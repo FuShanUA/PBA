@@ -4,9 +4,9 @@ Palantir 官方博客文章的中文归档浏览器，按 Palantir 真实 Medium
 
 ## 在线访问
 
-部署在 Streamlit Community Cloud：
+通过 GitHub Pages 在线访问：
 
-> 替换为你的 Streamlit 应用 URL
+https://fushanua.github.io/PBA/
 
 ## 本地运行
 
@@ -39,10 +39,10 @@ streamlit run app.py
 | `classified_articles.json` | 按标签分类的文章数据 |
 | `page_data.json` | 页面渲染数据 |
 
-## 部署到 Streamlit Community Cloud
+## 部署到 Streamlit Community Cloud（可选）
 
 1. 将本仓库推送到 GitHub
 2. 前往 [share.streamlit.io](https://share.streamlit.io)
-3. 点击 **New app**，选择该 GitHub 仓库
+3. 点击 **New app**，选择 `FuShanUA/PBA` 仓库
 4. 主文件路径填 `app.py`
 5. 点击 **Deploy**
