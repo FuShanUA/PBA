@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>A PySpark Style Guide for Real-world Data Scientists</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background:#fff;color:#1a1a1a;line-height:1.7;max-width:680px;margin:0 auto;padding:48px 24px 80px}
+h1{font-size:1.65em;font-weight:700;margin-bottom:8px;line-height:1.25;color:#111}
+.meta{color:#888;font-size:.82em;margin-bottom:32px;padding-bottom:16px;border-bottom:1px solid #eee}
+.meta a{color:#2e86de;text-decoration:none}
+article p{margin-bottom:18px;font-size:1.02em;line-height:1.75}
+article img{max-width:100%;height:auto;margin:20px auto;display:block;border-radius:6px}
+article h2{font-size:1.28em;font-weight:600;margin:28px 0 12px;line-height:1.3;color:#222}
+article h3{font-size:1.12em;font-weight:600;margin:24px 0 10px;color:#333}
+article h4{font-size:1em;font-weight:600;margin:20px 0 8px;color:#333}
+article ul,article ol{margin-bottom:16px;padding-left:24px}
+article li{margin-bottom:8px;line-height:1.7}
+article blockquote{border-left:3px solid #d0d0d0;padding:8px 16px;margin:18px 0;color:#666;background:#fafafa;border-radius:0 4px 4px 0}
+article pre{background:#f6f6f6;padding:14px 16px;border-radius:6px;overflow-x:auto;font-size:.85em;margin:18px 0;border:1px solid #e8e8e8;font-family:'SF Mono',Monaco,Consolas,monospace}
+article code{background:#f0f0f0;padding:2px 6px;border-radius:3px;font-size:.88em;font-family:'SF Mono',Monaco,Consolas,monospace}
+article pre code{background:none;padding:0;border:none}
+article table{width:100%;border-collapse:collapse;margin:18px 0;font-size:.92em}
+article th,article td{border:1px solid #e0e0e0;padding:8px 12px;text-align:left}
+article th{background:#f8f8f8;font-weight:600}
+article figure{margin:20px 0;text-align:center}
+article figcaption{color:#999;font-size:.82em;margin-top:6px;text-align:center}
+article a{color:#2e86de;text-decoration:none}
+article a:hover{text-decoration:underline}
+.nav{margin-bottom:28px}
+.nav a{color:#2e86de;text-decoration:none;font-size:.88em}
+.nav a:hover{text-decoration:underline}
+</style></head><body>
+<div class="nav"><a href="../../index.html">← Back to Archive</a></div>
+<h1>A PySpark Style Guide for Real-world Data Scientists</h1>
+<div class="meta">2020-10-20 · <a href="https://blog.palantir.com/a-pyspark-style-guide-for-real-world-data-scientists-1727fda397e9">Original →</a></div>
+<article>**太长不看：我们已将内部的 PySpark 风格指南开源，你可以在这里找到：** https://github.com/palantir/pyspark-style-guide
+
+Palantir 服务于众多不同的行业。各行业在数据工程实践和规范上的差异带来了诸多问题。不同组织的 PySpark 风格大相径庭，这不仅拉高了学习曲线，也阻碍了代码的扩展与维护。两年前，几位 Palantir 员工决定帮助分析用户标准化工作流，并加固他们的数据管道。我们编写了一份 PySpark 风格指南，此后一直在使用并不断演进和完善。我们很高兴能将其分享给全世界。
+
+![figure](https://miro.medium.com/v2/resize:fit:700/1*kce65p-EOiimCzVJnx-oPA.png)
+
+## PySpark 编码规范的必要性
+
+我们的 Palantir Foundry 平台广泛应用于各行各业，用户的技术背景也各不相同。从构建风险模型的银行统计学家，到从事飞机预测性维护的航空航天工程师，我们发现 PySpark 已成为大规模数据科学、工程和分析领域事实上的标准语言。不同用户编写的代码普遍面临一个问题：大型代码库中缺乏最佳实践，导致数据转换生产管道的维护和调试困难重重。
+
+```python
+df = df[["a", "b", "c", "key"]].filter(
+        df["a"] == "truthiness"
+    ).withColumn("boverc", df["b"] / df.c).join(
+        df2, "key", "inner").join(df3, df3.key, "left")\
+    .drop('c', 'f')
+```
+
+*当代码长成这样时，很难检验其正确性。*
+
+在生产环境运行的数据转换和建模，将数据科学的范畴延伸到了软件工程领域：如何组织代码以提升可维护性？如何确保代码库具有一致的外观与风格？如何缩短新开发人员的学习曲线并保证设计模式的一致性？在大规模场景下，数据工程（例如构建数据转换管道、机器学习模型等）与传统软件开发一样，都能从精益求精的工程原则中受益。我们发现，对于使用 PySpark 的数据科学家而言，缺乏这些原则的问题尤为突出：
+
+- 具有不同背景和语言经验（如 SQL，以及 MATLAB、R、SAS、Julia 等数学语言）的用户，可能会编写出初衷良好但既不符合 Python 规范，在 Python 和 Spark 中运行效率也不高的代码。
+- 数据科学和高级分析部门往往被要求持续交付结果，却忽视了代码的可维护性、稳定性和鲁棒性。
+- PySpark 的概念和 API 语法可能与常见的 Python 指南冲突，因为 Spark 的库倾向于基于 JVM 的约定，这些约定最初是按类似 SQL 的风格编写的。
+
+> 数据科学代码应当遵循优秀的软件工程规范。
+> —— Joel Grus 在《为什么我不喜欢 notebooks》演讲中的发言（《数据科学从零开始》作者）
+
+现代数据驱动应用程序的正常运行，既依赖传统代码，也依赖数据。例如，使用机器学习模型的应用程序，可能会因为软件本身的 Bug，或者模型底层数据质量下降而崩溃。这意味着**数据工程代码属于生产代码**，因此在测试、文档编写和可读性方面需要同等严谨，以确保易于维护和排障。
+
+忽视软件工程原则虽然能在短期内加速代码的编写和运行，但长远来看会产生技术债务，阻碍产品发布并增加系统维护成本。为了提升客户数据工程代码库的质量，我们最初的做法是在 Foundry 中通过代码评审提供帮助，这无异于“用人海战术解决问题”，耗费了大量工程时间。然而，多项“最佳实践”原则是自然演进出来的，且大多只存在于人们的脑海中。我们经常在同一个代码仓库的不同文件中发现相互冲突的代码风格。
+
+## 我们如何编写风格指南
+
+我们当时找不到任何专注于 PySpark 的风格指南作为基准，因此我们设定了一个目标：为 PySpark 编写一份带有强烈主张的风格指南和最佳实践，并配套相应的 linter 规则。自 2019 年第一季度起，我们向众多 Foundry 用户推出了这份风格指南，并根据他们的反馈不断对其进行完善。正因如此，我们开发的风格指南力求契合 PySpark 的实际使用场景：
+
+> 反映真实使用场景的风格指南才会被采用；而如果一份风格指南坚持的理想被其受众所排斥，那么无论它多么优秀，都面临着无人问津的风险。
+> —— RuboCop
+
+风格指南中的各项规则并非没有遇到阻力。一些具体的指导原则在 Palantir 内部和客户群体中引发了摩擦。对于某些代码实践的看法，往往会使开发者群体产生两极分化。
+
+软件工程中一些事实上的简单做法，比如关注点分离或逻辑隔离，能够极大地提升 PySpark 代码的可读性和可维护性。将特别复杂的表达式剥离为独立的变量或列，是一种很容易达成共识的做法：
+
+```python
+# bad
+df.select(
+    ((F.coalesce(F.unix_timestamp('closed_at'), F.unix_timestamp())
+    - F.unix_timestamp('created_at')) / 86400).alias('days_open')
+)
+# good
+df.withColumn(
+    'days_open',
+    (F.coalesce(F.unix_timestamp('closed_at'), F.unix_timestamp()) - F.unix_timestamp('created_at')) / 86400
+)
+```
+
+其他更复杂的情况，例如避免执行冗长的表达式链，则花了更长时间才达成共识。当时两种极端的做法都有拥护者：“链式调用一切”对阵“绝不使用链式调用”。最终形成的共识是：建议避免在多行表达式中串联不同类型的操作，尤其是当它们具有不同行为或上下文时：例如，将列创建或连接操作与选择和过滤操作混在一起。
+
+```python
+# bad
+df = (
+    df
+    .select('a', 'b', 'c', 'key')
+    .filter(F.col('a') == 'truthiness')
+    .withColumn('boverc', F.col('b') / F.col('c'))
+    .join(df2, 'key', how='inner')
+    .join(df3, 'key', how='left')
+    .drop('c')
+)
+
+# better (seperating into steps)
+# first: we select and trim down the data that we need
+# second: we create the columns that we need to have
+# third: joining with other dataframes
+
+df = (
+    df
+    .select('a', 'b', 'c', 'key')
+    .filter(F.col('a') == 'truthiness')
+)
+
+df = df.withColumn('boverc', F.col('b') / F.col('c'))
+
+df = (
+    df
+    .join(df2, 'key', how='inner')
+    .join(df3, 'key', how='left')
+    .drop('c')
+)
+```
+
+## 风格指南的演进
+
+随着风格指南在内部的不断演进，我们曾经历过有人公然无视它并坚持自己做法的时期，也曾出现过同一份指南存在多个版本、每个版本侧重问题不同方面的情况。起初我们并不清楚如何调和这些矛盾，但长远来看，这些讨论最终带来了益处，因为解决冲突并达成合理的折中方案，使得我们能够将规则推向更加平衡和成熟的方向。
+
+> 制定风格指南的意义在于建立通用的编码词汇表，这样人们就可以把注意力集中在你要表达的内容上，而不是你表达的方式上。我们在此提出全局风格规则，就是让人们了解这套词汇表。但局部风格同样重要。如果你添加到文件中的代码与周围的现有代码风格大相径庭，这种断裂感会打断读者的阅读节奏。请尽量避免这种情况。
+> —— https://google.github.io/styleguide/cppguide.html
+
+有了这份参考指南，我们的代码评审得以聚焦于数据工程代码库的内容本身，而不再受括号位置和换行等琐事干扰。每位 Palantir 客户可能都在管理着数十个数据源集成，这些集成作为不同的项目处理，需要从数据质量到代码复杂度等各方面的持续监控。我们的平台将每条数据管道视为一流的软件产品，因此在单个项目的代码仓库中，经常会有数十个变更请求并行在 `master` 分支上推进。更严格的代码风格规范和最佳实践选择，使得团队成员在不同功能和项目间的轮岗更加顺畅，也大幅加快了后续的代码修改和重构工作。
+
+我们列出的一些规则可能仍然会引发争议，因此在你阅读（并希望使用！）这份风格指南时，请通过代码仓库的 issue 或变更请求提供反馈，维护者将在那里集中讨论。我们的初衷是希望这份风格指南能帮助到广大的数据科学家和工程师，同时随着 Spark 和数据科学社区的发展不断演进。
+
+你可以在以下 GitHub 仓库中找到 PySpark 风格指南：https://github.com/palantir/pyspark-style-guide
+
+## 作者与贡献者（按拼音字母排序）
+
+Andre M., Andrew A., Arttu V., Bruno R., David L., Francis S., Francisco F., Logan R., Nezihe P., Viktor N.</article>
+</body></html>

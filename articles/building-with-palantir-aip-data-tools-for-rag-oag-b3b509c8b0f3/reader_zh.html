@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Building with Palantir AIP: Data Tools for RAG / OAG</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background:#fff;color:#1a1a1a;line-height:1.7;max-width:680px;margin:0 auto;padding:48px 24px 80px}
+h1{font-size:1.65em;font-weight:700;margin-bottom:8px;line-height:1.25;color:#111}
+.meta{color:#888;font-size:.82em;margin-bottom:32px;padding-bottom:16px;border-bottom:1px solid #eee}
+.meta a{color:#2e86de;text-decoration:none}
+article p{margin-bottom:18px;font-size:1.02em;line-height:1.75}
+article img{max-width:100%;height:auto;margin:20px auto;display:block;border-radius:6px}
+article h2{font-size:1.28em;font-weight:600;margin:28px 0 12px;line-height:1.3;color:#222}
+article h3{font-size:1.12em;font-weight:600;margin:24px 0 10px;color:#333}
+article h4{font-size:1em;font-weight:600;margin:20px 0 8px;color:#333}
+article ul,article ol{margin-bottom:16px;padding-left:24px}
+article li{margin-bottom:8px;line-height:1.7}
+article blockquote{border-left:3px solid #d0d0d0;padding:8px 16px;margin:18px 0;color:#666;background:#fafafa;border-radius:0 4px 4px 0}
+article pre{background:#f6f6f6;padding:14px 16px;border-radius:6px;overflow-x:auto;font-size:.85em;margin:18px 0;border:1px solid #e8e8e8;font-family:'SF Mono',Monaco,Consolas,monospace}
+article code{background:#f0f0f0;padding:2px 6px;border-radius:3px;font-size:.88em;font-family:'SF Mono',Monaco,Consolas,monospace}
+article pre code{background:none;padding:0;border:none}
+article table{width:100%;border-collapse:collapse;margin:18px 0;font-size:.92em}
+article th,article td{border:1px solid #e0e0e0;padding:8px 12px;text-align:left}
+article th{background:#f8f8f8;font-weight:600}
+article figure{margin:20px 0;text-align:center}
+article figcaption{color:#999;font-size:.82em;margin-top:6px;text-align:center}
+article a{color:#2e86de;text-decoration:none}
+article a:hover{text-decoration:underline}
+.nav{margin-bottom:28px}
+.nav a{color:#2e86de;text-decoration:none;font-size:.88em}
+.nav a:hover{text-decoration:underline}
+</style></head><body>
+<div class="nav"><a href="../../index.html">← Back to Archive</a></div>
+<h1>Building with Palantir AIP: Data Tools for RAG / OAG</h1>
+<div class="meta">2023-12-05 · <a href="https://blog.palantir.com/building-with-palantir-aip-data-tools-for-rag-oag-b3b509c8b0f3">Original →</a></div>
+<article><h2 id="06b5"><strong>引言</strong></h2><p id="5726">欢迎来到“使用 AIP 构建”系列的又一篇文章。在本系列中，Palantir 的工程师和架构师将带您了解如何使用我们的人工智能平台（AIP）构建端到端的工作流。<br/> <br/>今天我们将探讨<mark>本体增强生成（OAG）</mark>，这是检索增强生成（RAG）的一个更广泛的、以决策为中心的版本。从宏观层面来看，RAG 允许生成式 AI 从外部来源检索数据。这使得大语言模型能够利用特定上下文的外部信息（例如，企业的订单、客户、位置等数据）来生成回复，从而降低幻觉风险。借助 RAG，大语言模型还可以引用用于生成特定回复的数据源，从而建立信任并提供清晰的审计轨迹。<br/> <br/>OAG 将 RAG 提升到了新的高度，允许大语言模型利用确定性逻辑工具（例如预测和优化器），并通过 Palantir 本体与源系统闭环交互。每个企业的本体都包含了驱动特定场景下运营决策的数据、逻辑和动作。将大语言模型建立在本体之上，实际上就是将其锚定在特定业务的现实中，这不仅能驱动更准确、更强大的应用，还能建立更高的信任度：大语言模型可以有效地“展示其工作过程”，并从企业自身的运营现实中提取特定的数据源。</p><h3 id="8ac1"><strong>应用程序</strong></h3><p id="ab81">与我们的其他烹饪节目式视频一样，我们首先展示构建完成的应用程序。在这个场景中，我们有一家名为 Titan Industries 的虚构公司，该公司专营医疗用品，其配送中心之一突发火灾。火灾给 Titan 的客户带来了短缺风险，我们希望避免这种情况发生。</p><p id="bc0d">借助 AIP，我们可以构建一个应用程序（预览如下），使我们能够快速评估火灾的影响，识别受影响的订单，并提供可操作的解决方案（例如，重新分配库存以满足客户订单）。该应用程序展示了大语言模型正在采取的思维链推理步骤，以及它正在访问本体中的哪些对象——从而为其如何得出结论提供了透明度。</p><figure><img alt="" height="371" loading="eager" src="https://miro.medium.com/v2/resize:fit:700/1*a01V4Qx9sriSPHS76bUpMw.gif" width="700"/></figure><p id="ddac">让我们开始构建吧！</p><h3 id="95f5">HyperAuto</h3><p id="9868">为了驱动这个 OAG 工作流，我们需要有大语言模型支持的函数可以利用的数据要素。</p><p id="6de6">HyperAuto——也称为软件定义数据集成（SDDI）——是一套功能套件，旨在最常见且关键的任务系统之上提供开箱即用的端到端数据集成。HyperAuto 使您能够利用 ERP、CRM 和其他对组织至关重要的数据，自主创建有价值的工作流。</p><p id="56a0">利用数据源的元数据，HyperAuto 实时查询源系统，得出关于如何构建同步、应用何种转换逻辑以及如何设计合适本体的意见。</p><p id="1c94">通过利用元数据创建管道并连接到 SAP 等复杂系统，HyperAuto 简化了数据操作，使分析师能够专注于战略目标。HyperAuto 让您能够在几分钟内从源系统走到本体。</p><p id="dfe7">反过来，本体将来自所有相关来源的实时数据集成到业务的语义模型中。这使我们能够将 AI 锚定在企业的运营现实中，降低模型幻觉风险，并建立决策所需的信任。</p><p id="805c">在这种情况下，我们使用 HyperAuto 在几分钟内从 Titan 的 SAP 系统创建本体对象，例如客户、客户订单、成品、制造工厂等。</p><p id="5a92">在《此处》了解更多关于 HyperAuto 的信息。</p><figure><img alt="" height="462" loading="lazy" src="https://miro.medium.com/v2/resize:fit:700/1*zkKS0utGEGPcpzyKUQEsDA.png" width="700"/></figure><h3 id="fcd3">数据健康</h3><p id="8462">既然数据已经通过 HyperAuto 流动，保持其健康和清洁就变得非常重要。AIP 拥有一套强大的集成工具套件，可确保端到端的数据健康和完整性检查，使数据管道保持最新和可靠。</p><p id="3d61">当我们将数据健康与数据血缘关系工具（提供数据如何在平台中流动的视图）结合使用时，我们就拥有了一个统一的面板，可以查看和检查整个企业范围内的数据健康状况。例如，在数据健康模块中，您可以根据不同标准（例如状态、时间、大小、内容、模式）设置检查，并设置不同的严重程度和警报级别。借助数据血缘关系，我们可以轻松查看一个地方的数据健康问题是如何在其他地方引发问题的。</p><p id="77e5">在《此处》了解更多关于数据健康的信息，在《此处》了解数据血缘关系。</p><figure><img alt="" height="504" loading="lazy" src="https://miro.medium.com/v2/resize:fit:700/1*jVoywUhz9N4qqsEKkGziNg.jpeg" width="700"/></figure><h3 id="61f8">数据即代码</h3><p id="4fee">Palantir 的“数据即代码”理念将软件开发的原则融入数据治理，为用户提供了控制力、灵活性和可复现性。</p><p id="4502">本质上，AIP 以对待代码同样的谨慎态度和动态交互来对待数据，允许在多用户环境中进行迭代改进和严格的变更管理。</p><p id="d445">该系统的关键在于分支能力——这是一个源于版本控制系统的概念——它允许多个用户同时处理数据，在不牺牲数据完整性的前提下促进创新。此外，用户可以轻松展示数据集的时间演变，从而便于调试和解决问题。</p><p id="a577">这意味着用户可以快速行动，并对数据质量充满信心。</p><p id="5489">在《此处》了解更多关于“数据即代码”方法的信息。</p><figure><img alt="" height="688" loading="lazy" src="https://miro.medium.com/v2/resize:fit:700/1*WS0v4duKhJCjHYF-ECXhyA.png" width="700"/></figure><h3 id="d851">保护本体安全</h3><p id="0bb6">在本体中创建对象后，我们不仅需要通过链接和动作类型定义它们与业务其余部分的关系，还必须确保它们对用户和 AI 都具有适当的安全控制。</p><p id="3e44">我们可以在 Palantir 的本体管理器应用程序（OMA）中完成所有这些工作。OMA 允许我们在整个本体中快速传播细粒度的安全控制，直达单个对象级别。这保护了企业信息，并确保用户能够严格控制 AI 可以访问的信息。</p><p id="f155">在《此处》了解更多关于管理本体安全的信息。</p><figure><img alt="" height="494" loading="lazy" src="https://miro.medium.com/v2/resize:fit:700/1*T-3quO3MiDl1CB81ANEf0A.png" width="700"/></figure><h3 id="85f6">AIP 逻辑：赋予大语言模型数据工具</h3><p id="d3ef">既然我们已经自动创建了数据管道，定义了本体，确保了数据清洁，并设置了安全控制，我们就可以准备创建我们的应用程序了。</p><p id="2c30">我们将使用 AIP Logic 来实现这一点。AIP Logic 彻底改变了 AI 驱动函数的创建方式，提供了一个无代码环境，简化了高级大语言模型与本体的集成。它旨在简化开发过程，允许构建者轻松构建、测试和部署 AI 驱动的函数，而无需深入研究复杂的编程或工具配置。</p><p id="8c52">在视频中，我们展示了 AIP Logic 如何让我们能够为大语言模型配备一个由本体驱动的数据工具——在这个例子中，是为了帮助解决 Titan Industries 模拟的供应链问题。这种工具范式超越了数据，延伸到了逻辑和动作（我们将在未来的视频中看到），使我们能够安全地“教”大语言模型新的能力——就像我们培训一名新员工一样。</p><p id="e3a5">我们首先输入提示词。因为我们已经允许大语言模型访问本体中的特定对象，所以我们能够将它们包含在我们的提示词中。这意味着大语言模型还可以访问这些对象的链接、动作和其他关系——例如，一个客户订单对象将包含客户名称、物料 ID、配送中心等，以及它们之间的所有关系。因此，大语言模型在生成回复时能够考虑这些关系。</p><p id="3282">AIP Logic 友好的用户界面使我们能够轻松编写提示词、调试提示词和工具使用情况，并监控结果。我们构建的不同逻辑块会提示大语言模型搜索受影响的订单，识别具有充足必要物料供应的配送中心，并向我返回受影响的订单列表和建议的补救措施。</p><p id="8fc8">在几分钟内，我们就能够部署一个应用程序，该应用程序可在配送中心发生故障时激活，并针对出现的问题提供可操作的解决方案（在此示例中，告诉我如何解决因配送中心火灾导致的短缺）。这个基于本体增强生成（OAG）原则的应用程序，展示了 AIP 将 AI 建立在企业的数据、逻辑和动作之上以支持实时运营决策的强大能力。</p><figure><img alt="" height="428" loading="lazy" src="https://miro.medium.com/v2/resize:fit:700/1*ZZBKY07eDXcMwTO2wCOjvQ.png" width="700"/></figure><h2 id="0db8">结论</h2><figure><img alt="" height="274" loading="lazy" src="https://miro.medium.com/v2/resize:fit:700/1*Ozy0kMRjt_AjlpRNZyZDBQ.png" width="700"/></figure><p id="66fc">如果您准备好利用 AIP 释放全谱系 AI 的力量，请立即报名参加《AIP 训练营》。您的团队将向 Palantir 专家学习，更重要的是，获得 AIP 的实操经验，并在生产环境中组装出真正的工作流。</p><p id="e6ba">让我们开始构建吧！ <br/>Chad Wahlquist，Palantir 前线部署架构师</p></article>
+</body></html>

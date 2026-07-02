@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Au-delà de l’anonymisation (Palantir Mode d’Emploi, No.3)</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background:#fff;color:#1a1a1a;line-height:1.7;max-width:680px;margin:0 auto;padding:48px 24px 80px}
+h1{font-size:1.65em;font-weight:700;margin-bottom:8px;line-height:1.25;color:#111}
+.meta{color:#888;font-size:.82em;margin-bottom:32px;padding-bottom:16px;border-bottom:1px solid #eee}
+.meta a{color:#2e86de;text-decoration:none}
+article p{margin-bottom:18px;font-size:1.02em;line-height:1.75}
+article img{max-width:100%;height:auto;margin:20px auto;display:block;border-radius:6px}
+article h2{font-size:1.28em;font-weight:600;margin:28px 0 12px;line-height:1.3;color:#222}
+article h3{font-size:1.12em;font-weight:600;margin:24px 0 10px;color:#333}
+article h4{font-size:1em;font-weight:600;margin:20px 0 8px;color:#333}
+article ul,article ol{margin-bottom:16px;padding-left:24px}
+article li{margin-bottom:8px;line-height:1.7}
+article blockquote{border-left:3px solid #d0d0d0;padding:8px 16px;margin:18px 0;color:#666;background:#fafafa;border-radius:0 4px 4px 0}
+article pre{background:#f6f6f6;padding:14px 16px;border-radius:6px;overflow-x:auto;font-size:.85em;margin:18px 0;border:1px solid #e8e8e8;font-family:'SF Mono',Monaco,Consolas,monospace}
+article code{background:#f0f0f0;padding:2px 6px;border-radius:3px;font-size:.88em;font-family:'SF Mono',Monaco,Consolas,monospace}
+article pre code{background:none;padding:0;border:none}
+article table{width:100%;border-collapse:collapse;margin:18px 0;font-size:.92em}
+article th,article td{border:1px solid #e0e0e0;padding:8px 12px;text-align:left}
+article th{background:#f8f8f8;font-weight:600}
+article figure{margin:20px 0;text-align:center}
+article figcaption{color:#999;font-size:.82em;margin-top:6px;text-align:center}
+article a{color:#2e86de;text-decoration:none}
+article a:hover{text-decoration:underline}
+.nav{margin-bottom:28px}
+.nav a{color:#2e86de;text-decoration:none;font-size:.88em}
+.nav a:hover{text-decoration:underline}
+</style></head><body>
+<div class="nav"><a href="../../index.html">← Back to Archive</a></div>
+<h1>Au-delà de l’anonymisation (Palantir Mode d’Emploi, No.3)</h1>
+<div class="meta">2022-09-28 · <a href="https://blog.palantir.com/au-delà-de-lanonymisation-palantir-mode-d-emploi-no-3-b0af71e4c980">Original →</a></div>
+<article>（本文的英文版可在此处阅读。）
+
+编者注：本文是《Palantir 使用手册》系列的第三篇略作调整的文章。该系列探讨了一系列主题，包括我们在隐私、安全、AI/ML 安全等方面的方法。此前的文章探讨了我们的商业模式以及基于目的的访问控制。
+
+新冠疫情凸显了安全、大规模处理敏感数据的重要性。如今，数据分析对政府和企业解决复杂问题至关重要，这也引发了人们对于如何进行这些分析的合理质疑。公众希望了解其个人数据的去向，而负责这些数据的人员则必须掌握保护其掌管信息的可用手段。
+
+本文探讨了对于试图兼顾使命需求（例如执行公共服务使命）与隐私保护的组织而言，匿名化所面临的挑战。具体而言，我们将讨论匿名化的含义、实施难点，以及我们为降低再识别风险而推荐的最佳实践。
+
+本博文属于《Palantir 使用手册》系列的一部分，该系列探讨了隐私、安全、AI/ML 安全等一系列主题。我们有意将本博文写得简短以便于阅读，但如果您希望从技术层面深入了解匿名化，请参阅我们关于该主题的白皮书。
+
+![](https://miro.medium.com/v2/resize:fit:700/1*UNOMA5R0rcZlD7iFofOIww.png)
+
+## 匿名化与去标识化，以及再识别问题
+
+**匿名化**是指移除数据集中所有可识别信息的过程，使得这些数据所描述的人员无法被重新识别。匿名化的作用在于，它允许组织处理源自个人的数据，同时不会 compromise 其隐私。
+
+匿名化的难点在于其实施的复杂性，而实施不当的后果可能十分严重。帝国理工学院教授兼“计算隐私组”负责人 Yves-Alexandre de Montjoye 近期证明，尽管经过了信息匿名化处理，再识别依然可能发生，这尤其体现在 transmitted 给一家全球医疗数据收集与分析领军企业的法国消费者购药数据上。这些披露引发了争议，特别引起了法国国家信息与自由委员会（CNIL）的反应，后者在其 IQVIA 健康数据仓库决议中，回顾了2018年批准该项目的条件和法律框架。
+
+由于“匿名化”一词可能带来一种虚假的安全感，暗示数据无法被重新识别，Palantir 建议各组织使用“去标识化”一词来替代。与匿名化数据一样，去标识化数据也会移除姓名以及地址或出生日期等其他直接标识符。但与匿名化数据不同的是，去标识化数据享有与已标识数据同等的法律保护。这有助于正视**再识别**——即从去标识化或匿名化数据追溯至其所描述的具体个人——这一切实存在的风险。
+
+Palantir 提供的软件会处理高度敏感的数据，因此我们开发了相关流程和技术，帮助客户大幅降低再识别风险。以下章节涵盖了组织应自问的问题，以及为确保去标识化真正有效而应采用的技术。
+
+## 降低数据的可识别性
+
+根据经验，再识别风险应从两个维度考量：数据本身，以及数据的使用方式。
+
+首先，我们将探讨数据的内在属性，评估其敏感程度或可识别程度，并理解一旦与其他数据关联会发生什么。
+
+### 需要自问的问题
+
+- **数据是否敏感？** 数据的敏感程度各异。它们可能包含受保护属性的信息，如个人的地址、性别或宗教；或者在另一种层面上，它们可能是私密的、个人的或机密的。需要自问的问题是：“如果这些数据被再识别，对相关个人会带来什么潜在风险？”
+- **再识别数据是否容易？** 要回答这个问题，必须考虑每个数据点的基数，即它涉及多少个人。涉及的人数越少，再识别风险就越高。
+- **如果数据与其他数据关联会发生什么？** 为此，必须考虑整个数据系统体系，包括现有系统和未来系统。其他系统的数据能否与我们的去标识化数据拼接，从而导致再识别？发生这种拼接的可能性有多大？采取了哪些保护措施来防止这种情况？
+
+### 如何降低风险
+
+以下是一些技术，每种都有其优缺点，能显著降低再识别风险：
+
+- **泛化**：降低信息的粒度（例如将出生日期转换为年龄段）。
+- **聚合**：将个人数据归组，仅在聚合层面进行分析。
+- **隐藏**：对未授权用户隐藏可识别数据，例如通过掩码或加密。
+- **动态最小化**：根据用户的需求和角色，仅显示部分数据。
+- **合成数据**：生成复制原始数据统计分布的人工数据。
+
+## 技术与组织风险
+
+在考虑了数据本身固有的风险后，我们还需要根据数据的使用情况来评估再识别风险。事实上，尽管存在许多保护静态数据的技术，Palantir 的独特之处在于，它试图在复杂且动态的系统中评估再识别风险——也就是在这些数据被用于做出运营决策的真实世界中。
+
+### 需要自问的问题
+
+- **用户**：有多少用户将访问这些数据？未来会发生变化吗？事实上，每次新用户获得数据访问权限，风险都会增加。如果这些用户试图对数据进行再识别，以便可能更多地了解公众人物或其周围的人，这一点就更加重要。
+- **权限**：用户可以访问哪些数据？他们还能访问哪些其他数据（包含去标识化数据的平台之外的），这些数据能否被组合？这些用户是否有权在未经授权的情况下导入、导出或传输数据？
+- **治理**：是否建立了数据治理规则，并且用户是否理解这些规则？平台能否执行这些规则？数据治理团队能否监控和衡量对这些规则的合规性？
+- **元数据**：数据集是否被正确标记和描述，以便用户能够轻松理解其敏感程度、规定用途以及管辖其使用的规则？
+
+### 如何降低风险
+
+数据治理团队可以采用多种方法来降低再识别风险。
+
+- **访问权限**：确保用户只能访问其绝对必要的子集数据（点击了解 Palantir 软件如何整合这一点）。
+- **使用权限**：仅允许绝对需要的用户执行导入、导出、传输或组合数据等特定操作。
+- **标记**：在整个平台中以一致的方式标记敏感数据，以指示其敏感性，例如防止它们与带有不同标记的其他敏感数据组合。
+- **按需解密**：默认对最敏感的数据进行加密和不可读处理。仅当用户证明其有访问需求时，才允许其解密。
+- **控制**：允许内外部监管机构确保数据处理符合预先建立的治理规则，且受控系统中未发生任何恶意行为。
+- **检测敏感数据**：通过在后台运行检测算法，自动检测所使用系统中的敏感数据，从而在过于可识别的敏感数据被意外导入时发出警报并限制访问。
+- **测试与验证**：允许在去标识化数据对内或对外共享之前，对其进行验证和压力测试。
+- **数据血缘**：使用数据血缘可视化工具来理解数据在系统中的流转方式。这应能回答以下问题：“哪些用户出于何种目的，有权访问何种级别的敏感数据？”
+
+## 全局性方法
+
+新技术的开发必须优先兼顾数据使用与隐私保护。基于数据的研究和决策可以极大地改善人们的健康、安全乃至更多方面，但这些目标的实现绝不能以牺牲隐私权为代价。使用创新技术的组织必须符合数据被处理者的合理期望。Palantir 将数据和隐私保护视为其产品开发的核心价值观。
+
+去标识化只是现有工具之一。Palantir 认为，负责任的数据处理需要一种全局性的方法。有关 Palantir 如何在其产品中实现数据保护的更多信息，请参阅《Palantir Foundry 中的数据保护》。
+
+### **作者**
+
+Megha Arora，Palantir 隐私与个人自由工程负责人
+Paula Kift，Palantir 隐私保护合作负责人</article>
+</body></html>
