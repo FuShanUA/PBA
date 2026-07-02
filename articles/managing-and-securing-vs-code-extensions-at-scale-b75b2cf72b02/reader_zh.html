@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Managing and Securing VS Code Extensions at Scale</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background:#fff;color:#1a1a1a;line-height:1.7;max-width:680px;margin:0 auto;padding:48px 24px 80px}
+h1{font-size:1.65em;font-weight:700;margin-bottom:8px;line-height:1.25;color:#111}
+.meta{color:#888;font-size:.82em;margin-bottom:32px;padding-bottom:16px;border-bottom:1px solid #eee}
+.meta a{color:#2e86de;text-decoration:none}
+article p{margin-bottom:18px;font-size:1.02em;line-height:1.75}
+article img{max-width:100%;height:auto;margin:20px auto;display:block;border-radius:6px}
+article h2{font-size:1.28em;font-weight:600;margin:28px 0 12px;line-height:1.3;color:#222}
+article h3{font-size:1.12em;font-weight:600;margin:24px 0 10px;color:#333}
+article h4{font-size:1em;font-weight:600;margin:20px 0 8px;color:#333}
+article ul,article ol{margin-bottom:16px;padding-left:24px}
+article li{margin-bottom:8px;line-height:1.7}
+article blockquote{border-left:3px solid #d0d0d0;padding:8px 16px;margin:18px 0;color:#666;background:#fafafa;border-radius:0 4px 4px 0}
+article pre{background:#f6f6f6;padding:14px 16px;border-radius:6px;overflow-x:auto;font-size:.85em;margin:18px 0;border:1px solid #e8e8e8;font-family:'SF Mono',Monaco,Consolas,monospace}
+article code{background:#f0f0f0;padding:2px 6px;border-radius:3px;font-size:.88em;font-family:'SF Mono',Monaco,Consolas,monospace}
+article pre code{background:none;padding:0;border:none}
+article table{width:100%;border-collapse:collapse;margin:18px 0;font-size:.92em}
+article th,article td{border:1px solid #e0e0e0;padding:8px 12px;text-align:left}
+article th{background:#f8f8f8;font-weight:600}
+article figure{margin:20px 0;text-align:center}
+article figcaption{color:#999;font-size:.82em;margin-top:6px;text-align:center}
+article a{color:#2e86de;text-decoration:none}
+article a:hover{text-decoration:underline}
+.nav{margin-bottom:28px}
+.nav a{color:#2e86de;text-decoration:none;font-size:.88em}
+.nav a:hover{text-decoration:underline}
+</style></head><body>
+<div class="nav"><a href="../../index.html">← Back to Archive</a></div>
+<h1>Managing and Securing VS Code Extensions at Scale</h1>
+<div class="meta">2026-01-23 · <a href="https://blog.palantir.com/managing-and-securing-vs-code-extensions-at-scale-b75b2cf72b02">Original →</a></div>
+<article><figure><img alt="" height="366" loading="eager" src="https://miro.medium.com/v2/resize:fit:700/1*DavE6thOBFFwgC485aujRQ.png" width="700"/></figure>
+<p><em>编者按：在这篇博文中，Palantir 的信息安全（InfoSec）团队分享了他们实施全面 VS Code 扩展管理项目的经验，展示了解决这一经常被忽视的攻击向量的实用方案。</em></p>
+<h2>引言</h2>
+<p>集成开发环境（IDE）是编写代码和管理基础设施的核心界面，也是每家软件公司的基础。尽管 IDE 无处不在，人们却很容易忽视其带来的安全风险。几乎每位 IDE 用户都会依赖扩展程序——比如代码调试器、Git 附加组件和提升生产力的自定义颜色主题等常用工具。然而，这些看似实用的扩展程序却可能给个人和企业带来灾难性的风险。</p>
+<p>虽然信息安全团队通常将重点放在保护网页浏览器及其扩展程序上，但 IDE 生态系统构成了同样重要却较少受到审查的攻击面。在 Palantir，我们已成功实施了企业级的浏览器扩展安全控制，但 IDE 扩展领域一度鲜少涉足。</p>
+<p>本文详细介绍了 Palantir 信息安全团队大规模实施 VS Code 扩展安全的历程，我们汲取了浏览器扩展管理项目的经验，同时针对开发环境带来的独特挑战进行了应对。</p>
+<h2>背景：汲取浏览器扩展安全的经验</h2>
+<p>Palantir 自 2022 年起就采用代码化管理模式来管理浏览器扩展，使用基于允许列表的系统，在安全性与生产力之间取得平衡。这段经历为我们总结了数项关键原则，在应对 IDE 扩展安全的挑战时，这些原则发挥了不可估量的作用：</p>
+<ol>
+<li>在版本控制代码库中定义安全策略，能够实现透明化、自动化及协作化决策。</li>
+<li>允许用户通过拉取请求提交变更申请，既维持了安全监督，又赢得了用户的认同。</li>
+<li>人工流程无法规模化，因此成功的安全控制必须无缝融入现有基础设施。</li>
+<li>并非所有扩展的风险等级相同，这意味着分析工具有助于有效地确定审查工作的优先级。</li>
+</ol>
+<h2>问题：开发环境中的安全缺口</h2>
+<p>在成熟的浏览器扩展控制基础之上，我们发现了一个将类似保护机制延伸至 VS Code 的契机。开发人员过去可以在无人监管的情况下从市场安装任何扩展，由此引发了几种不容忽视的风险场景。</p>
+<p>与浏览器扩展不同，许多 IDE 扩展是开发工作流不可或缺的组成部分。全面封禁会严重影响生产力，而任其不受管控又会带来无法接受的安全风险。意识到恶意的 VS Code 扩展能在几分钟内实现远程代码执行后，我们将实施全面技术控制作为首要任务。</p>
+<h2>媒体关注与行业认可</h2>
+<p>2024 年全年，VS Code 扩展安全问题引发了媒体的广泛关注，这印证了我们的担忧，也突显了该问题的紧迫性。安全研究人员记录了多起恶意扩展潜入市场的案例，包括伪造的主题扩展和受损的开发者工具，这些均影响到了大型企业的用户。</p>
+<p>典型案例包括 Aqua Security 对 VS Code 扩展信任问题的调查，研究人员成功伪造了流行的 Prettier 扩展，并在 48 小时内获得了超过 1000 次安装量。Check Point 发现了多个累计下载量超过 45000 次的恶意扩展，这些扩展会窃取个人信息并在受害者机器上开启远程后门。Koi Security 利用仿冒热门 Dracula 主题的虚假扩展，仅在 30 分钟内就攻破了市值数十亿美元公司的系统，以此证明了此类攻击向量的严重性。</p>
+<p>安全社区围绕该问题迅速集结，像 Koi Security 这样的公司更是专门致力于通过自动化分析和威胁检测来解决 VS Code 市场安全问题。2024 年 11 月，VS Code 推出了企业级扩展控制功能，为各组织实施全面保护提供了所需的技术基础。</p>
+<p>这些进展证实了我们的担忧在整个行业内引起了共鸣，实施全面控制的时机已然成熟。</p>
+<h2>摸清 Palantir 的扩展使用现状</h2>
+<p>在实施任何控制之前，我们需要摸清现状。利用 osquery 数据，我们统计了 Palantir 员工在整个终端设备群中安装了多少个不同的 VS Code 扩展，这既展示了该平台的普及程度，也揭示了安全挑战的规模。</p>
+<p>数据揭示了几个令人担忧的模式，为我们的应对策略指明了方向。出人意料的是，大量扩展仅被单名用户安装，这表明用户在毫无安全考量的情况下进行了广泛的试错安装。这种模式表明，我们一半的扩展攻击面源于极少使用且可能无人维护的软件。许多开发者并不清楚自己当前安装了哪些扩展。当我们后续发布影响评估工具时，大量用户发现自己安装了一些完全遗忘或从未真正使用过的扩展。</p>
+<p>与此同时，被广泛采用的扩展主要集中在核心类别：生产力工具、语言支持和开发团队日常依赖的开发实用程序。这项现状分析表明，任何解决方案都必须在开发团队合理的生产力需求与不受控扩展安装带来的明确安全风险之间，进行审慎权衡。</p>
+<h2>构建扩展分析框架</h2>
+<p>鉴于环境中扩展的规模和多样性，我们需要一套系统化的风险评估方法。我们没有采购现成方案，而是决定自主研发专注于静态分析和元数据审查的内部工具。我们调整了分析引擎以反映 Palantir 面临的独特挑战，并定制规则以契合我们对安全风险的理解。</p>
+<p>该工具利用静态分析来识别潜在的高风险代码行为，包括可能助长数据外泄的网络和 API 调用、Shell 命令执行事件、硬编码的密钥或凭据、代码混淆技术以及过于宽泛的激活事件。我们集成了 NPM audit 以识别扩展依赖项中的已知漏洞，从而提供另一层风险评估。该工具会自动提取并分析扩展配置文件、权限和市场元数据，以构建全面的风险画像。</p>
+<figure><img alt="" height="362" loading="lazy" src="https://miro.medium.com/v2/resize:fit:700/1*gwYm0Qk8HZcpEiCtruTO2w.png" width="700"/></figure>
+<figure><img alt="" height="383" loading="lazy" src="https://miro.medium.com/v2/resize:fit:700/1*2ECCzmUXksQK5RlpQ4VMGw.png" width="700"/></figure>
+<p>这项自动化分析为我们做出有关扩展风险的明智决策奠定了基础，尽管在平衡安全问题与开发者生产力需求方面，人工判断依然至关重要。</p>
+<h2>扩展审查发现</h2>
+<p>对市场扩展的全面审查让我们对开发者行为和 VS Code 扩展生态系统有了深刻的认识：</p>
+<ul>
+<li>我们发现存在多个扩展与其他扩展具有相同或几乎相同的特征集。这可能导致扩展泛滥，从而增加管理难度。</li>
+<li>存在大量安装量较低的扩展，但这些扩展对开发者的生产力可能极具价值。我们正与开发团队合作，将这些高价值扩展推送给更广泛的受众，以改善开发体验。</li>
+<li>我们发现了许多由 Palantir 员工为提升自身生产力而开发的扩展，这凸显了在维持安全控制的同时支持内部开发的重要性。</li>
+</ul>
+<p>这些发现印证了逐案精细评估的必要性，而非采用宽泛的一刀切规则。</p>
+<h2>企业级配置与策略设计</h2>
+<p>得益于 VS Code 企业级扩展控制功能，各组织能够对扩展策略实施技术强制执行。我们的配置策略在安全性与操作简便性之间取得了平衡，以避免产生过于复杂的版本控制或标记要求，从而减少管理开销。</p>
+<p>这使我们能够将少数高度信任的组织加入允许列表，其整个扩展目录均可自动获批。其余扩展则需单独加入允许列表，以确保对知名度较低的开发者进行适当的安全审查。我们还具备从已允许的发布者中拒绝特定扩展的能力，从而在发布者发布不符合我们安全要求的工具时提供灵活性。通过摒弃基于版本或标记的更细粒度允许列表选项，我们使管理变得直观，开发者也能一目了然地知晓哪些扩展被允许、哪些被禁止。以下是 VS Code 企业级配置的示例：</p>
+<pre>{
+    "extensions.allowed": {
+        // 允许 Microsoft 附属发布者发布的所有扩展
+        "microsoft": true,
+        
+        // 允许以下发布者创建的所有扩展
+        "github": true,
+        "palantir": true,
+        "google": true,
+    
+        // 明确允许以下扩展
+        "esbenp.prettier-vscode": true,
+        "eamodio.gitlens": true,
+        "continue.continue": true,
+    
+        // 不允许 Copilot 网页搜索扩展
+        "ms-vscode.vscode-websearchforcopilot": false,
+    },
+    "telemetry.telemetryLevel": "off"
+}</pre>
+<p>除了已允许扩展的配置外，VS Code 的企业级设置还使我们能够配置参与扩展的遥测级别。在分析扩展时，我们发现许多扩展通过 Microsoft 提供的 Application Insights 包收集遥测数据。对于 Palantir 而言，将遥测数据发送给第三方在评估工具时通常是触碰红线的，因此我们曾担心不得不封禁任何利用此功能的扩展。幸运的是，通过将遥测级别设置为“off”，我们能够禁用所有扩展的 Application Insights 及类似遥测系统，防止数据泄露给第三方。</p>
+<h2>融入现有基础设施</h2>
+<p>取得成功的关键因素之一，是将 VS Code 扩展管理无缝融入我们现有的基础设施自动化中。我们的扩展允许列表 GitHub 代码库包含了类似于浏览器扩展所使用的自动化验证机制，确保获批的发布者和扩展与被拒绝的扩展不发生冲突。</p>
+<p>我们利用现有的 Excavator 服务自动为 macOS Jamf 和 Windows 组策略配置文件生成格式正确的配置文件，从而减少人工管理开销。允许列表通过现有的设备管理基础设施自动部署到我们的终端设备群中，确保快速且一致的策略执行。与浏览器扩展控制一样，VS Code 允许列表存放在 GitHub 代码库中，开发者可以通过拉取请求提出变更申请，保持了透明度并实现协作化安全决策。</p>
+<p>具体运作方式如下：</p>
+<figure><img alt="" height="252" loading="lazy" src="https://miro.medium.com/v2/resize:fit:700/1*13qiX7AxLnBYkBnE4PkBtA.png" width="700"/></figure>
+<p><strong>第一步：提交扩展申请</strong><br/>开发者若要使用新扩展，必须获得信息安全团队的批准才能在其设备上启用。这意味着他们必须进入包含当前扩展配置的 GitHub 代码库，并提交包含该扩展 ID 的拉取请求。我们要求他们提供业务理由，说明该扩展为何对其工作流至关重要，并要求他们核实现有的允许扩展集无法满足其需求。</p>
+<p><strong>第二步：审查扩展申请</strong><br/>当提交新的扩展申请时，我们会通过分析工具运行该扩展，以了解其可能带来的风险。在权衡分析结果和用户提供的业务理由后，信息安全工程师将决定是允许该扩展还是拒绝申请。</p>
+<p><strong>第三步：发布至 Artifactory</strong><br/>一旦拉取请求获批并合并，我们的 CircleCI 持续集成脚本将自动把结果发布至 Artifactory。我们会发布三个 .txt 文件：allowed_publishers.txt、allowed_extensions.txt 和 disallowed_extensions.txt。这使得查看允许和禁止哪些扩展变得一目了然。</p>
+<p><strong>第四步：生成允许扩展配置</strong><br/>在文件发布至 Artifactory 后，我们通过自动化程序将这些 .txt 文件快速转换为有效的 .json 格式 VS Code 企业级配置。这些脚本会在 Artifactory 文件发布新更新时触发，随后通知我们的端点工程团队需要在用户笔记本电脑上应用新更新。</p>
+<p><strong>第五步：在 Mac 和 Windows 上执行策略</strong><br/>最后，我们的端点工程团队利用 Jamf Pro 和组策略对象来强制执行 VS Code 企业级配置设置，从而完成新扩展申请的闭环。</p>
+<p>这种融合方式意味着，我们现有的管理流程和基础设施能够立即支持 VS Code 扩展管理，而无需引入新的工具或工作流。</p>
+<h2>经验教训</h2>
+<p>实施 VS Code 扩展安全为我们上了宝贵的一课，将为未来安全举措的方向提供指引：</p>
+<ul>
+<li>我们创建了一个影响评估脚本，并鼓励开发者在启用扩展控制强制执行前运行该脚本。该脚本在赢得开发者的信任和支持方面发挥了不可估量的作用。该工具让用户确切了解自己将受到怎样的影响，从而减少了对新控制措施的抵触情绪。</li>
+</ul>
+<pre>#!/bin/bash
+set -e
+
+# 从 VS Code extensions.json 获取已安装扩展的函数
+get_installed_exts() {
+    local ext_file="$1"
+    
+    # 检查 extensions.json 文件是否存在
+    if [ ! -f "$ext_file" ]; then
+        echo "Extensions file not found: $ext_file" >&2
+        return 1
+    fi
+    
+    # 解析 JSON 并提取扩展 ID，移除版本后缀
+    jq -r '.[].identifier.id' "$ext_file" 2>/dev/null || {
+        echo "Failed to parse extensions.json - invalid JSON format" >&2
+        return 1
+    }
+}
+
+# 从 VS Code 获取已安装扩展
+EXTENSIONS_FILE="$HOME/.vscode/extensions/extensions.json"
+INSTALLED_EXTENSIONS=$(get_installed_exts "$EXTENSIONS_FILE")
+
+# 检查是否获取到了扩展
+if [ $? -ne 0 ] || [ -z "$INSTALLED_EXTENSIONS" ]; then
+    echo "❌ Could not read installed extensions"
+    exit 1
+fi
+
+# 读取与此脚本同目录下的配置文件
+# 注意：您必须使用您的企业配置创建以下 .txt 文件
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ALLOWED_EXTENSIONS_FILE="$SCRIPT_DIR/allowed_extensions.txt"
+ALLOWED_PUBLISHERS_FILE="$SCRIPT_DIR/allowed_publishers.txt"
+DISALLOWED_EXTENSIONS_FILE="$SCRIPT_DIR/disallowed_extensions.txt"
+
+AFFECTED_EXTENSIONS=()
+
+while IFS= read -r ext; do
+    [ -z "$ext" ] && continue
+
+    publisher="${ext%%.*}"
+
+    # 决策逻辑：
+    # 1. 如果扩展被明确拒绝，则被封禁
+    # 2. 否则如果扩展被明确允许，则获许可
+    # 3. 否则如果发布者被允许，则获许可
+    # 4. 否则，扩展被封禁（默认拒绝）
+
+    if grep -Fxq "$ext" "$DISALLOWED_EXTENSIONS_FILE" 2>/dev/null; then
+        AFFECTED_EXTENSIONS+=("$ext") # 扩展被拒绝，封禁
+    elif grep -Fxq "$ext" "$ALLOWED_EXTENSIONS_FILE" 2>/dev/null; then
+        continue # 扩展被允许，跳过
+    elif grep -Fxq "$publisher" "$ALLOWED_PUBLISHERS_FILE" 2>/dev/null; then
+        continue # 发布者被允许，跳过
+    else
+        # 扩展未被明确允许，封禁
+        AFFECTED_EXTENSIONS+=("$ext")
+    fi
+done <<< "$INSTALLED_EXTENSIONS"
+
+if [ "${#AFFECTED_EXTENSIONS[@]}" -eq 0 ]; then
+    echo "✅ You do not have any extensions installed that will be disallowed!"
+else
+    echo "❌ Extensions that will be DISALLOWED by this config:"
+    echo "   (from $EXTENSIONS_FILE)"
+    echo
+    for ext in "${AFFECTED_EXTENSIONS[@]}"; do
+        echo "   • $ext"
+    done
+    echo
+    echo "Total disallowed extensions: ${#AFFECTED_EXTENSIONS[@]}"
+fi</pre>
+<pre>./scripts/how-will-i-be-affected-by-vs-code-security.sh 
+✅ You do not have any extensions installed that will be disallowed!</pre>
+<ul>
+<li>我们的分析表明，许多开发者完全不清楚自己的环境中列出了哪些扩展。我们的控制措施在无意中帮助用户了解了自身的工具占用情况，并促使他们更有意识地将开发环境围绕自己实际依赖的扩展进行优化整理。</li>
+<li>许多开发者并未将允许列表视为限制，相反，他们对拥有一套经过审查的精选扩展感到放心，并将安全控制视为一种赋能而非束缚。我们发现开发者在浏览 VS Code 市场时有时会感到困惑，往往因为名称相似而安装了错误的扩展。</li>
+</ul>
+<h2>结论</h2>
+<p>IDE 扩展安全是企业安全中至关重要却经常被忽视的一环。VS Code 的企业级控制功能使安全团队能够在维持开发者生产力的同时实施全面的保护。</p>
+<p>我们的方法——结合自动化风险分析、协作化策略制定以及无缝的基础设施融入——成功削减了重大攻击向量，同时保持了开发者的满意度。关键在于，不应将其视为纯粹的安全举措，而应将其视为安全团队与开发团队之间为了打造更安全、更高效的开发环境而开展的协同合作。</p>
+<p>我们通过浏览器和 IDE 扩展管理所确立的原则，能够为任何希望大规模保护开发环境的组织提供基础。随着 IDE 生态系统伴随新的编辑器和扩展功能不断演进，维持这种安全态势需要持续的警惕和适应。策略即代码、开发者驱动的流程、自动化优先以及基于风险的评估，为实现未来挑战并提供可扩展框架奠定了基础，既能保障开发者的高效产出，又能确保工作站的安全。</p></article>
+</body></html>
