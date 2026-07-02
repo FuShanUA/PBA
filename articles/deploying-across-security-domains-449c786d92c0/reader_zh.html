@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Deploying Across Security Domains</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background:#fff;color:#1a1a1a;line-height:1.7;max-width:680px;margin:0 auto;padding:48px 24px 80px}
+h1{font-size:1.65em;font-weight:700;margin-bottom:8px;line-height:1.25;color:#111}
+.meta{color:#888;font-size:.82em;margin-bottom:32px;padding-bottom:16px;border-bottom:1px solid #eee}
+.meta a{color:#2e86de;text-decoration:none}
+article p{margin-bottom:18px;font-size:1.02em;line-height:1.75}
+article img{max-width:100%;height:auto;margin:20px auto;display:block;border-radius:6px}
+article h2{font-size:1.28em;font-weight:600;margin:28px 0 12px;line-height:1.3;color:#222}
+article h3{font-size:1.12em;font-weight:600;margin:24px 0 10px;color:#333}
+article h4{font-size:1em;font-weight:600;margin:20px 0 8px;color:#333}
+article ul,article ol{margin-bottom:16px;padding-left:24px}
+article li{margin-bottom:8px;line-height:1.7}
+article blockquote{border-left:3px solid #d0d0d0;padding:8px 16px;margin:18px 0;color:#666;background:#fafafa;border-radius:0 4px 4px 0}
+article pre{background:#f6f6f6;padding:14px 16px;border-radius:6px;overflow-x:auto;font-size:.85em;margin:18px 0;border:1px solid #e8e8e8;font-family:'SF Mono',Monaco,Consolas,monospace}
+article code{background:#f0f0f0;padding:2px 6px;border-radius:3px;font-size:.88em;font-family:'SF Mono',Monaco,Consolas,monospace}
+article pre code{background:none;padding:0;border:none}
+article table{width:100%;border-collapse:collapse;margin:18px 0;font-size:.92em}
+article th,article td{border:1px solid #e0e0e0;padding:8px 12px;text-align:left}
+article th{background:#f8f8f8;font-weight:600}
+article figure{margin:20px 0;text-align:center}
+article figcaption{color:#999;font-size:.82em;margin-top:6px;text-align:center}
+article a{color:#2e86de;text-decoration:none}
+article a:hover{text-decoration:underline}
+.nav{margin-bottom:28px}
+.nav a{color:#2e86de;text-decoration:none;font-size:.88em}
+.nav a:hover{text-decoration:underline}
+</style></head><body>
+<div class="nav"><a href="../../index.html">← Back to Archive</a></div>
+<h1>Deploying Across Security Domains</h1>
+<div class="meta">2023-11-30 · <a href="https://blog.palantir.com/deploying-across-security-domains-449c786d92c0">Original →</a></div>
+<article>## Palantir 二进制传输服务与 Apollo
+
+就像我们习惯了对亚马逊订单的快速交付抱有期望一样，每个组织都力求以最快的速度获取最新、安全的软件。对于那些产品线有限、拥有得力 DevOps 团队且网络能够连接公共互联网的组织来说，这并非难事。
+
+然而，设想一下亚马逊向密歇根州麦基诺岛配送货物的挑战，这恰好可以用来比喻断开或“物理隔离”的网络。这座岛屿只能乘渡轮抵达，且自19世纪末起便禁止使用机动车辆。亚马逊的订单一旦抵岸，便需依靠马背和马车在镇上派送。这只是该公司绝不妥协的严酷配送环境之一。
+
+如果你是一家政府机构、受高度监管的实体，或是为这类组织提供服务的产品公司，你的客户在 CI/CD（持续集成/持续交付）方面也会面临类似的限制。出于合规性或安全考虑，他们可能拥有涉密网络 enclave、大量断开连接的设备，或是无法由传统 SaaS 框架提供服务的远程网络。问题在于，这种物理隔离是国家安全、国防、公共卫生及其他具有严格合规性要求的任务所固有的特征。
+
+Palantir 在这些领域深耕数十年，打磨出了其自主的、基于约束的持续交付平台——Apollo，以确保这些任务能够在更新、安全的软件支持下运行。
+
+![](https://miro.medium.com/v2/resize:fit:700/1*FcdXvv_pf4eOPZr76bk1oA.png)
+
+在这篇文章中，我们将深入解析《Palantir Apollo》向非涉密和涉密物理隔离环境部署软件的方法。我们将首先界定问题，随后概述 Apollo 针对物理隔离持续交付和 Day 2 运维的解决方案。最后，我们将发布一项名为 Palantir 二进制传输服务 (BTS) 的新功能，该功能可自主协调跨域的产品及产品元数据交付。
+
+### 构建网络路径
+
+设想一个服务于国家安全任务、采用物理隔离的现代网络所面临的困境。在这些加固环境中，过时的软件会削弱效能和响应速度，并使行动暴露于漏洞之中。由于缺乏从非涉密环境到涉密环境的网络路径，人们无法简单地通过标准文件传输协议部署或更新软件二进制文件。
+
+为了维持软件正常运转，这些组织过去不得不维持的“捕鼠器”式流程令人沮丧：
+
+- 根据需求、兼容性或许可范围，确定哪些软件包需要发送至高密端
+- 扫描这些软件包，排查恶意代码和漏洞
+- 将其刻录至一张或多张 DVD 中
+- 手动扫描漏洞
+- 步行将其送至断开连接的网络（即所谓的“人肉网”）
+- 物理转移 DVD 或存储介质
+- 在高密端再次扫描软件病毒
+- 将软件部署至目标环境
+
+我们深知这一点，因为我们曾与客户并肩坚守在同一战壕中。世纪之交左右，跨域解决方案 (CDS) 问世，但传输过程仅得到了些许改善。尽管 CDS 允许数据在安全域之间传递，却无法确保传输的高效性。（更不用说 CDS 解决方案缺乏原生的 DevOps 支持了。）
+
+过去，将软件部署到涉密网络上的资产一直极其耗时，至今依然如此，有时甚至需要耗费数小时来紧盯连接状态和进度条。这种延迟极其严重，以至于一些软件公司将其代码库分叉为公共部门和私营部门两个版本，这意味着商业用户获取新功能、补丁和更新的速度通常快于政府用户。
+
+美国国防部长办公室首席信息官 Danielle Metz 已将快速软件交付置于国防部现代化工作的核心， stating “该部门开发和部署软件生产系统的方式是获取新优势的源泉。”在人才培养和留任成为国防部软件战略关键要素的当下，让开发者反复经历这种令人沮丧的过程是极具风险的。
+
+回到我们最初的比喻，设想一下，如果产品创造者也被要求搭乘麦基诺岛渡轮，骑着马和马车在岛上四处奔波，以确保订单安全送达。要过多久，这种产品部署方式才会因在操作和情感上都令人难以承受而走向末路？
+
+### 驱动人机协同
+
+在 Palantir，我们的一项基础目标始终是构建能够放大人与机器相对优势的平台；让机器做它们最擅长的，从而解放人类去创造性地构建和应用软件。我们赞同 Metz 女士的观点，这也是我们为何要让 Apollo 在充满挑战的软件部署场景中，实现人机协作的平衡。让我们看看这在实践中是如何运作的。
+
+![](https://miro.medium.com/v2/resize:fit:700/1*bOJfEUJ2NXzljfUnF0wTOw.png)
+
+Apollo 采用轴辐式架构。作为中央控制平面的 SaaS 中心，可以管理任意数量和类型的分支环境。这些分支环境（例如 Kubernetes 集群）运行各自的分支控制平面，将信息和遥测数据回报给中央中心。由于中心维护着所有分支环境中现有或应有的软件版本数据目录，其编排引擎会向每个分支上运行的智能体下达指令——安装、升级、降级、配置更改等。随后，智能体会将这些操作的执行状态回报给中心。然而，如果安全边界或物理隔离阻碍了环境与 SaaS 中心的通信以获取指令（例如“将 Postgres 14.8 升级至 15.3”），就需要采用另一种架构了。于是，Apollo 远程中心应运而生。
+
+![](https://miro.medium.com/v2/resize:fit:700/1*k8a99eazKxehxw20du84Hg.png)
+
+远程 Apollo 中心是驻留在物理隔离或其他受限网络中的控制平面，它利用来自 SaaS 中心的产品数据目录副本管理分支环境。SaaS 中心的产品目录是通过在 CI 流水线中执行 Apollo CLI 命令来填充的，而远程中心的产品目录则不同，你需要定期将在 SaaS 中心生成的软件数据、镜像、配置和设置束填充到其中。这是 Apollo 用于跨安全边界传输软件的默认方法，与下文讨论的 BTS 不同，它仍然包含手动“人肉网”步骤。
+
+那么，相比于上文列举的那种令人沮丧的传统传输方法，它有什么优势呢？优势有几方面，主要在于我们如何设计这些数据束，使其能够在复杂的安全和合规性机制下工作。
+
+当你在 SaaS 中心创建、下载并手动传输数据束到远程中心时，前者会“感知”到后者中部署的版本、配置和元数据。因此，后续的数据束仅包含净新增的、经过智能压缩的传输项，而非每次都包含整个平台定义。此外，Apollo 数据束中还包含关键的元数据，这些元数据用于告知 SaaS 中心生成的软件交付路径和产品召回指令。防病毒 (AV) 元数据也会在数据束中传递，以确保高密端的防病毒解决方案始终使用最新的信息。载荷会在多个检查点进行扫描并验证其完整性。简而言之，Apollo 的默认数据传输流程虽包含手动传输步骤，但它减轻了过去 DevOps 的诸多重担。
+
+这对于我们的客户将安全、可靠地部署软件到物理隔离网络上而言，迈出了一大步。它也使我们得以获得《美国政府认证和国防部影响等级授权，适用于 Palantir 软件》。
+
+借助 Apollo 的 BTS 模块，我们将默认的软件部署流程又向前推进了一步。现在，这些在 SaaS 中心生成的数据束可以利用自动化手段，高效且安全地传输并安装到目标环境中。这就好比用一架符合所有 FAA 要求和当地法规的高速无人机，取代了麦基诺岛上渡轮和马车的配送过程。
+
+结合 Palantir BTS 模块，Apollo 解决了与将软件从低密端（例如 SaaS Apollo 中心）转移到高密端（例如驻留在涉密网络中的远程中心）环境相关的三大挑战。第一个挑战是提高文件传输的吞吐率。如前所述，即使偶尔为之，在每次传输中包含完整的平台二进制文件也会导致长达数天的等待。Apollo 拥有一套高效的数据传输机制，仅评估、打包和扫描需要发送的软件。
+
+![](https://miro.medium.com/v2/resize:fit:700/1*C5BF413hgB5Op7GrdT75Rw.png)
+
+Palantir BTS 模块专门应对下一个挑战：安全地自动化文件传输流程，以便在极少的 DevOps 开销下将数据束发送至远程中心。如上图所示，Apollo 允许你下载数据束，将其刻录至 DVD，通过“人肉网”将其送至物理隔离网络，再传输至远程中心。现在，用户可以摒弃这种手动工作流，转而使用我们凭借多年经验打磨出的自动化软件传输流程，该流程随后也获得了美国政府各级授权官员的认可。Palantir BTS 模块利用经认证的跨域解决方案在安全域之间移动文件。此外，它还包含一套自动化机制，可追踪所有已通过 CDS 传输的软件制品，并轮询 Apollo 数据目录以查找需要传输的新版本。一旦发现新版本，它会通过将制品仓库发布的加密校验和与实时生成的哈希值进行比对，从而验证安全扫描结果以及制品的完整性。简而言之，即便是 Apollo 这种一键式的数据束生成流程，也能进一步实现自动化，确保新版本的软件能够以任务所需的速度完成扫描、传输并在高密端发布。
+
+最后——当然也是同样重要的一点——是确保软件传输的安全性与完整性这一挑战。我们的美国政府客户需遵循严格的授权机制，这些机制主要围绕安全要求展开。Apollo 助力我们在这些环境中实现了自身软件的 FedRAMP、国防部 IL5 和 IL6 以及 ICD 503 认证。在文件创建、传输和解包过程中，均会在检查点进行漏洞和恶意代码扫描。
+
+拥有物理隔离环境的组织每天都面临巨大挑战，但部署最新软件不应成为其中之一。诚然，满足与政府认证相关的技术和流程约束绝非易事，需要严密的安全架构。以合规的方式实现这些流程的自动化是一项极其艰巨的任务，通常需要庞大的安全审查团队来完成。这种开发范式的运营开销无论怎么强调都不为过。Palantir BTS 模块带来的价值远超其各组件的简单相加；它还将 Palantir 的实战经验融入了其获批的架构中。如今，Palantir BTS 模块已在整个政府范围内广泛应用，确保任务系统安全地与尖端技术保持同步，并使其他软件提供商能够在 Palantir 安全且已获认证的环境中提供功能。
+
+如果你有兴趣了解如何利用 Palantir BTS 模块，将你的软件跨越安全边界交到政府用户手中；或者你是一家政府机构，正在寻找帮助软件供应商获得认证的方法，而无需投入常规所需的大量时间和资源，请访问此处，让我们开启对话。</article>
+</body></html>

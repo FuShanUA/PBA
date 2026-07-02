@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Data Connection: The first step in data integration (Palantir RFx Blog Series, #2)</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background:#fff;color:#1a1a1a;line-height:1.7;max-width:680px;margin:0 auto;padding:48px 24px 80px}
+h1{font-size:1.65em;font-weight:700;margin-bottom:8px;line-height:1.25;color:#111}
+.meta{color:#888;font-size:.82em;margin-bottom:32px;padding-bottom:16px;border-bottom:1px solid #eee}
+.meta a{color:#2e86de;text-decoration:none}
+article p{margin-bottom:18px;font-size:1.02em;line-height:1.75}
+article img{max-width:100%;height:auto;margin:20px auto;display:block;border-radius:6px}
+article h2{font-size:1.28em;font-weight:600;margin:28px 0 12px;line-height:1.3;color:#222}
+article h3{font-size:1.12em;font-weight:600;margin:24px 0 10px;color:#333}
+article h4{font-size:1em;font-weight:600;margin:20px 0 8px;color:#333}
+article ul,article ol{margin-bottom:16px;padding-left:24px}
+article li{margin-bottom:8px;line-height:1.7}
+article blockquote{border-left:3px solid #d0d0d0;padding:8px 16px;margin:18px 0;color:#666;background:#fafafa;border-radius:0 4px 4px 0}
+article pre{background:#f6f6f6;padding:14px 16px;border-radius:6px;overflow-x:auto;font-size:.85em;margin:18px 0;border:1px solid #e8e8e8;font-family:'SF Mono',Monaco,Consolas,monospace}
+article code{background:#f0f0f0;padding:2px 6px;border-radius:3px;font-size:.88em;font-family:'SF Mono',Monaco,Consolas,monospace}
+article pre code{background:none;padding:0;border:none}
+article table{width:100%;border-collapse:collapse;margin:18px 0;font-size:.92em}
+article th,article td{border:1px solid #e0e0e0;padding:8px 12px;text-align:left}
+article th{background:#f8f8f8;font-weight:600}
+article figure{margin:20px 0;text-align:center}
+article figcaption{color:#999;font-size:.82em;margin-top:6px;text-align:center}
+article a{color:#2e86de;text-decoration:none}
+article a:hover{text-decoration:underline}
+.nav{margin-bottom:28px}
+.nav a{color:#2e86de;text-decoration:none;font-size:.88em}
+.nav a:hover{text-decoration:underline}
+</style></head><body>
+<div class="nav"><a href="../../index.html">← Back to Archive</a></div>
+<h1>Data Connection: The first step in data integration (Palantir RFx Blog Series, #2)</h1>
+<div class="meta">2022-10-17 · <a href="https://blog.palantir.com/data-connection-the-first-step-in-data-integration-palantir-rfx-blog-series-2-efd908a449bb">Original →</a></div>
+<article>每个数据生态系统都需要数据集成，而第一步是建立到源系统的安全、及时和可靠的数据连接。
+
+![图片](https://miro.medium.com/v2/resize:fit:700/1*rjTV68HIJllxIhqNMSR6bQ.png)
+
+*编者注：这是《Palantir RFx 博客系列》的第二篇，该系列探讨组织如何更好地撰写 RFI 和 RFP，以评估数字化转型软件。每篇文章聚焦数据生态系统中的一个关键能力领域，旨在帮助企业提出正确的问题，从而更好地评估技术。*
+
+## 数据集成简介
+
+在过去二十年里，随着企业构建日益复杂的数据生态系统，数据集成已成为一门专有技术。该术语在不同语境下有不同含义，但通常指将来自多个源系统的数据汇聚并传输至单一“集成”环境所需的各项能力。随着数据系统的体量、多样性、速度、动态性及整体复杂性不断膨胀，数据集成几乎已成为每个数据平台招标书（RFP）的关键组成部分。
+
+大多数大型组织拥有复杂且碎片化的数据环境，包含许多运行了数年甚至数十年的遗留系统。每个系统都以自己的方式对世界进行建模，通常基于其最初设计的目的，且彼此之间往往互不兼容。**从本质上讲，数据集成是将这些原始、分散的数据源转化为连贯形式的过程，以便企业能更有效地加以利用。** 此过程涉及多组能力，概述如下：
+
+![图片](https://miro.medium.com/v2/resize:fit:700/1*zhI8_UDprspzqInQN3gYaA.png)
+
+数据集成一直是 Palantir 工作的核心组件。然而，这个话题太大，无法在一篇文章中尽述。因此，我们将通过多篇文章探讨数据集成过程的各个方面。本文将聚焦于数据连接，这是数据集成过程的第一步。
+
+## 什么是数据连接？
+
+集成数据的过程可被视为一个“转换管道”，对原始数据应用一系列增量变更，使其在数据生态系统中可用。这一多维过程要求将多种不同的能力集应用于原始数据输入，在将其协调、安全保障并传输至新系统时发挥作用。数据连接是此过程的第一步。来自源系统的数据需要被识别、定位并获准访问——这个过程看似简单直接，却往往耗费数周乃至数月的宝贵实施时间。
+
+**数据连接是一种实用工具，能将数据从源系统持续复制、移动或虚拟化到新数据生态系统的管道环境中。** 鉴于数据类型和托管环境的多样性，有效的数据连接必须具备灵活性，以适应各种不同因素，如源类型（结构化、非结构化、半结构化、批处理、流式等）、更新频率（一次性、指定间隔、临时、触发等）、数据量，以及数据治理策略（安全、留存、用途指定等）。数据连接还必须考虑到与底层源系统连接可能出现的不确定性，并能在源系统恢复在线时具备恢复能力。
+
+数据连接可通过多种方式建立。许多源系统可通过安全的网络路径，经由直接、安全的出口管道进行同步。在直接连接可能引发安全或策略顾虑的情况下，到数据系统的数据连接可利用部署在源系统中的数据连接智能体或服务。该智能体可追踪待集成的相关源数据，将其加密，并推送至目标位置。此智能体通常驻留在企业网络内部，执行在数据连接用户界面中定义的查询，以安全地将数据同步至新系统。该智能体还必须允许源系统的控制者决定数据被复制、移动或虚拟化的条件，从而确保数据策略在离开源系统后仍能有效跟随数据：
+
+![图片](https://miro.medium.com/v2/resize:fit:700/1*BY7aerDKzbDOleKB4Yem4w.png)
+
+最后，数据连接也是将数据返回或回写至源系统的机制，如上图中的“回写”功能所示。组织往往需要不同系统间的双向通信，因为数据从源系统抽取后，最终会以某种更新或转换后的状态被推回原系统。数据连接为这些往返操作或源系统的增强提供了手段，确保数据生态系统的所有组件最终实现数据表示的一致性。回写也经常发生在本体级别，在本体中，本体对象及其属性可基于用户发起的决策或数据变更进行修改。
+
+## 为什么这很重要？
+
+**数据生态系统的优劣取决于其中数据的质量。** 终端用户需要确信系统内的所有数据都是及时且正确的。如果数据连接不可靠，源系统流入的数据遭到破坏、不完整或过时，终端用户就会拒绝使用该系统，或者更糟的是，基于错误信息做出决策。组织若想从统一的数据生态系统中获益，数据连接就必须是安全、可靠且一致的。
+
+**建立数据连接伴随着高昂的机会成本。** 建立数据连接的过程可能是构建数据生态系统时最耗时、最耗人力的环节之一。每个数据源都有自己的特性，在格式、结构、模式、体量、更新节奏等方面各有不同。源系统也可能驻留在不同的环境中，如内部网络、云端服务或可公开访问的互联网。如果没有整体性的数据连接框架，数据工程师往往要花费数月时间才能与这些源系统建立稳定的连接，尤其是那些此前未开发过数据连接的源系统。投入到构建数据连接上的工程资源，就意味着无法投入到下游其他重要功能上，如应用构建、机器学习模型开发和分析工作流。
+
+**数据连接技术难以评估，也难以相互区分。** 组织通常通过确定一份数据源类型清单，并评估技术解决方案能否兼容这些类型，来考量数据连接能力。这看似直接，却遗漏了构建真正数据连接所伴随的诸多挑战。仅提供 JDBC 驱动程序或 REST API 不足以建立稳健的数据连接。数据连接解决方案在多个维度上差异显著，包括：设置时间、所需技术技能、UI/UX 的性质、自定义数据连接开发的灵活性与可选性，以及数据连接逻辑能否被其他传入管道复用。因此，不仅要明确待集成的数据源，还需精确说明这些数据源将以何种具体方式（即多快、由谁操作、经过哪些检查、带有哪些安全标记等）被引入数据生态系统，这一点至关重要。
+
+## 关键数据连接需求
+
+如上所述，数据集成是一个宽泛的能力类别，在此列举全部或大部分必要需求并不现实。因此，我们聚焦于与数据连接相关的部分关键需求。
+
+**解决方案必须包含标准化的数据连接器，以高效、安全地促进大规模数据传输。解决方案还必须支持标准接口（JDBC、REST 等）。** 高效且可靠地集成核心数据源是数据生态系统的主要功能之一。了解解决方案如何连接到特定系统，以及此过程能多快、多可靠地完成，非常重要。我们建议列出待集成的源系统及其关键特征（格式、体量、托管等），这将促使供应商更具体地说明他们将如何建立与这些系统的连接。
+
+**解决方案必须提供灵活的框架来构建数据连接，以适应潜在或未来的数据源，包括结构化（如 Parquet）、半结构化（如 XML、JSON）和非结构化（如 MOV、PDF）数据类型。** 由于组织的需求总在演进，必须同时考虑现有和未来/潜在的数据源。因此，任何可扩展的数据系统都必须与数据无关，因为几乎不可能准确预测未来需要纳入的确切数据源和系统。理想情况下，系统应具备标准化管道以连接数百种数据类型和系统，并具备高效连接新型系统的机制。
+
+**解决方案必须提供多种数据摄取事务类型，包括快照事务、追加事务和更新事务。** 组织必须能够指定数据在系统中更新的确切方式和频率。鉴于每个源系统都有其独特且往往存在差异的特征，组织需要灵活性来定义控制这些系统如何同步的确切参数。这些控件易于实施同样重要，因为许多数据生态系统只能通过繁重的开发时间和多次自定义代码交接才能提供这种粒度。
+
+**解决方案必须使技术和非技术用户都能导入新数据源。** 传统上，只有技术用户和数据科学家能构建数据集成管道。这在构建数据管道的团队与在下游利用数据的团队之间造成了天然隔阂，导致团队间沟通不畅和可能的工作浪费。通过选择允许业务用户基于可访问且直观的用户界面自行执行核心数据连接任务的解决方案，同时为技术用户提供在适当时机执行自定义数据连接的工具，组织可实现巨大的效率提升。
+
+**解决方案必须支持双向数据移动——即，必须能够从源系统读取数据，并作为回写将数据推回这些系统。** 即使是最有效的数据生态系统，也存在于更广泛的技术生态系统之内。各个平台需要能够从源系统提取数据，并将数据推回至这些系统或记录/行动系统。对于以行动为中心的工作流，数据连接还应支持对有关运营决策的信息进行重新集成；在下游采取的行动和做出的决策应被捕获，并以修改后的形式回写至源系统。
+
+**解决方案必须支持与流式数据源（Kafka、TIBCO EMS 等）的数据连接。数据连接必须能够摄取、丰富并转换到达管道环境的流式数据。** 实时数据流已成为许多组织运营和决策过程的关键。现代数据生态系统需要容纳流式源，鉴于其体量和结构，这带来了多重技术障碍。有效的数据生态系统应将这些流式源与传统“批处理”数据源结合在一起，允许用户像与系统中任何其他数据源交互那样与流式源交互。这要求在数据摄取、转换和终端用户消费方面具备高度差异化的能力。
+
+**解决方案必须适应源系统的数据安全配置。安全控件必须从父数据集中自动继承，以便在数据被下游使用、转换和修改时，安全策略能“跟随数据”。** 定义和实施访问控制是任何值得信赖的数据生态系统的关键组件。手动传播这些安全控件会导致时间浪费和执行错误，因为组织不得不管理和跟踪每个数据集每个版本的访问控制策略。在处理敏感数据源（如包含个人身份信息的源）时，这会变得极其昂贵。随着数据管道扩展到数千个数据源和中间数据转换，系统需要一种自动且动态的机制，在所有下游资源中实施一致的安全模型。
+
+**解决方案必须支持对数据连接的健康检查和告警，包括针对数据集状态、延迟、批处理大小和模式变更等潜在问题的预置检查。还应能针对任意定义的数据连接问题创建自定义检查。** 数据生态系统若要有效，其中的数据必须安全、可访问且正确。适当的数据健康检查解决了正确性的需求，为管理员提供遥测数据以了解所有数据连接的性能，并提供必要的工具以纠正任何已识别的问题。
+
+## 结论
+
+数据集成是数据生态系统的基础特性之一，而数据集成的第一步是建立到源系统的安全、及时和可靠的数据连接。最优秀的数据连接技术超越了复制数据的静态实用工具，能够适应多样化的源系统，提供精细控制以指定数据传输方式，并允许各类用户进行设置。通过普及并简化数据连接过程，组织可以减少在设置数据同步上花费的时间，将更多精力投入到系统旨在解决的业务问题上。</article>
+</body></html>

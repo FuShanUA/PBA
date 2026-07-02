@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Controles de Acceso basados en propósito (Explicando Palantir, #2)</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background:#fff;color:#1a1a1a;line-height:1.7;max-width:680px;margin:0 auto;padding:48px 24px 80px}
+h1{font-size:1.65em;font-weight:700;margin-bottom:8px;line-height:1.25;color:#111}
+.meta{color:#888;font-size:.82em;margin-bottom:32px;padding-bottom:16px;border-bottom:1px solid #eee}
+.meta a{color:#2e86de;text-decoration:none}
+article p{margin-bottom:18px;font-size:1.02em;line-height:1.75}
+article img{max-width:100%;height:auto;margin:20px auto;display:block;border-radius:6px}
+article h2{font-size:1.28em;font-weight:600;margin:28px 0 12px;line-height:1.3;color:#222}
+article h3{font-size:1.12em;font-weight:600;margin:24px 0 10px;color:#333}
+article h4{font-size:1em;font-weight:600;margin:20px 0 8px;color:#333}
+article ul,article ol{margin-bottom:16px;padding-left:24px}
+article li{margin-bottom:8px;line-height:1.7}
+article blockquote{border-left:3px solid #d0d0d0;padding:8px 16px;margin:18px 0;color:#666;background:#fafafa;border-radius:0 4px 4px 0}
+article pre{background:#f6f6f6;padding:14px 16px;border-radius:6px;overflow-x:auto;font-size:.85em;margin:18px 0;border:1px solid #e8e8e8;font-family:'SF Mono',Monaco,Consolas,monospace}
+article code{background:#f0f0f0;padding:2px 6px;border-radius:3px;font-size:.88em;font-family:'SF Mono',Monaco,Consolas,monospace}
+article pre code{background:none;padding:0;border:none}
+article table{width:100%;border-collapse:collapse;margin:18px 0;font-size:.92em}
+article th,article td{border:1px solid #e0e0e0;padding:8px 12px;text-align:left}
+article th{background:#f8f8f8;font-weight:600}
+article figure{margin:20px 0;text-align:center}
+article figcaption{color:#999;font-size:.82em;margin-top:6px;text-align:center}
+article a{color:#2e86de;text-decoration:none}
+article a:hover{text-decoration:underline}
+.nav{margin-bottom:28px}
+.nav a{color:#2e86de;text-decoration:none;font-size:.88em}
+.nav a:hover{text-decoration:underline}
+</style></head><body>
+<div class="nav"><a href="../../index.html">← Back to Archive</a></div>
+<h1>Controles de Acceso basados en propósito (Explicando Palantir, #2)</h1>
+<div class="meta">2022-07-28 · <a href="https://blog.palantir.com/controles-de-acceso-basados-en-propósito-explicando-palantir-2-7f9d5bc1ea63">Original →</a></div>
+<article><p><em>（本文的英文版可在此处阅读。）</em></p>
+<p><em>编者按：这是《解读 Palantir》系列的第二篇博文。该系列探讨了诸多话题，包括我们对隐私、安全、AI/ML 健壮性的态度等。请阅读该系列的首篇博文，以进一步了解 Palantir 的商业模式。</em></p>
+<p>隐私是 Palantir 开展工作的根本支柱之一。我们的客户通常需要在大量繁杂的系统中处理关键或敏感数据，而运营或业务负责人需要调用这些信息来制定业务战略决策（例如，确保人道主义援助在正确的时间和地点送达）。对这类数据的访问进行严格控制和追踪至关重要。</p>
+<p>例如，为了控制 COVID-19 病毒的传播，医疗卫生机构必须迅速整合来自不同系统的数据——包括健康检测、养老院和医院等，同时还要向数千名用户（从医护人员到政府机构、学术界和研究人员）提供对不同数据子集的访问权限。</p>
+<p>这给数据治理团队带来了巨大挑战。追踪谁有权访问哪些信息以及原因，在扩大到数千个数据集和数千名用户后，很快就会变成一个极其复杂的问题。为了保护个人信息可能存在于众多数据库中的个体的隐私，数据治理团队必须确保用户仅在绝对必要时才能访问敏感或个人数据。</p>
+<p>这一挑战随着组织规模的扩大呈指数级增长。随着访问请求的增加，潜在错误也会随之增多。如果访问请求是通过电话、电子邮件或当面提出的，审计访问授权决策将十分困难。数据治理团队通常会将数据访问授权工作委托给偏技术的同事，这使得数据治理团队难以核实其决策是否得到了妥善执行。</p>
+<p>在这篇博文中，我们将介绍基于目的的访问控制。在这里，“目的”是指使用数据的最终目标。Palantir Foundry 拥有市场上独一无二的工具，旨在帮助数据治理团队应对这一挑战。</p>
+<figure><img alt="" height="367" loading="eager" src="https://miro.medium.com/v2/resize:fit:700/1*FZ2FbS5H2PfM0ri5aovSYw.png" width="700"/></figure>
+<h2>Palantir Foundry：基于目的的访问控制</h2>
+<p>在 Palantir，我们创建了基于目的的访问控制工具来应对这一挑战，将数据治理流程紧密集成到 Palantir Foundry 的访问控制系统中。</p>
+<p>在设计该工具时，我们有三个目标：</p>
+<ul>
+<li>为数据访问决策引入结构和清晰度</li>
+<li>捕获可能遗漏的上下文，并将其提供给需要的人员</li>
+<li>构建直观的工具，让（非技术的）数据治理团队能够应用必要的规则以实现既定目标</li>
+</ul>
+<p>该解决方案的理念很清晰：<strong>用户无需请求访问单个数据集，而是请求访问某个目的。</strong>数据治理团队会设立一个目的，其中包含专门用于帮助用户实现该目的的数据，不多不少。每个用户必须请求一个目的，并且只能访问为此目的分配的数据。</p>
+<p>数据治理团队在向用户授予数据访问权限时，必须记录其决策的正当理由。同样，数据主人将记录批准将某个数据集用于特定目的的动机。记录这些理由促使双方不断考量其决策的必要性和相称性。该评估结果会被捕获在 Palantir Foundry 中，供数据治理团队日后审查使用。</p>
+<p>审计员随时可以了解不仅是谁有权访问哪些数据，还能知道为何授予其访问权限，并掌握做出该决策所考虑的所有上下文。</p>
+<h2>演示</h2>
+<p><a href="https://www.youtube.com/watch?v=7zqE8J4WKOU" rel="noopener ugc nofollow" target="_blank">用户如何在 Palantir Foundry 中请求访问目的的示例</a></p>
+<figure></figure>
+<p><a href="https://www.youtube.com/watch?v=Xbo65u9Yt1o" rel="noopener ugc nofollow" target="_blank">数据主人如何掌控其数据的使用方式及原因示例：</a></p>
+<figure></figure>
+<h2>优势所在</h2>
+<p>基于目的的权限和访问管理，使数据治理负责人能够快速直观地了解其数据环境。直接在平台中捕获访问讨论的上下文，有助于理清为何会做出某些关键决策。另一方面，为非技术的数据治理管理员提供直观的工具，使他们能够自行管理访问权限并施加控制，而无需依赖技术团队。</p>
+<p>将数据处理按目的进行划分，并随之为每个目的指定数据主人，能够强化责任感，避免形成脱离数据治理监督的“暗区”。此外，<strong>由于明确知道某人为何有权访问特定数据集，因此很容易判断何时不再需要该访问权限。</strong></p>
+<p>根据我们的经验，许多组织都能从应用基于目的的访问和权限模型中受益。如果您想了解有关基于目的的访问控制的更多信息，请与我们联系。我们期待数据治理专家的参与，因为我们希望始终走在隐私工程和公民自由的前沿。</p>
+<p>在本系列的后续博文中，我们将探讨在促进隐私、算法安全以及平台安全方面的方法。</p>
+<p>我们期待听到您的意见！请通过 business@palantir.com 与我们联系。</p></article>
+</body></html>

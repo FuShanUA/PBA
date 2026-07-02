@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Data Pipeline Version Control: Tracking code &amp; data together (Palantir RFx Blog Series, #3)</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background:#fff;color:#1a1a1a;line-height:1.7;max-width:680px;margin:0 auto;padding:48px 24px 80px}
+h1{font-size:1.65em;font-weight:700;margin-bottom:8px;line-height:1.25;color:#111}
+.meta{color:#888;font-size:.82em;margin-bottom:32px;padding-bottom:16px;border-bottom:1px solid #eee}
+.meta a{color:#2e86de;text-decoration:none}
+article p{margin-bottom:18px;font-size:1.02em;line-height:1.75}
+article img{max-width:100%;height:auto;margin:20px auto;display:block;border-radius:6px}
+article h2{font-size:1.28em;font-weight:600;margin:28px 0 12px;line-height:1.3;color:#222}
+article h3{font-size:1.12em;font-weight:600;margin:24px 0 10px;color:#333}
+article h4{font-size:1em;font-weight:600;margin:20px 0 8px;color:#333}
+article ul,article ol{margin-bottom:16px;padding-left:24px}
+article li{margin-bottom:8px;line-height:1.7}
+article blockquote{border-left:3px solid #d0d0d0;padding:8px 16px;margin:18px 0;color:#666;background:#fafafa;border-radius:0 4px 4px 0}
+article pre{background:#f6f6f6;padding:14px 16px;border-radius:6px;overflow-x:auto;font-size:.85em;margin:18px 0;border:1px solid #e8e8e8;font-family:'SF Mono',Monaco,Consolas,monospace}
+article code{background:#f0f0f0;padding:2px 6px;border-radius:3px;font-size:.88em;font-family:'SF Mono',Monaco,Consolas,monospace}
+article pre code{background:none;padding:0;border:none}
+article table{width:100%;border-collapse:collapse;margin:18px 0;font-size:.92em}
+article th,article td{border:1px solid #e0e0e0;padding:8px 12px;text-align:left}
+article th{background:#f8f8f8;font-weight:600}
+article figure{margin:20px 0;text-align:center}
+article figcaption{color:#999;font-size:.82em;margin-top:6px;text-align:center}
+article a{color:#2e86de;text-decoration:none}
+article a:hover{text-decoration:underline}
+.nav{margin-bottom:28px}
+.nav a{color:#2e86de;text-decoration:none;font-size:.88em}
+.nav a:hover{text-decoration:underline}
+</style></head><body>
+<div class="nav"><a href="../../index.html">← Back to Archive</a></div>
+<h1>Data Pipeline Version Control: Tracking code &amp; data together (Palantir RFx Blog Series, #3)</h1>
+<div class="meta">2022-10-31 · <a href="https://blog.palantir.com/data-pipeline-version-control-tracking-code-data-together-palantir-rfx-blog-series-3-4d1783d548a2">Original →</a></div>
+<article><h2 id="1a2d">在数据生态系统中，版本控制对于追踪代码变更和数据本身的变更至关重要。</h2>
+<figure><img alt="" height="366" loading="eager" src="https://miro.medium.com/v2/resize:fit:700/1*2F7t91r3ldIiiXgxykXs5w.png" width="700"/></figure>
+<p id="9e62"><em>编者按：这是《Palantir RFx 博客系列》的第三篇文章。该系列探讨组织如何更好地撰写 RFI 和 RFP，以评估数字化转型软件。每篇文章聚焦数据生态系统中的一个关键能力领域，旨在帮助企业提出正确的问题，从而更好地评估技术。</em></p>
+<h2 id="09e4">引言</h2>
+<p id="bd23">自 Palantir 成立以来，我们就对版本控制（VC）情有独钟。我们见证了 VC 技术如何推动全球最重要的软件项目，并认识到它具备改变我们数据思维的潜力。Palantir 最早的技术之一就是 Revisioning Database，这是一种将版本控制概念应用于 <a href="https://www.palantir.com/platforms/gotham/" rel="noopener ugc nofollow" target="_blank">Palantir Gotham 平台</a>图数据库的框架。在现代数据生态系统不断演变且复杂多样的地形中，我们持续完善 VC 技术。</p>
+<p id="09ca">广义上讲，版本控制是指一套允许在软件开发中开展大规模协作的工具和技术。VC 通过追踪每个开发人员对代码的所有变更（或“差异”），并决定如何将这些变更合并到新版本的软件中来实现这一点。在此过程中，VC 系统还会追踪许多其他内容，例如关于差异的元数据、操作者以及操作时间。</p>
+<p id="2695">在数据生态系统的语境下，版本控制对于追踪代码变更（用于清洗、转换、连接或解析数据的逻辑）和数据本身的变更都非常重要。与用于代码的 VC 系统类似，用于数据的 VC 系统会追踪数据变更及与这些变更相关的元数据。捕获元数据往往比捕获数据本身的变更更为重要，因为正如我们之前的《本体论》文章所讨论的，数据本身没有固有的含义，而元数据是我们赋予数据含义的方式之一。元数据包含有关数据源自哪个源系统、附加了哪些安全策略以及哪些开发人员修改了数据等信息。随着数据生态系统中建立起各种数据管道，元数据在很大程度上决定了最终用户的体验。例如，两个具有不同角色的用户可能查看同一个数据文件，但基于各自的授权级别，他们会看到文件的不同版本。</p>
+<p id="501f">在 2016 年发布 <a href="https://www.palantir.com/platforms/foundry/" rel="noopener ugc nofollow" target="_blank">Palantir Foundry 平台</a>时，我们将重心放在为用户提供构建高质量数据管道的工具上。由于代码和数据在该领域内的交互方式极为复杂，VC 成为构建强大数据管道的关键组件。在数据管道的生命周期中，用于定义数据转换并生成中间和最终数据集的代码将经历复杂的演进。能够追踪这种演进——并理解哪种代码与数据的组合导致了哪种结果——是数据生态系统的关键要素。</p>
+<p id="8e56">在这篇博文中，我们将探讨什么是数据管道版本控制、它为何重要，以及组织如何制定需求以确保对这些能力提供最高质量的支持。</p>
+<h2 id="ab4c">什么是数据管道版本控制？</h2>
+<p id="6a22"><a href="/data-connection-the-first-step-in-data-integration-palantir-rfx-blog-series-2-efd908a449bb" rel="noopener ugc nofollow" target="_blank">数据管道</a>可以描述为一系列通过增量逻辑<strong>转换</strong>连接起来的<strong>数据集</strong>。数据集本身是数据文件（电子表格、文档、图像等）的集合。转换是以某种有用方式更改数据集的软件代码（或逻辑）。例如，开发人员可能会编写转换逻辑来清洗、连接、解析或合并数据集。一个数据管道可以包含数百个逻辑转换，每一个都通过一系列长长的增量步骤对前一个状态进行修改。数据管道版本控制旨在追踪这些众多差异造成的混乱——在一个转换逻辑与数据本身深度交织的系统中，追踪做了哪些修改、何时修改以及由谁修改。</p>
+<p id="5b96">面向代码的版本控制系统帮助追踪和管理软件代码的变更。它们为不同开发人员在同一共享环境中编写代码提供了机制。任何 VC 系统的一个核心概念是<a href="https://www.palantir.com/docs/foundry/data-integration/branching/#branches-in-builds" rel="noopener ugc nofollow" target="_blank">分支</a>。开发人员创建自己的新代码“分支”，在其中独立编写、测试和修改，而不会影响主分支。一旦新分支获准投入生产，它就可以作为新版本合并回主分支。通过让成千上万的开发人员能够在同一代码库上协作，版本控制系统为软件开发运营（“DevOps”）提供了骨干支撑，并提供了一种机制，使组织在新版本不理想时能够“时光倒流”回退到之前的版本。</p>
+<p id="58db">面向数据的版本控制系统追踪数据本身的变更。数据与代码的主要区别之一在于，当企业使用数据时，数据通常具有多种用途，而代码通常只为某一特定目的设计。一个给定的数据集可能在一种场景中用于操作，在第二种场景中用于分析，在第三种场景中用于提供信息——每一种用途都受制于自身的策略和限制。这些基于用途的差异给面向数据的 VC 系统带来了独特的挑战。虽然数据也有分支和版本，但数据真正重要的是<em>它从哪里来</em>和<em>它要到哪里去</em>。了解数据从何而来被称为<em>血缘关系</em>，借此可以查看数据在转换之前应用了哪些策略。了解数据要去往何处被称为<em>继承</em>，有助于决定当数据在管道中流转时应保留哪些策略。</p>
+<p id="f1a0">数据的版本控制也带来了一个独特的挑战，因为数据可以有多种形式。代码是一种可预测的数据类型，因为它是基于文本的，并有严格的规则来控制这些文本如何组合在一起。其他类型的数据通常缺乏这种限制。为了确保对<em>所有</em>数据的<em>所有</em>变更都能得到同等追踪，面向数据的 VC 系统通常要求变更符合 ACID 标准。ACID（原子性、一致性、隔离性和持久性）意味着每次变更都可以被视为一个独立的单元。实现文本变更的 ACID 合规性相对简单，但对于图像或音频等更复杂的数据源来说，实现起来就困难得多了。ACID 保证是数据版本控制的一项重要要求，因此也是数据管道版本控制的要求。数据管道的版本控制非常难实现，因为它需要支持所有这些概念——版本、分支、血缘关系、继承、ACID 保证——以及其他要素。</p>
+<figure><img alt="" height="364" loading="lazy" src="https://miro.medium.com/v2/resize:fit:624/1*2_Dvg-2ogfst6H3k6Ugw8A.png" width="624"/></figure>
+<h2 id="3fd4">数据管道版本控制为何重要？</h2>
+<p id="ef65">版本控制之所以重要，是因为它能在数据生态系统中建立信任。通过为用户协作和个人实验提供机制，版本控制技术为健康的开发环境奠定了必要的基础。如果实施得当，VC 能以非破坏性的方式激发创造力和实验精神。它减少了重复和冗余的工作，防止了用户之间的相互干扰。它提供了回退选项，以防新发布的代码不稳定或出现问题。或许最重要的是，它确保了对系统中所有数据实施严格的安全防护，让用户能在正确的时间、因正确的原因看到正确的数据。</p>
+<p id="7257">在数据管道的语境下，强大的版本控制系统使得部署和维护独立的开发环境变得不再必要。传统的数据生态系统拥有独立的环境（例如开发环境和 QA/预发布环境），开发人员可以在将代码推送到主生产环境之前编写和完善代码。这些独立的环境给组织带来了巨大的开销，因为需要单独维护并定期同步。它们在托管、行政人员配备、数据传输延迟和系统宕机方面也带来了高昂的成本。通过将代码版本控制原则（版本、分支、审查、提交等）应用于数据，组织可以简化其开发运营，避免多环境带来的成本，并且通过允许开发人员在实际生产数据上测试代码，最终在数据生态系统本身建立更多的信任。</p>
+<p id="c397">将代码 VC 技术应用于数据说来容易做来难。以数据为中心的工作流变化多端，涉及从分析到操作再到信息提供等多种目的。由于大型数据集规模庞大，可能包含数十亿个大型二进制文件，传统的代码版本控制工具在应用于这些以数据为中心的工作流时作用有限。这些数据集不仅存储繁琐，而且由于代码版本控制系统是针对基于文本的代码进行优化的，它们会很快达到系统极限。例如，Git 并不计算二进制 BLOB 的<em>差异</em>，而只是存储完整的副本。因此，数据版本控制通常是通过生产数据的完整备份存储，或者通过一个追踪生产数据库的暂存数据库来实现的。</p>
+<p id="2cc8">当数据被高效地版本化后，组织就无需为暂存和生产部署、管理和同步多个环境。每个数据集的血缘关系都从其源系统开始被追踪，确保与这些源相关的任何数据策略都能适当地由后续数据集继承。这种方法有效地保留了所有企业数据的可审计、准确且可恢复的历史记录，同时促进了全组织的协作并保证了数据保护。当逻辑和数据一起被版本化时，用户就能够提出这样的问题：<em>我现在掌握的信息与过去掌握的信息有何不同，是什么导致了这些变化？</em> 这种对数据生态系统的元认知推动了持续改进和更可靠的决策。</p>
+<h2 id="4630">需求</h2>
+<p id="3818"><strong>解决方案必须包含一个用于数据管道的版本控制系统，该系统能同时追踪数据和逻辑的血缘关系。该版本控制系统应使得数据编写无需单独的测试、暂存和生产环境。</strong>如上所述，维护用于测试和生产的独立环境会在性能、托管成本和管理开销方面带来巨大成本。当开发环境与生产环境分离时，开发人员被迫在很少与生产实例中相同的数据上编写和测试代码。强大的数据管道版本控制系统确保开发人员能够使用真实的生产数据构建和测试逻辑，并依赖于与生产环境相同的生产配置（因为它们<em>就是</em>同一个环境）。</p>
+<p id="53c0"><strong>解决方案必须支持数据和逻辑的分支，允许用户从生产代码库创建测试分支，以开发和测试新功能。</strong>最有效的数据生态系统将数据视为代码——提供机制将生产数据“分叉”到一个新分支，以便开发人员可以在各自的沙箱中操作数据。一旦新的转换完成并获得批准，就可以通过预定义的审查过程将其合并回生产代码库。</p>
+<p id="75a4"><strong>解决方案必须维持数据管道代码版本与其输出数据集版本之间持久且对应的日志。</strong>在数据生态系统中，数据和代码以多种复杂的方式交织在一起，组织需要以高度细化的方式追踪它们。这种日志对应关系显示了哪个版本的代码生成了哪个数据集，并允许用户选择性地、分别更新代码和数据。数据和代码可以以独立的版本推进。这允许了隔离的工作流，同时为可追溯性和协作保留关键关系。</p>
+<p id="c6db"><strong>解决方案必须记录有关每次转换的事务元数据，包括转换的输入数据集、输出数据集以及转换逻辑的来源。</strong>元数据构成了数据生态系统中数据和逻辑之间的连接组织，支撑了整个类别的流程和功能。这种与信息相关的数据集输入/输出和事务代码的组合构成了<em>作业规范</em>的基础，可以将其看作是一个可用于识别和物化数据集的独特配方。这个配方被完整记录、版本化并分支，允许组织为下游数据集指定保留策略，同时也允许它们切换回管道的任何先前版本。</p>
+<p id="4c84"><strong>解决方案必须维护数据管道的完整依赖图。</strong>追踪数据集之间的依赖关系是版本控制的关键要素，因为它能在特定的数据管道中有效地维持数据集的连贯组织。这个依赖图支持许多关键功能，包括：计算哪些数据集相对于其输入已过时并重建它们；在构建前实现“前瞻性”错误检测，特别是在模式冲突方面；作为数据健康检查系统的骨架；并提供可视化以帮助用户理解数据血缘关系。它还在整个数据管道中构建了安全和访问控制的传播结构。</p>
+<p id="8276"><strong>解决方案必须保证数据事务是序列化的且符合 ACID 标准。</strong>由于数据事务是顺序的、非重叠的事务，系统可以提供对每个数据集所做更改的清晰版本历史。这种数据保留允许您查看和恢复数据集的先前状态。此外，ACID 合规性排除了数据读取/写入中可能损害数据可信度的边缘情况。</p>
+<p id="49cc"><strong>解决方案必须提供对数据集进行分组和追踪的机制，包括定义源数据和一组数据转换的能力。</strong>数据集是通过转换对其上游数据集所做更改的总和。单个数据集代表了继承线中的一个停靠点，允许多个上游父级被转换为一个单一的数据集（从多个数据集到一个输出）。了解这种继承关系可以实现更直观、更细粒度的属性和权限传播。</p>
+<p id="5837"><strong>解决方案必须实现数据策略、访问控制和其他限制在整个管道中的所有数据源的自动传播。策略必须跨版本、分支和下游应用程序保持有效。</strong>鉴于用户数量众多且角色各异，强大的访问控制对于处理潜在的敏感数据至关重要。最细粒度级别（例如行/列级别）的访问控制在不影响适当的数据治理的前提下，为用户的探索和协作提供了最大的自由度。</p>
+<h2 id="4887">结论</h2>
+<p id="1b52">正如我们在本 RFx 博客系列中讨论数据生态系统的不同支柱时一直强调的，一个始终如一的主题是<em>信任</em>。要让数据生态系统发挥效用，系统用户需要信任该系统具备高性能、可靠且安全。对数据和代码进行并发的版本控制，是在数据生态系统中建立信任的基础部分，因为它允许以非破坏性的方式进行个人创造和实验。最好的版本控制系统对待数据的方式就像软件开发人员对待代码一样——提供创建新数据分支的机制，以便在安全的沙箱环境中开发和测试新功能。虽然这些概念已成为代码版本控制系统的一部分多年，但它们在数据生态系统中同时应用于数据和代码只是最近才出现，代表着一条通向影响力与协作的令人兴奋的新路径。</p></article>
+</body></html>

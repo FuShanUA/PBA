@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Building with Palantir AIP: Logic Tools for RAG/OAG</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background:#fff;color:#1a1a1a;line-height:1.7;max-width:680px;margin:0 auto;padding:48px 24px 80px}
+h1{font-size:1.65em;font-weight:700;margin-bottom:8px;line-height:1.25;color:#111}
+.meta{color:#888;font-size:.82em;margin-bottom:32px;padding-bottom:16px;border-bottom:1px solid #eee}
+.meta a{color:#2e86de;text-decoration:none}
+article p{margin-bottom:18px;font-size:1.02em;line-height:1.75}
+article img{max-width:100%;height:auto;margin:20px auto;display:block;border-radius:6px}
+article h2{font-size:1.28em;font-weight:600;margin:28px 0 12px;line-height:1.3;color:#222}
+article h3{font-size:1.12em;font-weight:600;margin:24px 0 10px;color:#333}
+article h4{font-size:1em;font-weight:600;margin:20px 0 8px;color:#333}
+article ul,article ol{margin-bottom:16px;padding-left:24px}
+article li{margin-bottom:8px;line-height:1.7}
+article blockquote{border-left:3px solid #d0d0d0;padding:8px 16px;margin:18px 0;color:#666;background:#fafafa;border-radius:0 4px 4px 0}
+article pre{background:#f6f6f6;padding:14px 16px;border-radius:6px;overflow-x:auto;font-size:.85em;margin:18px 0;border:1px solid #e8e8e8;font-family:'SF Mono',Monaco,Consolas,monospace}
+article code{background:#f0f0f0;padding:2px 6px;border-radius:3px;font-size:.88em;font-family:'SF Mono',Monaco,Consolas,monospace}
+article pre code{background:none;padding:0;border:none}
+article table{width:100%;border-collapse:collapse;margin:18px 0;font-size:.92em}
+article th,article td{border:1px solid #e0e0e0;padding:8px 12px;text-align:left}
+article th{background:#f8f8f8;font-weight:600}
+article figure{margin:20px 0;text-align:center}
+article figcaption{color:#999;font-size:.82em;margin-top:6px;text-align:center}
+article a{color:#2e86de;text-decoration:none}
+article a:hover{text-decoration:underline}
+.nav{margin-bottom:28px}
+.nav a{color:#2e86de;text-decoration:none;font-size:.88em}
+.nav a:hover{text-decoration:underline}
+</style></head><body>
+<div class="nav"><a href="../../index.html">← Back to Archive</a></div>
+<h1>Building with Palantir AIP: Logic Tools for RAG/OAG</h1>
+<div class="meta">2024-01-31 · <a href="https://blog.palantir.com/building-with-palantir-aip-logic-tools-for-rag-oag-fdaf8938d02e">Original →</a></div>
+<article><img alt="" height="365" loading="eager" src="https://miro.medium.com/v2/resize:fit:700/1*8QZrszozkXWZZ04vtb4aVg.png" width="700"/>
+
+作者：Chad Wahlquist，Palantir 前线部署架构师
+
+欢迎来到《AIP 构建系列》的又一篇章。在本系列中，Palantir 的工程师与架构师将带您了解如何使用我们的《人工智能平台 (AIP)》构建端到端工作流。本期视频，我们将继续深入探讨本体增强生成 (OAG) ——这一次，聚焦于逻辑工具。
+
+## RAG/OAG 回顾
+
+如果您没有看过我们关于检索增强生成/OAG 的首篇文章，简单来说，OAG 是检索增强生成 (RAG) 的一个更具扩展性、以决策为中心的进阶版本。
+
+检索增强生成允许大语言模型在生成回复时调用（并引用）特定的外部上下文源，从而降低幻觉风险并增强信任度。OAG 则通过以决策为中心的本体，将大语言模型锚定在特定企业的运营现实中，从而将检索增强生成提升到新的高度。该本体将决策的三大核心要素——数据、逻辑和行动——整合于单一系统之中。您可以在《这篇博文》中阅读更多关于本体的内容。
+
+### 《OAG 逻辑工具简介》
+
+在上一期视频中，我们构建了一个应用程序，帮助虚构的医疗用品公司 Titan Industries 在某个配送中心发生火灾后，防止客户出现物资短缺。AIP 帮助我们梳理了受火灾影响的客户订单，找出了库存充足以弥补短缺的配送中心，并据此更新了相关客户订单。
+
+<img alt="" height="394" loading="lazy" src="https://miro.medium.com/v2/resize:fit:700/1*WtVZzNFYEMdjXTeA6bugYQ.gif" width="700"/>
+
+这一次，我们将把工具范式从数据扩展到逻辑。我们将基于原有的应用程序，重点 enabling 大语言模型调用逻辑工具；在此场景下，它是一个预测模型。Titan Industries 正在从配送中心火灾中逐步恢复，该模型将通过预测客户订单，帮助其管理库存与供应链。
+
+<img alt="" height="956" loading="lazy" src="https://miro.medium.com/v2/resize:fit:700/1*QjWMoZ-dprEeJHfAjyUWQw.png" width="700"/>
+
+为什么这如此强大？
+
+虽然大语言模型擅长诸多领域——例如上下文推理——但在传统计算类型上表现不佳，比如预测或线性优化。通过在 AIP 中创建供大语言模型调用的逻辑工具，我们能够将企业内部的预测模型、优化器及其他类型逻辑资产的强大能力，与大语言模型及其他生成式 AI 的推理能力相结合。归根结底，这意味着企业可以为 AIP 配备其逻辑资产——无论这些资产是在何处开发的——进而创建日益强大的应用程序来利用这些资产，且无需牺牲信任度。
+
+让我们开始构建吧！
+
+## 建模目标、评估与部署
+
+<img alt="" height="616" loading="lazy" src="https://miro.medium.com/v2/resize:fit:700/1*1i0QwEXTtCddXAS07L-P-Q.png" width="700"/>
+
+在平台中，模型封装了任何功能性逻辑，包括机器学习、预测、优化、物理模型和业务规则。模型可广泛用于多方面用途，从生成指标与建议以辅助决策，到支持场景分析与模拟。
+
+我们首先介绍如何在 AIP 中集成、评估和部署模型。该平台实现了完整的模型运维生命周期，涵盖问题定义、开发一个或多个候选解决方案、评估这些解决方案、部署、监控以及迭代。
+
+### **建模目标**
+
+<img alt="" height="395" loading="lazy" src="https://miro.medium.com/v2/resize:fit:700/1*ZvDcRi4MNswH15NmtUP_DQ.png" width="700"/>
+
+在 AIP 中，我们从一个建模目标出发，可以将其视为模型的最终目标或它试图解决的问题。在我们的应用程序中，目标是为 Titan Industries 预测客户订单；但在本次建模演示中，我们将考察一个预测机器故障概率的模型。
+
+建模目标实际上充当了平台中模型的“任务控制中心”；它是建模生态系统的沟通枢纽，也是随时间推移评估、审查模型解决方案并将其投入运营的系统记录。除了提供便捷的用户界面外，它还提供了治理与权限层、自动化层（例如对候选模型的统一评估），以及模型的 CI/CD 层。
+
+一个建模目标包含多个模型资产，这些资产又由模型工件（例如模型文件、容器或指向第三方端点的指针）和模型适配器组成，后者本质上是对模型输出进行标准化处理，以便平台中的其他工具能够调用它们。
+
+我们如何将模型接入平台？模型可以在平台内部开发，也可以在外部构建后导入。我们可以使用代码仓库或代码工作区，基于平台中已有的数据对模型进行训练，或者导入在其他地方开发的模型。AIP 也支持外部托管的模型——如果客户在其他云服务商或第三方处运行着模型端点，或者付费获取了模型端点的访问权限，他们都可以将其作为模型工件注册到平台中。
+
+### **评估与部署**
+
+<img alt="" height="395" loading="lazy" src="https://miro.medium.com/v2/resize:fit:700/1*Oce6UYE7GWQGOB6dXDDEPA.png" width="700"/>
+
+让模型达到真正投入使用的阶段颇具挑战；我们常常看到数据科学团队构建的模型最终未能进入生产状态。在视频中，我们以一个建模目标为例——预测机器故障概率——并演示了将其投入运营的各个步骤。
+
+我们首先查看该建模目标内的生产部署；即实际托管模型并允许将其交付给消费者（例如应用程序、管道等）的端点。模型可以部署到托管的批量推理管道或提供实时推理的实时 API 端点。
+
+在建模目标内，我们还可以深入查看日志和指标。这不仅能让我们了解模型的性能，还能掌握推理服务器的性能表现，从而做出有关资源配置的决策。
+
+如上文所述，建模目标为模型提供了 CI/CD 层——我们能够从沙箱环境推进到预发布环境再到生产环境，并在此过程中实施恰当的控制与检查（例如要求通过标记和版本发布进行刻意升级，以及为生产管道提供可审计的模型版本历史）。
+
+要决定发布哪些模型，我们需要对它们进行评估。为此，我们使用评估仪表板，在其中可以选择评估数据集、评估库和评估子集（以查看模型在不同领域的表现，例如来自不同地理位置的数据）。在仪表板中，我们可以轻松地跨多个维度比较两个或多个不同模型的性能。
+
+在本示例中，这一个建模目标下共有 27 个模型。对于所有这些模型，我们能够实施审查关卡，细粒度地追踪当前状态，并在将它们发布到预发布环境之前进行测试。
+
+## 工具工厂：Auto ML
+
+<img alt="" height="395" loading="lazy" src="https://miro.medium.com/v2/resize:fit:700/1*0BR1Eu4SoNcMIYQb8y_Mqg.gif" width="700"/>
+
+Auto ML 是一款 Workshop 应用程序，它利用生成式 AI 帮助我们更高效地编写模型训练代码。通过 Auto ML，我们可以输入对要解决的问题的描述（在此场景中，是为 Titan 预测客户订单）以及相关的本体对象集（这里是客户订单对象）。
+
+接着，Auto ML 使用由大语言模型驱动的函数（在 AIP Logic 中编写）来生成模型训练代码，随后我们便可利用这些代码构建模型以实现建模目标。
+
+这是我们如何将 AIP 作为工具工厂的又一个示例——实质上，是利用 AI 构建一系列工具，帮助我们更高效地完成特定任务（如编写模型训练代码）。
+
+### 《逻辑工具》
+
+<img alt="" height="395" loading="lazy" src="https://miro.medium.com/v2/resize:fit:700/1*o4Ozlv5BWg6h9v_1GBhhew.png" width="700"/>
+
+我们现在想要在 AIP Logic 函数中添加逻辑，以确保在正确的时间将正确的库存放置在正确的位置。
+
+在上一期视频中构建的 Workshop 应用程序中，我们拥有一个供应链副驾驶，它可以导航 Titan 的本体，呈现出受影响的客户订单及建议的解决方案。现在，我们正在对该应用程序进行增强，以预测客户订单并帮助 Titan 在更长的周期内管理此次中断事件。为此，我们正在创建另一个工具——这一次是一个逻辑工具，使大语言模型能够提取准确的客户订单预测。
+
+我们已经通过在 Auto ML 中的工作建立了一个时间序列预测目标，并且将使用 Meta 的 Prophet 框架创建一个回归模型，该模型将接收来自 Titan 本体的客户订单时间序列数据，并据此生成预测。
+
+由于我们使用的是 Prophet 的实时端点，可以通过模型适配器将其连接到 AIP。在 AIP 中设置适配器非常简单；我们很快就能获得一份 14 天的客户订单预测。
+
+### 《大语言模型与预测模型的集成》
+
+<img alt="" height="395" loading="lazy" src="https://miro.medium.com/v2/resize:fit:700/1*2DQwVJp0HaH2JXwpfSte6w.png" width="700"/>
+
+在 AIP Logic 中，我们可以将大语言模型与预测模型集成，以便在最终应用程序中使用。
+
+提醒一下，AIP Logic 允许我们在无代码环境中创建 AI 驱动的函数，从而简化高级大语言模型与本体的集成。上一次，我们演示了 AIP Logic 如何允许我们为大语言模型配备一个由本体驱动的数据工具。
+
+基于提示词（“Haynes 设施发生了火灾，这将导致外科口罩短缺，我该怎么办？”），我们设置了逻辑块，让大语言模型在本体中找到合适的成品和配送中心，识别出拥有充足所需材料以填补缺口的配送中心，并返回受影响订单的列表及建议的补救措施。
+
+这一次，我们增加了一个计算器以及刚刚构建的预测客户订单的逻辑函数。我们设置了任务提示词，就如同在给一位新分析师下达指令，提供关于如何完成此任务的分步指导。具体来说，我们告诉大语言模型何时以及如何使用我们为其配备的预测工具，以生成未来 14 天受影响订单的预测总量。
+
+当我们在调试器中检查以确保一切按预期工作时，可以实时看到由大语言模型触发的、基于本体生成的预测。
+
+### 《AIP 副驾驶使用逻辑工具》
+
+<img alt="" height="394" loading="lazy" src="https://miro.medium.com/v2/resize:fit:700/1*IbmPcspSjGSl8qknlCq9_w.gif" width="700"/>
+
+既然我们已将预测模型集成到 AIP Logic 中的大语言模型函数里，让我们看看它的实际运行效果。
+
+应用程序展示了大语言模型正在采取的思维链推理步骤，包括访问本体中的对象以及运行我们添加的预测函数。我们不仅能完全透视大语言模型的推理过程，还能了解它如何部署我们为其配备的各种数据和逻辑工具，从而生成以企业运营现实为基础的准确、可靠的响应。
+
+下次，我们将深入探讨行动。
+
+### **结论**
+
+如果您准备好利用 AIP 释放全频谱 AI 的力量，请立即报名参加 AIP 训练营。您的团队将从 Palantir 专家那里学习，更重要的是，获得 AIP 的实操经验，并在生产环境中构建出真实的工作流。
+
+让我们开始构建吧！
+Chad</article>
+</body></html>

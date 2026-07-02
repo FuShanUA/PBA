@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Confianza en los Datos (Explicando Palantir, #4)</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background:#fff;color:#1a1a1a;line-height:1.7;max-width:680px;margin:0 auto;padding:48px 24px 80px}
+h1{font-size:1.65em;font-weight:700;margin-bottom:8px;line-height:1.25;color:#111}
+.meta{color:#888;font-size:.82em;margin-bottom:32px;padding-bottom:16px;border-bottom:1px solid #eee}
+.meta a{color:#2e86de;text-decoration:none}
+article p{margin-bottom:18px;font-size:1.02em;line-height:1.75}
+article img{max-width:100%;height:auto;margin:20px auto;display:block;border-radius:6px}
+article h2{font-size:1.28em;font-weight:600;margin:28px 0 12px;line-height:1.3;color:#222}
+article h3{font-size:1.12em;font-weight:600;margin:24px 0 10px;color:#333}
+article h4{font-size:1em;font-weight:600;margin:20px 0 8px;color:#333}
+article ul,article ol{margin-bottom:16px;padding-left:24px}
+article li{margin-bottom:8px;line-height:1.7}
+article blockquote{border-left:3px solid #d0d0d0;padding:8px 16px;margin:18px 0;color:#666;background:#fafafa;border-radius:0 4px 4px 0}
+article pre{background:#f6f6f6;padding:14px 16px;border-radius:6px;overflow-x:auto;font-size:.85em;margin:18px 0;border:1px solid #e8e8e8;font-family:'SF Mono',Monaco,Consolas,monospace}
+article code{background:#f0f0f0;padding:2px 6px;border-radius:3px;font-size:.88em;font-family:'SF Mono',Monaco,Consolas,monospace}
+article pre code{background:none;padding:0;border:none}
+article table{width:100%;border-collapse:collapse;margin:18px 0;font-size:.92em}
+article th,article td{border:1px solid #e0e0e0;padding:8px 12px;text-align:left}
+article th{background:#f8f8f8;font-weight:600}
+article figure{margin:20px 0;text-align:center}
+article figcaption{color:#999;font-size:.82em;margin-top:6px;text-align:center}
+article a{color:#2e86de;text-decoration:none}
+article a:hover{text-decoration:underline}
+.nav{margin-bottom:28px}
+.nav a{color:#2e86de;text-decoration:none;font-size:.88em}
+.nav a:hover{text-decoration:underline}
+</style></head><body>
+<div class="nav"><a href="../../index.html">← Back to Archive</a></div>
+<h1>Confianza en los Datos (Explicando Palantir, #4)</h1>
+<div class="meta">2023-02-27 · <a href="https://blog.palantir.com/confianza-en-los-datos-explicando-palantir-4-17c1a05b34cd">Original →</a></div>
+<article>（本文的英文版本请阅读此处。）
+
+编者注：这是《解析 Palantir》系列的第四篇博文，该系列探讨了诸多话题，包括我们对人工智能/机器学习的隐私、保护与安全的态度等。此前的文章探讨了我们的商业模式、基于目的的访问控制以及数据匿名化。
+
+全球各类组织利用 Palantir 的软件开展其最关键的举措：从应对疫情到癌症研究、供应链优化以及清洁能源开发。尽管这些项目在范围和影响上各不相同，但它们都源于同一个根本问题：是否拥有相关数据？如果有，这些数据的质量如何，即在全面性、准确性和时效性方面表现怎样？保护我们最重要的机构免受数据熵增的后果——即劣质数据导致劣质决策——至关重要。
+
+在这篇博文中，我们将探讨为何各类机构维持高水平的数据质量至关重要。我们将重点介绍跟踪和控制数据质量与完整性的策略，并讨论组织如何培养用户对数据的信任。最后，作为数十年来多国政府的技术合作伙伴，我们将分享在应对 COVID-19 中的经验，包括为何问责与透明原则在危机情境下尤为关键。如需详细了解我们的数据质量与血缘关系工具的运作方式，请阅读此处发布的博文。
+
+![ ](https://miro.medium.com/v2/resize:fit:700/1*z1SZGy_3p-xDJNax49vFkw.png)
+
+## 为什么这很重要？
+
+数据质量是构建所有成功的分析与数据项目的基石。单单一个错误的数据集就有可能危及整个计划，导致终端消费者或用户对数据产生不信任，并使所做的努力受到质疑。
+
+此外，无论数据质量低下的原因是什么（来源错误、定义未对齐、数据收集存在偏差，甚至是数据准备过程中的错误），基于错误数据做出的决策都可能在整个组织内迅速且有害地传播。如果没有对数据进行适当控制，依据错误信息做出的决策可能会被忽视，导致得出错误的结论，这不仅无法提供解决方案，反而会制造出更难以解决的复杂问题。正因如此，数据质量必须伴随坚实的数据透明度：所有具备相关角色和权限的用户，都必须拥有充分的上下文，以便恰当且可靠地使用数据。
+
+## 为什么这很困难？
+
+并非所有数据的生来都是一样的，它们很少以干净、可靠且易于分析的形式呈现。实际上，根本不存在完美的数据源。有时，数据源缺乏必要的信息广度或深度。另一些时候，源系统已经过时，导致数据架构、模式或结构无法支持新的用例。更糟糕的是，数据源可能包含不准确或过时的数据。
+
+除了数据本身，围绕数据的重要上下文也可能支离破碎或根本不存在。通常，数据更新是以一次性摘要或 CSV 文件的形式接收的，无法看到数据来源、最后一次更新时间，也没有任何表明潜在问题或缺陷的提示。即使存在此类信息，也可能仅存于电子邮件或口头交流中，没有任何持久的记录。
+
+所有这些问题都可能影响单一的数据集。现在，想象一下将数十或数百个这样的单一数据源整合为一个唯一的事实来源。不同的标准、定义、模式和格式，使得在将数据呈现给决策者之前，很难保证数据已得到正确准备、合并和审查。
+
+![ ](https://miro.medium.com/v2/resize:fit:700/1*9yFJdc0u0OapM3YwVNsSsA.png)
+
+## 我们是如何看待这个问题的？
+
+每次启动项目时，我们都会鼓励用户和决策者针对任何集成的数据资产提出以下根本问题：
+
+- 该资产由哪些数据源组成？这些数据源的声誉如何？关于数据的来源我们了解多少？
+- 这些数据源有多可靠？这些数据是否存在严重偏差，从而可能导致误导性的解读？
+- 这些信息的一致性如何？如果数据的形式或质量发生变化或恶化，我们能察觉到吗？
+- 这些信息最后一次更新是在什么时候？更新是否出现了延迟？如果是，这会对数据和决策产生怎样的影响？
+- 如果需要连接多个数据源，发生冲突时应优先考虑哪个数据源？我们如何追踪覆盖或优先处理某个数据源的决策？
+
+这些问题的答案不仅与初始的数据集成有关，在数据生命周期的每个阶段都息息相关，并且是创建可靠数据资产所必需的。基于我们与全球数百家客户合作的丰富经验，我们了解到，如果没有帮助跟踪和确保数据质量的结构与应用程序，要以所需的规模和速度回答这些问题是极其困难的。
+
+因此，我们设计了 Foundry 的数据集成工具，使任何数据工程师都能在管理过程中跟踪数据管道的整体状态，并让用户知道数据的来源以及应如何解读。
+
+## 它是如何运作的？
+
+### 面向 Foundry 开发者的数据质量、完整性与透明度
+
+Foundry 赋予数据工程师构建高质量数据管道的能力，并提供一套工具来监控和检测可能污染数据资产质量的异常情况。
+
+**数据追踪工具：** 了解数据曾途经何处以及流向何方，使数据工程师能够在整个平台内追踪潜在的数据质量问题，从而确保所有业务部门和对应团队都能获得经过验证的数据。
+
+- **自下而上的输入探索：** Foundry 允许数据工程师和用户直接在数据源头追踪、调查和解决数据质量问题。
+- **自上而下的影响追踪：** Foundry 的 Data Lineage 允许用户主动追踪数据质量问题可能对后续产出物造成的影响。
+
+![ ](https://miro.medium.com/v2/resize:fit:700/1*Qx-80n10flaT0EaBEtrRoQ.gif)
+
+**自动化数据健康检查：** Foundry 自动执行旨在检测数据问题的检查，无论是数据更新的时效性、完整性、一致性，还是识别内容缺失，从而确保在大规模应用中保持强健的数据质量。数据管道也可以配置为监控这些检查项，并在任何检查失败时阻止数据继续传播。
+
+![ ](https://miro.medium.com/v2/resize:fit:700/1*N7h-28t9VhABzguawDL_fQ.png)
+
+![ ](https://miro.medium.com/v2/resize:fit:496/1*gsxWHq64G425wbq2UyuyLQ.png)
+
+**用于数据比较的临时分析：** Foundry 为数据工程师提供工具以进行临时分析，从而更好地了解数据的状态及其随时间变化的趋势。这使数据工程师能够主动识别异常模式，并对数据问题进行根因分析。
+
+### 面向 Foundry 消费者的数据质量、完整性与透明度
+
+即使在系统性地验证数据之后，工作也尚未结束：数据的使用和解读取决于用户，而用户的方法和需求差异很大。有些用户既不被要求也不被期望去检查数据，有些用户“信任但验证”，还有些用户希望了解数据准备的每一个步骤。Foundry 旨在满足众多此类用户特征的需求，提供工具以揭示对其工作至关重要的信息。
+
+**数据源跟踪器与数据目录：** Foundry 允许用户探索整个组织内经过授权的数据。让用户对其数据资产具有可见性，是在平台中建立信任和上下文基础的关键。Foundry 不仅展示了平台中存在哪些数据，还展示了关键的元数据，例如描述、分类以及共享和处理数据的指导原则。
+
+**数据概况、文档与元数据：** Foundry 还可以向用户展示数据本身之外的上下文信息，例如数据缺失、局限性、时间范围或已知的问题。这使得所有用户在使用数据进行决策之前，都能获得必要的上下文。
+
+**列级问题标记：** 定期更新的数据集会随时间变化和演进：今天健康的数据在未来未必如此。整个平台对潜在数据问题的透明化，使平台用户、数据工程师和数据权属机构能够就数据提出疑问或指出潜在问题，从而实现数据质量检查的民主化。
+
+**可视化数据追踪：** 从初始集成到数据清洗、聚合和分析的端到端可见性，使用户能够跟踪数据是如何准备的，以及它如何融入全局视图。这包括报告、分析、模型以及所有中间过程。
+
+让用户对数据的来源、准备和转换过程拥有透明度，可以使他们对信息及其质量和可追溯性，以及对衍生结果的有效性充满信心。
+
+## 面向公共信任的数据透明度
+
+对于那些其使命和效能依赖于公众信任的组织（如公共卫生部门）而言，透明度至关重要。为了培养这种信任，许多组织会发布汇总或匿名化后的数据，并附带有关数据来源和准备的详细说明，从而向公众提供关于驱动最关键决策的数据的关键信息。
+
+此类文档应清晰地传达所有相关信息来源、数据是如何准备的，以及数据质量在何处存在缺陷。对潜在问题保持坦诚，表明该组织正本着诚意行事，谨慎使用可用数据并充分考虑了各项局限性。
+
+我们在英国和美国都看到了这样的例子，我们利用 Palantir Foundry 为公众提供了关于 COVID-19 的全面数据访问，这不仅为大学、地方立法者和公民提供了极大的便利，还随着时间推移，让公众对已发布数据的质量和完整性有了前所未有的可见性。这种水平的公共数据报告还创建了更广泛的反馈回路，因为地方社区使用相同的国家级数据来指导地方政策，这反过来又促进了源头数据质量和收集的提升。
+
+我们相信，数据信任是一种公共产品，它可以防止机构显得像是在黑箱操作。如果公众要信任其机构，这种信任必须建立在透明的基础之上。
+
+## 融会贯通
+
+在过去的 20 多年里，Palantir 一直支持其客户（包括政府和各类企业）应对过去几十年中一些最复杂、最关键的挑战。而最复杂的数据转型过程至少阐明了一件事：数据质量需要透明的数据生产者和知情的数据消费者之间形成良性循环。利用数据做出更好、更可靠的决策，需要借助合适的工具来实现自动化检查、提供文档和反馈，并与完整的可追溯性和数据历史上下文进行交互。Foundry 提供了所有这些工具，以及从来源到结果的透明度。我们的客户正在做出世界上最重要的一些决策，我们很自豪地说，我们正在构建让社会能够信任其数据的工具。
+
+## 作者
+
+Alice Yu，隐私、公民自由与公共卫生负责人，曾领导 2020 年美国应对 COVID-19 的 HHS Protect 项目。</article>
+</body></html>
