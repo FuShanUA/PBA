@@ -88,7 +88,7 @@ header h1{font-size:1.35em;font-weight:700;color:var(--accent);letter-spacing:-0
 
 .source-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:.68em;font-weight:600;margin-bottom:4px}
 .source-badge.blog{background:rgba(14,165,233,0.12);color:#0EA5E9}
-.source-badge.website{background:rgba(139,92,246,0.12);color:#8B5CF6}
+.source-badge.website{background:rgba(139,92,246,0.12);color:#8B5CF6}.source-badge.docs{background:rgba(245,158,11,0.12);color:#F59E0B}
 .source-filter{display:flex;gap:6px;align-items:center}
 .source-pill{padding:4px 12px;border-radius:14px;font-size:.78em;cursor:pointer;border:1px solid var(--border);background:var(--card);color:var(--text);transition:all 0.15s;user-select:none}
 .source-pill.active{background:var(--accent-soft);color:var(--accent);font-weight:500;border-color:var(--accent)}
@@ -116,7 +116,15 @@ footer{text-align:center;padding:20px;color:var(--muted);border-top:1px solid va
 .article-modal-orig:hover{text-decoration:underline}
 .article-modal iframe{flex:1;border:none;width:100%;background:#fff}
 
-.tag-bar{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;padding:8px 0}
+.tag-bar{display:flex;gap:6px;margin-bottom:16px;padding:4px 0;overflow:hidden;white-space:nowrap;position:relative}
+.tag-bar.expanded{flex-wrap:wrap;overflow:visible;white-space:normal}
+.tag-pill{display:inline-flex;align-items:center;gap:4px;padding:5px 12px;border-radius:16px;font-size:.82em;cursor:pointer;background:var(--card);border:1px solid var(--border);color:var(--text);transition:all 0.12s;user-select:none;flex-shrink:0}
+.tag-pill:hover{border-color:var(--accent);color:var(--accent)}
+.tag-pill.active{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:500}
+.tag-pill .pill-count{color:var(--muted);font-size:.85em}
+.tag-pill.active .pill-count{color:var(--accent)}
+.tag-expand{padding:5px 12px;border-radius:16px;font-size:.82em;cursor:pointer;background:var(--card);border:1px solid var(--border);color:var(--muted);flex-shrink:0;transition:all 0.12s}
+.tag-expand:hover{border-color:var(--accent);color:var(--accent)}
 .tag-pill{display:inline-flex;align-items:center;gap:4px;padding:5px 12px;border-radius:16px;font-size:.82em;cursor:pointer;background:var(--card);border:1px solid var(--border);color:var(--text);transition:all 0.12s;user-select:none}
 .tag-pill:hover{border-color:var(--accent);color:var(--accent)}
 .tag-pill.active{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:500}
@@ -132,7 +140,7 @@ footer{text-align:center;padding:20px;color:var(--muted);border-top:1px solid va
 <div class="sidebar-overlay" id="sidebarOverlay"></div>
 <div class="layout"><div class="sidebar" id="sidebar"></div><div class="sidebar-resizer" id="sidebarResizer"></div>
 <div class="main">
-<div class="toolbar"><div class="source-filter" id="sourceFilter"><span class="source-pill active" data-source="blog">Blog</span><span class="source-pill active" data-source="website">Website</span></div>
+<div class="toolbar"><div class="source-filter" id="sourceFilter"><span class="source-pill active" data-source="blog">Blog</span><span class="source-pill active" data-source="website">Website</span><span class="source-pill active" data-source="docs">Docs</span></div>
 <button class="filter-btn" id="filterBtn">&#9776;</button>
 <div class="search-wrap"><span class="icon">&#128269;</span><input type="text" id="search" placeholder="搜索关键词..."></div>
 <select id="yearSelect"></select><select id="monthSelect"></select>
@@ -163,7 +171,7 @@ initApp();
 }).catch(function(e){console.error('Failed to load index.json:',e);document.getElementById('grid').innerHTML='<p style="padding:40px;text-align:center;color:var(--muted)">Failed to load data. If running locally, use a web server.</p>'});
 
 function initApp(){
-var lang="zh";var F={bc:new Set(),sc:new Set()};var dateFilter={year:null,month:null};var sourceFilter=new Set(["blog","website"]);
+var lang="zh";var F={bc:new Set(),sc:new Set()};var dateFilter={year:null,month:null};var sourceFilter=new Set(["blog","website","docs"]);
 var accOpen={};var pageSize=24;var currentPage=0;
 
 function t(k){return I18N[lang][k]}
@@ -294,7 +302,7 @@ if(visible.length===0){g.innerHTML="<div class='empty'>"+t("no_result")+"</div>"
 var gh="";
 for(var i=0;i<visible.length;i++){var a=visible[i];
 var title=lang==="zh"?(a.tt||a.t||""):(a.t||"");
-var src=a.source||"blog";var srcLabel=src==="blog"?"Blog":"Website";var th=a.th?"<div class='thumb'><img src='"+a.th+"' loading='lazy'></div>":"<div class='thumb'></div>";var dateStr=a.d?formatDate(a.d):(src==="website"?"归档":"");gh+="<div class='card' data-slug='"+a.s+"' data-url='"+a.u+"' data-source='"+(a.source||"blog")+"' style='cursor:pointer'>"+th+"<div class='body'><span class='source-badge "+src+"'>"+srcLabel+"</span><div class='ttl'>"+esc(title)+"</div><div class='meta'>"+dateStr+"</div></div></div>"}
+var src=a.source||"blog";var srcLabel=src==="blog"?"Blog":src==="docs"?"Docs":"Website";var th=a.th?"<div class='thumb'><img src='"+a.th+"' loading='lazy'></div>":"<div class='thumb'></div>";var dateStr=a.d?formatDate(a.d):(src==="website"||src==="docs"?"归档":"");gh+="<div class='card' data-slug='"+a.s+"' data-url='"+a.u+"' data-source='"+(a.source||"blog")+"' style='cursor:pointer'>"+th+"<div class='body'><span class='source-badge "+src+"'>"+srcLabel+"</span><div class='ttl'>"+esc(title)+"</div><div class='meta'>"+dateStr+"</div></div></div>"}
 g.innerHTML=gh;
 var lm=document.getElementById("loadMore");
 if(f.length>visible.length){lm.style.display="block"}else{lm.style.display="none"}
@@ -329,9 +337,9 @@ modalTitle.textContent=title||"";
 modalOrig.href=url||"#";
 var src=source||"blog";
 var path,contentFile;
-if(src==="website"){
+if(src==="website"||src==="docs"){
 contentFile=lang==="zh"?"page_zh.html":"page.html";
-path="content/website/"+slug+"/"+contentFile;
+path="content/"+src+"/"+slug+"/"+contentFile;
 }else{
 contentFile=lang==="zh"?"reader_zh.html":"reader.html";
 path="articles/"+slug+"/"+contentFile;
@@ -349,8 +357,10 @@ document.getElementById("grid").addEventListener("click",function(e){var card=e.
 /* tagFreq loaded from index.json */
 
 function buildTagBar(){
-var tb=document.getElementById("tagBar");if(!tb)return;var h="";
+var tb=document.getElementById("tagBar");if(!tb)return;
 var sorted=Object.keys(tagFreq).sort(function(a,b){return tagFreq[b]-tagFreq[a]});
+var visible=[];
+var hidden=[];
 for(var i=0;i<sorted.length;i++){
 var tag=sorted[i],count=tagFreq[tag];
 var parts=tag.split("::");
@@ -358,7 +368,13 @@ var tagCat=parts[0];
 if(F.bc.size>0&&!F.bc.has(tagCat))continue;
 var display=tt(parts.length>1?parts[1]:tag);
 var active=F.sc.has(tag)?" active":"";
-h+="<span class='tag-pill"+active+"' data-type='sc' data-val='"+tag+"'>"+display+"<span class='pill-count'>"+count+"</span></span>";
+var pill="<span class='tag-pill"+active+"' data-type='sc' data-val='"+tag+"'>"+display+"<span class='pill-count'>"+count+"</span></span>";
+if(F.sc.has(tag)){visible.push(pill)}else if(visible.length<8){visible.push(pill)}else{hidden.push(pill)}
+}
+var h=visible.join("");
+if(hidden.length>0){
+h+="<span class='tag-expand' id='tagExpand'>+"+hidden.length+"</span>";
+if(tb.classList.contains("expanded")){h+=hidden.join("")}
 }
 tb.innerHTML=h;
 tb.querySelectorAll(".tag-pill").forEach(function(el){el.addEventListener("click",function(){
@@ -366,6 +382,8 @@ var val=el.dataset.val;
 if(F.sc.has(val)){F.sc.delete(val)}else{F.sc.add(val)}
 buildSidebar();buildTagBar();resetPage();render();
 })});
+var exp=document.getElementById("tagExpand");
+if(exp)exp.addEventListener("click",function(){tb.classList.toggle("expanded");buildTagBar()});
 }
 
 applyTheme("light");applyLang();
