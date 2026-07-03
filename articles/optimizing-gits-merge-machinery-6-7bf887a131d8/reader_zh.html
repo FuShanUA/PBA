@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Optimizing Git’s Merge Machinery, #6</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background:#fff;color:#1a1a1a;line-height:1.7;max-width:680px;margin:0 auto;padding:48px 24px 80px}
+h1{font-size:1.65em;font-weight:700;margin-bottom:8px;line-height:1.25;color:#111}
+.meta{color:#888;font-size:.82em;margin-bottom:32px;padding-bottom:16px;border-bottom:1px solid #eee}
+.meta a{color:#2e86de;text-decoration:none}
+article p{margin-bottom:18px;font-size:1.02em;line-height:1.75}
+article img{max-width:100%;height:auto;margin:20px auto;display:block;border-radius:6px}
+article h2{font-size:1.28em;font-weight:600;margin:28px 0 12px;line-height:1.3;color:#222}
+article h3{font-size:1.12em;font-weight:600;margin:24px 0 10px;color:#333}
+article h4{font-size:1em;font-weight:600;margin:20px 0 8px;color:#333}
+article ul,article ol{margin-bottom:16px;padding-left:24px}
+article li{margin-bottom:8px;line-height:1.7}
+article blockquote{border-left:3px solid #d0d0d0;padding:8px 16px;margin:18px 0;color:#666;background:#fafafa;border-radius:0 4px 4px 0}
+article pre{background:#f6f6f6;padding:14px 16px;border-radius:6px;overflow-x:auto;font-size:.85em;margin:18px 0;border:1px solid #e8e8e8;font-family:'SF Mono',Monaco,Consolas,monospace}
+article code{background:#f0f0f0;padding:2px 6px;border-radius:3px;font-size:.88em;font-family:'SF Mono',Monaco,Consolas,monospace}
+article pre code{background:none;padding:0;border:none}
+article table{width:100%;border-collapse:collapse;margin:18px 0;font-size:.92em}
+article th,article td{border:1px solid #e0e0e0;padding:8px 12px;text-align:left}
+article th{background:#f8f8f8;font-weight:600}
+article figure{margin:20px 0;text-align:center}
+article figcaption{color:#999;font-size:.82em;margin-top:6px;text-align:center}
+article a{color:#2e86de;text-decoration:none}
+article a:hover{text-decoration:underline}
+.nav{margin-bottom:28px}
+.nav a{color:#2e86de;text-decoration:none;font-size:.88em}
+.nav a:hover{text-decoration:underline}
+</style></head><body>
+<div class="nav"><a href="../../index.html">← Back to Archive</a></div>
+<h1>Optimizing Git’s Merge Machinery, #6</h1>
+<div class="meta">2021-09-20 · <a href="https://blog.palantir.com/optimizing-gits-merge-machinery-6-7bf887a131d8">Original →</a></div>
+<article>*编者注：这是 Palantir 软件工程师关于扩展 Git 合并和重命名检测机制系列文章的第六篇，也是最后一篇。点击阅读第一篇、第二篇、第三篇、第四篇和第五篇博文。*
+
+![](https://miro.medium.com/v2/resize:fit:700/1*FfU0MkhHj3psx40JiAmTpQ.jpeg)
+
+本系列的第一篇文章包含了一些背景信息，介绍了 Git 合并机制的工作原理以及我为何要对其优化和重写。这些背景知识可能有助于理解本文的某些部分。然而，与前几篇文章不同，本文不深入探讨合并的复杂细节。早期文章利用了合并的各种特性来减少所需的工作量，而本文则着眼于更传统、直接的优化方法。此外，前几篇文章围绕特定主题展开，每个主题都需要花费不少篇幅解释，而本文包含的优化方法解释起来相当简单，因此将其归整到一篇文章中。
+
+## 大型优化
+
+首先，我们来看看这些优化，分为两类：
+
+### merge-ort 设计的根本性变革
+
+Git 的基础是一个镜像索引（即 `.git/index` 文件）的内存数据结构。它只是一个数组，包含仓库中跟踪的每个路径的条目，并按路径名排序。这个数据结构是 merge-recursive 以及 Git 代码库大部分核心的基础。在第五篇博文中，我讨论了内存索引数据结构如何阻碍简单的目录解析；在这里，我将讨论它如何给合并带来性能问题。
+
+内存索引作为一个数组，使得迭代速度快，搜索速度也相对较快（O(log N)），但插入/删除速度有些慢，因为必须移动 O(N) 个条目。通常这不会有大问题，因为它是一个指针数组，移动大量指针的操作成本相对较低（使用 `memmove()` 函数，该函数可能已针对系统进行了优化）。此外，初始遍历会同时遍历三棵树，在发生冲突时为每个路径添加多个条目。初始遍历只会在数组末尾插入条目。这些特性意味着大多数合并只需要处理少量的插入和删除。
+
+但是，如果需要进行大量的三方内容合并（并且它们都能顺利解决，因此三个冲突条目将被删除并由一个新条目替代），或者如果有大量的重命名（导致路径需要从数组中删除并在其他地方添加），那么我们可能需要进行 O(N) 次插入和/或删除。由于每次操作都是 O(N) 的，我们会花费 O(N^2) 的时间来移动数组中的元素。
+
+旧算法的第二个问题来自于一个名为 `unpack_trees()` 的底层函数。该函数会同时遍历一棵或多棵树，以创建或更新内存索引，并调用各种回调。这种设计对于 checkout 或 reset 等命令非常有用。在简单情况下，它也为合并提供了一个看似坚实的基础（因为只需要“对特殊情况做一些简单的修复”）。实际上，这种方案提供的信息不足以满足合并算法的需求。合并需要更多的数据，并且能够通过延迟和完全跳过子树来更改遍历顺序，这主要是为了更好地处理重命名。我早期尝试调整 `unpack_trees()` 中所有棘手的逻辑以满足额外需求，最终让我意识到，对于 merge-ort，我们完全需要一种不同的抽象。由于 merge-recursive 构建在 `unpack_trees()` 之上，它确实有一些函数可以完全重新遍历树（以搜索特定信息，例如目录/文件冲突），或者从顶层树向下重新遍历到单个路径（例如，每次重命名时都会这样做），以收集更多信息。这非常昂贵，而我们希望在 merge-ort 中避免这种开销。
+
+merge-ort 通过绕过内存索引和任何对 `unpack_trees()` 的使用，避免了上述两个问题。merge-ort 被编写为创建一个作为树的新合并结果（如果合并存在冲突，则可能包含带有冲突标记的文件），而不触碰工作树或索引。只有在得到合并结果后，merge-ort 才会使用 checkout 逻辑从当前树移动到合并结果。这种设计避免了由于索引条目的插入和删除导致的二次方行为，以及 merge-recursive 进行的许多昂贵的小型树遍历。我相信，这两项改进是 merge-recursive 起点和 merge-ort 起点之间实现大幅加速的主要原因：
+
+```
+                     merge-recursive           merge-ort
+  mega-renames:   5964.031 s ± 10.459 s  5504.231 s ±  5.150 s
+```
+
+提醒一下，“mega-renames”测试用例涉及在一个包含约 26,000 次重命名的分支上变基 35 个提交。从技术上讲，这种加速还包括下面章节中列出的众多“微优化”。然而，它们都是亚秒级的优化，因此上述几乎所有加速都来自 skipping quadratic array entry shifts 和 avoiding additional tree re-traversals 这两大优化。从上述结果来看，这两项优化节省了近 459.8 秒或 7.66 分钟。如果您想了解其他测试用例以及 merge-ort 在这些用例上领先 merge-recursive 的程度，请参阅提交 `557ac0350d`（merge-ort: begin performance work; instrument with trace2_region_* calls, 2021–01–23）。
+
+### 为部分克隆批量预取缺失对象
+
+下一项优化仅会使使用部分克隆的用户受益，但对他们来说这是一项相当大的优化。部分克隆的运作方式是仅下载部分或不完整的对象集。通常，它会跳过所有文件并下载树、提交和标签，以及关联的分支名称和它们指向的提交。然后，当任何操作需要访问某些文件时，它会即时从原始仓库下载。
+
+确保部分克隆正常工作的回退代码会在任何 Git 命令首次访问给定对象时下载它，这可能导致许多对象在单独的连接中一个个地被下载。为每个需要的对象使用单独的顺序连接可能会很慢。如果操作需要许多对象，能够先进行一些计算以确定它将需要哪些对象，然后调用函数预取所有这些对象，将会很有帮助。
+
+几年前，Google 的 Jonathan Tan 为重命名检测逻辑添加了这种预取功能。然而，在我的第一、第二、第三和第四篇博文中的优化之后，我们通常需要少得多的对象来完成重命名检测。这提供了一个机会来修改重命名检测中的预取逻辑，首先进行更有限的预取，然后仅在需要的情况下回退到更彻底的预取。此修改可能会增加下载操作，但通常会显著减少下载的对象数量。
+
+在此过程中，我还为三方内容合并的 merge-ort 添加了一些预取，以进一步减少下载操作次数。
+
+两者的结合在部分克隆中产生了一些令人瞩目的结果：
+
+```
+Number of `git fetch` ops during rebase                     Before Series   After Series
+merge-recursive:          62              63
+merge-ort:                30              20
+     Number of objects fetched during rebase                     Before Series   After Series
+merge-recursive:         11423          11423
+merge-ort:               11391             63
+```
+
+如果您想了解更多细节，请参阅上游讨论此优化的邮件列表。特别是，这些结果让 Microsoft 开始谈论为他们的大型单体仓库启用重命名检测。他们的单体仓库拥有的文件数量是 Linux 内核的 25 倍以上，迫使他们需要部分克隆、稀疏检出和一堆特殊配置才能让一切正常运作。其中一项就是关闭重命名检测，因为这对他们来说成本太高。能够向人展示使用这些新算法需要的文件要少得多，这让他们开始讨论重新启用它。
+
+## 微优化
+
+有一长串的微优化，包含了我所做的所有亚秒级优化。它们的幅度从数百毫秒到数十毫秒，甚至仅几毫秒不等。也有一些我甚至没有测量的优化（例如，因为它是基本重写的一部分，我无法单独测试该项）。我不会详细讨论所有这些微优化，但在许多情况下会提供链接，供您深入了解。
+
+### 内置于 merge-ort 设计中的小细节
+
+- 避免无条件丢弃并重新读取索引
+- 避免重新比较哈希值（缓存在 `match_masks` 中）
+- 将（频繁使用的）`merged_info` 结构体的大小减少 8 字节，由 `pahole` 识别
+
+### diffcore-rename 优化
+
+- `b970b4ef62`（diffcore-rename: simplify and accelerate register_rename_src()）
+- `9db2ac5616`（diffcore-rename: accelerate rename_dst setup）
+- `350410f6b1`（diffcore-rename: remove unnecessary duplicate entry checks）
+
+### hashmap/strmap 优化
+
+- `33f20d8217`（hashmap: introduce a new hashmap_partial_clear()）
+- `6ccdfc2a20`（strmap: enable faster clearing and reusing of strmaps）
+- `23a276a9c4`（strmap: take advantage of FLEXPTR_ALLOC_STR when relevant）
+- `a208ec1f0b`（strmap: enable allocations to come from a mem_pool）
+
+### 使用内存池
+
+- `f239fff4c1`（merge-ort: store filepairs and filespecs in our mem_pool, 2021–02–04）
+- `6697ee01b5`（merge-ort: switch our strmaps over to using memory pools, 2021–02–04）
+- `fa0e936fbb`（diffcore-rename: use a mem_pool for exact rename detection’s hashmap, 2021–02–04）
+
+### 其他次要优化
+
+- `092e5115d1`（merge-ort: reuse path strings in pool_alloc_filespec, 2021–02–04）
+- `5a3743da32`（merge-ort: replace string_list_df_name_compare with faster alternative, 2021–06–08）
+
+### 微优化的综合效果
+
+如上所述，其中几项优化已包含在初始计时中。对于其中一些，点击链接将提供有关性能改进的详细信息。但是，对于密切关注本系列全部六篇博文的人来说，我想特别指出两组微优化。首先，对 `string_list_df_name_compare` 的替换是在其他博文的其他优化中间提交的，并产生了以下差异：
+
+```
+                     Before Series            After Series
+mega-renames:      10.127 s ±  0.073 s      9.419 s ±  0.107 s
+```
+
+在它之前的四项优化（内存池的使用和重用路径字符串）是在所有其他优化结束时提交的，并产生了以下差异：
+
+```
+                     Before Series           After Series
+mega-renames:      1.076 s ±  0.015 s     661.8 ms ±  5.9 ms
+```
+
+## 仅预览的优化（与合并或重命名检测无关）
+
+一些优化尚未在 Git 的发布版本中提供，但预示着未来的工作方向。
+
+应用一系列补丁（用于变基、拣选或还原）的机制位于 `sequencer.c` 中。由于没有合并后端能在运行时不更新工作树，sequencer 构建时便将其作为硬性假设——这种假设渗透到了代码中。此外，由于所有 sequencer 逻辑最初以 shell 脚本存在，并随时间迁移到 C，它还假设在每个补丁处重新读取和验证状态，并且其设计仍然会派生多个子进程。
+
+变基机制还有许多检查，这些检查可以被视为部分功能、部分试图解决以前合并机制缓慢问题的权宜之计。尽管这些检查最初以性能为目标，但在非常大的仓库和/或使用部分克隆时，它们可能会特别缓慢和痛苦。
+
+尝试改变这一切是一项重大的工作，超出了我最初工作的范围。因此，我创建了一个简单的 `fast-rebase` 工具，其适用性非常有限（特别是遇到冲突时会报错），但其设计目的是非常快速地运行并展示 Git 的变基和拣选的可能性。具体而言，`fast-rebase` 会：
+
+- 避免在每个中间补丁处更新工作树/索引
+- 避免在遇到冲突或其他停止点之前读写变基元数据
+- 避免在变基每个补丁时检查索引是否匹配 HEAD；仅在开始时进行
+- 避免不必要的进程派生（原始 shell 脚本设计的副作用）
+- 避免仅由于历史上的设计意外而触发的每次提交钩子
+- 避免不必要的历史遍历（来自各种 `can-fast-forward` 和 `is-linear-history` 检查）以及检查未被变基的提交的补丁（由于 `--no-reapply-cherry-picks` 是历史默认值）
+
+这些更改加起来大约有六秒的执行时间，听起来可能不多，但如果将其与我们如下方所示在“mega-renames”测试用例上取得的最终优化结果相比，这就很多了。
+
+## 总体结果
+
+在这里，我想回顾一下从旧合并算法起点（使用 Git 2.30.0 版本）开始，通过所有优化取得的总体改进。我还将包含更多测试用例（注意，“no-renames”是一个用词不当；它本应该是“few-renames”），这些用例在此处有更详细的解释。
+
+对于三个测试用例中的每一个，我将提供使用旧合并算法（merge-recursive）的原始计时、merge-recursive 提升了多少（作为优化新合并算法 merge-ort 的副作用）、如果我们用一个无限并行化的版本（即重命名检测是瞬时的实现）替换重命名检测代码会得到什么样的计时，以及我使用新合并算法取得的计时。
+
+在每种情况下，您都可以看到我比无限并行化的重命名检测版本做得好得多，因为我优化了重命名检测以外的东西。我还包含了这三个用例中每一个的相对加速因子：
+
+```
+                              Timings
+                                          Infinite
+                 merge-       merge-     Parallelism
+                recursive    recursive    of rename    merge-ort
+                 v2.30.0      current     detection     current
+                ----------   ---------   -----------   ---------
+no-renames:       18.912 s    18.030 s     11.699 s     198.3 ms
+mega-renames:   5964.031 s   361.281 s    203.886 s     661.8 ms
+just-one-mega:   149.583 s    11.009 s      7.553 s     264.6 ms
+                           Speedup factors
+                                          Infinite
+                 merge-       merge-     Parallelism
+                recursive    recursive    of rename
+                 v2.30.0      current     detection    merge-ort
+                ----------   ---------   -----------   ---------
+no-renames:         1           1.05         1.6           95
+mega-renames:       1          16.5         29           9012
+just-one-mega:      1          13.6         20            565
+```
+
+但是，请注意，如果没有“仅预览”的优化，mega-renames 测试用例会慢约 10 倍，仍然比无限并行化的重命名检测用例快，但不如上面显示的那么快。因此，在重命名检测逻辑和合并机制之外，仍有工作要做。
+
+本文中的许多优化已经出现在 Git 的发布版本中，可以通过向 merge/rebase/cherry-pick 传递 `--strategy ort` 选项或设置 `git config --global pull.twohead ort`（由于向后兼容性，配置选项名称比较糟糕）来访问。除了“仅预览”的优化外，其余优化将出现在 2021 年晚些时候的 Git 2.34 中。
+
+## 特别感谢——审查者
+
+根据我的经验，Git 项目的代码审查比其他项目更彻底。我认为这是一件好事，但这确实意味着在上游 Git 中合并代码更改需要非原始代码作者付出大量工作。（作为背景，在我让新的合并后端完全工作并优化之后，我花了一整年的时间才将所有代码提交到上游……尽管在那之前我已经向上游发送了大量的准备性补丁和清理工作。）这些审查者通常设法使代码比最初好得多。
+
+这里确实如此；代码更干净、更具可移植性、更具前瞻性、更快（审查者确实设法找到并建议了几项额外的次要优化，并提出正确的问题以帮助我发现某个优化并未完全激活但应该被激活的地方），并且全面变得更好。因此，我要感谢许多投入时间审查这六篇博文中所有工作涉及的数百个补丁的人。我肯定会遗漏一些人（抱歉！），因为在这几年中有太多人参与了这些工作。按字母顺序排列（除了最后我想特别提及的一个人），帮助审查补丁的人（没有人与我同属一个雇主）包括：
+
+- Eric Sunshine
+- Jeff King
+- Johannes Schindelin
+- Jonathan Tan
+- Junio Hamano
+- René Scharfe
+- Taylor Blau
+- Ævar Arnfjörð Bjarmason
+
+我想向 **Derrick Stolee** 表达由衷的感谢。
+
+Derrick 单枪匹马审查了几乎所有 merge-ort 和 diffcore-rename 补丁。大多数人会在这里或那里挑选一些补丁进行审查（我当然也是这样做的），但在我完成对 merge-recursive 的清理和测试套件准备阶段后，Derrick 几乎审查了所有内容。在我开始为新合并算法提交补丁时他就加入了，并一直坚持到底。
+
+## 作者
+
+Elijah Newren</article>
+</body></html>

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Más que anonimizar (Explicando Palantir, #3)</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background:#fff;color:#1a1a1a;line-height:1.7;max-width:680px;margin:0 auto;padding:48px 24px 80px}
+h1{font-size:1.65em;font-weight:700;margin-bottom:8px;line-height:1.25;color:#111}
+.meta{color:#888;font-size:.82em;margin-bottom:32px;padding-bottom:16px;border-bottom:1px solid #eee}
+.meta a{color:#2e86de;text-decoration:none}
+article p{margin-bottom:18px;font-size:1.02em;line-height:1.75}
+article img{max-width:100%;height:auto;margin:20px auto;display:block;border-radius:6px}
+article h2{font-size:1.28em;font-weight:600;margin:28px 0 12px;line-height:1.3;color:#222}
+article h3{font-size:1.12em;font-weight:600;margin:24px 0 10px;color:#333}
+article h4{font-size:1em;font-weight:600;margin:20px 0 8px;color:#333}
+article ul,article ol{margin-bottom:16px;padding-left:24px}
+article li{margin-bottom:8px;line-height:1.7}
+article blockquote{border-left:3px solid #d0d0d0;padding:8px 16px;margin:18px 0;color:#666;background:#fafafa;border-radius:0 4px 4px 0}
+article pre{background:#f6f6f6;padding:14px 16px;border-radius:6px;overflow-x:auto;font-size:.85em;margin:18px 0;border:1px solid #e8e8e8;font-family:'SF Mono',Monaco,Consolas,monospace}
+article code{background:#f0f0f0;padding:2px 6px;border-radius:3px;font-size:.88em;font-family:'SF Mono',Monaco,Consolas,monospace}
+article pre code{background:none;padding:0;border:none}
+article table{width:100%;border-collapse:collapse;margin:18px 0;font-size:.92em}
+article th,article td{border:1px solid #e0e0e0;padding:8px 12px;text-align:left}
+article th{background:#f8f8f8;font-weight:600}
+article figure{margin:20px 0;text-align:center}
+article figcaption{color:#999;font-size:.82em;margin-top:6px;text-align:center}
+article a{color:#2e86de;text-decoration:none}
+article a:hover{text-decoration:underline}
+.nav{margin-bottom:28px}
+.nav a{color:#2e86de;text-decoration:none;font-size:.88em}
+.nav a:hover{text-decoration:underline}
+</style></head><body>
+<div class="nav"><a href="../../index.html">← Back to Archive</a></div>
+<h1>Más que anonimizar (Explicando Palantir, #3)</h1>
+<div class="meta">2022-10-19 · <a href="https://blog.palantir.com/más-que-anonimizar-explicando-palantir-3-1621c0fb98fd">Original →</a></div>
+<article><div><div><section><div><div><div><div><p id="35bb"><em>（本文的英文版可在此处阅读。）</em></p><p id="f4d8"><em>编者按：这是《Palantir 解读》系列的第三篇。该系列探讨了诸多主题，包括我们在隐私、安全以及 AI/ML 安全等方面的理念与实践。前两篇文章分别探讨了我们的商业模式和基于目的的访问控制。</em></p><p id="4cb2">COVID-19 大流行凸显了安全、大规模处理敏感数据的重要性。在应对日益复杂的挑战时，数据分析的作用愈发关键，但如何使用这些数据也引发了重要疑问。公众想知道哪些信息被使用了，而个人数据处理者则必须保护其掌管的敏感信息。</p><p id="f5a3">在这篇博文中，我们将探讨数据脱敏如何帮助组织平衡其职责——例如快速分发疫苗——与隐私保护之间的关系。具体而言，我们将解释脱敏的含义、为何要实现有保障的脱敏流程并不容易，以及如何降低重新识别的风险。</p><p id="7bc6">《Palantir 解读》系列探讨了诸多主题，包括我们在隐私、安全以及 AI/ML 安全等方面的理念。为保持文章的易读性，我们尽量精简了本篇博文的内容。如需从技术层面深入了解脱敏，请参阅我们的相关专业技术文档。</p><figure><img alt="" height="367" loading="eager" src="https://miro.medium.com/v2/resize:fit:700/1*DVILv6F14R57qV0f-U7Bag.png" width="700"/></figure><h2 id="0bab">脱敏与去标识化的区别，以及重新识别的难题</h2><p id="62df"><em>（本节将使用一些非隐私专业人士可能不熟悉的术语。下文将介绍其中部分术语，对于感兴趣的读者，《理解患者数据》博客提供了一个实用的术语表。）</em></p><p id="a0ac"><strong>脱敏</strong>是指从数据集中移除可识别信息的过程，使得数据中描述的个人无法被重新识别。脱敏是一项极具实用价值的工具，它允许组织在处理与个人相关的数据时，不会危及他们的隐私。</p><p id="29f8">脱敏面临的挑战在于，如何确保其实施具备完全成功的保障，因为脱敏失败可能带来严重后果。举一个众所周知的例子：一名研究生利用马萨诸塞州据称已脱敏的医院数据，成功向该州州长发送了其本人的医疗记录。这种失误相当普遍，以至于英国信息专员办公室将其视为受《通用数据保护条例》（GDPR）约束的组织所面临的“真实风险”。</p><p id="abe4">鉴于“脱敏”一词可能会带来虚假的安全感——暗示数据绝无被重新识别的可能——我们建议组织改用<strong><em>去标识化</em></strong>这一术语。与脱敏数据一样，去标识化数据也已去除了姓名、地址或出生日期等个人标识符。但不同之处在于，去标识化数据享受与可识别数据同等的法律保护，这承认了<strong>重新识别</strong>的现实风险：即去标识化或脱敏数据可能会再次与其描述的个人关联起来（从而被重新识别）。</p><p id="b44b">在向处理高度敏感数据的客户提供软件时（例如美国国立卫生研究院（NIH）的 National COVID Cohort Collaborative (N3C) 项目），Palantir 已经实施了相关技术框架，帮助客户将重新识别的风险降至最低。请继续阅读，详细了解你可以采取哪些技术手段来保护数据，确保去标识化过程切实有效。</p><h2 id="47e4">降低数据的可识别性</h2><p id="1500">根据我们的经验，重新识别的风险应从两个层面加以应对：数据本身，以及数据使用的环境。</p><p id="7c92">首先，我们关注数据本身：其敏感程度、被重新识别的难易程度，以及如果这些数据与其他数据库发生交叉匹配可能会产生什么后果。</p><h3 id="f161">需要提出的问题</h3><p id="24ba"><strong>数据的敏感程度有多高？</strong>数据的敏感性可以从多个维度来理解：可能包含健康、性别或种族等受保护特征的信息；或者在某些方面具有私密性、个人性或机密性。我们必须扪心自问：“如果这些信息被重新识别，对相关个人可能造成怎样的潜在伤害？”</p><p id="9c92"><strong>重新识别数据的难度有多大？</strong>要回答这个问题，必须考虑单个数据点的独特性，即该数据可以归属于多少人的范围。该数据能归属的人数越少，重新识别的风险就越高。</p><p id="e204"><strong>如果将其与其他数据结合会怎样？</strong>请设想系统中现有的以及未来将引入的其他数据。这些数据与已去标识化的数据结合后，是否可能导致重新识别？发生这种结合的可能性有多大（无论是在系统内部，还是数据被发布到其他地方）？有哪些保护措施可以防止这种情况发生？</p><h3 id="a2fa">可考虑的预防措施</h3><p id="4d00">为防止重新识别，有多种对数据进行操作和修改的技术，每种技术各有优缺点。这些可以组合使用的技术包括：</p><ul><li id="d9d4"><strong>泛化</strong>：降低信息的粒度（例如，将出生日期转换为年龄或年龄段）。</li><li id="66f1"><strong>聚合</strong>：将个人数据归组，并在聚合层面进行分析。</li><li id="d07b"><strong>混淆</strong>：对未授权方隐藏可识别数据，可能通过掩码或加密等方式实现。</li><li id="f3e4"><strong>动态最小化</strong>：根据用户的需求或角色，仅展示部分数据。</li><li id="31e2"><strong>合成数据</strong>：生成能够再现原始数据中重要潜在趋势的人工数据。</li></ul><h2 id="2f9d">技术风险与组织风险</h2><p id="6caa">接下来，我们将评估数据使用的环境如何影响重新识别的概率。针对静态数据集，业界已有许多众所周知的降低重新识别风险的技术，但我们的方法旨在评估复杂动态系统中的风险，也就是人们利用数据进行决策的真实场景。</p><h3 id="539a">需要提出的问题</h3><ul><li id="14b7"><strong>用户</strong>：有多少用户将访问这些数据？随着时间推移，这一情况会发生怎样的变化？必须认识到，每新增一名获得访问权限的用户，风险都会随之增加。如果用户存在重新识别数据的动机（可能是为了了解公众人物或熟人的信息），这一点尤为重要。</li><li id="ffe1"><strong>权限</strong>：用户可以访问多少数据？他们还能访问哪些其他数据（位于访问去标识化数据的平台之外的），这些数据能否与去标识化数据结合？<strong> </strong>这些用户是否拥有允许其以非预期方式导入、导出或传输数据的凭证？</li><li id="0dcb"><strong>策略</strong>：是否存在清晰的数据治理策略？普通用户对这些策略的理解程度如何？平台是否执行了这些策略？数据治理团队能否监督并衡量合规性情况？</li><li id="4250"><strong>元数据</strong>：平台上的数据集是否有清晰的标记和描述，以便业务运营人员和数据治理人员能够快速了解其敏感程度、预期用途以及适用的保护策略？</li></ul><h3 id="4521">可考虑的预防措施</h3><p id="dc08">数据治理团队可以采取保护措施来降低重新识别的风险。</p><ul><li id="d3a3"><strong>访问权限</strong>：确保用户仅能根据其职责访问所需的具体数据子集。（点击了解基于目的的访问控制在我们的软件中如何运作。）</li><li id="1e34"><strong>操作权限</strong>：将执行导入、导出、传输或合并数据等潜在敏感操作的权限，限制在确有需要的用户范围内。</li><li id="ccb8"><strong>数据标记</strong>：对敏感数据集进行持久标记，以明确指示其敏感程度，并限制其与其他具有不同“标记”、且组合后可能引发风险的数据集进行合并等操作。</li><li id="4f48"><strong>选择性解密</strong>：对数据进行加密，使其默认处于不可读状态。用户必须提供合理的理由，才能对所需的数据子集进行解密。</li><li id="92bb"><strong>审计</strong>：允许监管机构检查并核实去标识化数据是否遵守了数据治理策略，并确保未发生任何欺诈性、恶意性或高风险的操作。</li><li id="dc65"><strong>检测敏感数据</strong>：在整个系统中执行全面校验以检测敏感数据，自动标记并拦截意外上传的敏感数据或脱敏不彻底的数据。</li><li id="04eb"><strong>测试与校验</strong>：在数据于系统内更广泛共享或导出供外部使用之前，提供在模拟场景中对脱敏数据进行校验和测试的能力。</li><li id="45b3"><strong>数据血缘关系</strong>：利用血缘关系追踪来了解数据在系统内部如何流转：在集成和转换的各个阶段中，哪些用户能够访问哪个层级的可识别数据，以及出于何种目的。</li></ul><h2 id="0603">全局视角的综合方案</h2><p id="40a0">在数据使用过程中保护隐私，必须是新技术发展中的首要任务。基于数据的研究和决策能够极大改善健康、安全以及生产流程等，但这不应以过度牺牲隐私为代价。采用创新技术的组织必须符合数据被处理的个人的期望。监管和最佳实践必须与技术同步演进。这需要与社会各界、社区及相关个人保持持续互动。在 Palantir，我们将数据保护和隐私视为一个持续的过程，并在所有产品的设计中将这一价值观作为核心理念。</p><p id="0435">“去标识化”只是众多工具之一。根据我们的经验，负责任的数据处理需要一种综合性的方案。如需进一步了解我们在产品中如何思考数据保护，请参阅我们的博文《Palantir Foundry 中的数据保护》。</p><h2 id="0f96">作者</h2><p id="d4b1">Megha Arora，Palantir 隐私与公民自由工程负责人<br/>Paula Kift，Palantir 隐私合作伙伴关系负责人</p></div></div></div></div></section></div></div></article>
+</body></html>

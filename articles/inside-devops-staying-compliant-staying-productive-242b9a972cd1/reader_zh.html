@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Inside DevOps: Staying compliant, staying productive</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;max-width:680px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em}
+img{max-width:100%;height:auto}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px}
+</style>
+</head>
+<body>
+<article>
+# DevOps 内部：保持合规，保持生产力
+
+Palantir
+
+6 分钟阅读时长
+
+·
+
+2019 年 5 月 24 日
+
+![Palantir](https://miro.medium.com/v2/resize:fill:32:32/1*yFp1VmXHPcrYrYrDNlD_7A.png)
+
+Palantir
+
+关注
+
+![图片](https://miro.medium.com/v2/resize:fit:648/1*pt808His5qBijwaz5sqjdg.jpeg)
+
+发展中的公司往往面临速度与合规之间的权衡。借用马克·扎克伯格那句臭名昭著的口号，要么“快速行动，打破陈规”，要么严格遵循规则和政策，结果被那些愿意承担更多风险的竞争对手甩在身后。Palantir 对这种权衡深有感触，因为我们的商业模式正是建立在打破这一权衡的基础之上。我们在全球最重要的机构中推动变革，在这些场景下，速度和合规都毫无妥协余地，这也铸就了我们的声誉。
+
+Palantir 的 DevOps 团队职责之一就是规避这种权衡。我们致力于减少摩擦、消除低效，通过构建工具将勾选合规清单这种繁琐劳作，转化为“设计即合规”且能提升工程效能的流程。为此，我们最近开发并开源了两个对工作流至关重要的 GitHub 应用：Policy Bot 和 Bulldozer。本文将探讨开发这些工具的初衷及其运作方式。
+
+## Policy Bot
+
+任何合规体系的基本要求之一是，无论是软件还是基础设施的变更，在进入生产环境前都必须经过审查。由于 Palantir 遵循基础设施即代码实践，这种审查几乎总是以代码审查的形式进行。要求代码审查听起来是个简单问题，但在调研了具有不同工作流的开发团队后，我们发现需求更为精细。例如：
+
+- 针对特定分支（如预发分支）的变更不需要审查。
+- 某些类型的变更可能需要信息安全或法务团队的额外审批。
+- 某些类型的变更（如文档变更）已预先获批，无需审查。
+- 当多个环境的配置集中在单个代码仓库时，开发人员应能在同级审批通过后，直接更改各自对应的环境（例如通过仓库内的子文件夹区分），而无需阻塞等待 DevOps 团队成员的审批。
+
+未能自动化这些条件会打断开发人员的流畅工作状态，迫使他们四处寻找并打扰他人获取审批，无谓地拖延变更进度。如果团队地理分布分散或忙于其他工作，合并一项变更可能需要数天时间。
+
+由于我们使用 GitHub 进行源代码管理，首选方案是 GitHub 的必需审查功能。然而我们很快发现其局限性：审查无法根据变更的文件或分支设置条件，任何拥有写入权限的用户都能在拉取请求中批准变更，而且随着需求演进，缺乏可扩展点。构建能与 GitHub 集成的自定义审批工具似乎是最佳选择，于是便有了 Policy Bot。
+
+Policy Bot 通过将多个规则与逻辑“与/或”运算符结合来定义审批条件。每条规则都有判断其何时生效的谓词。例如，以下策略在 DevOps 团队成员批准，或者拉取请求仅修改测试文件时，批准该拉取请求：
+
+    policy:
+      approval:
+        - or:
+          - devops team approves
+          - only changes test files
+
+    approval_rules:
+      - name: devops team approves
+        requires:
+          count: 1
+          teams: ["palantir/devops"]
+      - name: only changes test files
+        if:
+          only_changed_files:
+            paths: ["test/.*"]
+
+其他支持的谓词允许用户针对拉取请求的作者、目标分支和贡献者来设定规则。
+
+## 在收件箱中获取 Palantir 的故事
+
+免费加入 Medium，获取此作者的最新动态。
+
+<input type="text" placeholder="Enter your email">
+
+<input type="checkbox" checked=""> 记住我，以便更快登录
+
+策略定义在每个仓库的 YAML 文件中，使其与常规代码一样受相同的审批条件约束。虽然策略设计为人类可读，但要理解特定拉取请求中每条规则的状态可能颇具挑战。因此，Policy Bot 还提供了展示所有规则状态的 UI 界面：
+
+![图片](https://miro.medium.com/v2/resize:fit:700/1*FiuctmMFvgoF94m5dWAAzQ.png)
+
+Policy Bot 在产品和基础设施团队中都得到了广泛采用。我们根据经验发现，对复杂审批规则的需求是有充分依据的：中等规模的项目使用 5 条规则——这已经超出了 GitHub 原生支持的范围——而最复杂的配置仓库之一使用了超过 100 条规则。
+
+## Bulldozer
+
+Policy Bot 提供了我们所需的精细审批条件，但很快我们面临另一个问题：提交了已批准变更的开发人员，由于没有写入权限，无法合并自己的拉取请求。这抵消了 Policy Bot 带来的许多自助化优势，必须等 DevOps 工程师执行合并才能推进。遗憾的是，GitHub 的写入权限粒度极大，仅为让用户合并已批准的变更就赋予所有用户对这些敏感仓库的写入权限，这是无法接受的。
+
+我们意识到，由于 Policy Bot 提供了必需的审批检查，且我们的 CI 系统提供了必需的测试检查，在所有必需检查通过后自动合并拉取请求是安全的。我们开发了 Bulldozer 来实现这一点。与 Policy Bot 一样，Bulldozer 也通过各仓库中的 YAML 文件进行配置，指定拉取请求可以合并的条件。除了所有必需状态检查通过外，用户还可以选择仅自动合并带有特定标签或评论的拉取请求，或者选择带有这些标签或评论时阻止自动合并。
+
+有了 Bulldozer，用户现在可以完全自助处理预批准和同级批准的变更，无需 DevOps 团队阻塞，也不会降低仓库安全性。我们还发现自动合并在其他场景中同样有益。开发人员现在可以让已批准的拉取请求在耗时较长的集成测试完成后立即合并，无需将注意力切回先前任务只为点击合并按钮。对于全球开发团队，当开发人员和审查者处于不同时区时，Bulldozer 还缩短了审批到合并之间的时间，减少了合并冲突，加快了迭代速度。
+
+在 Policy Bot 和 Bulldozer 打好基础后，我们很快发现了实现更深度自动化的契机。
+
+## 自动化维护
+
+一旦我们自动化了手动变更的审批和合并流程，便面临一个新挑战：能否将变更的创建也自动化？为此我们创建了 Excavator，这是一个对数千个仓库运行任意脚本，并将脚本产生的变更创建为拉取请求的服务，其理念类似于 Dependabot 和 Microplane。（我们早在 2016 年就开始开发 Excavator，看来多仓库管理工具的需求在不同地方几乎同时涌现；如果您对此领域感兴趣，也可查阅 Google 的 Refaster 和 Netflix 的 Rewrite。）这使我们能够在各个项目中自动化执行依赖升级、代码重构、构建配置等常见维护任务。与 Policy Bot 和 Bulldozer 结合后，Excavator 对某些文件的修改会自动获批并合并（如果构建通过），全程无需人工干预！我们的许多稳定项目现在实际上能自我维护，始终保持最新的安全补丁和最佳实践。
+
+## 结论
+
+面对“让开发合规但不减速”这样的宏大问题时，往往会令人望而生畏，甚至诱使团队推倒重来，认定现有工具难堪大任。但通过 Policy Bot 和 Bulldozer 我们发现，通常只需微调就能扫除生产力的重大障碍。用户可以继续使用熟悉的工具，DevOps 团队也能专注于解决实际问题，而非重建现有功能。只要这些调整针对具体且定义明确的问题，它们往往会产生复合效应，随时间推移带来更大的改进。如果需求发生变化，我们也能轻松替换或扩展生态系统中的这些机器人。
+
+随着 Palantir 持续发展，我们无疑将不断面对速度与合规之间的张力，这在很大程度上是因为与全球最重要的机构合作意味着严格合规不容妥协。但 Palantir 创立的核心理念在于，安全与效率之间的权衡往往是伪命题，我为能成为这样一个每天都在推动我们迈向这一未来的团队的一员而感到自豪。
+
+有兴趣加入 DevOps 团队的候选人可通过相关办公地的招聘启事申请：
+
+- 纽约
+- 华盛顿特区
+- 帕洛阿尔托
+- 西雅图
+
+## 作者
+
+Billy K.
+</article>
+</body>
+</html>

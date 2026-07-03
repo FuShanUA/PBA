@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Stemma: Palantir’s distributed Git server</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;max-width:680px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em}
+img{max-width:100%;height:auto}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px}
+</style>
+</head>
+<body>
+<article>
+Stemma：Palantir 的分布式 Git 服务器
+
+*欢迎来到 Palantir 在 Medium 上的全新技术博客！本文仅是关于 Palantir 软件、工程实践以及我们为开源社区所做贡献的系列文章的开篇。敬请关注！*
+
+Stemma 是一个分布式、高可用的 Git 服务器，具备细粒度的权限模型，并与外部服务有着简单的集成接口。无论是云端还是本地部署环境，Stemma 的安装实例都是 Palantir 部署中数据集成骨干网络的有机组成部分。
+
+本文介绍了该项目的动机，并解释了一些核心设计选择和实现细节。简而言之，Stemma 借助《JGit 的 DfsRepository 框架》以及 Palantir 开源的分布式事务键值存储系统《AtlasDB》，仅用数千行代码便实现了一个分布式 Git 服务器。
+
+## 我们对 Git 服务器的需求
+
+Palantir 的业务遍布众多国家和行业，每个领域都有其独特的业务需求和数据基础设施。这意味着我们的项目团队需要管理复杂的数据集成和分析流水线，其中包含用不同语言（Java、Scala、Python、R、SQL 等）编写的数据转换代码，以及数十个不同软件组件的产品配置。我们在 Git 仓库中跟踪这些代码和配置。
+
+对于这些 Git 仓库，我们有几项特殊的需求：
+
+**可部署性。** 我们的软件通常以单客户专属安装（而非“即服务”模式）的方式运行，要么部署在专用的 Palantir Cloud 实例中，要么部署在本地硬件上。这一需求使得标准的纯云端 Git 服务（例如《Amazon CodeCommit》或《GitHub》）不在我们的考虑范围内。
+
+**容错与可扩展性。** 这些安装实例由众多高可用的微服务组成。由于服务实例通常是无状态且冗余的（以便于负载均衡和故障转移），其支撑的代码和配置仓库也需要支持并发远程访问，并且（理想情况下）具备高可用性。我们最初尝试了基于 NFS 的原生 Git，但根据我们在各种客户网络中部署产品的经验，我们发现 NFS 的管理和调优非常困难。
+
+**细粒度访问控制。** 众多不同的用户每天都会访问我们的 Git 仓库：客户和 Palantir 员工、技术与非技术人员、数据生产者和数据消费者、自动化程序和真实用户、读取者和写入者。这意味着每次访问都受到一套丰富且细粒度的访问控制规则约束，我们通过身份验证/授权系统来管理这些规则。
+
+**与外部服务集成。** 我们将产品安装在各种各样的环境中，这些环境必须与客户现有的系统兼容，无论那些系统是什么。我们倾向于采用事件驱动架构来通知这些系统并触发下游操作：将数据推送到转换流水线中、同步权限配置，或者重新配置并重启服务。这意味着 Git 服务器需要提供一种可扩展的通知机制，由推送、合并、代码审查等 Git 状态变更触发。（值得注意的是，固定的 Webhook 集合——类似于《Github 的 Webhook 模型》——并不足以满足需求，因为我们通常无法控制或扩展客户系统所提供的 API。）
+
+我们很快就意识到，没有任何现成的 Git 解决方案（包括《Gitlab》、《GitHub》和《Gogs》）能够满足所有这些要求，因此我们决定构建自己的 Git 服务器：**Stemma**。（Palantir 有一个悠久的传统，由产品团队为新产品和工具命名。在这个案例中，Stemma 的命名是基于 Git 中的软件版本控制与文本考证中 stemma 概念之间的类比：stemma 是展示不同手稿版本之间关系的图表。）
+
+## 分布式 Git 的架构
+
+宏观上看，Stemma 的架构非常简单：多个无状态的 Stemma 节点提供基于 HTTP 的《Git 智能协议》服务。共享状态由存储后端维护，身份验证/授权则委托给专用的身份验证和授权服务。负载均衡和故障转移本质上就是为每个请求选择一个响应正常的节点。
+
+![](https://miro.medium.com/v2/resize:fit:600/1*Bd3IwMbgTDlGpfAVitaKeQ.png)
+
+**Git 数据模型**
+
+深入探讨一下，让我们来讨论 Stemma 节点与存储后端之间的交互。分布式 Git 仓库的状态是如何表示的？Stemma 节点又是如何与这种状态交互的？为了理解其中的复杂性和可选方案，我们将仔细研究 Git 的数据模型和通信协议。任何 Git 实现都必须管理可变数据和不可变数据的组合：
+
+《Git 对象》包括提交、树（即目录）和二进制大对象（即文件）。每个此类对象都由一个概率上唯一的哈希值标识。直观地说，Git 仓库的状态表示为一个提交图，每个提交通常指向一个由目录和文件对象组成的树。对象是不可变的，这意味着 Git 仓库中的每次修改都通过向对象图中添加具有不同全新哈希值的新对象来编码。
+
+《Git 引用》包括分支和标签，它们是人类可读的提交标签。引用是可变的，因为用户可以更改它们的“目的地”。例如，用户可以删除一个分支，随后再用相同的名称创建一个分支，但使其指向不同的提交。
+
+《Git 包文件》是对象的压缩集合，通过对象哈希值进行索引。直观地说，每个包文件代表对象图的一个子集。包文件在 Git 的《智能协议》中被广泛使用，以交换两个 Git 图之间的最小增量。此外，许多 Git 实现（包括 JGit 等）使用包文件作为 Git 图的序列化和存储格式。基于包文件的对象图表示可以选择将包文件视为可变的或不可变的：
+
+- 如果它们是不可变的，那么图的每次突变（例如 git push）都会产生一个额外的包文件，而图在概念上是所有包文件的并集。
+- 如果它们是可变的，那么图的每次突变可能会扩充包含图相关部分的包文件。
+- 第三种选择是将每个包文件视为不可变，并定期将一部分包文件组合成一个新的包文件，从而有可能将其中的对象压缩为更紧凑的表示形式。此时，整个对象图由所有包文件的集合减去被组合的包文件，再加上新生成的包文件组成。
+
+任何分布式 Git 实现面临的主要挑战都是在并发访问下管理可变数据（即引用和包文件）。有两种替代方法可以应对这一挑战：
+
+**架构 A：Git 服务器将不可变数据存储在分布式文件系统中，将可变数据存储在（分布式）事务数据库中。**
+
+![](https://miro.medium.com/v2/resize:fit:400/1*J7s__YFQt_WfOBEbRbQ3iQ.png)
+
+由于 Git 对象通过唯一的哈希值存储，因此可以安全地将它们写入分布式文件系统，而无需过多担心读写冲突。引用和包文件的并发写入由具有适当原子性和隔离属性的数据库来管理。例如，《Google 内部的 Git 实现以 GFS（Google 文件系统）和 Bigtable 为支撑》。
+
+## 获取 Palantir 的故事到您的收件箱
+
+免费加入 Medium，获取此作者的最新动态。
+
+输入您的电子邮箱
+
+订阅
+
+订阅
+
+勾选以记住我，以便更快登录
+
+**架构 B：Git 代理将请求联合到一个由冗余的原生 Git 服务器组成的网络中。**
+
+![](https://miro.medium.com/v2/resize:fit:500/1*4Ai-34jGgH5hm7dH5RsVRA.png)
+
+只有当大多数副本仓库确认后，代理才会确认请求。这种方法的主要挑战在于正确实现副本的故障转移、负载均衡和恢复。并发访问由每个 Git 从属仓库在本地处理。该模型由《GitHub 的 DGit》和《Git Ketch》实现。
+
+## 基于 JGit 和 AtlasDB 的实现
+
+由于架构 A 在概念和实现上的简洁性，我们决定基于架构 A 构建 Stemma。Stemma 站在开源巨人的肩膀上：首先，JGit 是 Git 协议的完整 Java 实现，并暴露了用于分布式存储实现的 DfsRepository 扩展点。其次，通过依赖最近开源的 AtlasDB 作为所有共享状态的分布式事务数据库层，我们能够将分布式系统的复杂性委托给一个现有的、经过充分测试的后端（这类似于 Google 决定将其 Git 实现建立在 GFS 和 Bigtable 之上）。AtlasDB API 提供了存储和查询表格数据及流数据的接口。Stemma 前者用于存储结构化元数据（例如，每个仓库的包文件 ID 列表和引用集合），后者用于包文件二进制大对象存储。在生产系统中，我们通常将 AtlasDB 部署在 Cassandra 集群之上，集群规模根据预期的性能和冗余要求进行配置。
+
+我们需要实现的核心 JGit 接口涉及引用（DfsRefDatabase）和对象/包文件（DfsObjDatabase）的存储与检索。以下伪代码概述了它们的实现（AtlasDB 接口在概念上是准确的，但为了表述清晰，在语法上进行了简化）：
+
+```java
+class AtlasDfsObjDatabase {
+  void commitPackImpl(
+      Collection<DfsPackDescription> toSave, Collection<DfsPackDescription> toDelete) {
+    atlasStore.withTransaction { tx ->
+      tx.storePacks(toSave)
+      tx.deletePacks(toDelete)
+    }
+    localDiskCache.storePacks(toSave)
+  }
+
+  List<DfsPackDescription> listPacks() {
+    return atlasStore.withTransaction { tx -> tx.listPacks() }
+  }
+
+  ReadableChannel openFile(DfsPackDescription desc, PackExt ext) {
+    return localDiskCache.getOrLoad(desc, () ->
+      atlasStore.withTransaction { tx -> tx.loadPack(desc).stream() }
+    )
+  }
+}
+
+class AtlasDfsRefDatabase {
+  RefCache scanAllRefs() {
+    return atlasStore.withTransaction { tx → tx.listRefs() }
+  }
+
+  boolean compareAndPut(Ref expectedExistingRef, Ref refToUpdateTo) {
+    return atlasStore.withTransaction { tx ->
+      if ((Ref existingRef = tx.getRef(expectedExistingRef)) == null) {
+        if (expectedExistingRef.getStorage() == NEW) {
+          return tx.putRef(refToUpdateTo)
+        else {
+          return false // ref was deleted by other user
+        }
+      else {
+        if (existingRef == expectedExistingRef) {
+          return tx.replaceRef(expectedExistingRef, refToUpdateTo)
+        } else {
+          return false // ref was mutated by other user
+        }
+      }
+    }
+  }
+
+  boolean compareAndRemove(Ref refToDelete) {
+    return atlasStore.withTransaction { tx → tx.deleteRef(refToDelete) }
+  }
+}
+```
+
+通过这种实现，分布式逻辑的复杂性被完全转移到了 AtlasDB 的事务机制上。例如，存储后端保证对 AtlasDfsObjDatabase#listPacks 和 AtlasDfsObjDatabase#commitPackImpl 的交错并发调用——无论是针对相同还是不同的 Stemma 节点——都是可序列化的，这意味着用户无法观察到或存储不一致或部分状态变更。
+
+每个 Stemma 节点都维护一个本地的包文件缓存。由于在 JGit 中包文件具有稳定的唯一标识符，因此该缓存非常容易维护：每当请求未缓存的包文件时，就会从 AtlasDB 检索并存储在磁盘上。由于每个包文件——由唯一标识符标识——都是不可变的，因此磁盘缓存不需要失效或更新。
+
+**包文件压缩与垃圾回收**
+
+上述实现会在仓库中为每次写操作（即 git push）创建一个新包文件。通常，每个这样的包文件都很小，只包含连续 git push 操作之间提交的对象。对于 Git 服务器来说，在维护大量小包文件和少量大包文件之间存在一种权衡。
+
+- 一系列突变生成的一组小（未压缩）包文件通常包含高度冗余的信息，因为所有文件对象都是完整存储的。相比之下，包文件压缩对同一文件对象的增量变更进行增量编码，因此空间效率大幅提升。
+- 如果过于频繁地压缩包文件，缓存未命中就会变得频繁，并且需要加载大型的新包文件。然而，一旦检索到这些文件，扫描少数几个高效压缩的包文件和索引速度会很快。
+
+我们利用《JGit 的 DfsGarbageCollector》定期将较小的包文件合并为较大的包文件，从而在两个极端之间调优 Stemma。如上所述，AtlasDB 的事务语义允许我们以原子方式用重新打包的新包文件替换过时的包文件，而不会危及并发访问下 Git 仓库的一致性。目前，我们尚未观察到 Stemma 使用模式存在足够大的差异，从而无法针对不同访问特征下的压缩策略得出结论性建议，但随着我们了解的深入，我们将分享这些发现。
+
+**访问控制**
+
+Stemma 与授权和身份验证服务集成，以实现对仓库和引用的访问控制。我们目前支持仓库级读取权限和引用级写入权限。例如，可以授予用户或组读取仓库内容的权限，而不允许他们向其中某些分支提交代码。
+
+由于将身份验证委托给了专门的服务，实现变得非常简单。仓库级读取授权通过《JGit 的 RepositoryResolver》接口实现：
+
+```java
+Repository open(HttpServletRequest httpRequest, String repositoryName) {
+  AuthToken token = extractToken(httpRequest.getHeader(HttpHeaders.AUTHORIZATION))
+  if (!authService.canReadResource(repositoryName, token)) {
+    throw new ServiceNotAuthorizedException()
+  }
+  // ...
+}
+```
+
+引用写入访问通过 JGit PreReceiveHook 进行限制，该钩子会在每次推送时检查权限：
+
+```java
+class BranchAuthPreReceiveHook implements PreReceiveHook {
+  AuthToken token // injected on instance creation
+  Repository repo // injected on instance creation
+  
+  void onPreReceive(ReceivePack rp, ReceiveCommand command) {
+    switch (command.type) {
+      case CREATE:
+        boolean canCreate = authService.canCreateResource(repo, token)
+        // ...
+      case UPDATE:
+        // ...
+    }
+  }  
+}
+```
+
+**与外部服务集成**
+
+与外部服务的集成主要通过 Stemma 的 Webhook 实现，这是一套类似于《Github Webhooks》的 HTTP/REST 接口。在发生预定义的状态变更（例如推送或合并）时，Stemma 会通过调用相应的 API 端点来通知已订阅的服务。该模型支持标准的持续集成工作流，例如运行合并前测试，以及 Palantir 特有的通知，如在数据转换代码发生变更时触发数据集成流水线的更新。
+
+此外，Stemma 使我们能够针对未实现标准 Webhook API 集合的外部服务，实现特定的自定义通知插件。这种灵活性极大地简化了与现有客户系统的集成。
+
+作者：Ben D, Grace W, Jared N, Jimin S, Mark E, Robert F
+</article>
+</body>
+</html>

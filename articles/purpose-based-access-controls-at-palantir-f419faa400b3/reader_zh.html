@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Purpose-based Access Controls at Palantir (Palantir Explained, #2)</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background:#fff;color:#1a1a1a;line-height:1.7;max-width:680px;margin:0 auto;padding:48px 24px 80px}
+h1{font-size:1.65em;font-weight:700;margin-bottom:8px;line-height:1.25;color:#111}
+.meta{color:#888;font-size:.82em;margin-bottom:32px;padding-bottom:16px;border-bottom:1px solid #eee}
+.meta a{color:#2e86de;text-decoration:none}
+article p{margin-bottom:18px;font-size:1.02em;line-height:1.75}
+article img{max-width:100%;height:auto;margin:20px auto;display:block;border-radius:6px}
+article h2{font-size:1.28em;font-weight:600;margin:28px 0 12px;line-height:1.3;color:#222}
+article h3{font-size:1.12em;font-weight:600;margin:24px 0 10px;color:#333}
+article h4{font-size:1em;font-weight:600;margin:20px 0 8px;color:#333}
+article ul,article ol{margin-bottom:16px;padding-left:24px}
+article li{margin-bottom:8px;line-height:1.7}
+article blockquote{border-left:3px solid #d0d0d0;padding:8px 16px;margin:18px 0;color:#666;background:#fafafa;border-radius:0 4px 4px 0}
+article pre{background:#f6f6f6;padding:14px 16px;border-radius:6px;overflow-x:auto;font-size:.85em;margin:18px 0;border:1px solid #e8e8e8;font-family:'SF Mono',Monaco,Consolas,monospace}
+article code{background:#f0f0f0;padding:2px 6px;border-radius:3px;font-size:.88em;font-family:'SF Mono',Monaco,Consolas,monospace}
+article pre code{background:none;padding:0;border:none}
+article table{width:100%;border-collapse:collapse;margin:18px 0;font-size:.92em}
+article th,article td{border:1px solid #e0e0e0;padding:8px 12px;text-align:left}
+article th{background:#f8f8f8;font-weight:600}
+article figure{margin:20px 0;text-align:center}
+article figcaption{color:#999;font-size:.82em;margin-top:6px;text-align:center}
+article a{color:#2e86de;text-decoration:none}
+article a:hover{text-decoration:underline}
+.nav{margin-bottom:28px}
+.nav a{color:#2e86de;text-decoration:none;font-size:.88em}
+.nav a:hover{text-decoration:underline}
+</style></head><body>
+<div class="nav"><a href="../../index.html">← Back to Archive</a></div>
+<h1>Purpose-based Access Controls at Palantir (Palantir Explained, #2)</h1>
+<div class="meta">2020-12-04 · <a href="https://blog.palantir.com/purpose-based-access-controls-at-palantir-f419faa400b3">Original →</a></div>
+<article>*编者按：这是 Palantir 深度解析系列的第二篇文章。该系列探讨了广泛的主题，包括我们在隐私、安全、AI/ML 安全性等方面的做法。请阅读第一篇文章以详细了解 Palantir 的商业模式。*
+
+![图](https://miro.medium.com/v2/resize:fit:700/1*Bh-tRtfMnoJ0B0EpC2I39w.png)
+
+在 Palantir，隐私始终是我们工作中的基本考量。我们的客户通常使用众多分散的系统，其中包含关键或敏感数据，而这些组织的决策者需要利用这些信息来做出关乎业务成败甚至生死攸关的决策。因此，对这类数据的访问进行严格控制与追踪至关重要。
+
+例如，为了控制新冠疫情的蔓延，医疗机构需要快速整合来自多个系统的数据——包括检测项目、养老院和医院——并让从医护人员到学术研究人员在内的数千名用户，访问这些信息中的不同子集。
+
+这给数据治理团队带来了严峻挑战。要在数千个数据集和数千名用户之间追踪谁有权访问什么信息以及为何访问，迅速演变成一个极其复杂的问题。为了保护数据中涉及个人信息的相关个体的隐私，数据治理团队必须确保用户仅在绝对必要的情况下才能访问敏感或个人数据。
+
+这一挑战的复杂性随组织规模的扩大呈指数级增长。随着访问请求的增加，潜在失误也随之增多。如果访问请求是通过电话、电子邮件甚至当面提出的，那么对授权决策进行审计将非常困难。数据治理团队往往依赖技术同事来执行数据访问授权，这使得治理团队难以核实其决策是否得到了切实执行。
+
+在这篇博文中，我们将介绍基于目的的访问控制——这是 Palantir Foundry 中专为帮助数据治理团队应对此挑战而设计的独特工具。
+
+## Palantir Foundry 的基于目的的访问控制
+
+我们创建了基于目的的访问控制工具，通过将数据治理流程紧密集成到 Palantir Foundry 的底层访问控制系统中，以此应对这一挑战。
+
+在设计该工具时，我们设定了三个目标：
+
+- 为数据访问决策引入结构与清晰度
+- 捕获缺失的上下文，并将其提供给需要的人员
+- 为非技术背景的数据治理团队构建直观的工具以执行规则
+
+潜在用户不再是申请访问单个数据集，而是申请访问某个目的。该目的由数据治理团队设定，包含的数据范围专门用于帮助用户实现其目标——不多也不少。每个用户都必须申请一个目的，且只能访问分配给该目的的数据。
+
+数据治理团队在授予用户数据访问权时，必须同时记录其决策依据。同样，数据主人在批准将某数据集用于特定目的时，也必须记录理由。记录这些依据促使双方不断审视其决策的必要性与相称性。该评估结果将被记录在 Palantir Foundry 中，供数据治理团队审查。
+
+审计人员随时都能弄清的不仅是谁有权访问什么数据，还包括为何授权其访问——以及做出该决策的所有上下文。
+
+## 演示
+
+观看用户如何申请访问某个目的：
+
+![]()
+
+观看数据主人如何掌控其数据的使用方式及原因：
+
+![]()
+
+## 为何具备优势
+
+借助目的，治理人员能够直观且快速地了解其数据全貌。在平台中捕获访问讨论的上下文，有助于深入、持久地理解做出关键决策的原因。为非技术背景的治理管理员提供直观的工具，使他们能够自行授予访问权并执行管控，而无需依赖技术同事代劳。
+
+将数据处理过程按目的进行分区，并为每个目的指定一位数据主人，能够强化问责机制，避免出现脱离治理监管的“暗区”。既然人员访问特定数据集的原因清晰可见，那么当访问权不再必要时，也同样容易判定。
+
+我们认为，许多组织都能从实施基于目的的访问模型中获益。若想进一步了解我们独特的基于目的的访问控制，请与我们联系。在致力于保持隐私与公民自由工程领域领先地位的过程中，我们欢迎数据治理专家的参与和交流。在系列的后续文章中，我们将探讨在平台上促进隐私、算法安全与安全的各项方法。
+
+期待您的反馈！请通过 media@palantir.com 与我们联系。</article>
+</body></html>

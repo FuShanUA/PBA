@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Terraforming Stack Overflow Enterprise in AWS</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;max-width:680px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em}
+img{max-width:100%;height:auto}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px}
+</style>
+</head>
+<body>
+<article>
+# 在 AWS 中改造 Stack Overflow 企业版
+
+Stack Overflow Enterprise (SOE) 是 Stack Overflow 面向企业的付费私有版本，由 Stack Overflow 提供本地部署或托管服务。在这篇博文中，我们将探讨如何在亚马逊云科技 (AWS) 上构建和部署具备自愈能力、高可用性的内部 SOE 实例。我们将描述通过 HashiCorp 的 Packer 和 Terraform 部署套件，将作为复杂微软技术栈应用的 SOE 迁移至全 AWS 架构的迭代过程。我们详细介绍了安全策略，包括使用堡垒主机和前端/后端子网来隔离组件间的通信路由。总体而言，我们展示了如何构建基础设施，从而简化公司内部这一日益重要的知识管理服务的维护工作。
+
+## 动机
+
+在任何快速发展的公司中，有效的知识管理都绝非易事，而 Palantir 的全球分布让这项工作更具挑战性。我们的业务拓展、支持和产品团队跨越不同国家和时区展开协作，因此我们需要工具能将 Palantir 员工的专业知识提供给所有同事，不受地域限制。SOE 让悉尼的工程师能够实时受益于公司级知识库并为其做出贡献，无需苦等帕洛阿尔托的日出。它通过为常见技术问题提供友好的、可搜索的界面来减轻支持负担，其知识的复利效应让开发团队能够专注于核心功能的开发。
+ 
+在上线第一年，Palantir 的内部 SOE 实例托管位于美国东岸的两台本地虚拟机上。虽然这套基础设施易于访问和管理，但对美国以外的同事来说服务质量欠佳。此外，服务器维护也成为问题，本地硬件需要离线进行关键的安全补丁更新，无法实现零停机维护。我们必须手动对所有 SOE 组件进行冒烟测试，很容易遗漏在补丁后未能正确重置的细小组件或设置。
+ 
+在本地部署上线六个月后，由于本地安装存在的这些弊端，我们开始探索将 SOE 迁移至 AWS。将 SOE 迁移到 AWS 为我们带来了几项具体收益：
+
+- 更好的正常运行时间和可靠性，提升系统稳定性
+- 自动化且更省时的维护、升级和打补丁工作流
+- 通过自适应资源分配节约成本
+- 通过基于最新且已全面打补丁的镜像进行可重复的构建和部署，改善安全态势
+
+## Terraform 部署基础设施
+
+我们拥抱基础设施即代码范式，并选择 HashiCorp 产品套件来定义我们的 SOE 基础设施：使用 Packer 创建 EC2 亚马逊机器镜像 (AMI)，使用 Terraform 部署 AWS 基础设施，以及使用 Vault 控制对系统机密的访问。我们选择 HashiCorp 的部署软件，是因为我们发现 Terraform 提供了一种简洁的方式，通过多个代码文件来表示我们的基础设施，而 Packer 则提供了一种直观的方式来创建 AMI，并能清晰记录其构建过程的每一步。借助 HashiCorp 的 GitHub 集成，我们能够像开发常规软件一样开发和审查 AWS 基础设施，在构建周期中对每次增量变更进行测试和空运行。
+ 
+由此带来了一致的部署流程， admittedly 起初要完善它比较繁琐，但在重复运行时能节省大量时间。例如，创建 Packer 构建以安装 SOE 时，我们需要研究安装 .NET 运行时应用所需的 Powershell 命令，配置 IIS，并启动多个用于 SOE 徽章和通知处理的相关计划任务。我们最初的构建耗费了一个多月才完成，但现在只需对 Packer 代码进行几处简单编辑，就能升级到新的 SOE 版本。
+ 
+迁移后，我们的 SOE 升级流程得到了改善：过去长达一小时的手动测试流程，现在变成了一个 20 分钟的自动化工作流，包含 Packer 构建，随后通过 Bouncer 进行滚动式 Terraform/EC2 重新部署。此外，我们可以在预发环境中执行同样可重复的工作流来测试变更。
+
+## 将 Stack Overflow 进行 Packer 化
+
+我们使用 Packer 为核心 SOE 应用及 Elasticsearch 创建 AMI。我们部署了一个专用的 Elasticsearch 集群，因为亚马逊的 Elasticsearch 服务最初不支持静态加密。亚马逊已于 2017 年 12 月增加了加密支持，未来我们可能会考虑切换至该服务。
+ 
+我们的 SOE Packer 构建会下载 SOE 的发布产物，安装若干支持工具（如 Chocolatey、Redis 及我们的安全工具套件），随后将 SOE 安装和定制所需的所有资源放入本地目录；接着它会根据结果创建并打包成 AMI。当 EC2 Web 服务器启动时，其 EC2 启动配置提供的用户数据脚本会运行我们定制的自动化 SOE 安装脚本，随后应用任何进一步的配置（如域名绑定、安全工具配置），并添加 CSS 样式让 SOE 独具我们的特色。
+
+## 架构
+
+SOE 是一个微软 .NET 应用，包含以下组件，每个组件均列出了对应的 AWS 组件：
+
+<div class="qt gr qu qv v j cs"><div class="qw qx qy qz ra e fj"><h2 class="rb b rc rd re rf rg">在您的收件箱中获取 Palantir 的故事</h2></div><div class="cp e fj"><p class="bb b bc u dy">免费加入 Medium，获取该作者的最新动态。</p></div><div class="rk rl rm rn ro rp v"><span class="bb b bc u bg"><div class="rq v cs"><div class="v rq fg ff bl rr rs db ni rt ru rv rw rx ry rz"><input class="sa af ac ah sb sc gh mt bh sd bd" placeholder="输入您的电子邮箱" type="text" value=""></div></div></span><div class="au bt se bx"><div class="rh ri rj"><button class="bb b bc u sf sg sh si sj sk sl ez fa sm sn so fe ff fg fh bi fi fj">订阅</button></div></div><div class="bd by r s"><button class="bb b bc u sf sg sh si sj sk sl ez fa sm sn so fe bd ff fg fh bi fi fj">订阅</button></div></div><div class="id e"><label class="v j"><div class="tc td te v tf bx fw"><input class="sp sq sr gb hw ss st su sv sw sx sy" type="checkbox" checked=""><span class="j sz ta ff fg hz fh sf ak v sh tb cf" data-checkbox="true"><svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 11 11" class="sh"><path d="m0 6.313 3.704 3.705.904.904.66-1.095 5.296-8.795L8.85 0 3.554 8.795l1.563-.191-3.704-3.705z"></path></svg></span></div><div class="e"><p class="bb b bc u bg">记住我以便更快登录</p></div></label></div><div class="tg e"><div id="g-recaptcha"></div></div></div>
+
+- **IIS Web 服务器（托管主站点）**
+分布在不同可用区 (AZ) 的若干 EC2 实例
+- **Redis（缓存和发布/订阅服务）**
+作为 Windows 服务安装在每台 EC2 Web 服务器上
+- **Elasticsearch**
+一台 EC2 实例，由各 EC2 Web 服务器共享
+- **MS-SQL Server 数据库**
+具备多可用区可用性和数据库镜像的 RDS MS-SQL Server
+
+下图展示了我们 AWS SOE 安装的组件和网络配置：
+
+<figure class="tk tl tm tn to tp th ti paragraph-image"><div role="button" tabindex="0" class="tq tr fw ts bd tt"><span class="gb gc gd ai ge gf gg fo gh speechify-ignore">按回车键或点击以查看全尺寸图像</span><div class="th ti tj"><picture><source srcset="https://miro.medium.com/v2/resize:fit:640/format:webp/1*IzweNb-tj-9qWyXxMcbbWw.png 640w, https://miro.medium.com/v2/resize:fit:720/format:webp/1*IzweNb-tj-9qWyXxMcbbWw.png 720w, https://miro.medium.com/v2/resize:fit:750/format:webp/1*IzweNb-tj-9qWyXxMcbbWw.png 750w, https://miro.medium.com/v2/resize:fit:786/format:webp/1*IzweNb-tj-9qWyXxMcbbWw.png 786w, https://miro.medium.com/v2/resize:fit:828/format:webp/1*IzweNb-tj-9qWyXxMcbbWw.png 828w, https://miro.medium.com/v2/resize:fit:1100/format:webp/1*IzweNb-tj-9qWyXxMcbbWw.png 1100w, https://miro.medium.com/v2/resize:fit:1400/format:webp/1*IzweNb-tj-9qWyXxMcbbWw.png 1400w" sizes="(min-resolution: 4dppx) and (max-width: 700px) 50vw, (-webkit-min-device-pixel-ratio: 4) and (max-width: 700px) 50vw, (min-resolution: 3dppx) and (max-width: 700px) 67vw, (-webkit-min-device-pixel-ratio: 3) and (max-width: 700px) 65vw, (min-resolution: 2.5dppx) and (max-width: 700px) 80vw, (-webkit-min-device-pixel-ratio: 2.5) and (max-width: 700px) 80vw, (min-resolution: 2dppx) and (max-width: 700px) 100vw, (-webkit-min-device-pixel-ratio: 2) and (max-width: 700px) 100vw, 700px" type="image/webp"><source data-testid="og" srcset="https://miro.medium.com/v2/resize:fit:640/1*IzweNb-tj-9qWyXxMcbbWw.png 640w, https://miro.medium.com/v2/resize:fit:720/1*IzweNb-tj-9qWyXxMcbbWw.png 720w, https://miro.medium.com/v2/resize:fit:750/1*IzweNb-tj-9qWyXxMcbbWw.png 750w, https://miro.medium.com/v2/resize:fit:786/1*IzweNb-tj-9qWyXxMcbbWw.png 786w, https://miro.medium.com/v2/resize:fit:828/1*IzweNb-tj-9qWyXxMcbbWw.png 828w, https://miro.medium.com/v2/resize:fit:1100/1*IzweNb-tj-9qWyXxMcbbWw.png 1100w, https://miro.medium.com/v2/resize:fit:1400/1*IzweNb-tj-9qWyXxMcbbWw.png 1400w" sizes="(min-resolution: 4dppx) and (max-width: 700px) 50vw, (-webkit-min-device-pixel-ratio: 4) and (max-width: 700px) 50vw, (min-resolution: 3dppx) and (max-width: 700px) 67vw, (-webkit-min-device-pixel-ratio: 3) and (max-width: 700px) 65vw, (min-resolution: 2.5dppx) and (max-width: 700px) 80vw, (-webkit-min-device-pixel-ratio: 2.5) and (max-width: 700px) 80vw, (min-resolution: 2dppx) and (max-width: 700px) 100vw, (-webkit-min-device-pixel-ratio: 2) and (max-width: 700px) 100vw, 700px"><img alt="" class="bd gp tu tv" width="700" height="432" loading="eager" role="presentation" src="https://miro.medium.com/v2/resize:fit:700/1*IzweNb-tj-9qWyXxMcbbWw.png"></picture></div></div><figcaption class="tw fj tx th ti ty tz bb b bc u dy" data-selectable-paragraph="">Stack Overflow Enterprise AWS 架构图</figcaption></figure>
+
+我们在不同可用区创建了多台 EC2 Web 服务器，每台均带有自己的 Redis Windows 服务以处理本地内容缓存；这为通知分发系统增加了冗余性，因为每个 EC2 Web 实例都能单独处理通知，随后由 RDS 进行去重。
+ 
+EC2 Web 服务器部署在弹性负载均衡器 (ELB) 后面的自动伸缩组中，并配置了一个通过 HTTP 请求 SOE 主页的简单健康检查。如果该检查连续失败超过两分钟，ELB 将请求创建另一台 EC2 Web 服务器，并将表现不佳的实例从集群中剔除。单台 EC2 实例通过 HTTP 向 ELB 提供流量，随后 ELB 在前端应用由亚马逊提供的 SSL 证书，该证书匹配目标 Route53 托管区域，从而为整个 EC2 Web 服务器集群提供 HTTPS 流量。
+ 
+SOE 最初支持 Azure Blob 存储和本地存储来存放用户生成的内容（如头像或发布的图片），最新版本增加了对 SQL Server 存储的支持。我们最初尝试通过为每个实例挂载弹性块存储设备来实现跨 EC2 实例的数据共享，但发现该方法会使启动时间增加约 50%。因此，我们现在将图片存储在本地磁盘上，并定期在实例与 S3 之间执行 `s3 sync` 同步内容。这种方法确实存在一个时间窗口，在此期间图片可能已创建但尚未同步至 S3 或从中同步；这已被列入我们的改进清单，我们很可能在下一次升级时切换至新的 SQL Server 存储选项。
+ 
+微软 SQL Server 数据库由亚马逊 RDS 处理，并具备多可用区冗余，以支持不同地理位置的 EC2 Web 服务器。我们对 RDS 应用了备份策略，定期生成快照，以应对数据库损坏或故障。
+ 
+我们将配置值编码为 Terraform 变量，以便选择性地部署到预发或生产环境。例如，我们维护了一个 `network` 变量允许部署到不同的 VPC，同时还有跟踪目标 Route53 区域、基础 AWS 可用区、EC2 Web 服务器实例大小和类型以及 ELB 的 ACM 证书等变量。
+
+## 安全
+
+我们使用多项 AWS 安全功能，在 SOE 的不同组件、用户和管理员之间建立适当的网络和访问控制边界。
+ 
+我们的基础基础设施部署在虚拟私有云 (VPC) 中，具有独立的前端和后端子网，以便根据预期发送和接收的流量类型对各组件进行分类和保护。前端子网面向用户基础设施（如 SOE 的弹性负载均衡器 (ELB)），预期接收直接用户流量，因此在 Palantir 网络内部开启了入口权限。后端子网面向不直接接收用户流量的基础设施，包括 SOE 的 EC2 应用服务器、RDS 数据库和 Elasticsearch EC2 服务器。默认情况下，后端子网仅允许来自已定义堡垒主机和 ELB 的入站流量；我们为每个组件所需的外部资源（如日志端点）添加了特定的出站路由。VPC 的默认拒绝安全态势让我们能精细控制 SOE 不同组件间的信息流动。
+ 
+我们将组件间的连接限制建模为 AWS 安全组。EC2 Web 服务器位于多个不同的安全组中，帮助它们与其他组件进行信息收发：
+
+- 用于对 Palantir 内部 IP 进行 HTTP/S 出入站的 ELB 安全组
+- 用于 Elasticsearch EC2 访问的 Elasticsearch 安全组
+- 用于连接至堡垒主机列表的远程桌面和 SSH 安全组
+- 用于镜像备份和同步的 S3 安全组
+- 以及用于数据库连接的 RDS 安全组
+
+为安全起见，我们禁用了对 EC2 Web 服务器的直接访问，转而使用 Windows 堡垒主机，这些主机需要特殊权限才能通过远程桌面或 SSH 连接。此外，我们手动批准证书管理器中所有可接受的证书，确保只有有效的 Route53 托管区域才能由面向 Web 的 ELB 代表。最后，我们将 KMS 密钥和最简化的身份与访问管理 (IAM) 策略绑定到一个特殊的 Terraform AWS 用户上，使其能够创建基础设施，但除此之外几乎无法执行其他操作。
+
+## 结论
+
+将 SOE 部署迁移至 AWS 是一次净收益，我们实现了首要目标：更好的可靠性和性能、可预测的自动化部署管道以及改善的安全态势。当然，这样的迁移需要投入并有权衡：开发初始构建十分耗时，且在管理员熟悉相关工具之前，代码定义的基础设施可能更难以理解、监控和调试。总体而言，我们相信团队在迁移后的生产力得到了提升。
+ 
+我们正在积极对 SOE AWS 部署工具包进行多项改进。我们的首要工作是围绕亚马逊 Elasticsearch 服务对静态加密的新支持展开：我们正考虑从定制的 EC2 Elasticsearch 实例迁移，这将免除维护内部 AMI 的需要。此外，我们正继续完善 SOE Powershell 部署脚本，以自动化并合并某些耗时的步骤。我们还在为 SOE 创建 Terraform 模块，以便能够将多个 SOE 实例配置为独立的 Git 分支。我们希望继续为 SOE 的各个组件编写告警和警报，实现各项服务的自愈。最后，我们持续与 SOE 团队合作，提供来自迁移的反馈，帮助加快其软件的初始安装时间并提升稳定性。
+ 
+我们希望关于 SOE 的 AWS 自动化实践能为您自己的 AWS 服务带来启发和帮助，并欢迎对所述方法提供反馈和讨论。
+ 
+*您可以在 https://www.stackoverflowbusiness.com/enterprise 了解更多关于 Stack Overflow Enterprise 的信息。我们感谢 Stack Overflow Enterprise 团队在我们完善部署流程期间随时解答所有问题！*
+
+<div class="v cf ug uh ui uj" role="separator"><span class="uk bu bi gs ul um"></span><span class="uk bu bi gs ul um"></span><span class="uk bu bi gs ul"></span></div>
+
+## 作者与贡献者
+
+Adil B.、Andrew S.、Andy A.、Ashir A.、Austin C.、Dom P.、Holt W.、RJ B.、Tristan S.
+</article>
+</body>
+</html>

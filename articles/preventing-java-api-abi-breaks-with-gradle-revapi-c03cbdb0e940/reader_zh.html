@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Preventing Java API/ABI breaks with gradle-revapi</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;max-width:680px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em}
+img{max-width:100%;height:auto}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px}
+</style>
+</head>
+<body>
+<article>
+# 使用 gradle-revapi 预防 Java API/ABI 断裂
+
+当面对数百个 Java 微服务时，底层库引发的 API/ABI 断裂往往令人头疼。我们开始使用开源的 Revapi 向后兼容性检查工具，并编写了一个 Gradle 插件，现已将其开源。这篇博文将说明我们使用 Revapi 的原因，并简述如何使用该 Gradle 插件。
+
+Palantir Foundry 由 100 多个微服务构成，使用了数百个开源和内部开发的库。为了保证隔离性，我们避免微服务间的交叉依赖（倾向于暴露纯 Conjure API），但一些底层库几乎无处不在。例如，我们开源的 tracing 和 HTTP 客户端库几乎被所有的 Java 服务所使用。只要存在代码共享，风险就随之而来：这些被广泛使用的库如果在 API 或 ABI 上发生破坏性变更，可能会导致大量消费者在编译时出错（更糟的是在运行时出错）。
+
+例如，在 tritium（我们用于处理 Java 服务指标的库）中，一个看似无害的 PR 将方法返回类型作了如下修改：
+
+```
+- Map<String, String> safeTags();
++ SortedMap<String, String> safeTags();
+```
+
+这段代码在项目内部甚至直接依赖该库的消费者那里都能正常编译（因为 SortedMap 属于 Map），但却导致运行时出错，因为我们的日志库期望的是 Map 签名，而该签名在已发布的 tritium jar 包中已不复存在，从而引发了令人头疼的 `NoSuchMethodError`：
+
+```
+java.lang.NoSuchMethodError: com.palantir.tritium.metrics.registry.MetricName.safeTags()Ljava/util/Map;
+    at com.palantir.sls.logging.metric.ScheduledTaggedMetricLogReporter.metricLog(ScheduledTaggedMetricLogReporter.java:121)
+    at com.palantir.sls.logging.metric.ScheduledTaggedMetricLogReporter.reportMetrics(ScheduledTaggedMetricLogReporter.java:102)
+```
+
+这就是所谓的应用二进制接口（ABI）断裂，尽管我们已尽全力进行修复，它还是引发了几次生产事故。归根结底，我们在常规代码审查中未能察觉到此变更的风险。协变返回类型变更只是 API 或 ABI 断裂的众多隐蔽方式之一。通过使用 Revapi 等自动化工具来辅助人工代码审查，我们可以放心地进行重构，并依靠工具在开发者引入破坏性变更时发出警告。
+
+## Revapi
+
+Revapi 是一个面向 Java 项目的开源 API 检查工具，能够检测 API 和 ABI 断裂。由于我们是 Gradle 的重度用户，而 Revapi 仅提供 Maven 插件，因此我们开发了 gradle-revapi。这是一个零配置的 Gradle 插件，能够自动配置并生成 Revapi 报告，将你的 jar 包与先前发布的版本进行对比检查。它还能与 CircleCI 完美集成，使得构建失败信息直接显示在页面顶部。
+
+事实上，回顾前文提到的 tritium 变更，Revapi 本会警告我们这是一个糟糕的变更（在众多预期的断裂问题之中）：
+
+这本可以提醒 PR 作者注意异常情况，从而有望避免给库的使用者带来痛苦和生产环境中出现的问题！
+
+## 如何使用？
+
+可以通过标准方式将 Revapi Gradle 插件添加到 Gradle 项目中。首先添加插件依赖：
+
+```
+buildscript {
+    // ...
+    dependencies {
+        classpath 'com.palantir.gradle.revapi:gradle-revapi:<latest-version>'
+    }
+}
+```
+
+随后，将其应用到每个发布 API 的项目中：
+
+```
+// 在发布 jar 包的 Java 项目的 build.gradle 中
+apply plugin: 'com.palantir.revapi'
+```
+
+请查阅 GitHub 上的说明文档获取更多细节。
+
+## 作者
+
+Callum R., Dan F., Dan S., Felipe O.
+</article>
+</body>
+</html>

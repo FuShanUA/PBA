@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Renaming and Deep Directory Hierarchies in Git</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;max-width:680px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em}
+img{max-width:100%;height:auto}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px}
+</style>
+</head>
+<body>
+<article>
+# Git 中的重命名与深层目录层级
+
+在 Palantir，我们的一个代码库包含大量文件（与 linux 内核相当），并且由于主要包含 Java 代码，具有很深的目录层级。在如此庞大的代码库中进行重构工作流，包括重命名顶层目录，可以作为对 Git 实时重命名处理能力的一次有效压力测试……结果显示其在多处存在不足。
+
+这篇博文解释了我们在过去两年中向 Git 贡献的多项改进的*是什么、为什么*以及*如何做*。最重要的贡献是*目录重命名检测*，即实现了一个看似简单的想法：当历史记录的一方重命名某个目录时，在另一方新增的文件应当与该目录中的其他文件一起移动。
+
+![](https://miro.medium.com/v2/resize:fit:700/1*4NkBpGTaCxMCb9gd0ajwZw.jpeg)
+
+## 数量上的弱点
+
+在一个特定案例中，尝试拣选一个仅修改了少数文件的提交引发了几个问题。初始设置大致如下：
+
+- 基础版本：包含大量文件和目录，其中值得注意的是一个名为 `olddir/` 的目录，里面包含几个 Java 文件
+- 我们的提交：新增了一个文件 `olddir/FileH.java`，并修改了 `olddir/` 中的其他几个文件
+- 上游：将 `olddir/` 重命名为 `newdir/`，并修改了该目录中的部分文件，此外还编辑了许多其他文件，产生了巨大的整体差异。
+
+当我们进行拣选时，看到了以下情况：
+
+```
+$ git cherry-pick $COMMIT
+error: could not apply $COMMIT... Commit summary
+hint: after resolving the conflicts, mark the corrected paths
+hint: with ’git add <paths>’ or ’git rm <paths>’
+hint: and commit the result with ’git commit’
+$ git status
+...
+Changes to be committed:
+  new file: olddir/FileH.java
+Unmerged paths:
+  deleted by us: olddir/FileA.java
+  deleted by us: olddir/FileB.java
+  deleted by us: olddir/FileC.java
+  deleted by us: olddir/FileD.java
+  deleted by us: olddir/FileE.java
+  deleted by us: olddir/FileF.java
+  deleted by us: olddir/FileG.java
+```
+
+这里存在多个问题。在上述输出中最普遍的问题或许是令人困惑的“deleted by us”行。要理解这些内容，请注意，如果我们没有检测到重命名（例如 `olddir/FileA.java` -> `newdir/FileA.java`），那么看起来就像是 `olddir/FileA.java` 被删除了，并且添加了某个无关的 `newdir/FileA.java`（即使新文件的内容恰好非常相似）。如果一方删除了文件，而另一方修改了它，就会产生修改/删除冲突，并导致如上所示的输出。这迫使用户手动合并 `olddir/FileA.java` 和 `newdir/FileA.java`，而用户往往不知道如何访问“基础”版本；这对用户来说往往是一个容易出错的过程，极易导致意外遗漏来自任一方的某些代码更改。
+
+下一组问题从上述输出中不一定能明显看出，但对于想知道 Git 在做什么并让其检测重命名的用户来说，却变得显而易见：
+
+- 尽管花费了很长时间，却没有提供关于拣选进度的任何更新。
+- 没有通知用户由于 `merge.renameLimit` 过低而导致重命名检测被中止。
+- 即使用户想到增加 `merge.renameLimit`，如果该配置高于任意的硬编码阈值 32767，它也会被忽略。
+
+在《我们修复了这些问题》（包括我们在提交信息中开个小玩笑，引用了《“对任何人来说都应该足够了”》这句话）之后，输出变得好多了：
+
+```
+$ git -c merge.renameLimit=50000 cherry-pick $COMMIT
+Performing inexact rename detection:  100% (2836767183/2836767183), done.
+error: could not apply $COMMIT... Commit summary
+hint: after resolving the conflicts, mark the corrected paths
+hint: with ’git add <paths>’ or ’git rm <paths>’
+hint: and commit the result with ’git commit’
+$ git status
+...
+Changes to be committed:
+  new file: olddir/FileH.java
+  modified: newdir/FileA.java
+  modified: newdir/FileC.java
+  modified: newdir/FileD.java
+  modified: newdir/FileE.java
+  modified: newdir/FileF.java
+Unmerged paths:
+  both modified: newdir/FileB.java
+  both modified: newdir/FileG.java
+```
+
+在这种情况下，我们进行了几项改进：
+
+- 如果用户遗漏了 `merge.renameLimit` 设置，他们会收到一条消息，提示由于重命名过多而跳过了重命名检测，并建议将 `merge.renameLimit` 设置为多少。
+- 当设置值大于 32767 时，不再被忽略。
+- 在重命名检测运行时会提供进度输出。
+- 大多数文件已经干净地合并了来自历史记录双方的更改。
+- 用户可以查看 `newdir/FileB.java` 和 `newdir/FileG.java` 来查看冲突所在并进行修复，同时这些文件中所有干净合并的更改都已经为用户处理完毕。
+
+## 真正的关键：目录重命名检测
+
+在上面的例子中，`FileH.java` 仍然是个问题；它所在的目录不对。上游历史分支没有将 `olddir/FileH.java` 重命名为 `newdir/FileH.java`，因为 `olddir/FileH.java` 当时还不存在。因此，如果你仅孤立地查看文件，那么将 `FileH.java` 留在 `olddir/` 中是合理的。然而，如果你的构建系统只构建特定目录中的源码，或者 `FileH.java` 本应与添加到该目录中的其他文件放在一起，那么这个问题就介于恼人和引发 bug 之间了。我们宁愿 Git 检测到目录重命名，并将 `FileH.java` 与其旁边的文件一起移动到 `newdir/` 下。
+
+注意到文件有时被添加到被另一方重命名的目录中，并利用该信息移动新文件，这就是*目录重命名检测*背后的简单想法。这很容易解释，但尝试实现它却相当《复杂》1 2。根据我们不得不处理的无意波及的范围数量，或许更容易了解其工作量。附带的修复包括：《不必要的重编译问题》（影响了 Linus）、《内存泄漏》、《涉及（常规非目录）重命名的脏文件覆盖》、《拆分索引问题》、《不区分大小写文件系统问题》、《子模块问题》、《针对 VFS-for-Git 用户的稀疏检出问题》以及其他几个问题。目录重命名检测工作还重新引发了关于《重写默认合并后端》的讨论，并为此启动了一些前期准备工作。
+
+这项工作在 git-2.18.0 中成为其一部分，并在后续版本中进行了一些更新。它帮助了使用 `merge` 或 `cherry-pick` 的用户，但由于 `am` 会《构建与源目录不符的虚假树》并将其输入给合并机制，因此目录重命名检测无法与 git-am 一起使用。不幸的是，`rebase` 有三个独立的后端，通过不同的选项集触发，而默认后端基于 `am`。《合并为一个后端》来处理目录重命名检测固然好，但不同的后端自然具有不同的能力，并且在重叠功能领域存在不一致性。因此，我们启动了一项《持续》《努力》来消除 rebase 中的这些不一致性，其中一些工作被《剥离为一个 GSoC 项目》。三个 rebase 后端中的一个现已被删除，但目前希望在其 rebase 中使用目录重命名检测的用户需要包含 `-m` 或 `-i` 选项。
+
+## 细节太多了；有哪些能帮到我的基础知识？
+
+四点：
+
+- Git 现在在重命名检测方面提供了更好的进度和警告消息，包括常规重命名和目录重命名的情况。你会自动获得这些。
+- 目录重命名检测适用于 `merge` 和 `cherry-pick`；只有当你指定 `merge` 或 `cherry-pick`（或暗示其中之一的选项）时，它才适用于 `rebase`。
+- 有一个 `merge.directoryRenames` 配置设置，你可能需要考虑将其设置为 `true`。
+- 关于目录重命名检测何时适用，存在一些规则。
+
+## 好吧，什么是 `merge.directoryRenames` 以及适用规则是什么？
+
+《merge.directoryRenames 配置设置》在 git-2.22.0 中引入，默认值为 `conflict`。这意味着如果检测到目录重命名，受影响的文件将被标记为冲突。你可以将此选项设置为 `true`，直接让这些文件移动到新目录中。
+
+## 在收件箱中获取 Palantir 的故事
+
+免费加入 Medium，以获取此作者的更新。
+
+[在此输入你的电子邮件]
+
+[订阅] [订阅]
+
+[ ] 记住我以便更快登录
+
+存在几个基本规则来限制目录重命名检测的适用情况，以避免出现索引中无法表示的冲突可能性，或者对用户来说过于复杂而难以理解和解决的冲突。这些规则是：
+
+- 如果给定目录在合并双方仍然存在，我们不认为该目录已被重命名（因此，在一个提交中重命名目录，然后在另一个提交中使用旧名称创建一个新目录并放入一些文件，将阻止目录重命名检测看到你的目录重命名）。
+- 如果待重命名文件的子集遇到了阻挡文件或目录（或者彼此阻挡），则针对这些特定子路径将“关闭”目录重命名检测，并向用户显示冲突报告。
+- 如果另一方历史记录将目录重命名到了你方历史记录将其重命名移走的路径，那么来自另一方历史记录的该特定重命名将被忽略，不进行任何隐式目录重命名（尽管会向用户发出警告）。
+
+## 这些规则暗示情况可能会变得疯狂。有哪些疯狂的情况？
+
+或许从简单案例开始并逐步深入是最好的方式。最简单的情况：
+
+- 当 x/a、x/b 和 x/c 全部移动到了 z/a、z/b 和 z/c 时，在此期间添加的 x/d 很可能也想移动到 z/d，这是通过获取整个目录 'x/' 移动到 'z/' 的提示来实现的。
+
+不过，还存在更有趣的可能性，例如：
+
+- 历史记录的一方将 x/ 重命名为 z/，但也重命名了该目录内的所有文件。例如，x/a -> z/alpha，x/b -> z/bravo 等。仍应检测到 x/ -> z/ 的重命名。
+- 并非目录中的所有文件都被重命名到同一位置；即可能 'x' 中的大多数文件现在位于 'z' 下，但少数位于 'w' 下。我们仍应检测到 x/ -> z/ 的重命名。
+- 一方将 x/ 中的所有文件重命名到 z/ 中。另一方向 x/ 添加了一个新文件，但也*同时*将 x/ 中的所有其他文件重命名到 z/ 中。与正常的目录重命名情况不同，这里向 x/ 添加新文件的一方知道将路径从 x/ 重命名为 z/，但仍然选择将新文件保留在 x/ 中。
+- 一个目录被重命名，其中包含一个被重命名到完全不同位置的子目录……并且可能该内部目录本身还包含被重命名到其他位置的内部目录。旧目录中的任何新文件都应根据最近的包含目录重命名移动到新目的地。（例如，对于 x -> z，x/m -> y/n，x/m/r -> w/p/q，假设在没有进行目录重命名的一方添加了一个名为 x/m/r/whataboutme 的新文件。合并后该文件的正确位置是 w/p/q/whataboutme，而不是 z/m/r/whataboutme 或 y/n/r/whataboutme。）
+- 历史记录的一方将 x/ 重命名为 z/，另一方将 w/e 重命名为 x/e，导致合并需要进行传递性重命名，使得 w/e 最终位于 z/e。
+- 历史记录的一方将 x/ 重命名为 z/ 并将 w/d 重命名为 z/d；另一方将 v/d 重命名为 x/d。这应导致重命名/重命名冲突，w/d 和 v/d 最终在 z/d 处发生冲突。
+- 历史记录的一方将两个目录合并为其中一个。例如，x/ 和 z/ 都存在，但一方将 x/ 下的所有文件移动到 z/ 下。这应被检测为 x/ -> z/ 的目录重命名。
+- 历史记录的一方将 x/ 重命名为 z/，一方将 y/ 重命名为 z/（可能是历史记录的不同方，但也可能是同一方）。两个目录重命名都应被检测到，在未重命名的一方添加到 x/ 或 y/ 下的新文件在合并后出现在 z/ 中。
+
+## 好吧，那么有些有趣的案例……但疯狂的呢？
+
+我正要说……
+
+- 一方将 x/ 重命名为 z/。另一方的记录添加了两个新文件 x/somefile 和 z/somefile。虽然这看起来像是一个添加/添加冲突，但请注意是同一方添加了这两个文件——那么在合并这些文件时，如何用冲突标记来表示冲突呢？（为了更有趣，调整设置使得将 x/ 重命名为 z/ 的一方也添加 z/somefile，让我们有三个文件最终都变成了 z/somefile——一个添加/添加/添加冲突。你如何用冲突标记来表示它？）
+- 不仅是将两个目录合并为一个，而是将 N 个目录合并为 1。即，一方将 y/、x/、w/、v/ 或 u/ 下所有文件/目录移动到 z/ 下。这应导致检测到 y/ -> z/、x/ -> z/、w/ -> z/ 等目录重命名。但如果未重命名目录的一方向每个旧目录添加了一个具有公共文件名的新文件（例如 y/somefile、x/somefile、w/somefile 等），使其看起来像 N 路冲突怎么办？
+- 从两个目录层级 x/ 和 y/ 开始，让每一方将其中一个目录移动到另一个中。即，一方将 y/ 重命名为 x/y/，另一方将 x/ 重命名为 y/x/。
+- 我们的历史记录将 z/a 重命名为 y/a，另一方将 y/ 重命名为 x/，我们将 x/ 重命名为 w/，另一方将 w/ 重命名为 v/，等等。文件 'a' 最终应该位于哪个目录中？如果在一个中间目录中存在名为 'a' 的冲突文件（或目录）（或者可能多个中间目录都存在名为 'a' 的文件）怎么办？
+
+## 等等，我在一些例子中迷失了！
+
+别担心，请参阅《t6043-merge-rename-directories.sh》，它涵盖了所有这些测试和许多其他测试。对于每个测试，它都有更精确的英文描述来说明设置和期望，随后是通过 shell 命令将代码库设置为该状态，并验证合并是否确实产生了预期结果。
+
+## 核心要点是什么？
+
+我们希望让那些想要在大小代码库重构中重命名许多文件甚至目录的人生活得更轻松一些，以便 Git 在合并、拣选或（有时）变基时提供更直观、更友好的结果。在未来，我们希望继续使 `git rebase` 更加一致，显著提高合并机制的重命名检测性能，并提供各种其他 Git 改进。
+
+## 作者
+
+Elijah N.
+</article>
+</body>
+</html>

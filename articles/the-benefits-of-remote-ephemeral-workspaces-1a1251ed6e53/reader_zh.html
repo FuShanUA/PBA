@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>The Benefits of Remote Ephemeral Workspaces</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background:#fff;color:#1a1a1a;line-height:1.7;max-width:680px;margin:0 auto;padding:48px 24px 80px}
+h1{font-size:1.65em;font-weight:700;margin-bottom:8px;line-height:1.25;color:#111}
+.meta{color:#888;font-size:.82em;margin-bottom:32px;padding-bottom:16px;border-bottom:1px solid #eee}
+.meta a{color:#2e86de;text-decoration:none}
+article p{margin-bottom:18px;font-size:1.02em;line-height:1.75}
+article img{max-width:100%;height:auto;margin:20px auto;display:block;border-radius:6px}
+article h2{font-size:1.28em;font-weight:600;margin:28px 0 12px;line-height:1.3;color:#222}
+article h3{font-size:1.12em;font-weight:600;margin:24px 0 10px;color:#333}
+article h4{font-size:1em;font-weight:600;margin:20px 0 8px;color:#333}
+article ul,article ol{margin-bottom:16px;padding-left:24px}
+article li{margin-bottom:8px;line-height:1.7}
+article blockquote{border-left:3px solid #d0d0d0;padding:8px 16px;margin:18px 0;color:#666;background:#fafafa;border-radius:0 4px 4px 0}
+article pre{background:#f6f6f6;padding:14px 16px;border-radius:6px;overflow-x:auto;font-size:.85em;margin:18px 0;border:1px solid #e8e8e8;font-family:'SF Mono',Monaco,Consolas,monospace}
+article code{background:#f0f0f0;padding:2px 6px;border-radius:3px;font-size:.88em;font-family:'SF Mono',Monaco,Consolas,monospace}
+article pre code{background:none;padding:0;border:none}
+article table{width:100%;border-collapse:collapse;margin:18px 0;font-size:.92em}
+article th,article td{border:1px solid #e0e0e0;padding:8px 12px;text-align:left}
+article th{background:#f8f8f8;font-weight:600}
+article figure{margin:20px 0;text-align:center}
+article figcaption{color:#999;font-size:.82em;margin-top:6px;text-align:center}
+article a{color:#2e86de;text-decoration:none}
+article a:hover{text-decoration:underline}
+.nav{margin-bottom:28px}
+.nav a{color:#2e86de;text-decoration:none;font-size:.88em}
+.nav a:hover{text-decoration:underline}
+</style></head><body>
+<div class="nav"><a href="../../index.html">← Back to Archive</a></div>
+<h1>The Benefits of Remote Ephemeral Workspaces</h1>
+<div class="meta">2022-06-06 · <a href="https://blog.palantir.com/the-benefits-of-remote-ephemeral-workspaces-1a1251ed6e53">Original →</a></div>
+<article><figure><img alt="" height="367" loading="eager" src="https://miro.medium.com/v2/resize:fit:700/1*HwrY5EneuuIscebY5g--Cg.png" width="700"/></figure>作为 Palantir 的 DevOps 团队之一，我们一直在探索提升开发人员生产力新路径。近期，我们开始研究远程工作空间（包括 AWS EC2 实例、AWS Cloud9 或专用机器）能带来哪些助益。业界关于远程工作空间优势的文章不胜枚举，例如《为什么远程开发可能比本地开发更好》、《我是如何将开发环境成本削减 90% 的》、《迈向云原生开发环境（第一部分：原因）》、《开发人员入职指南》、《云端开发与本地开发对比》或者《本地开发正在消亡，这是件好事》（以及更多相关文章！）。在 Palantir，我们将这一模式进一步深化，采用临时性远程工作空间模型来缩短本地构建时间、提升开发人员生产力，并降低入职成本。不仅如此，我们还做到了这一切而不必大把烧钱。
+
+## 企业环境的复杂性
+
+尽管上述文章强调了远程开发的诸多优势，但在大型企业环境中，我们认为还存在额外的复杂性，尤其是在性能效率、标准化以及运营效率优化方面。
+
+需要考量的复杂性包括：
+
+**性能效率**
+
+* 构建大型复杂软件产品需要重度计算资源（例如用于机器学习训练的 GPU，用于测试和构建的扩容 RAM），这迫使开发人员去寻找笔记本之外的替代方案，比如台式机塔式机箱、机架式服务器或开通虚拟机。
+
+**标准化**
+
+* 在不牺牲开发速度的前提下，向大型组织大规模交付开发基础设施，需要标准化的产品方案来减轻运维负担。
+* 随着开发环境推荐配置的变更，配置漂移会导致支持负担加重，使得开发人员不断陷入“在我的机器上能跑”的综合症。
+* 提供与生产环境代码运行方式更贴近的环境，从系统库（例如特定 Python 版本）到部署模型（例如 Docker 容器）。
+
+**运营效率优化**
+
+* 在复杂环境中招聘和引导新员工入职可能会令人抓狂，并且需要耗费时间进行初始配置。
+* 一名员工可能会在多个开发环境之间频繁切换。他们可能需要在不同类型的代码库（前端与后端）中工作，或者面临相互冲突的需求（即不同的 Java 版本）。在他们解决这些不同需求的过程中，这会带来显著的额外开销成本。
+* 必须控制开发成本。如果成本增长速度超过了所提供的效益，你这家公司可能撑不了多久。
+
+## 应对复杂性
+
+在 Palantir，我们坚信临时性基础设施的理念，并在许多生产环境中应用此模式来应对各种挑战。（可以阅读关于 Rubix 平台的《在 Palantir 引入 Rubix Kubernetes》博文，或者关于 Active Directory 的《基础设施即代码：Active Directory》博文，了解具体做法和原因）。为了实现影响力最大化和运营负担最小化，我们深知，如果能将临时性基础设施的优势与远程工作空间的优势结合起来，就能为公司解锁全新水平的生产力。
+
+## 一些可选方案
+
+在全面介绍我们的解决方案之前，先来梳理几种潜在的选项。
+
+* **为人员配备性能更强的笔记本。** 这解决了计算力不足的问题，但无助于组织控制成本。由于大量人员居家办公以及近期的供应链问题，获取更高配置的笔记本在物流上也十分复杂。
+* **让人员在云端自行开通虚拟机。** Palantir 已有内部服务供人员自助开通虚拟机，因此这种方案能让我们利用现有能力。尽管部分开发人员已开始自行使用远程开发模式，但该选项对每位开发人员来说都需要大量配置开销，且仍可能导致配置问题以及“在我的（另一台）机器上能跑”的综合症。
+* **为人员提供预配置的虚拟机。** 虽然该选项意味着开发人员需要管理的内容更少，但基础设施团队（我们）的负担会加重，必须确保预配置的虚拟机在开发人员需要时已打补丁、更新并可用。我们本就希望避免这种开销，好在这一领域已有诸如 Amazon Workspaces 和 Google Virtual Desktops 等服务提供了不错的起点。
+* **转嫁部分基础设施的管理工作。** 将部分基础设施转交给诸如 GitHub Codespaces 等 SaaS 提供商，或者其他在 Kubernetes 容器集群上运行的方案。这降低了开发人员的开销，同时减少了基础设施团队（还是我们）管理个人用户的需求。我们不想自建产品，否则就得操心如何自动化实现诸如开启新工作空间、自动更新容器以及 SSH 密钥管理等功能。
+
+在探索完上述所有选项后，我们最终决定在 Amazon Elastic Kubernetes Service (EKS) 之上使用 Coder，因为它能满足开发人员更广泛的需求（截至撰写本博文时）。
+
+## Coder 令我们振奋之处
+
+* **运维层面的胜利：** 它在计算层之上基于 Kubernetes 运行。结合 Amazon EKS，我们可以将团队的开销降至最低。
+* **兼顾标准化与灵活性：** Coder 允许用户使用自定义的 dotfiles 和启动脚本。开发人员花费多年时间优化自身工作流，这为他们提供了所需的自定义层，使环境保持熟悉感。
+* **开发人员赋能：** 自助式获取更多资源配置。只需几次点击，开发人员即可部署新环境、申请更多资源并更快投入工作。
+* **生态系统集成：** 与 GitHub Enterprise 原生集成。用户可以轻松克隆代码库并管理自身的 SSH 设置。再加上自助式访问功能，此类集成消除了我们团队大量潜在的事务性支持工作。
+
+<figure><img alt="" height="647" loading="lazy" src="https://miro.medium.com/v2/resize:fit:699/1*rl-JwN0qmr9WcCMjluLo4Q.png" width="699"/></figure>
+
+## 但这真的有效吗？
+
+部署基础设施后，我们深知接下来的首要目标是向开发人员证明，远程工作空间将极大改善他们的工作体验。为此，我们与产品开发团队紧密合作，确保：
+
+* 延迟和用户体验无缝衔接
+* 开发容器准确代表环境
+* 为每个代码库创建用户指南
+
+以下是我们部署后获得的一些收益：
+
+* **更快的开发周期**（在此再次强调是因为这意义重大）。开发人员只需按个按钮就能获取更多 CPU/RAM。这全面加速了整个“开发 → 构建 → 测试”流程。例如在前端构建方面，构建时间缩短了 78%！
+* **更快的下载速度。** 由于工作空间与我们的代码仓库和制品服务器部署在同一位置，下载时间和请求延迟极低。以某代码仓库为例，git clone 时间缩短了 71%。虽然我们预期开发周期会普遍加快，但这算是一个意外之喜。
+* **降低入职和支持成本。** 专职的开发基础设施团队开始鼓励用户切换到 Coder。他们能更快地引导新用户入职，且无需频繁调试本地机器上的问题。这意味着他们能将更多时间专注于优化开发工具。
+* **增加外部贡献。** 借助更简便的开发环境路径，团队能轻松为彼此的代码库做贡献。这对直接面向客户工作的工程师尤为实用。修复小缺陷的开销仅仅是申请一个工作空间，而无需下载所有产品依赖。
+* **更好的本地笔记本体验。** 随着开发工作流中许多高消耗部分被转嫁，人员在本地机器上看到了更好的性能。我们再也听不到“我没法共享屏幕，因为我的服务器正在运行！”这种抱怨了。
+* **远程 Docker 环境。** 部分开发人员利用增加的资源创建了混合环境。他们在本地进行部分开发，而在远程运行 docker 和测试服务器。我们原以为人员会将所有开发工作转移到新工作空间，但这表明混合方案同样可行。
+
+## 开发周期提速深度解析
+
+在本节中，我们将提供一些具体的改进实例。
+
+作为背景说明，本次测试我们使用了一个 Foundry 代码仓库来构建前端。该仓库采用单体仓库概念，大量使用 git-lfs，大小约为 4.5 GB。
+
+<figure><img alt="" height="415" loading="lazy" src="https://miro.medium.com/v2/resize:fit:700/1*ctXxRPuQhFsv8K9Sy-Sk6A.png" width="700"/></figure>
+
+这些速度优势不言而喻。虽然较小的仓库也有所改善，但这个例子凸显了速度提升的幅度。研究表明，重新进入心流状态可能需要长达 20 分钟，而这对保持高产至关重要。拥有数百名开发人员，这意味着每天累计损失数百小时的生产力。只要能让开发人员保持心流状态，对整个组织来说就是胜利。
+
+## 成本考量
+
+<figure><img alt="" height="346" loading="lazy" src="https://miro.medium.com/v2/resize:fit:460/1*MHZ-nXAoWDpkPspPUy5uAw.gif" width="460"/></figure>
+
+另一个需要考虑的重要方面是成本。毕竟，给开发人员无限的计算能力很可能耗资巨大。虽然我们没指望这个项目能全面降低成本，但必须确保在推广期间不至大把烧钱。
+
+来看一笔快速的成本拆解。
+
+**Macbooks。** 在 Palantir，我们大约每两年为开发人员更换一次笔记本。大多数开发人员使用 Macbook。对于当今标准的开发人员配置，我们提供一台 32GB M1 Macbook，成本约为 2900 美元。分摊到两年，约为每位开发人员每年 1500 美元。
+
+**EC2 实例。** 在拥有远程临时工作空间的新环境下，成本考量略有不同。我们不再购买高配置的 Macbook，而是购买标准的 M1 Macbook，价格约为 2000 美元。这将使每位开发人员的笔记本成本降至每年 1000 美元，但我们仍需计入新的 EC2 成本。
+
+我们大多数开发人员需要更多 RAM，因此决定在 Amazon 中使用 r5.4xlarge 实例类型。截至撰写本文时，r5.4xlarge 的成本为每小时 1.008 美元。折算下来每年为 8830 美元。在此基础上，我们可以进行一些大多数人察觉不到的优化。
+
+* **优化 1** — 在这种实例类型上，我们可以轻松容纳三位开发人员。这充分利用了容器化架构。
+* **优化 2** — 我们不需要在周末保持实例开启。这意味着平均而言，我们只需支付 7 天中 5 天的费用。只要具备允许用户在周末时段轻松开通实例的自动化机制，这里就能省下一笔可观的费用。
+* **优化 3** — 我们不需要全天 24 小时开启实例。大多数开发人员在其所在地区的 12 小时窗口内工作，因此可以在非工作时间关闭这些机器。我们可以使用与上述类似的自动化措施，确保开发人员永远不会被阻塞。
+
+<figure><img alt="" height="347" loading="lazy" src="https://miro.medium.com/v2/resize:fit:700/1*q7RmTf02ALb8GMmnn4-C0g.jpeg" width="700"/></figure>
+
+差额大约是总成本增加 41%。然而，还可以考虑其他成本优化方案：部分开发人员将使用较小的远程工作空间；部分开发人员工作不到完整的 12 小时；还有些开发人员并非每天进行开发。对 Palantir 而言，开发人员生产力的提升和更好的运维足以抵消这一成本增幅！归根结底，这种成本权衡是否划算取决于各自组织，但对我们来说绝对物超所值。
+
+## 未来方向
+
+我们对迄今为止取得的成果感到兴奋，并且随着越来越多开发人员了解到我们的新方案，使用人数也在不断攀升。目前，我们在前端代码仓库中看到了最大的应用进展。这些代码仓库体积庞大，且大多数开发人员已经在使用 VSCode，该工具对远程开发提供了极佳的支持，并收到了开发人员的良好反馈。对于 Java 项目，我们正在测试其他 IDE，以确保为开发人员提供高质量体验。我们将持续关注改进情况，并希望能尽快更广泛地推广临时远程工作空间。
+
+## 结论
+
+我们的经验再次印证，远程开发环境是提升开发人员生产力的绝佳方式。更重要的是，应用临时性基础设施模式是管理这些高价值投资的一种可持续且高性价比的手段。
+
+如果你想帮助我们构建这一未来并推动其他重要成果落地，欢迎加入我们！
+
+### 作者
+
+Ashir</article>
+</body></html>

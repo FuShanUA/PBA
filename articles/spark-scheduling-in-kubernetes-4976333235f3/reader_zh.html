@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Spark Scheduling in Kubernetes. Introducing our open source…</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;max-width:680px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em}
+img{max-width:100%;height:auto}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px}
+</style>
+</head>
+<body>
+<article>
+# Kubernetes 中的 Spark 调度
+
+*编者按：这是我们在博客上关于 Rubix 系列文章的第二篇，该系列讲述了我们围绕 Kubernetes 重建云架构的实践。*
+
+2018 年，随着在生产环境中快速扩大 Kubernetes 上 Spark 的使用规模，我们通过调度器扩展程序扩展了 Kubernetes，以增加对批处理作业调度的支持。具体而言，我们旨在缓解集群超载时部分调度引发的问题。这篇博文将介绍我们开源的 k8s-spark-scheduler 扩展程序，解释其工作原理，并分享我们在 Palantir 生产环境中运行该程序所取得的成效。
+
+## 引言
+
+作为 Spark 社区长期的积极参与者和热心支持者，我们非常高兴能将 Spark 作为在 Palantir Foundry 中执行用户编写代码的框架之一。Foundry 为客户提供了一个通用数据平台，用于复杂的数据分析和转换。Foundry 执行两类不同的工作负载：用于批处理的短生命周期专用 Spark 应用，以及服务于交互式用户查询的长生命周期多租户 Spark 应用。如今，我们每天在数百个环境的数千台主机上运行数以万计的 Spark 应用。
+
+本系列的第一篇文章讲述了 Rubix 的由来：Palantir 的部署基础设施团队决定将 Foundry 的云架构迁移到 Kubernetes，从而致力于在 Kubernetes 之上支持安全的多租户 Spark 集群。第一步是开展开源工作（联合多家组织的工程师），为 Spark 增加 Kubernetes 支持。虽然这一努力取得了成功——它合并到了 Spark 主线并且对单个 Spark 应用运行良好，但与 YARN 相比，Kubernetes 对多容器批处理工作负载的支持仍不成熟。我们开发了 k8s-spark-scheduler 来解决在生产环境中运行 Kubernetes 上的 Spark 时遇到的两个主要问题：执行器调度不可靠和自动扩缩容缓慢。
+
+## Kubernetes 上的 Spark
+
+Kubernetes 中的对象（如 Pod 或服务）是通过 Kubernetes API 声明期望的对象状态来创建的。Kubernetes 控制器会持续观察期望状态与实际状态之间的差异，并采取措施以达到期望状态，例如，在具有空闲计算资源的机器上启动新的 Pod。
+
+Spark 应用由单个驱动程序进程（即“主节点”）和数量可变的执行器（即“工作节点”）组成。在 Kubernetes 上执行时，驱动程序和执行器都作为独立的 Pod 运行，其启动分为两步：首先，Spark 客户端启动驱动程序 Pod，然后驱动程序 Pod 自行启动执行器 Pod。
+
+![Press enter or click to view image in full size](https://miro.medium.com/v2/resize:fit:700/1*89yppFKczjGPZPDTLKVMDA.jpeg)
+
+这种设计的优点在于驱动程序自身负责管理其执行器，例如用于动态扩容集群。**然而，这一设计决策有一个致命缺点：在驱动程序成功启动之后，调度器才知道驱动程序需要多少个执行器。**在资源充足的集群中这不成问题，但当集群相对于 Spark 提交量而言“太小”时，客户端理论上可能会用驱动程序占满集群。在这种情况下，没有任何驱动程序能够获取执行器，因此无法完成任何工作。在实践中，我们观察到了该问题的一个更局部化的版本：偶尔会有不走运的应用面临执行器匮乏，导致不可预测的性能下降。
+
+此外，由于不同 Spark 应用的 Pod 是以（相对）任意的顺序单独调度的，小应用可能会插队到大应用之前。这导致较大、较昂贵的工作负载出现更高的资源饥饿率，进而引发性能下降甚至失败。让我们看一个简单的例子：
+
+![Press enter or click to view image in full size](https://miro.medium.com/v2/resize:fit:700/1*m_GGPHGN4nY4GuclwIzmTA.jpeg)
+
+*示例：将启动两个应用，A（蓝色）和 B（粉色）。注意，不同应用的驱动程序和执行器的 Pod 可能以任意顺序出现，例如，执行器 A.3 出现在驱动程序 B 之后。假设集群有足够的空闲资源来启动驱动程序 A、执行器 A.1 和 A.2 以及驱动程序 B 的 Pod。此时，集群可能没有足够的资源来启动开销较大的执行器 A.3，但有足够的资源来启动开销较小的执行器 B.1。因此，开销较小的应用 B 成功启动，而开销较大的应用 A 仍在等待执行器 A.3 才能继续执行。*
+
+**成组调度。** 对 Spark 应用而言，更理想的行为是成组调度。我们希望按应用而非逐个 Pod 进行调度：
+
+![Press enter or click to view image in full size](https://miro.medium.com/v2/resize:fit:700/1*hd1kCrZkk2i_ex0UsdhK1w.jpeg)
+
+*示例：使用与上述相同的示例，成组调度的目标是在 B 的任何 Pod 之前调度 A 的所有 Pod，或者反之亦然。注意，根据集群中的可用资源，这种策略可能意味着在给定的调度周期内不会启动任何新的 Pod，即使集群有资源可供其中部分 Pod 使用。在这里，调度器绝不能在 A.3 启动之前启动 B 的驱动程序或执行器 B.1。*
+
+**先进先出。** 成组调度确保 Kubernetes 永远不会启动不完整的应用。然而，仅靠成组调度本身并不能解决资源饥饿问题。例如，如果调度器在少量资源可用时持续启动小应用，较大的应用可能永远得不到调度。在本文中，我们讨论解决资源饥饿问题的一种简单方案：按应用提交的顺序进行调度，即 FIFO 顺序。在上面的例子中，我们先启动应用 A 再启动应用 B，因为驱动程序 A 的提交时间早于驱动程序 B。
+
+## Kubernetes 中的 FIFO 成组调度
+
+现在我们来看看如何通过 Kubernetes 调度器实现 FIFO 成组调度。简而言之，Kubernetes 调度器维护着一个待调度 Pod 队列，从队列中取出一个 Pod，并尝试为其寻找合适的主机。扩展程序 API 允许我们实现自定义的过滤器，用于筛选应该被调度的 Pod。我们的过滤器实现依赖于驱动程序 Pod 的注解，这些注解声明了驱动程序和执行器所需的内存和 CPU 资源量。有了这些注解，成组调度的过滤器实现就非常简单了：
+
+```text
+// 如果给定的驱动程序 Pod 应该被启动，则返回 true
+shouldScheduleDriver(pod p):
+  cpuAndMem = 从 p.annotations 中提取声明的驱动程序和执行器资源
+  if 集群有足够的空闲 cpuAndMem 资源:
+    for i in 0..p.numExecutors:
+      创建预约对象 'executor-{p.appId}-{i}'
+    return true
+  else
+    return false  // 参见“集群自动扩缩容”段落
+
+// 当且仅当给定的执行器 Pod 应该被启动时返回 true
+shouldScheduleExecutor(pod p):
+  if 存在预约对象 'executor-{p.appId}-{p.executorId}':
+    return true
+  else
+    return false
+```
+
+为了调度驱动程序 Pod，我们会检查集群当前是否有足够的空闲 CPU 和内存资源来启动驱动程序及其所有必需的执行器。如果条件满足，我们就启动该驱动程序，并为每个执行器创建一个自定义的资源预约对象。这个预约对象会在 `shouldScheduleExecutor` 中决定是否调度某个执行器 Pod 时被消耗：我们只启动那些其驱动程序先前已被启动的执行器。这两个过滤器共同实现了 Spark 驱动程序和执行器 Pod 的成组调度。
+
+为了实现 FIFO 调度，我们在 `shouldScheduleDriver` 中增加了一个条件：只有当所有先前提交的驱动程序都已启动，或者集群有足够资源立即启动所有这些驱动程序及其执行器时，我们才启动当前驱动程序。这意味着驱动程序的调度可能会乱序，但前提是我们能保证所有先前提交的驱动程序都能立即启动。这种对“纯 FIFO”的轻微偏离是一种性能优化，它避免了冗余的空调度循环。
+
+下图描绘了整个事件序列：
+
+![Press enter or click to view image in full size](https://miro.medium.com/v2/resize:fit:700/1*DHTP2GxO5Wqkm_ht5_QPHw.jpeg)
+
+## 集群自动扩缩容
+
+现有的自动扩缩容服务（如 Atlassian 的 Escalator 和 Kubernetes Autoscaler）使用 Pod 资源请求来推断目标集群容量。对于 Spark 应用，这种模型会带来显著的扩容延迟，因为在驱动程序声明执行器之前，执行器 Pod 是不存在的。为了解决这个问题，当集群太小而无法调度某个 Spark 应用时，我们会创建自定义的资源需求对象；在上面的伪代码中，这些对象是在 `shouldScheduleDriver` 的 `false` 分支中创建的，即恰好发生在集群对驱动程序及其执行器容量不足的情况下。我们运行了一个名为 Scaler 的自定义自动扩缩容控制器，它会处理这些需求对象并相应地调整集群规模。
+
+## 总结与展望
+
+FIFO 成组调度与资源需求相结合，使我们能够为 Spark 应用提供可调和可靠的性能。我们为关键任务或交互式计算作业提供不同的“通道”（通过 AWS 自动扩缩容组和 Kubernetes 节点选择器实现），从而让客户能够自主控制成本与性能之间的权衡。
+
+如今，我们在集群阵列中的每个 Kubernetes 集群的生产环境中都运行着 Spark 调度器扩展程序。在我们较大的集群中，该程序每秒处理超过 10 个 Pod 的调度请求，并在 1000 多个节点上执行数百个并发的 Spark 作业。此外，通过高效利用自动扩缩容，我们能够实现好得多的集群整体利用率，我们经常看到在几分钟内有 100 多台主机启动以应对需求激增。
+
+关于如何在 Kubernetes 上调度 Spark，我们的探索才刚刚开始。随着客户不断将 Foundry 整合到其业务运营中，我们也在不断发现新的挑战。如今，吞吐量受到 k8s-spark-scheduler 中创建资源预约速度的限制——随着我们计划在未来 12 个月内将最大集群的规模翻倍，这一点尤为关键。
+
+在使 Kubernetes 上的 Spark 调度更加智能化方面，我们还有很多工作要做。我们正在研究的几个领域包括：
+
+**启动性能。** 由于 Kubernetes 调度器中的积压，我们经常看到启动延迟不一。我们希望通过优先调度各自的执行器，来尽量减少驱动程序闲置的时间。我们曾在 Kubernetes 1.10 和 1.11 中尝试使用 k8s pod 优先级，但遇到了 Pod 在无法被调度时卡住的问题。一旦我们将集群升级到 Kubernetes 1.14，我们将继续推进这项工作。
+
+**可用区感知。** 如今，我们在多个可用区（AZ）中运行自动扩缩容组，以降低单一可用区容量不足的风险。不幸的是，这带来了跨区数据传输成本增加的副作用。一种可能的缓解措施是使节点选择过程具备可用区感知能力，即我们尽量将单个作业的尽可能多的 Pod 放置在同一个可用区内。
+
+**竞价型实例。** 我们正在探索为某些资源池使用竞价型实例。竞价型实例可以节省大量成本，但也可能随时被中断。如果驱动程序 Pod 被中断，整个作业就会失败，必须从头开始重启。丢失执行器 Pod 的影响没有那么严重，但也不是毫无代价。使用竞价型实例是以可预测的性能换取成本；这肯定不适用于所有用户的工作负载，但我们的客户通常愿意为非关键任务或对时间不敏感的工作负载接受这种权衡。
+
+本系列关于 Rubix 的下一篇博文将介绍 Rubix 的网络和安全，敬请期待！
+
+*有兴趣加入部署基础设施团队的候选人可在此处申请。*
+
+*我们的 Spark & AI Summit 演讲现已在此处发布。*
+
+## Rubix 博客系列
+
+- Rubix 介绍：Palantir 的 Kubernetes
+- Kubernetes 中的 Spark 调度（本文）
+- Rubix 中容器网络的演进（即将发布）
+- 大规模保护 Kubernetes 的安全（即将发布）
+
+## 作者
+
+Greg D., Onur S., Robert F., Will M.
+</article>
+</body>
+</html>

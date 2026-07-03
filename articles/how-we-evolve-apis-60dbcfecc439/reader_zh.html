@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>How we evolve APIs. Navigating the tension between…</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;max-width:680px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em}
+img{max-width:100%;height:auto}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px}
+</style>
+</head>
+<body>
+<article>
+# 我们如何演进 API
+
+Robert Fink
+
+8 分钟阅读
+·
+2019年9月5日
+
+254
+
+1
+
+--
+
+
+
+Press enter or click to view image in full size
+![](https://miro.medium.com/v2/resize:fit:700/1*inmjuoj8A-_BKeHRSdr_-g.jpeg)
+
+Palantir 的软件平台 API 通常向我们的客户和用户开放，因此必须在*稳定性*与*敏捷性*之间承受一种天然的张力的拉扯。API 消费者通常希望 API 永远保持稳定。对他们而言，稳定意味着避免进行“不必要的”工作以使他们的软件适配新的 API，同时也意味着将漏洞和宕机风险降至最低。另一方面，API 维护者则希望拥有随意更改 API 的自由。在实现新功能、修复漏洞或重构服务或组件时，他们可能需要更改 API。
+
+在软件领域，如同在任何其他商业领域一样，*客户就是上帝*，因此，调和稳定性与敏捷性之间张力的责任在于 API 维护者，而非 API 消费者。两种极端立场显然都站不住脚：如果我们*从不*演进 API，那么我们永远无法推出新功能；如果我们*不断地*破坏 API，我们的用户迟早会迁移到其他库或服务。折中之道在于谨慎管理 API 演进；为此，我将在本文中介绍 Palantir 的一些开发者工具，用于实现和推出 Foundry 和 Gotham API 的变更。
+
+我们希望开发人员将时间花在 API 设计和应用逻辑上，而不是纠结于模式变更的细节或收集 API 使用数据的机制。从更宏观的哲学角度来看，我们致力于构建能够自然而然地引导开发人员走向成功之坑的工具和框架：好的工具能让开发人员专注于重要事务，卓越的工具不仅能做到这一点，还能以直观的方式实现，且不阻碍他们的创造自由。
+
+我们将在典型的客户端/服务器设置的上下文中讨论 API 演进，其中服务器向人类或程序化客户端提供大致呈 CRUD 形状的服务 API。关键在于，我们将允许客户端和服务器异步更新且无需协调；这是基于微服务的架构中必备的部署模型，在这种架构中，不同的团队拥有整体应用的不同组件，并可以自由地独立更新它们。
+
+## 1. 声明所有 API。
+
+所有 Palantir API 均使用 Conjure 进行声明。Conjure 允许我们的开发人员基于语言无关、带类型的请求和响应对象来对 API 进行逻辑推理，并封装了底层关注点，如精确的传输格式和数据编组。例如，以下（略有删减的）代码片段是我们的电子邮件网关 Conjure API 的一部分：
+
+```
+types:
+  definitions:
+    objects:
+      SendEmailRequest:
+        fields:
+          from: UserId
+          to: set<UserId>
+          email: EmailContent
+          encryption: optional<EncryptionOptions>
+      SendEmailResponse:
+        fields:
+          requestId: RequestId
+          emails: list<EmailReceipt>
+      EmailReceipt:
+        fields:
+          emailId: EmailId
+          recipients: set<UserId>
+```
+
+```
+services:
+  EmailService:
+    endpoints:
+      sendEmail:
+        args:
+          email: SendEmailRequest
+        returns:
+           SendEmailResponse
+```
+
+简洁性是 Conjure 的主要设计目标。对我们而言，所有支持编程语言的开发人员都能直观地理解并基于给定的 Conjure API 进行开发，这一点至关重要。为此，Conjure 提供了一组非常有限的数据类型（大致包括：基元、集合和递归对象），并摒弃了继承等更复杂的概念。Conjure 代码生成器为服务器和客户端生成符合语言习惯、特定语言的绑定，使开发人员走上正轨并加速开发。我们发现，通过限制开发人员接触 RPC 内部机制和边缘情况，可以避免大量无意中导致的 API 破坏。
+
+## 2. 优先选择向后兼容的演进。
+
+许多 API 变更在实现时，客户端甚至根本察觉不到。我们称此类变更为*向后兼容*。关于稳定性与敏捷性之间的张力，向后兼容的变更是*双赢*的：API 维护者可以向前沿客户端提供新功能，而无需要求所有客户端都升级到新 API。在 Conjure 中，向后兼容 API 演进的规则非常直接：简而言之，可以添加新的 API 端点，或者向现有响应对象添加新的可选字段或集合字段。让我们通过研究一个具体案例来详细看看这一点。
+
+首先，假设服务器通过在其 RPC 响应中发送额外信息来更改其 API；例如，在上面勾勒的电子邮件 API 中，服务器可能会在 EmailReceipt 对象中包含一个新的 date 字段。即使客户端未察觉到 API 变更（因为服务器在客户端之前升级），客户端也没有理由恐慌，因为其逻辑不可能依赖于新增字段的语义。[此论断在除最极端复杂情况外的所有情况下都是正确的；例如，在发送失败的情况下，向 EmailReceipt 添加一个新的 sendFailed:boolean 字段而不是响应 5xx HTTP 错误码，很可能是不安全的，因为旧客户端可能会错误地推断邮件已成功发送。] Conjure 客户端通过宽松地反序列化服务器响应来支持此类 API 演进：未知字段会被静默忽略。
+
+其次，让我们考虑在 API 的请求对象中添加额外字段的 API 变更。如果此字段是必需的，则所有旧客户端会立即崩溃。相反，如果此字段是可选的（带有默认值），则旧客户端可以继续发出请求而不会察觉到 API 变更。例如，API 可能支持一个新的可选请求字段 bcc: set<UserId>。如上所述，此类 API 变更通常是安全的，但在原始 API 规范不足的情况下可能是不安全的。Conjure 允许集合类型在传输格式中不存在，从而支持此类 API 演进。例如，服务器将请求对象 `{ "from": "rfink", "to": "peter", "email": {..}, "bcc": [] }` 和 `{ "from": "rfink", "to": "peter", "email": {..} }` 均解释为带有空 bcc 列表的请求。
+
+我们的 Conjure 工具链提供了相关工具，用于验证给定的 API 变更相对于先前给定的 API 定义是否兼容。开发人员在 CI 阶段依赖这些检查来避免无意间的破坏，并验证给定的变更是否向后兼容。其他 RPC 系统也有类似的兼容性检查器，例如可以查看 Confluent 为 Kafka 提供的 Schema Registry。
+
+底线是，我们允许保持兼容性的 API 模式演进，以支持微服务架构中的异步开发和部署模型。对于此类兼容性变更，我们不要求进行重大的 API 版本更改，仅仅是因为该变更不会破坏任何人。开发人员有权频繁进行向后兼容的变更，而我们的 Conjure 工具链让最佳方式成为最简便的方式。
+
+## 3. 总是提供好处。
+
+很少有 API 用户会自愿投入时间、汗水和泪水去迁移到新的 API，除非它带有好处，例如性能提升或新功能。大棒政策，即公司领导层强制要求内部团队（或者更糟，客户）迁移到新 API，根本行不通，我们仅在出现安全漏洞等异常情况下才会使用它。表面上的改动（即“我们应该重构此 API 使其更整洁”）是不可取的，除非它们伴随着同等程度的好处。
+
+## 4. 偏好演进而非革命。
+
+我们在上文已经确立了如何实现向后兼容的变更，现在让我们讨论破坏性变更。我们吸取了惨痛的教训：只有在正确的思维方式和工具支持下，将给定服务从旧的 v1 全面迁移到新的 v2 API 才是可行的。我们的开发团队计划了漫长的过渡期——可能需要数月至数年才能完成向我们数百个安装实例的部署——并提供 v1 → v2 适配器和详尽的文档，以协助消费者进行迁移。因此，即使是破坏性变更，感觉上也更像是演进而非革命。
+
+## 5. 了解你的用户。
+
+Press enter or click to view image in full size
+![](https://miro.medium.com/v2/resize:fit:700/1*kR5gwCs1v1SVud1BNirNVg.png)
+
+随时间推移按 API 版本对给定服务的请求，不同颜色代表不同版本。该图表说明了随着服务器和客户端的更新，API 版本如何随时间变化。此分析是使用我们的内部指标和日志分析工具创建的。
+
+显然，如果你的 API 没有用户，你就不会破坏任何用户。棘手的一点是弄清楚你的 API 到底在什么时候没有用户。我们将服务 API 从 v1 升级到 v2 的总体策略是，部署一个能够同时处理 v1 和 v2 请求的桥接版本服务，然后将所有用户迁移到 v2，最后删除 v1 代码路径。那么，我们如何确定 v1 API 没有用户的时间点呢？
+
+##### 获取 Robert Fink 的故事到您的收件箱
+
+免费加入 Medium 以获取此作者的更新。
+
+[输入你的电子邮箱]( )
+[订阅]( )
+
+记住我以便更快登录
+
+首先，显而易见的一步是收集所有 API 端点的请求日志，以确定按 API 版本划分的使用情况。我们的服务器框架（例如 witchcraft-go）会自动为所有 API 端点生成一组丰富的指标和请求日志；所有指标和日志均集中收集，以便开发人员可以跟踪 API 使用情况随时间的变化。Conjure 客户端会注入结构化的 user-agent 标头，格式为 `originService/version conjureLibrary/version targetApi/version`，服务器会对其进行分析，从而生成有关其客户端的详细统计数据。
+
+Press enter or click to view image in full size
+![](https://miro.medium.com/v2/resize:fit:1000/1*9iFRiaIAQBKmslEjvvKjiw.png)
+
+按客户端（水平）和安装实例（垂直，标签已灰显）划分的 API 请求量。左上角的深蓝色色块代表某一特定安装实例中配置错误的客户端，它发送了空的 user agent。“oms”服务的开发人员创建了此分析，以追踪配置错误的客户端；该分析是在我们内部的 Foundry 技术栈上基于不同安装实例报告的请求数据执行的。
+
+一种互补的方法是，甚至在客户端发出任何请求之前就了解你的客户端。为此，我们的部署基础设施强制应用开发人员声明对其他服务的 API 依赖。这些依赖在运行时用于配置 RPC 子系统（例如，路由、故障转移、蓝/绿部署等），但它们也让我们能够全局洞察不同已部署和未部署服务所兼容的目标 API 版本。例如，我们可以安排依赖服务的升级顺序，使得较新的客户端永远不会在对应的新服务器之前部署。我们结合服务依赖图和请求日志来决定何时可以逐步淘汰被弃用的 API。
+
+## 6. 将其进行到底。
+
+为并行支持多个 API 版本或已弃用功能而遗留的代码，会随着时间的推移堆积成技术债务。因此，为开发人员提供尽可能好的工具以推动 API 迁移进行到底，并允许他们最终移除和整合未使用的代码路径，这一点至关重要。请求日志就是这样一种工具。第二种是一组代码维护和重写工具；让我们看看其中两个工具。
+
+在多代码库设置中，一个常见的挣扎是通过更新依赖项和共享库来推动 API 消费者向前发展。我们使用 gradle-consistent-versions 插件来声明所有库和服务依赖，并使用像 Excavator 这样的自动化工具来透明地升级依赖。这些工具共同使 API 维护者能够代表其消费者完成大部分 API 迁移工作。关键在于，所有向后兼容的 API 升级都会自动合并（假设 CI 测试通过），从而使消费者 API 版本不会随着时间的推移与服务 API 版本产生分歧。
+
+Press enter or click to view image in full size
+![](https://miro.medium.com/v2/resize:fit:700/1*lQXqGui3sFjqnfJT8mcDVg.png)
+
+推出新 API 始终是一个渐进的过程：我们不是协调所有 API 用户进行瞬时的 v1 → v2 切换，而是同时支持两个版本，直到我们的监控显示所有用户都已迁移到 v2。
+
+推出破坏性的 v1 → v2 API 变更分为三个阶段。首先，我们手动将少量 v1 客户端升级到 v2。这种“ Beta 测试”使我们能够修复剩余的 API 怪癖，并观察新 v2 API 在生产环境中的性能。其次，我们使用像 Refaster 这样的代码重写工具来自动化 v1 → v2 升级。最后，最后一些零散的 v1 请求通常很难用自动化工具迁移，要么是因为代码库不受我们控制，要么是因为它们的构建系统过时（从而无法进行自动化迁移），要么是因为它们的客户端是用非标准（即非 Conjure）框架编写的。
+
+## 结论
+
+我总是很想知道其他开发人员和组织是如何解决我在 Palantir 遇到的技术问题的。欢迎与我联系！
+
+## 作者
+
+Robert 自该数据分析平台第一天起就塑造了 Palantir Foundry 背后的工程文化和架构。他喜欢将技术写作作为一种教育和传播知识的手段。
+</article>
+</body>
+</html>

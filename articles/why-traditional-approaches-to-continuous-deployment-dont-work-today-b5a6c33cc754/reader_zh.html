@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Why Traditional Approaches to Continuous Deployment Don’t Work Today</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background:#fff;color:#1a1a1a;line-height:1.7;max-width:680px;margin:0 auto;padding:48px 24px 80px}
+h1{font-size:1.65em;font-weight:700;margin-bottom:8px;line-height:1.25;color:#111}
+.meta{color:#888;font-size:.82em;margin-bottom:32px;padding-bottom:16px;border-bottom:1px solid #eee}
+.meta a{color:#2e86de;text-decoration:none}
+article p{margin-bottom:18px;font-size:1.02em;line-height:1.75}
+article img{max-width:100%;height:auto;margin:20px auto;display:block;border-radius:6px}
+article h2{font-size:1.28em;font-weight:600;margin:28px 0 12px;line-height:1.3;color:#222}
+article h3{font-size:1.12em;font-weight:600;margin:24px 0 10px;color:#333}
+article h4{font-size:1em;font-weight:600;margin:20px 0 8px;color:#333}
+article ul,article ol{margin-bottom:16px;padding-left:24px}
+article li{margin-bottom:8px;line-height:1.7}
+article blockquote{border-left:3px solid #d0d0d0;padding:8px 16px;margin:18px 0;color:#666;background:#fafafa;border-radius:0 4px 4px 0}
+article pre{background:#f6f6f6;padding:14px 16px;border-radius:6px;overflow-x:auto;font-size:.85em;margin:18px 0;border:1px solid #e8e8e8;font-family:'SF Mono',Monaco,Consolas,monospace}
+article code{background:#f0f0f0;padding:2px 6px;border-radius:3px;font-size:.88em;font-family:'SF Mono',Monaco,Consolas,monospace}
+article pre code{background:none;padding:0;border:none}
+article table{width:100%;border-collapse:collapse;margin:18px 0;font-size:.92em}
+article th,article td{border:1px solid #e0e0e0;padding:8px 12px;text-align:left}
+article th{background:#f8f8f8;font-weight:600}
+article figure{margin:20px 0;text-align:center}
+article figcaption{color:#999;font-size:.82em;margin-top:6px;text-align:center}
+article a{color:#2e86de;text-decoration:none}
+article a:hover{text-decoration:underline}
+.nav{margin-bottom:28px}
+.nav a{color:#2e86de;text-decoration:none;font-size:.88em}
+.nav a:hover{text-decoration:underline}
+</style></head><body>
+<div class="nav"><a href="../../index.html">← Back to Archive</a></div>
+<h1>Why Traditional Approaches to Continuous Deployment Don’t Work Today</h1>
+<div class="meta">2022-06-15 · <a href="https://blog.palantir.com/why-traditional-approaches-to-continuous-deployment-dont-work-today-b5a6c33cc754">Original →</a></div>
+<article>*编者按：本篇博文是关于 Palantir Apollo 系列文章的第一篇，旨在深入解析 Apollo 是什么、它解决了什么问题，以及在面对日益复杂和碎片化的软件格局时，其新颖的软件部署方式如何带来竞争优势。*
+
+![](https://miro.medium.com/v2/resize:fit:700/1*kpUJWLvD_c6i2-U9fnF6Lg.jpeg)
+
+在首篇文章中，我们将探讨传统的线性持续部署方法为何会暴露短板，并阐述 Apollo 如何重新审视软件部署方式，从而真正应对现代软件开发与部署在新复杂现实下所引发的挑战。
+
+## 传统方式：通过“线性流水线”拥抱自动化
+
+过去十年间，持续部署领域取得了令人惊叹的进展，使得代码从提交到进入生产环境的速度达到了前所未有的水平。这些进展帮助软件团队更快捷、更安全地将新功能交付给客户，同时也能迅速获取最新代码变更在生产环境中的实际运行反馈。
+
+然而，剥开表象来看，大多数传统的持续部署工具在底层架构上与十年前相比并无二致：依然是线性流水线。其底层设计建立在这样一个假设之上：软件将线性地流转于测试、编译、发布和部署这一系列顺序流程之中。随着时间的推移，部署流程中的更多环节通过叠加在流水线上的策略脚本实现了自动化，同时也打造了更好的用户界面以提供更清爽的开发者体验。但就其核心而言，传统持续部署所采用的方法并未发生实质性改变。
+
+然而，这种线性的“流水线”模式所能触及的极限也就到此为止了。当今线性流水线面临的核心挑战在于，它无法应对软件开发方式与部署环境复杂程度的爆炸式增长。具体而言：
+
+- **从单体架构向面向服务架构（SOA）的转变，意味着对单个服务的更新无法再“线性地”直接部署到测试或生产环境中，而必须首先考量该变更对潜在数十个其他依赖项造成的影响。** 面向服务架构的价值在于，它使开发团队能够独立交付功能，让软件的演进速度与最快的迭代者保持同步，从而更快地将新功能推向客户。它还使平台更具模块化、可复用性和韧性。然而，拼图碎片越多，可能意味着复杂度越高；管理大量相互关联的服务绝非易事——而且它绝对不是线性的。
+- **如今，将同一套软件部署到众多不同的环境中已成为常态。** 为了尽量贴近客户的所在环境，组织将软件跨多个云服务商和基础设施类型进行交付已不鲜见，这些环境在连接性和访问级别上各不相同，对合规性和数据治理的要求也更高。这带来了诸多挑战，而在企业软件还放在单一的本地数据中心时，甚至在迅速破灭的单一云“SaaS”美梦中，这些都是不存在的。将新的、可能具有异构性的环境作为部署目标，且每个环境都有其特定的约束/要求，这给部署模型增加了指数级的复杂度。
+
+这些重大演变带来的总体结果就是复杂度的急剧攀升，而线性流水线尽管有其种种优势，但在应对这些挑战时已显得力不从心。
+
+## 传统方法的短板所在
+
+### 管理面向服务架构的复杂度
+
+要安全地管理由众多截然不同且可能相互关联的服务所组成的平台部署绝非易事，并且复杂度会随着服务数量的增加呈指数级攀升。
+
+![](https://miro.medium.com/v2/resize:fit:700/1*6kDFUhwT5REnXZXeXapzpg.png)
+
+一些挑战包括：
+
+- **跨服务依赖**，涉及部署和网络两个方面。在线性持续部署流水线方法中，管理流水线之间的跨服务依赖极其困难。往好了说，你只能将各种流水线串成一条链，这会变得非常脆弱且无法扩展。**处理回滚**而不破坏 API 兼容性成了一项极其艰巨的任务，尤其是在你希望以自动化方式完成回滚的情况下。
+- **大规模配置管理**，尤其是在跨多个环境管理依赖服务的数据库 URI 时。你需要设置 URI 的配置点数量，等同于服务图中的边数乘以环境数量。依靠人工逐一配置这些内容会使其变得极其脆弱且繁琐。另一个痛点在于，当跨各种部署目标存在同一服务的多个实例时，如何管理特定于客户的配置。
+- **流水线之间缺乏标准化。** 服务众多意味着你需要维护众多流水线。随着每条流水线独立演进，流水线偏差会迅速出现。当团队创建新流水线时，他们通常会克隆已有的流水线，然后对其进行修改以适应新服务或团队的需求。此外，线性流水线将所有内容紧耦合在一起——你很难创建出可以标准化、复用或替换的模块。这可能会引发问题，因为团队之间往往缺乏关于各自服务如何部署的通用知识；通往生产环境的路径五花八门。每当工程师加入新团队，都必须花时间摸清新团队的流水线是如何运作的。流水线调试也变得更具挑战性。这种流水线标准化的缺失进一步加剧了复杂度和管理开销，耗费你的时间和金钱。
+- **维持对众多动态流转部件的全局感知**——究竟什么部署在了哪里，其状态如何？谁拥有什么，遇到问题该联系谁来解决？团队应该在多长时间内维持向后的 API 兼容性？
+- **资产依赖**，例如前端使用的静态文件。
+- **管理数据库模式版本依赖**，以及其他挑战。
+
+### 环境与业务复杂度
+
+**难以跟上业务需求的发展速度：** 服务和环境在流水线内部是耦合的。当你的部署模型需要向众多环境分发时，这就会成为问题。假设你的公司需要搭建一个新环境：如果你只有单条流水线，你需要把每个新环境串联到流水线末端。如果你有多条流水线，你就必须把每个新环境添加到每条流水线中。这既低效又无法扩展，同时也意味着你的工程师卡在了新业务增长的关键路径上。
+
+**在不同配置下部署的挑战：** 如果你需要以不同的配置和不同的功能集来部署平台，流水线绝对是一场噩梦。通常，不同的客户可能只需要你平台的不同部分，而基于线性流水线的方法很难以模块化的方式去部署平台的不同子集。
+
+**不断膨胀的流水线复杂度：** 当你加入各种合规性控制、安全策略、审批步骤等内容时，流水线会变得更加复杂，往往导致流水线变得异常庞大，并需要团队编写自动化脚本来管理它们。随后，你的团队不得不疲于维护数以百计的流水线和自动化脚本。
+
+流水线的线性特质也使其变得僵化——因为它们是从左到右设计的，要让其中某一部分并行运行并在中间触发某个操作会非常复杂。要实现这一点，通常需要在流水线之上或外围编写更多脚本。
+
+## Apollo 如何解决这些问题
+
+**在 Palantir，我们深信软件只会变得愈发复杂，对其部署环境的要求也只会不断增加，因此线性流水线已难以为继。这正是我们打造 Apollo 的原因。** 它建立在几项核心原则与关键组件之上，助力你的业务高效、坚韧且安全地将软件部署到任何所需之处：
+
+- **关注点分离——解耦软件与环境。** Apollo 通过软件包和环境这两个维度来对世界进行建模。开发者最清楚他们的软件应如何升级及其应有的行为表现，因此他们在代码旁定义服务规范与约束。运维人员最清楚什么对他们的环境和客户至关重要，因此由他们定义环境规范与约束。运维人员选择应在环境中安装哪些服务，而 Apollo 将确保安全安装。如果约束条件未满足，Apollo 会发出警示，且通常能自动化解。各方均立足于自身专业领域，互不掣肘。
+- **在保持灵活性的同时隐藏复杂度——发布通道。** Apollo 的“发布通道”概念是一种在稳定性与速度之间取得最佳平衡的方式。发布通道为你提供了一种风险建模途径，并允许将风险较高的通道用作金丝雀测试。环境订阅指定的发布通道，由此界定它们将在何种节点为其安装的各项服务获取新的产品发布。你还可以针对每个产品订阅不同的发布通道。这使得环境数据主人能够在平台的特定方面承担更多风险，例如，某客户可能对特定功能有走在前沿的需求，但在其他方面则相对厌恶风险。
+- **在保留最终控制权的前提下尽可能自动化——护栏机制。** 安全与合规性是 Apollo 中的首要概念；它最终将开发者、运维、安全、合规性与质量团队的激励机制统一起来。Apollo 在通往生产环境的路径上设置了多道关卡，以便你的团队可以定义必须遵守的策略与工作流。Apollo 致力于在可能的地方实现流程自动化，从而无需人工介入，同时保留所有必要的安全与合规性控制（例如具备上下文感知能力的变更管理功能）。
+
+它还为平台团队提供了多个切入点，以设定不同类型的黄金路径，例如默认的发布通道。
+
+*Palantir Apollo 系列的下一篇博文*《博文》*将进行技术深潜，详细阐述 Apollo 如何重新审视整个问题空间，从而在现代软件现实下实现持续部署。*
+
+**想让你的组织引入 Apollo 吗？**在我们的网站上了解更多信息并预约 Apollo 演示。</article>
+</body></html>

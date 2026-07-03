@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Using Static Analysis to Prevent Java Class Initialization Deadlocks</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background:#fff;color:#1a1a1a;line-height:1.7;max-width:680px;margin:0 auto;padding:48px 24px 80px}
+h1{font-size:1.65em;font-weight:700;margin-bottom:8px;line-height:1.25;color:#111}
+.meta{color:#888;font-size:.82em;margin-bottom:32px;padding-bottom:16px;border-bottom:1px solid #eee}
+.meta a{color:#2e86de;text-decoration:none}
+article p{margin-bottom:18px;font-size:1.02em;line-height:1.75}
+article img{max-width:100%;height:auto;margin:20px auto;display:block;border-radius:6px}
+article h2{font-size:1.28em;font-weight:600;margin:28px 0 12px;line-height:1.3;color:#222}
+article h3{font-size:1.12em;font-weight:600;margin:24px 0 10px;color:#333}
+article h4{font-size:1em;font-weight:600;margin:20px 0 8px;color:#333}
+article ul,article ol{margin-bottom:16px;padding-left:24px}
+article li{margin-bottom:8px;line-height:1.7}
+article blockquote{border-left:3px solid #d0d0d0;padding:8px 16px;margin:18px 0;color:#666;background:#fafafa;border-radius:0 4px 4px 0}
+article pre{background:#f6f6f6;padding:14px 16px;border-radius:6px;overflow-x:auto;font-size:.85em;margin:18px 0;border:1px solid #e8e8e8;font-family:'SF Mono',Monaco,Consolas,monospace}
+article code{background:#f0f0f0;padding:2px 6px;border-radius:3px;font-size:.88em;font-family:'SF Mono',Monaco,Consolas,monospace}
+article pre code{background:none;padding:0;border:none}
+article table{width:100%;border-collapse:collapse;margin:18px 0;font-size:.92em}
+article th,article td{border:1px solid #e0e0e0;padding:8px 12px;text-align:left}
+article th{background:#f8f8f8;font-weight:600}
+article figure{margin:20px 0;text-align:center}
+article figcaption{color:#999;font-size:.82em;margin-top:6px;text-align:center}
+article a{color:#2e86de;text-decoration:none}
+article a:hover{text-decoration:underline}
+.nav{margin-bottom:28px}
+.nav a{color:#2e86de;text-decoration:none;font-size:.88em}
+.nav a:hover{text-decoration:underline}
+</style></head><body>
+<div class="nav"><a href="../../index.html">← Back to Archive</a></div>
+<h1>Using Static Analysis to Prevent Java Class Initialization Deadlocks</h1>
+<div class="meta">2021-02-02 · <a href="https://blog.palantir.com/using-static-analysis-to-prevent-java-class-initialization-deadlocks-c2f31ca967d6">Original →</a></div>
+<article>这篇博文讲述了我们在一个流行 Java 库中发现竞态条件的简短过程，以及如何通过静态代码分析来防范类似缺陷。在此过程中，我们还会探讨导致该问题的 JVM 内部机制。
+
+<figure><img alt="" height="348" loading="eager" src="https://miro.medium.com/v2/resize:fit:700/1*9jltaUxNJQ2gRLbp5w_P4g.png" width="700"/></figure>
+
+## 发现并修复 JavaPoet 中的竞态条件
+
+在 Palantir，我们使用 Square 开发的优秀 JavaPoet 库来处理许多代码生成任务，首当其冲的便是生成我们的 RPC 框架 Conjure 的 Java 绑定。我们的同事 Justin 在 2018 年曾报告称，JavaPoet 在多线程环境下存在竞态条件：两个线程会非确定性地在 JavaPoet 库代码中发生死锁。
+
+正如 Justin 所推测的，死锁的根源在于两条类初始化代码路径之间存在竞态条件。假设我们有一个 `Base` 类，其初始化代码（例如通过静态字段）依赖于它自身的子类 `Sub`：
+
+<pre>class Base {<br/>  private static final Sub SUB = new Sub();<br/>  static class Sub extends Base {}<br/>}</pre>
+
+为了初始化 `Base`，JVM 必须先初始化 `Sub`。在单线程环境中，这符合预期且运行正常；但如果一个线程直接初始化 `Sub`（即调用 `new Sub()`），同时另一个线程试图通过 `Base` 的静态依赖来初始化 `Sub`（即调用 `new Base()`），就会引发问题。事实上，JavaPoet 恰好使用了这种模式：`TypeName` 类有一个 `ClassName` 类型的静态字段，而 `ClassName` 是 `TypeName` 的子类。
+
+## 背景
+
+Java 语言规范在 jls-12.4.2 中定义了类初始化过程。其中，“对类 `C` 的初始化锁 `LC` 进行同步。这包括等待当前线程获取 `LC`。”这一描述直接为上述死锁埋下了隐患。JDK-8037567 中也指出，根据规范，这种死锁属于预期行为，必须在应用程序和库代码中予以规避，而不是交由 JVM 处理。如果你想亲自尝试，JDK-8037567 中提供了一个能够稳定复现该竞态条件和死锁的最小化代码示例。
+
+尽管 JVM 在理论上可以提供更复杂的锁定协议，但这会改变类初始化的性能，不仅拖慢启动时间，还可能破坏现有代码。许多组件或编程模式直接依赖于类初始化细节，例如“延迟初始化持有者”设计模式。
+
+## 修复并防范竞态条件
+
+当然，可以通过重新调整静态字段或方法来修复此类死锁。然而，正如 JavaPoet 案例中所展示的，在移动公开字段或方法时，修复操作可能会引发 API 破坏。为了在修复时既能避免竞态条件又能防止 API 破坏，我们决定编写一条 error-prone 规则，在编译期禁用一系列已知存在缺陷的静态类依赖。
+
+简而言之，该规则的工作原理如下：
+
+- 给定一个类定义 `C`，检查其每个静态代码块和静态字段。
+- 如果代码中包含对 `C` 子类的引用，并且该引用会触发基于 jls-12.4.1 的初始化过程，我们便面临一个潜在的死锁场景。初始化发生在以下情况：创建新实例、读取静态（非常量）字段、写入静态字段或调用静态方法。
+- 如果该子类由 `C` 包含且为私有，则该子类无法在 `C` 外部被实例化，因此不可能发生死锁。
+- 如果该子类可见，但拥有私有构造函数且无可访问的静态字段或方法，死锁同样不可能发生。然而，这种假设非常脆弱，因为一旦添加非私有构造函数、方法或字段，就可能导致死锁！
+
+需要注意的是，该算法并不能捕捉所有有缺陷的模式；一些存在多层间接调用的场景更难检测，但根据我们的经验，这些场景并未导致死锁。遗憾的是，正如许多出了名难以处理的静态分析问题一样，想要识别出*所有*此类模式似乎是不大可能的（尽管我们尚未给出形式化证明）。
+
+## 示例
+
+例如，该 error-prone 规则会禁用以下模式：
+
+<pre>class Base {<br/>  private static final Sub SUB = new Sub();<br/>  static class Sub extends Base {}<br/>}class Base {<br/>  static {<br/>    new Sub();<br/>  }<br/>  static class Sub extends Base {}<br/>}class Base {<br/>  static Sub SUB = new Sub();<br/>  static class Sub extends Base {<br/>    Sub() {} // can be initialized externally through instantiation<br/>  }<br/>}</pre>
+
+相反，该规则允许以下形式的模式：
+
+<pre>class Base {<br/>  private /* not static */ final Sub SUB = new Sub();<br/>  static class Sub extends Base {}<br/>}class Base {<br/>  static Sub SUB = new Sub();<br/>  static class Sub extends Base {<br/>    private Sub() {} // cannot be instantiated externally<br/>  }<br/>}</pre>
+
+我们已将该 error-prone 规则应用于内部的许多代码仓库中，遗憾但不出所料地发现了多处违规。当然，我们已经修复了这些潜在的竞态条件，以防其在生产环境中造成损失。
+
+如果你想使用这条 error-prone 规则或我们的其他任何开发工具，欢迎在 GitHub 上查看我们的 Baseline 代码仓库。
+
+## 作者
+
+Carter Kozak，Robert Fink</article>
+</body></html>

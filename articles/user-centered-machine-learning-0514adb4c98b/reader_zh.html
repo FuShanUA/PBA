@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>User-Centered Machine Learning</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background:#fff;color:#1a1a1a;line-height:1.7;max-width:680px;margin:0 auto;padding:48px 24px 80px}
+h1{font-size:1.65em;font-weight:700;margin-bottom:8px;line-height:1.25;color:#111}
+.meta{color:#888;font-size:.82em;margin-bottom:32px;padding-bottom:16px;border-bottom:1px solid #eee}
+.meta a{color:#2e86de;text-decoration:none}
+article p{margin-bottom:18px;font-size:1.02em;line-height:1.75}
+article img{max-width:100%;height:auto;margin:20px auto;display:block;border-radius:6px}
+article h2{font-size:1.28em;font-weight:600;margin:28px 0 12px;line-height:1.3;color:#222}
+article h3{font-size:1.12em;font-weight:600;margin:24px 0 10px;color:#333}
+article h4{font-size:1em;font-weight:600;margin:20px 0 8px;color:#333}
+article ul,article ol{margin-bottom:16px;padding-left:24px}
+article li{margin-bottom:8px;line-height:1.7}
+article blockquote{border-left:3px solid #d0d0d0;padding:8px 16px;margin:18px 0;color:#666;background:#fafafa;border-radius:0 4px 4px 0}
+article pre{background:#f6f6f6;padding:14px 16px;border-radius:6px;overflow-x:auto;font-size:.85em;margin:18px 0;border:1px solid #e8e8e8;font-family:'SF Mono',Monaco,Consolas,monospace}
+article code{background:#f0f0f0;padding:2px 6px;border-radius:3px;font-size:.88em;font-family:'SF Mono',Monaco,Consolas,monospace}
+article pre code{background:none;padding:0;border:none}
+article table{width:100%;border-collapse:collapse;margin:18px 0;font-size:.92em}
+article th,article td{border:1px solid #e0e0e0;padding:8px 12px;text-align:left}
+article th{background:#f8f8f8;font-weight:600}
+article figure{margin:20px 0;text-align:center}
+article figcaption{color:#999;font-size:.82em;margin-top:6px;text-align:center}
+article a{color:#2e86de;text-decoration:none}
+article a:hover{text-decoration:underline}
+.nav{margin-bottom:28px}
+.nav a{color:#2e86de;text-decoration:none;font-size:.88em}
+.nav a:hover{text-decoration:underline}
+</style></head><body>
+<div class="nav"><a href="../../index.html">← Back to Archive</a></div>
+<h1>User-Centered Machine Learning</h1>
+<div class="meta">2024-01-26 · <a href="https://blog.palantir.com/user-centered-machine-learning-0514adb4c98b">Original →</a></div>
+<article><h2 id="4ff1"><strong>计算机视觉工作流的新范式</strong></h2><figure><img alt="" height="366" loading="eager" src="https://miro.medium.com/v2/resize:fit:700/1*HHX5DPDpXLlowejWoqPxXw.png" width="700"/></figure><p id="c61b">国防部（DoD）正投入大量资金，开发和部署基于机器学习（ML）的情报与作战数据源处理能力。特别是在高空航空影像之上应用计算机视觉（CV）模型，已成为团队旨在更好地检测和跟踪关注对象的重点领域。</p><p id="9186">Palantir 与 CV 目标检测和跟踪技术的分析人员和用户直接合作已有多年。我们见证了无数第三方 CV 模型在实际应用中的局限性，也切身感受到不完美的模型在任务执行中表现不佳时对用户造成的影响。</p><p id="279c">以用户为中心的机器学习（UCML）是 Palantir 针对此问题提出的解决方案。UCML 将模型从封闭、孤立的实体——这种实体往往按照缓慢的周期进行训练和部署——转化为动态的、可由用户在数秒内加以改进的实时解决方案。在这篇博文中，我们将探讨如何构建 UCML 服务，并深入解析其部署方式：它不仅能改善模型输出，还能引入旨在为各类任务辅助决策的下一代工作流。</p><h2 id="b787">计算机视觉用户采纳挑战</h2><figure><img alt="" height="359" loading="lazy" src="https://miro.medium.com/v2/resize:fit:411/1*sprdm_-ZlGMEzihTnXTtIQ.png" width="380"/></figure><figure><img alt="" height="500" loading="lazy" src="https://miro.medium.com/v2/resize:fit:936/1*LDCvpPsHo3iiBJ1YOPA6Tg.png" width="621"/></figure><p id="d2a0">当 CV 模型达到完美精度时，能显著提升影像分析师的工作效率。例如，在采集卫星影像时，确切掌握每张影像上各类军用车辆、舰船和飞机的位置（图 1），分析师就能立即提取所需的情报信息，从而支持及时的战略决策与行动。<br/> <br/>Palantir 已在实际应用中部署了多个自研及大量第三方 CV 模型。在观察分析师使用这些模型的过程中，我们发现绝大多数用户并不会完全依赖这些模型来执行日常任务，而是将其视为辅助工具，以补充日常工作流。用户的这种采用迟疑态度主要源于两大挑战：</p><ol><li id="6beb"><strong>CV 模型极少能达到完美精度。</strong>在实际部署条件下，目标检测与跟踪模型的观察精度通常在 60% 到 80% 之间。影像分析师必须不断评估模型输出，在执行关键任务时绝不能盲目信任。分析师深知，由于多种原因，这种不准确性将持续存在，例如：训练数据多样性不足、关注类别具有挑战性或罕见、训练数据标注不准确、生物群落差异显著且数量庞大，以及训练数据与作战数据之间存在脱节。</li><li id="2a1d"><strong>CV 用户工作流是静态的。</strong>在多数工作流中，用户面对的是一组静态且带有噪声的检测结果或跟踪轨迹，它们以边界框的形式叠加在图像上。由于缺乏与这些检测结果交互的能力，用户无法向模型提供反馈，也无法在任务背景下按需实时优化其输出。这极大地限制了用户利用模型输出来执行任务的能力与积极性。</li></ol><p id="489e">真正的需求并非寻求一个永不出错的完美模型，而是寻求一种方法：当模型<em>确实</em>失效时，能够基于用户反馈进行实时自我完善。在 Palantir，我们深知构建这种能力意味着要从根本上重新定义分析师的工作流，使其能更准确地反映他们所感知的真实世界。通过赋能用户与模型进行实时交互和响应，他们能够针对准确的前线现实量身定制应对措施，从而支持上下游各方做出明智决策，取得更有效的成果。</p><h2 id="20f3">Palantir 以用户为中心的机器学习（UCML）服务介绍</h2><p id="e96a">要将此服务推向一线，Palantir 必须重新审视机器学习工作流的构建方式及底层技术。我们必须确保用户能够与机器学习模型的输入和输出直接交互，从而<em>实时</em>帮助改善模型输出。</p><p id="78e7">我们将这种新型服务称为“以用户为中心的机器学习”（UCML），因为它将控制权交给了用户和分析师，而不是将他们视为模型静态输出的被动消费者。</p><p id="50b8">借助 UCML，用户可以查看带有不完整 CV 模型检测结果的图像，标注几个对象，只需简单点击几下，就能根据自身输入获得改进后的检测结果。见证了 UCML 带来的体验，我们坚信这项技术对于驱动各类应用的新体验至关重要，涵盖了从传统的目标检测与跟踪，到数据标注和视觉搜索应用等领域。</p><p id="a12a">下方的示例展示了 UCML 如何与卫星光电（EO）影像进行交互（图 2）。模型最初检测到图像中的几辆车，但漏检了另外一些。分析师可以直接与模型输出及输入图像进行交互并提供反馈。在此例中，用户标出了图像中一辆漏检的车辆并提交反馈。Palantir 的 UCML 服务能够接收该反馈，并<em>实时</em>重新处理输入图像，从而生成一组更新且改进的检测结果，此时大部分小型车辆均被成功检出。</p><figure><figcaption><em>图 2. 以上所有图像仅供演示之用，展示的是 Palantir 及/或概念性模型。</em></figcaption></figure><p id="ded9">分析师可以选择目标检测模型最初生成的任何检测结果，指出其是真正例还是假正例，也可以如图 2 所示标出漏检目标。随后，UCML 模型能够考虑用户的这一反馈，通过检测更多用户关注的目标和/或消除假正例，进一步优化其检测结果。</p><p id="c16b">每次用户向模型提供反馈时——无论是漏检、假正例还是真正例——UCML 服务都会将这些反馈点存储为图像模板。这些图像模板可以随时间推移，在特定关注区域或跨多个关注区域内由多名分析师汇总。分析师随时可以检索并利用这些历史模板，使 UCML 服务能够在实时处理新影像时自动提升检测效果。通过解锁分析师利用整个业务决策闭环中全新上下文的能力，这从根本上改变了整个体系内的决策制定方式。</p><h2 id="5c61">UCML 的工作原理</h2><p id="cc7d">下图展示了以用户为中心的机器学习技术的工作原理。它包含 3 个基础组件：基线检测器、定制的模板匹配深度学习模型，以及融合模块。</p><figure><img alt="" height="1144" loading="lazy" src="https://miro.medium.com/v2/resize:fit:700/1*8-rLaGi71qEANGsuyHjbPQ.png" width="700"/></figure><p id="d83b">基线检测器可以是任何在我们感兴趣分析的影像类型之上训练而成的目标检测模型。当用户与基线检测器模型的输出和/或输入图像进行交互时，提供的反馈将以两种不同方式被加以利用。</p><p id="2a3a">首先，标出的正例和负例将用于与我们基线检测器最初生成的每个检测结果计算相似度。基于相似度得分，初始检测结果会被重新评分，这使我们能够抑制与所标假正例相似的结果，或者展示之前被抑制但与用户提供的准确示例相似的结果。</p><p id="4222">其次，用户提供的正例将成为定制的模板匹配深度学习模型的输入，该模型经过训练，可在输入图像中检测相似的关注对象。随后，更新后的基线检测结果与来自模板匹配模型的新检测结果将被合并，为用户提供一组全新的检测结果。随着用户提供更多反馈，该过程将反复应用，持续改善检测结果。</p><p id="900a">UCML 赋予分析师一种全新的体验，使其能够在特定任务及所处理影像的上下文中掌控模型。通过解锁已部署模型成为交互式、动态解决方案的能力，UCML 服务代表了对现有基于机器学习工作流的根本性转变，并对于在关键任务作战中释放机器学习技术的真正潜力具有决定性意义。</p><p id="bc09"><strong>如需表达意向或了解更多信息，请通过 </strong><a href="mailto:X@palantir.com" rel="noopener ugc nofollow" target="_blank"><strong>ucml@palantir.com</strong></a><strong> 联系我们。</strong></p><h3 id="ebb0"><strong>作者</strong></h3><p id="f9ae">Dimitrios Lymperopoulos，Palantir 机器学习负责人</p><p id="3a2a">Ben Radford，Palantir 产品经理</p></article>
+</body></html>

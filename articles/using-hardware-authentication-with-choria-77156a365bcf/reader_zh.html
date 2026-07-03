@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Using Hardware Authentication with Choria</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;max-width:680px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em}
+img{max-width:100%;height:auto}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px}
+</style>
+</head>
+<body>
+<article>
+在 Choria 中使用硬件认证
+===
+![](https://miro.medium.com/v2/resize:fill:32:32/1*yFp1VmXHPcrYrYrDNlD_7A.png)
+
+[Palantir](https://palantir.medium.com/?source=post_page---byline--77156a365bcf---------------------------------------)
+
+Follow
+5 分钟阅读
+2019年11月21日
+
+3
+
+![](https://miro.medium.com/v2/resize:fit:700/1*MVp8Ijx5GqDt6S5RdQr0aw.jpeg)
+
+*编者注：本文内容最初发布于《Choria 博客》。*
+
+[Choria](https://choria.io/) 是一个基础设施编排系统，也是 MCollective 的继任者。它与 [Puppet](https://puppet.com/) 完美集成，具备[安全](https://choria.io/blog/post/2019/09/09/choria_012/)、快速的特点，使用 Golang 编写，且易于扩展。我们使用 Choria 在整个集群中编排一次性任务（或其他不适合 Puppet 处理的复杂任务）。在评估 Choria 供内部使用时，一个痛点是缺乏对硬件认证令牌的支持。我们查看了代码库，与主要维护者 R.I. Pienaar 进行了讨论，并决定向 Choria 代码库[贡献对硬件安全令牌的支持](https://github.com/choria-io/go-security/pull/51)。本文简要介绍了 pkcs11，随后描述了如何为硬件令牌配置 Choria。
+
+## 什么是 pkcs11？
+
+pkcs11 代表“公钥密码学标准 #11”。它是一套关于如何与密码令牌交互的标准。你可能听说过硬件安全模块（HSM）或智能卡；pkcs11 就是软件与这些设备交互的方式。
+
+HSM 的强大之处在于，敏感的密码材料在硬件上生成，且永远不会离开硬件。因此，你无需打开私钥文件并用它对哈希进行签名，而是将哈希交给你的 Yubikey，由它完成签名并返回数据。这还带来了合规性方面的优势（因为安全性更强）。部分 HSM 符合 FIPS 标准，这正是某些计算环境所要求的。Yubikey 和 CAC 在大规模环境中的应用日益广泛；如果你还没有开始使用这些工具，建议了解一下。
+
+## 如何开始使用 pkcs11？
+
+以下示例适用于 OS X/Linux 环境。我们来看看如何设置 Yubikey（一种 HSM 品牌）以供 Choria 使用。你需要下载 `ykman` 实用程序才能跟着操作。
+首先，让我们清空 Yubikey。
+
+```bash
+$ ykman piv reset
+WARNING! This will delete all stored PIV data and restore factory settings. Proceed? [y/N]: y
+Resetting PIV data...
+Success! All PIV data have been cleared from your YubiKey.
+Your YubiKey now has the default PIN, PUK and Management Key:
+    PIN:    123456
+    PUK:    12345678
+    Management Key:    010203040506070801020304050607080102030405060708
+```
+
+现在我们需要在 Yubikey 上生成一个私钥：
+
+```bash
+$ ykman piv generate-key -P 123456 -m 010203040506070801020304050607080102030405060708 --pin-policy ONCE --touch-policy CACHED 9a test.pub
+```
+
+上面的命令设定了在你发送密码请求前必须输入 PIN 码，并且发送密码请求时必须触碰 Yubikey。一旦触碰，你可以在 15 秒内执行更多请求，而无需再次触碰。该命令还会生成一个公钥文件，你将使用它来生成 CSR，从而为你的 Yubikey 获取签名证书。
+
+```bash
+$ ykman piv generate-csr -s ptittle -P 123456 9a test.pub test.csr
+```
+
+通过上述操作，我们使用之前获取的公钥生成了一个通用名称为 `ptittle` 的 CSR，并生成了一个 CSR 文件。既然有了 CSR 文件，你就可以去找任意证书颁发机构进行签名。签名完成后，获取他们提供的证书文件，并将其放入 `test.crt` 中。
+
+```bash
+$ ykman piv import-certificate --pin 123456 -m 010203040506070801020304050607080102030405060708 9a test.crt
+```
+
+该命令将你的证书导入到 Yubikey 中。现在你的 Yubikey 已配置完毕，可供 Choria 使用！
+上面的教程虽然针对 Yubikey 编写，但也适用于其他 HSM。你始终需要生成密钥、设置 PIN 码、创建 CSR，然后将证书导回 HSM。
+
+## 如何配置 Choria 使用我的 HSM？
+
+以下内容假设你在 HSM 插入的同一台主机上运行 Choria。我们稍后讨论转发 HSM 连接。首先，安装 `opensc`，这是一个允许软件与 HSM 通信的库。然后，在你的*客户端配置文件*中，添加/修改以下内容：
+
+```yaml
+plugin.security.provider: "pkcs11"
+plugin.security.pkcs11.slot: 0
+plugin.security.pkcs11.driver_file: "/usr/local/lib/opensc-pkcs11.so"
+```
+
+你的驱动文件路径可能不同，请根据实际情况调整。接着，像平常一样配置 Choria 信任你证书的通用名称。要进行测试，请尝试运行 `choria req rpcutil ping`。系统会提示你输入 PIN 码。输入后，它应该会正常运行！
+
+## 如何将我的 HSM 转发到集群的堡垒机？
+
+你的计算环境很可能无法从你的工作站直接访问。在这种情况下，你可以使用 [p11 kit](https://p11-glue.github.io/p11-glue/p11-kit.html) 创建一个套接字，然后通过 SSH 将其转发到集群的堡垒机。在堡垒机上，按照上述方法配置 Choria，但使用 p11-kit 驱动文件。该驱动程序知道如何找到你转发的套接字，因此它可以将密码请求发送回你的工作站！
+让我们详细解析一下，从工作站端的更改开始。在工作站的 `.bash_profile` 中添加以下内容：
+
+```bash
+function proxyyubi () {
+    mkdir -p ~/.xdg/
+    rm -rf ~/.xdg/p11-kit/
+    export XDG_RUNTIME_DIR=~/.xdg/
+    token_url=$(p11tool --provider /usr/local/lib/opensc-pkcs11.so --list-token-urls)
+    eval $(p11-kit server --provider /usr/local/lib/opensc-pkcs11.so "${token_url}")
+    ln -sf ${P11_KIT_SERVER_ADDRESS#*=} ~/pkcs11
+    echo "Created yubikey socket, proceed to ssh as normal"
+}
+```
+
+将库路径替换为你的 opensc 库所在位置。同时修改相关的 homedir 路径。现在在你的工作站上安装 p11-kit。接着连接到你的堡垒机并安装 p11-kit。运行 `systemd-path user-runtime`；输出应该类似于 `/run/user/632000069`。返回工作站，编辑 `~/.ssh/config`，如果没有堡垒机条目，请为其添加一个。加入以下内容：
+
+```text
+RemoteForward /run/user/<runtime-user-id>/p11-kit/pkcs11 /Users/<username>/pkcs11
+```
+
+现在插入你的 HSM，运行 `proxyyubi`，然后通过 SSH 登录到堡垒机。如果你看到关于转发套接字的任何错误，请检查你的步骤，并确保堡垒机允许转发套接字。
+
+堡垒机上的 Choria 客户端配置仅在你指定的库上有所不同。你需要使用 p11-kit 库，因为只有它知道如何找到你转发的套接字。尝试运行 `choria req rpcutil ping` 吧！
+如果你仍然遇到问题，请查看 [p11-kit 转发步骤](https://p11-glue.github.io/p11-glue/p11-kit/manual/remoting.html)。
+
+## 总结
+
+通过 pkcs11 使用 HSM 是增强计算环境安全态势的便捷方式。借助 Choria，你可以直接使用本地 HSM，或者将连接了 HSM 的套接字转发到堡垒机并在那里使用。欢迎在[安全提供程序仓库](https://github.com/choria-io/go-security/)中提交任何功能请求！
+
+## 作者
+
+Paul T.
+</article>
+</body>
+</html>
