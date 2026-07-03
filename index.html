@@ -294,7 +294,7 @@ if(visible.length===0){g.innerHTML="<div class='empty'>"+t("no_result")+"</div>"
 var gh="";
 for(var i=0;i<visible.length;i++){var a=visible[i];
 var title=lang==="zh"?(a.tt||a.t||""):(a.t||"");
-var src=a.source||"blog";var srcLabel=src==="blog"?"Blog":"Website";var th=a.th?"<div class='thumb'><img src='"+a.th+"' loading='lazy'></div>":"<div class='thumb'></div>";var dateStr=a.d?formatDate(a.d):(src==="website"?"归档":"");gh+="<div class='card' data-slug='"+a.s+"' data-url='"+a.u+"' style='cursor:pointer'>"+th+"<div class='body'><span class='source-badge "+src+"'>"+srcLabel+"</span><div class='ttl'>"+esc(title)+"</div><div class='meta'>"+dateStr+"</div></div></div>"}
+var src=a.source||"blog";var srcLabel=src==="blog"?"Blog":"Website";var th=a.th?"<div class='thumb'><img src='"+a.th+"' loading='lazy'></div>":"<div class='thumb'></div>";var dateStr=a.d?formatDate(a.d):(src==="website"?"归档":"");gh+="<div class='card' data-slug='"+a.s+"' data-url='"+a.u+"' data-source='"+(a.source||"blog")+"' style='cursor:pointer'>"+th+"<div class='body'><span class='source-badge "+src+"'>"+srcLabel+"</span><div class='ttl'>"+esc(title)+"</div><div class='meta'>"+dateStr+"</div></div></div>"}
 g.innerHTML=gh;
 var lm=document.getElementById("loadMore");
 if(f.length>visible.length){lm.style.display="block"}else{lm.style.display="none"}
@@ -324,12 +324,27 @@ document.addEventListener("mouseup",function(){if(!dragging)return;dragging=fals
 
 // Article modal
 var modal=document.getElementById("articleModal"),modalFrame=document.getElementById("modalFrame"),modalTitle=document.getElementById("modalTitle"),modalOrig=document.getElementById("modalOrigLink"),modalClose=document.getElementById("modalClose");
-function openArticle(slug,title,url){modalTitle.textContent=title||"";modalOrig.href=url||"#";var rf="reader"+(lang==="zh"?"_zh":"")+".html";modalFrame.src="articles/"+slug+"/"+rf;modal.classList.add("show");document.body.style.overflow="hidden"}
+function openArticle(slug,title,url,source){
+modalTitle.textContent=title||"";
+modalOrig.href=url||"#";
+var src=source||"blog";
+var path,contentFile;
+if(src==="website"){
+contentFile=lang==="zh"?"page_zh.html":"page.html";
+path="content/website/"+slug+"/"+contentFile;
+}else{
+contentFile=lang==="zh"?"reader_zh.html":"reader.html";
+path="articles/"+slug+"/"+contentFile;
+}
+modalFrame.src=path;
+modal.classList.add("show");
+document.body.style.overflow="hidden";
+}
 function closeArticle(){modal.classList.remove("show");modalFrame.src="about:blank";document.body.style.overflow=""}
 modalClose.addEventListener("click",closeArticle);
 modal.addEventListener("click",function(e){if(e.target===modal)closeArticle()});
 document.addEventListener("keydown",function(e){if(e.key==="Escape"&&modal.classList.contains("show"))closeArticle()});
-document.getElementById("grid").addEventListener("click",function(e){var card=e.target.closest(".card");if(!card)return;openArticle(card.dataset.slug,card.querySelector(".ttl").textContent,card.dataset.url)});
+document.getElementById("grid").addEventListener("click",function(e){var card=e.target.closest(".card");if(!card)return;openArticle(card.dataset.slug,card.querySelector(".ttl").textContent,card.dataset.url,card.dataset.source||"blog")});
 
 /* tagFreq loaded from index.json */
 
