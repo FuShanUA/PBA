@@ -34,72 +34,40 @@ article a:hover{text-decoration:underline}
 <div class="nav"><a href="../../index.html">← Back to Archive</a></div>
 <h1>Frontend Engineering at Palantir: Building a Backend-less Cross-Application API</h1>
 <div class="meta">2026-04-02 · <a href="https://blog.palantir.com/frontend-engineering-at-palantir-building-a-backend-less-cross-application-api-a40be7874ee5">Original →</a></div>
-<article>![](https://miro.medium.com/v2/resize:fit:700/1*s6-vWURWN2TAe4beczo-zA.png)
-
-**关于本系列**
-Palantir 的前端工程远不止是构建标准的 Web 应用。我们的工程师负责为关键任务的决策设计界面，构建将洞察转化为行动的运营应用，并创建处理海量数据集的系统——我们不仅要考虑用户需要什么，还要考虑在网络不稳定、 stakes 高、容错率为零的环境下，用户需要什么。
-
-本系列将揭开这项工作真实面貌的面纱：我们解决的技术问题、产生的影响，以及采取的方法。无论你是单纯好奇，还是在寻找加入我们的机会，这些文章都将为你真实展现我们前端团队的工作与生活。在此处查看所有前端工程博文。
-
-在这篇博文中，一位驻加州的前端工程师分享了 Palantir 应用间实时通信的几个框架概览。敬请期待第 4 部分。
-
-大学毕业后，我加入 Palantir 成为一名前端开发者。起初，我以为这会是一份熟悉的开发工作：设计界面、构建功能、与用户迭代。但当我加入“应用框架”团队后，发现工作内容有些不同。这个团队并不开发单个应用，而是专注于不同应用之间如何通信——也就是我同事所说的“前端的后端”。这就引出了一个问题：我们究竟是一个专注于用户体验的产品团队，还是一个维护跨应用服务的基础设施团队？要回答这个问题，需要了解 Palantir 应用在实际场景中的使用方式。
-
-对于大多数应用团队而言，UX 挑战确实局限于单一应用范围内，重点在于如何将界面和信息流设计到最优。但在实践中，这种对 UX 的理解并不能完整反映用户与 Palantir 软件交互的方式。我们许多用户最高效的工作流实际上涉及多个应用同时协同工作。我团队的职责就是构建让这种通信成为可能的框架。
-
-经常一起使用的两个应用是 Gaia 和 Workshop。Gaia 是一款专注于地理空间数据的工具，允许用户在地图上可视化并交互数据。Workshop 则完全不同——它是一个用于构建专用、交互式数据界面的所见即所得编辑器。用户可以通过 Workshop 探索数据、理解决策，并通过自定义按钮触发操作。
-
-这些应用各自独立使用时已经很有用，但配合使用效果更佳。用户可以在 Gaia 中交互基于地图的数据，同时访问 Workshop 中为其具体工作流量身定制的界面。在这种用法下，虽然每个应用都有自己的 UX，但用户真正关心的前端体验，是能够跨两个应用无缝连接的界面体验。
-
-以下是一个概念性示例，展示了一个用户工作流：在左侧 Workshop 中选择一个美国州，然后在右侧 Gaia 中进行探索。我们的用户经常使用并排布局，以便同时操作两个应用。
-
-![](https://miro.medium.com/v2/resize:fit:700/1*3DwtrbqU-Jg6sfcVuPxIow.gif)
-
-通常，这种多应用工作流会严重依赖后端服务来处理。然而，由于 Palantir 的产品常常部署在拒绝、中断、间歇或有限（DDIL）连接环境中，无法保证访问后端服务的延迟。为此，我们只能使用纯前端的浏览器 API 来构建这些跨应用框架，从而消除不稳定网络条件导致的干扰风险。
-
-## 第一个原型
-
-Palantir 的跨应用交互历史比我们的 Git 提交记录还要早。从早期 Java Swing 工作区开始，客户就需要在我们的应用之间共享数据。第一代实现是通过拖放（Drag-and-Drop）完成的。
-
-![](https://miro.medium.com/v2/resize:fit:700/1*iJjfGi4yP5WOlY5fDL97Jw.png)
-
-过去几年，用户对更复杂的应用交互需求日益增加。洞察到这一需求，一位 Palantir 员工设计了一套 Gaia 与 Workshop 之间的通信系统，命名为“Gaia Controller”。它以 Workshop widget 的形式实现——这是一种扩展 Workshop 功能的插件。
-
-使用 Gaia Controller 时，构建者首先需要配置其指向特定地图。当 Workshop 发布并查看时，控制器会通过浏览器 BroadcastChannel 监听消息来定位该地图，BroadcastChannel 是一个允许不同标签页通信的 API。当地图打开后，控制器会建立连接，用户便可通过 Workshop 中的各种按钮更新地图状态。
-
-![](https://miro.medium.com/v2/resize:fit:700/1*Nael8316FtjwTJYka5ZJIA.gif)
-
-虽然这个 widget 只是一个概念验证，但在渴望更无缝跨应用 UX 的用户和部署中逐渐流行起来。然而，这种方式存在局限：所有代码都位于 Workshop 内，无法将其能力扩展到其他应用和工作流。
-
-我们团队的任务是找到一种方法，将 Gaia Controller 的逻辑重构为 Palantir 的一等公民框架。
-
-## 构建跨应用通信 API
-
-为此，团队将 Gaia Controller 实现的两类独立行为进行了拆解，并为每类行为分别构建了框架。
-
-第一类行为是多标签页间的状态共享。Gaia Controller 允许 Workshop 构建者定义与地图状态绑定的变量，并在两者间自动同步更改。为将其标准化，我们开发了一个名为“Shared State”的框架。Shared State 允许任何应用为某块状态定义数据模型和名称，随后提供用于接收和发送该状态更新的 API。状态按 Media Type 组织，任何应用都可以通过对应的 Media Type 字符串获取所需数据。
-
-第二类行为是触发一次性命令式操作。Gaia Controller 允许用户创建能瞬间改变地图视图的按钮，例如上文演示中的“Zoom to”按钮。在对其进行泛化时，我们创建了一个名为“Commands”的框架，允许任何应用将任意逻辑暴露为可被其他应用调用的 API。调用该 API 时，应用需提供一个命令 ID 和一个请求对象，Commands 负责传输调用并返回响应。
-
-![](https://miro.medium.com/v2/resize:fit:700/1*kk9ncsaS0G4lxQEB4DOJeA.png)
-
-以下演示展示了这两个框架的实际运行。首先，使用 Shared State 将 Gaia 中选中的纽约市建筑物同步至 Workshop。然后，使用“Draw Circle”命令从 Workshop 触发 Gaia 的标注工作流。
-
-![](https://miro.medium.com/v2/resize:fit:700/1*GmX5e3Mo_SPIfVZ9x6HrRA.gif)
-
-这两个框架正在 Palantir 内部被快速采用。一种常见的配置是 Workshop 仪表板与另一应用并排使用，但新的工作流也在不断涌现，例如应用与现有 AIP 智能体进行交互。
-
-在这些场景中，智能体在响应提示时，会将 Commands 和 Shared State 用作“工具”。这些工具允许智能体通过修改用户机器上的应用来引导用户，同时在整个过程中允许用户参与。最重要的是，所有这些交互都在客户端完成，这对于后端延迟不稳定的严苛环境来说，是一种极其高效的工作流。例如，在以下演示中，智能体仅凭一条提示，便帮助用户导航并标注了纽约地图：
-
-![](https://miro.medium.com/v2/resize:fit:700/1*Z9Z4VcbUqd9qLGqrfxmTbw.gif)
-
-Palantir 的前端始终在不断演进。它既涵盖传统的专注单应用的团队，也包括像我这样负责“前端的后端”的团队。如果你愿意迎接艰难的前端挑战，欢迎加入我们。请查看我们今天的招聘职位：https://www.palantir.com/careers/open-positions/
-
-***在 Palantir 文档中阅读更多关于跨应用交互和 Commands 的内容：***
-
-https://www.palantir.com/docs/foundry/cross-app-interactivity/overview/
-https://www.palantir.com/docs/foundry/cross-app-interactivity/commands-overview/
-https://www.palantir.com/docs/foundry/agent-studio/commands-as-tools
-
-*如果这听起来正是你感兴趣的项目和影响力，请查看我们今天的招聘职位：https://www.palantir.com/careers/open-positions/ 。与我们最匹配的前端职位是“Web Application Developer”。目前我们还正在招聘以下两个特定职位：Software Engineer — Core Interfaces (Palo Alto)，以及 Software Engineer — Defense Applications (DC)。*</article>
+<article><p><img alt="" src="https://miro.medium.com/v2/resize:fit:700/1*s6-vWURWN2TAe4beczo-zA.png" /></p>
+<p><strong>关于本系列</strong><br />
+Palantir 的前端工程远不止是构建标准的 Web 应用。我们的工程师负责为关键任务的决策设计界面，构建将洞察转化为行动的运营应用，并创建处理海量数据集的系统——我们不仅要考虑用户需要什么，还要考虑在网络不稳定、 stakes 高、容错率为零的环境下，用户需要什么。</p>
+<p>本系列将揭开这项工作真实面貌的面纱：我们解决的技术问题、产生的影响，以及采取的方法。无论你是单纯好奇，还是在寻找加入我们的机会，这些文章都将为你真实展现我们前端团队的工作与生活。在此处查看所有前端工程博文。</p>
+<p>在这篇博文中，一位驻加州的前端工程师分享了 Palantir 应用间实时通信的几个框架概览。敬请期待第 4 部分。</p>
+<p>大学毕业后，我加入 Palantir 成为一名前端开发者。起初，我以为这会是一份熟悉的开发工作：设计界面、构建功能、与用户迭代。但当我加入“应用框架”团队后，发现工作内容有些不同。这个团队并不开发单个应用，而是专注于不同应用之间如何通信——也就是我同事所说的“前端的后端”。这就引出了一个问题：我们究竟是一个专注于用户体验的产品团队，还是一个维护跨应用服务的基础设施团队？要回答这个问题，需要了解 Palantir 应用在实际场景中的使用方式。</p>
+<p>对于大多数应用团队而言，UX 挑战确实局限于单一应用范围内，重点在于如何将界面和信息流设计到最优。但在实践中，这种对 UX 的理解并不能完整反映用户与 Palantir 软件交互的方式。我们许多用户最高效的工作流实际上涉及多个应用同时协同工作。我团队的职责就是构建让这种通信成为可能的框架。</p>
+<p>经常一起使用的两个应用是 Gaia 和 Workshop。Gaia 是一款专注于地理空间数据的工具，允许用户在地图上可视化并交互数据。Workshop 则完全不同——它是一个用于构建专用、交互式数据界面的所见即所得编辑器。用户可以通过 Workshop 探索数据、理解决策，并通过自定义按钮触发操作。</p>
+<p>这些应用各自独立使用时已经很有用，但配合使用效果更佳。用户可以在 Gaia 中交互基于地图的数据，同时访问 Workshop 中为其具体工作流量身定制的界面。在这种用法下，虽然每个应用都有自己的 UX，但用户真正关心的前端体验，是能够跨两个应用无缝连接的界面体验。</p>
+<p>以下是一个概念性示例，展示了一个用户工作流：在左侧 Workshop 中选择一个美国州，然后在右侧 Gaia 中进行探索。我们的用户经常使用并排布局，以便同时操作两个应用。</p>
+<p><img alt="" src="https://miro.medium.com/v2/resize:fit:700/1*3DwtrbqU-Jg6sfcVuPxIow.gif" /></p>
+<p>通常，这种多应用工作流会严重依赖后端服务来处理。然而，由于 Palantir 的产品常常部署在拒绝、中断、间歇或有限（DDIL）连接环境中，无法保证访问后端服务的延迟。为此，我们只能使用纯前端的浏览器 API 来构建这些跨应用框架，从而消除不稳定网络条件导致的干扰风险。</p>
+<h2>第一个原型</h2>
+<p>Palantir 的跨应用交互历史比我们的 Git 提交记录还要早。从早期 Java Swing 工作区开始，客户就需要在我们的应用之间共享数据。第一代实现是通过拖放（Drag-and-Drop）完成的。</p>
+<p><img alt="" src="https://miro.medium.com/v2/resize:fit:700/1*iJjfGi4yP5WOlY5fDL97Jw.png" /></p>
+<p>过去几年，用户对更复杂的应用交互需求日益增加。洞察到这一需求，一位 Palantir 员工设计了一套 Gaia 与 Workshop 之间的通信系统，命名为“Gaia Controller”。它以 Workshop widget 的形式实现——这是一种扩展 Workshop 功能的插件。</p>
+<p>使用 Gaia Controller 时，构建者首先需要配置其指向特定地图。当 Workshop 发布并查看时，控制器会通过浏览器 BroadcastChannel 监听消息来定位该地图，BroadcastChannel 是一个允许不同标签页通信的 API。当地图打开后，控制器会建立连接，用户便可通过 Workshop 中的各种按钮更新地图状态。</p>
+<p><img alt="" src="https://miro.medium.com/v2/resize:fit:700/1*Nael8316FtjwTJYka5ZJIA.gif" /></p>
+<p>虽然这个 widget 只是一个概念验证，但在渴望更无缝跨应用 UX 的用户和部署中逐渐流行起来。然而，这种方式存在局限：所有代码都位于 Workshop 内，无法将其能力扩展到其他应用和工作流。</p>
+<p>我们团队的任务是找到一种方法，将 Gaia Controller 的逻辑重构为 Palantir 的一等公民框架。</p>
+<h2>构建跨应用通信 API</h2>
+<p>为此，团队将 Gaia Controller 实现的两类独立行为进行了拆解，并为每类行为分别构建了框架。</p>
+<p>第一类行为是多标签页间的状态共享。Gaia Controller 允许 Workshop 构建者定义与地图状态绑定的变量，并在两者间自动同步更改。为将其标准化，我们开发了一个名为“Shared State”的框架。Shared State 允许任何应用为某块状态定义数据模型和名称，随后提供用于接收和发送该状态更新的 API。状态按 Media Type 组织，任何应用都可以通过对应的 Media Type 字符串获取所需数据。</p>
+<p>第二类行为是触发一次性命令式操作。Gaia Controller 允许用户创建能瞬间改变地图视图的按钮，例如上文演示中的“Zoom to”按钮。在对其进行泛化时，我们创建了一个名为“Commands”的框架，允许任何应用将任意逻辑暴露为可被其他应用调用的 API。调用该 API 时，应用需提供一个命令 ID 和一个请求对象，Commands 负责传输调用并返回响应。</p>
+<p><img alt="" src="https://miro.medium.com/v2/resize:fit:700/1*kk9ncsaS0G4lxQEB4DOJeA.png" /></p>
+<p>以下演示展示了这两个框架的实际运行。首先，使用 Shared State 将 Gaia 中选中的纽约市建筑物同步至 Workshop。然后，使用“Draw Circle”命令从 Workshop 触发 Gaia 的标注工作流。</p>
+<p><img alt="" src="https://miro.medium.com/v2/resize:fit:700/1*GmX5e3Mo_SPIfVZ9x6HrRA.gif" /></p>
+<p>这两个框架正在 Palantir 内部被快速采用。一种常见的配置是 Workshop 仪表板与另一应用并排使用，但新的工作流也在不断涌现，例如应用与现有 AIP 智能体进行交互。</p>
+<p>在这些场景中，智能体在响应提示时，会将 Commands 和 Shared State 用作“工具”。这些工具允许智能体通过修改用户机器上的应用来引导用户，同时在整个过程中允许用户参与。最重要的是，所有这些交互都在客户端完成，这对于后端延迟不稳定的严苛环境来说，是一种极其高效的工作流。例如，在以下演示中，智能体仅凭一条提示，便帮助用户导航并标注了纽约地图：</p>
+<p><img alt="" src="https://miro.medium.com/v2/resize:fit:700/1*Z9Z4VcbUqd9qLGqrfxmTbw.gif" /></p>
+<p>Palantir 的前端始终在不断演进。它既涵盖传统的专注单应用的团队，也包括像我这样负责“前端的后端”的团队。如果你愿意迎接艰难的前端挑战，欢迎加入我们。请查看我们今天的招聘职位：https://www.palantir.com/careers/open-positions/</p>
+<p><strong><em>在 Palantir 文档中阅读更多关于跨应用交互和 Commands 的内容：</em></strong></p>
+<p>https://www.palantir.com/docs/foundry/cross-app-interactivity/overview/<br />
+https://www.palantir.com/docs/foundry/cross-app-interactivity/commands-overview/<br />
+https://www.palantir.com/docs/foundry/agent-studio/commands-as-tools</p>
+<p><em>如果这听起来正是你感兴趣的项目和影响力，请查看我们今天的招聘职位：https://www.palantir.com/careers/open-positions/ 。与我们最匹配的前端职位是“Web Application Developer”。目前我们还正在招聘以下两个特定职位：Software Engineer — Core Interfaces (Palo Alto)，以及 Software Engineer — Defense Applications (DC)。</em></p></article>
 </body></html>

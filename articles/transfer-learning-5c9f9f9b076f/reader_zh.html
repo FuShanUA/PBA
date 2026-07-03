@@ -35,48 +35,29 @@ article a:hover{text-decoration:underline}
 <h1>Transfer Learning: Object Detection in Satellite Imagery</h1>
 <div class="meta">2023-12-15 · <a href="https://blog.palantir.com/transfer-learning-5c9f9f9b076f">Original →</a></div>
 <article><figure><img alt="" height="365" loading="eager" src="https://miro.medium.com/v2/resize:fit:700/1*FKhdHf-6Mc8bwXEia7Qkvg.jpeg" width="700"/></figure>
-卫星图像中的目标检测是众多复杂商业和政府工作流的关键组成部分。在 Palantir，我们与各行业的客户合作，致力于提升其模型精准检测相关上下文的能力。
-
-在商业领域，这些模型通常是自然灾害应急响应协调的核心环节。它们能够识别建筑物并评估受损情况，从而加速关键服务的交付，这不仅能优化应急救援队伍的调度，还能协助保险公司快速处理理赔。当然，这项技术在非危机时刻同样大有用武之地——金融机构可依据零售商停车场内的车辆数量，预测其市场需求。对于政府用户而言，应用场景则更为直接：掌握友方与敌方航空器、舰船及车辆等装备的位置及动态轨迹，能够为关键战略决策提供有力支撑。
-
-针对上述各类用例，如何以最优方式训练目标检测模型以实现效用最大化，始终是一项挑战。下文将剖析训练高精度模型所面临的难点，并公布我们的一项实验成果：在同一样本集上对比测试两种不同的预训练模型。我们希望这些经验能帮助其他用户找到有效策略，更高效地完成模型预训练。
-
-## 训练高精度模型面临的挑战
-
-为实现上述应用而训练高精度的目标检测模型，需要依赖海量的标注数据集。就卫星图像而言，训练复杂度更是显著提升：图像尺寸庞大，而待检测目标却相对微小。加之各卫星运营商所采用的硬件与图像处理软件存在差异，想要收集完美标注的数据集来训练泛化能力强的目标检测模型绝非易事。鉴于这一现实，加上尽快打通端到端用户工作流的迫切需求，客户常常要求我们协助解决一个关键问题：在训练数据有限且时间紧迫的情况下，如何构建出最优的目标检测模型？
-
-在 Palantir，我们发现，若用户试图在有限数据集上从零开始训练目标检测模型，往往难以取得最佳效果。业界有多种技术应对此问题，其中最常用的是迁移学习。在迁移学习中，我们首先在一个或多个代理数据集上对目标检测模型进行预训练，随后利用训练得到的权重来初始化模型，使其在我们真正关心的有限下游数据集上进行训练。
-
-目标检测任务中最主流的预训练数据集是 ImageNet [1] 和 COCO [2]。它们的普及得益于对目标检测问题的专注，以及学术界提供了大量基于这些数据集的预训练模型。尽管在 ImageNet 和 COCO 上进行预训练能提升模型在下游数据集上的准确率，但如果在特征与下游任务更相近的数据集上作进一步预训练，还能实现额外的性能提升。总体而言，预训练数据集与我们关注的下游数据集相似度越高，预训练带来的精度提升往往就越大。例如，在处理卫星图像目标检测问题时，仅靠 ImageNet 和/或 COCO 预训练可能不够，因为这些数据集与典型的卫星目标检测数据集存在显著差异（如目标尺寸、目标类型、图像背景特征等）。针对此类情况，必须基于开源的卫星目标检测数据集进行预训练，才能进一步提升最终模型的性能。
-
-在本篇博文中，我们量化分析了在 DOTA 2 数据集 [3]（一个开源的航空影像目标检测数据集）上进行预训练，对 Palantir 基于较小规模标注数据集训练的商业卫星目标检测模型质量的影响。我们在此公布实验结果，希望能为面临类似挑战的广大学术界同仁提供参考。
-
-## 构建自有数据集
-
-为了验证迁移学习在目标检测中的有效性，Palantir 构建了一个专门用于卫星图像目标检测的标注数据集。该数据集包含来自两家卫星提供商的 EO 卫星影像，其具体特征详见表 1。训练数据集包含约 7500 张图像（每张 1000x1000 像素），分别来自两家不同的商业卫星供应商。总计在此批图像中标注了约 13 万个关注目标，重点涵盖三大类别：车辆、航空器（含直升机）以及船只。
-
-为防止训练过程中出现过拟合，数据集已被合理划分为训练集和验证集。我们的目标是使这三个目标类别的 F1 分数最大化。
-
+<p>卫星图像中的目标检测是众多复杂商业和政府工作流的关键组成部分。在 Palantir，我们与各行业的客户合作，致力于提升其模型精准检测相关上下文的能力。</p>
+<p>在商业领域，这些模型通常是自然灾害应急响应协调的核心环节。它们能够识别建筑物并评估受损情况，从而加速关键服务的交付，这不仅能优化应急救援队伍的调度，还能协助保险公司快速处理理赔。当然，这项技术在非危机时刻同样大有用武之地——金融机构可依据零售商停车场内的车辆数量，预测其市场需求。对于政府用户而言，应用场景则更为直接：掌握友方与敌方航空器、舰船及车辆等装备的位置及动态轨迹，能够为关键战略决策提供有力支撑。</p>
+<p>针对上述各类用例，如何以最优方式训练目标检测模型以实现效用最大化，始终是一项挑战。下文将剖析训练高精度模型所面临的难点，并公布我们的一项实验成果：在同一样本集上对比测试两种不同的预训练模型。我们希望这些经验能帮助其他用户找到有效策略，更高效地完成模型预训练。</p>
+<h2>训练高精度模型面临的挑战</h2>
+<p>为实现上述应用而训练高精度的目标检测模型，需要依赖海量的标注数据集。就卫星图像而言，训练复杂度更是显著提升：图像尺寸庞大，而待检测目标却相对微小。加之各卫星运营商所采用的硬件与图像处理软件存在差异，想要收集完美标注的数据集来训练泛化能力强的目标检测模型绝非易事。鉴于这一现实，加上尽快打通端到端用户工作流的迫切需求，客户常常要求我们协助解决一个关键问题：在训练数据有限且时间紧迫的情况下，如何构建出最优的目标检测模型？</p>
+<p>在 Palantir，我们发现，若用户试图在有限数据集上从零开始训练目标检测模型，往往难以取得最佳效果。业界有多种技术应对此问题，其中最常用的是迁移学习。在迁移学习中，我们首先在一个或多个代理数据集上对目标检测模型进行预训练，随后利用训练得到的权重来初始化模型，使其在我们真正关心的有限下游数据集上进行训练。</p>
+<p>目标检测任务中最主流的预训练数据集是 ImageNet [1] 和 COCO [2]。它们的普及得益于对目标检测问题的专注，以及学术界提供了大量基于这些数据集的预训练模型。尽管在 ImageNet 和 COCO 上进行预训练能提升模型在下游数据集上的准确率，但如果在特征与下游任务更相近的数据集上作进一步预训练，还能实现额外的性能提升。总体而言，预训练数据集与我们关注的下游数据集相似度越高，预训练带来的精度提升往往就越大。例如，在处理卫星图像目标检测问题时，仅靠 ImageNet 和/或 COCO 预训练可能不够，因为这些数据集与典型的卫星目标检测数据集存在显著差异（如目标尺寸、目标类型、图像背景特征等）。针对此类情况，必须基于开源的卫星目标检测数据集进行预训练，才能进一步提升最终模型的性能。</p>
+<p>在本篇博文中，我们量化分析了在 DOTA 2 数据集 [3]（一个开源的航空影像目标检测数据集）上进行预训练，对 Palantir 基于较小规模标注数据集训练的商业卫星目标检测模型质量的影响。我们在此公布实验结果，希望能为面临类似挑战的广大学术界同仁提供参考。</p>
+<h2>构建自有数据集</h2>
+<p>为了验证迁移学习在目标检测中的有效性，Palantir 构建了一个专门用于卫星图像目标检测的标注数据集。该数据集包含来自两家卫星提供商的 EO 卫星影像，其具体特征详见表 1。训练数据集包含约 7500 张图像（每张 1000x1000 像素），分别来自两家不同的商业卫星供应商。总计在此批图像中标注了约 13 万个关注目标，重点涵盖三大类别：车辆、航空器（含直升机）以及船只。</p>
+<p>为防止训练过程中出现过拟合，数据集已被合理划分为训练集和验证集。我们的目标是使这三个目标类别的 F1 分数最大化。</p>
 <figure><img alt="" height="125" loading="lazy" src="https://miro.medium.com/v2/resize:fit:700/1*cZqNdQk4UgGMEB-qoPv62w.png" width="700"/></figure>
 
-作为卫星图像目标检测任务的代理数据集，我们采用了 DOTA 2 这一开源航空影像目标检测数据集 [3]。该数据集包含了从 Google Earth、GF-2 和 JL-1 卫星采集的影像，以及由 CycloMedia B.V. 提供的航空影像。来自 Google Earth 和 CycloMedia 的影像均为 RGB 格式，而来自 GF-2 和 JL-1 卫星的影像则为灰度图。
-
-DOTA 数据集标注了极其丰富的关注目标类别，远超我们在内部数据集中所设定的 3 个类别。我们对 DOTA 的标签进行了预处理，构建出与内部数据集类别一致的数据集。具体做法是：在必要时将所有不同的车辆、航空器和船只子类合并为一个单独的父类（车辆、航空器和船只），同时忽略其余已标注的类别。我们仅基于这三个派生出的父类对模型进行预训练。
-
-## 实验结果
-
-表 2 展示了两种不同架构下各类别的 F1 分数：一种是传统的类 Faster-RCNN 模型 [4]，另一种是更现代的基于 Transformer 的目标检测架构 [5]。所列 F1 分数均基于我们的内部验证集计算得出。每个模型均训练了两次：一次使用 ImageNet 预训练权重，另一次使用 DOTA 数据集的预训练权重。其中，基于 DOTA 数据集的预训练过程采用了 ImageNet 的预训练权重进行初始化。
-
+<p>作为卫星图像目标检测任务的代理数据集，我们采用了 DOTA 2 这一开源航空影像目标检测数据集 [3]。该数据集包含了从 Google Earth、GF-2 和 JL-1 卫星采集的影像，以及由 CycloMedia B.V. 提供的航空影像。来自 Google Earth 和 CycloMedia 的影像均为 RGB 格式，而来自 GF-2 和 JL-1 卫星的影像则为灰度图。</p>
+<p>DOTA 数据集标注了极其丰富的关注目标类别，远超我们在内部数据集中所设定的 3 个类别。我们对 DOTA 的标签进行了预处理，构建出与内部数据集类别一致的数据集。具体做法是：在必要时将所有不同的车辆、航空器和船只子类合并为一个单独的父类（车辆、航空器和船只），同时忽略其余已标注的类别。我们仅基于这三个派生出的父类对模型进行预训练。</p>
+<h2>实验结果</h2>
+<p>表 2 展示了两种不同架构下各类别的 F1 分数：一种是传统的类 Faster-RCNN 模型 [4]，另一种是更现代的基于 Transformer 的目标检测架构 [5]。所列 F1 分数均基于我们的内部验证集计算得出。每个模型均训练了两次：一次使用 ImageNet 预训练权重，另一次使用 DOTA 数据集的预训练权重。其中，基于 DOTA 数据集的预训练过程采用了 ImageNet 的预训练权重进行初始化。</p>
 <figure><img alt="" height="198" loading="lazy" src="https://miro.medium.com/v2/resize:fit:700/1*phrZDn6OIsvLpXi6iusTVQ.png" width="700"/></figure>
 
-在这两种架构中，结合 ImageNet 和 DOTA 进行预训练，在所有类别上均稳定获得了更高的 F1 分数。就 FasterRCNN 架构而言，基于 DOTA 的预训练使车辆、航空器和船只的 F1 分数分别提升了 1%、3% 和 6%。在 Transformer 架构下，我们同样观察到采用 DOTA 预训练带来了显著提升，但幅度不及 FasterRCNN 架构。具体来说，车辆、航空器和船只的 F1 分数分别提升了 1%、1% 和 6%。
-
-需要注意的是，性能差距可能因下游数据集质量的不同而大幅波动。在本实验中，我们使用的下游数据集包含数千张图像和数十万条标注。对于更庞大的数据集，预训练的影响可能相对减弱；而对于更小的数据集，情况则可能截然相反。
-
-## 结果可视化对比
-
-为了直观展示上述结果在实际应用中的表现，我们在下方提供了一系列基于 Transformer 架构在 Palantir 内部数据集上的检测结果可视化图像，以凸显检测效果的差异。左侧图像展示的是仅基于 ImageNet 预训练的检测结果，右侧则反映了结合 ImageNet 和 DOTA 预训练的检测结果。纵观所有图像，同时基于 ImageNet 和 DOTA 预训练的模型，比仅基于 ImageNet 预训练的模型能够更可靠地检测出更多关注目标。
-
+<p>在这两种架构中，结合 ImageNet 和 DOTA 进行预训练，在所有类别上均稳定获得了更高的 F1 分数。就 FasterRCNN 架构而言，基于 DOTA 的预训练使车辆、航空器和船只的 F1 分数分别提升了 1%、3% 和 6%。在 Transformer 架构下，我们同样观察到采用 DOTA 预训练带来了显著提升，但幅度不及 FasterRCNN 架构。具体来说，车辆、航空器和船只的 F1 分数分别提升了 1%、1% 和 6%。</p>
+<p>需要注意的是，性能差距可能因下游数据集质量的不同而大幅波动。在本实验中，我们使用的下游数据集包含数千张图像和数十万条标注。对于更庞大的数据集，预训练的影响可能相对减弱；而对于更小的数据集，情况则可能截然相反。</p>
+<h2>结果可视化对比</h2>
+<p>为了直观展示上述结果在实际应用中的表现，我们在下方提供了一系列基于 Transformer 架构在 Palantir 内部数据集上的检测结果可视化图像，以凸显检测效果的差异。左侧图像展示的是仅基于 ImageNet 预训练的检测结果，右侧则反映了结合 ImageNet 和 DOTA 预训练的检测结果。纵观所有图像，同时基于 ImageNet 和 DOTA 预训练的模型，比仅基于 ImageNet 预训练的模型能够更可靠地检测出更多关注目标。</p>
 <figure><img alt="" height="350" loading="lazy" src="https://miro.medium.com/v2/resize:fit:700/1*OOCaRNEQfwOfH3wuizwc1Q.png" width="700"/></figure>
 <figure><img alt="" height="350" loading="lazy" src="https://miro.medium.com/v2/resize:fit:700/1*cD_lfjYbqHxiHMAab7IiHA.png" width="700"/></figure>
 <figure><img alt="" height="350" loading="lazy" src="https://miro.medium.com/v2/resize:fit:700/1*rju1wHYVzVAtzF9QyekyTQ.png" width="700"/></figure>
@@ -84,15 +65,12 @@ DOTA 数据集标注了极其丰富的关注目标类别，远超我们在内部
 <figure><img alt="" height="352" loading="lazy" src="https://miro.medium.com/v2/resize:fit:700/1*YArgq_pLMwFItwKFWZL-8g.png" width="700"/></figure>
 <figure><img alt="" height="350" loading="lazy" src="https://miro.medium.com/v2/resize:fit:700/1*6MXp7vEJxdK_oqeKjcUTBQ.png" width="700"/></figure>
 
-## 结论
-
-研究表明，基于 ImageNet 或类似的开源目标检测数据集对卫星目标检测模型进行预训练，能够有效提升模型准确率，从而检测出更多关注目标。在本实验中，我们采用了基于 ImageNet 预训练的模型，但实际上同样可以依赖 COCO 预训练模型，甚至将这些模型与*额外*的数据集结合使用。如上所述，在与我们实际任务相似的数据集上对目标检测模型作进一步预训练，是提升模型性能的有效策略。
-
-## 参考文献
-
-[1] Deng, J., Dong, W., Socher, R., Li, L.-J., Li, K., & Fei-Fei, L. (2009). Imagenet: A large-scale hierarchical image database. In *2009 IEEE conference on computer vision and pattern recognition* (pp. 248–255).
-[2] COCO: Common Objects in Context: https://cocodataset.org/#home 
-[3] DOTA: A Large-Scale Benchmark and Challenges for Object Detection in Aerial Images: https://captain-whu.github.io/DOTA/dataset.html
-[4] Ren, S., He, K., Girshick, R., & Sun, J. (2015). Faster R-CNN: Towards Real-Time Object Detection with Region Proposal Networks. In *Advances in Neural Information Processing Systems (NIPS)*.
-[5] Dosovitskiy, A., Beyer, L, Kolesnikov, A., Weissenborn, D., Zhai, X., Unterthiner, T., Dehgani, M., Minderer, M., Heigold, G., Gelly, S., Uszkoreit, J., & Houlsby, N. (2021). An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale. In 2021 ICLR.</article>
+<h2>结论</h2>
+<p>研究表明，基于 ImageNet 或类似的开源目标检测数据集对卫星目标检测模型进行预训练，能够有效提升模型准确率，从而检测出更多关注目标。在本实验中，我们采用了基于 ImageNet 预训练的模型，但实际上同样可以依赖 COCO 预训练模型，甚至将这些模型与<em>额外</em>的数据集结合使用。如上所述，在与我们实际任务相似的数据集上对目标检测模型作进一步预训练，是提升模型性能的有效策略。</p>
+<h2>参考文献</h2>
+<p>[1] Deng, J., Dong, W., Socher, R., Li, L.-J., Li, K., &amp; Fei-Fei, L. (2009). Imagenet: A large-scale hierarchical image database. In <em>2009 IEEE conference on computer vision and pattern recognition</em> (pp. 248–255).<br />
+[2] COCO: Common Objects in Context: https://cocodataset.org/#home <br />
+[3] DOTA: A Large-Scale Benchmark and Challenges for Object Detection in Aerial Images: https://captain-whu.github.io/DOTA/dataset.html<br />
+[4] Ren, S., He, K., Girshick, R., &amp; Sun, J. (2015). Faster R-CNN: Towards Real-Time Object Detection with Region Proposal Networks. In <em>Advances in Neural Information Processing Systems (NIPS)</em>.<br />
+[5] Dosovitskiy, A., Beyer, L, Kolesnikov, A., Weissenborn, D., Zhai, X., Unterthiner, T., Dehgani, M., Minderer, M., Heigold, G., Gelly, S., Uszkoreit, J., &amp; Houlsby, N. (2021). An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale. In 2021 ICLR.</p></article>
 </body></html>

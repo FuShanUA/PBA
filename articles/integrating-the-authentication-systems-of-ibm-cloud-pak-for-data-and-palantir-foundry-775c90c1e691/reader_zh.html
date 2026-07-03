@@ -34,38 +34,27 @@ article a:hover{text-decoration:underline}
 <div class="nav"><a href="../../index.html">← Back to Archive</a></div>
 <h1>Integrating the Authentication Systems of IBM Cloud Pak for Data and Palantir Foundry</h1>
 <div class="meta">2021-02-08 · <a href="https://blog.palantir.com/integrating-the-authentication-systems-of-ibm-cloud-pak-for-data-and-palantir-foundry-775c90c1e691">Original →</a></div>
-<article><figure><img alt="" height="367" loading="eager" src="https://miro.medium.com/v2/resize:fit:700/1*DEM748hlbA6tD9yemf3AEA.png" width="700"/></figure>本周，Palantir 与 IBM 宣布达成合作，将通过易于部署的 AI 应用帮助企业大幅提升其数据影响力。新方案将 Palantir Foundry 的核心模块与 IBM 面向商业的 AI 能力及混合云数据平台——Cloud Pak for Data 融为一体。
-
-其中一个尤为有趣的技术挑战（也是本篇博文探讨的主题），在于 IBM Cloud Pak for Data 与 Palantir Foundry 各自的认证与授权子系统之间如何实现集成。
-
-为简洁起见，在本文中我们将 IBM Cloud Pak for Data 简称为“Cloud Pak for Data”或“Cloud Pak”，并将 Palantir Foundry 的核心模块简称为“Palantir”。
-
-## Cloud Pak 与 Palantir 中的认证与授权
-
-<figure><img alt="" height="449" loading="lazy" src="https://miro.medium.com/v2/resize:fit:700/1*oCxroZe1lt5hsYHBHcTMWw.jpeg" width="700"/></figure>首先，我们来简要介绍一下 IBM Cloud Pak for Data 和 Palantir 各自的认证与授权架构。这两个平台都将认证与授权逻辑封装在一个中心组件中：Palantir 中是 Multipass，IBM Cloud Pak for Data 中则是用户管理服务。在常见的企业单点登录（SSO）配置中，该组件会通过 SAML 或 Kerberos+LDAP、X509+LDAP 等方式，与现有的身份提供者（如 Azure AD 或 Okta）协同处理用户登录。成功登录后，Multipass 和 Cloud Pak 的用户管理服务会颁发 JSON Web Token (JWT)，通常以 Cookie 形式存储在用户的浏览器会话中。随后，用户将 JWT 传递给 Cloud Pak 或 Palantir 的后端 API，以此证明其身份。
-
-<figure><img alt="" height="415" loading="lazy" src="https://miro.medium.com/v2/resize:fit:700/1*3LiC8vywx2Lvd_YkuWDlSA.jpeg" width="700"/></figure>在 Cloud Pak for Data 中，JWT 同时携带身份认证声明和访问授权许可。Cloud Pak 的授权组件将用户组映射至相应的权限许可，并将这些许可编码进颁发给 Cloud Pak 用户的 JWT 中。随后，每个 Cloud Pak 应用都会根据 JWT 中编码的权限许可，在本地决定是否授予用户访问特定资源或执行特定操作的权限。相比之下，Palantir 依赖中心的 Multipass 服务来处理授权决策：当用户试图在某个应用中对特定*资源*（例如数据集标识符）执行特定*操作*（例如“读取数据”）时，该应用会调用 Multipass 的 *hasOperation(token, operation, resource)* API，以此判断是否授予访问权限。将授权规则集中封装在一个中心服务中虽然增加了复杂性，但也正因如此，我们才得以实现诸如《溯源感知的访问控制》这类复杂的访问控制工作流。
-
-## 无缝集成
-
-<figure><img alt="" height="547" loading="lazy" src="https://miro.medium.com/v2/resize:fit:700/1*fGzM23pBUBm1PL5PQghhGA.jpeg" width="700"/></figure>为了在 Cloud Pak for Data 和 Palantir 之间提供无缝的用户体验，我们与 IBM 工程师共同设计了一套集成的认证与授权解决方案。用户通常通过 Cloud Pak 的 SSO 集成进行登录，获取对所有 Cloud Pak 应用均有效的 Cloud Pak JWT。当切换至 Palantir 应用时，我们会以透明方式将 Cloud Pak JWT 换取为 Palantir JWT，这样用户在访问 Palantir 应用前无需再次登录。下面我们来详细了解一下令牌交换的具体机制。
-
-Multipass 的核心认证系统分为所谓的*收集器*、*凭证*和*提供者*。收集器的职责是从外部系统获取用户凭证；例如，*表单*收集器允许用户通过界面输入用户名和密码作为凭证，而更复杂一些的 *SAML* 收集器则从上游身份提供者处接收已签名的 SAML 断言作为凭证。随后，Multipass 在内部将获取到的凭证转发给可配置的提供者；提供者的职责是返回用户组信息（例如在 Azure AD 配置下的用户 AD 组）和用户详情（例如用户的电子邮件地址）。
-
-值得注意的是，收集器和提供者不仅是可配置的，还具备多态性；这意味着 Multipass 可以将不同的收集器和提供者组合起来，融合它们的能力。我们正是利用了这种灵活性来实现与 Cloud Pak for Data 的集成：我们将一个用于提取并验证 Cloud Pak JWT 的 *CookieCollector*，与一个特定于 Cloud Pak 的提供者结合，该提供者会调用 Cloud Pak 用户管理 API 来获取额外的用户详情。当用户访问 Palantir 应用但未提供有效的 Palantir JWT 时，用户会被重定向（通过 OAuth2）至 Multipass。Multipass 会检查是否存在 Cloud Pak JWT，如有必要会引导用户走 Cloud Pak 的登录流程，随后调用收集器和提供者来验证 Cloud Pak JWT 并构建相应的 Palantir JWT。重定向完成后，浏览器将同时为用户保存 Cloud Pak JWT 和对应的 Palantir JWT。
-
-## API 网关
-
-<figure><img alt="" height="350" loading="lazy" src="https://miro.medium.com/v2/resize:fit:700/1*XFkI13-g6c1o1igxMY1fZA.jpeg" width="700"/></figure>整个拼图中还缺最后一块：Palantir 的后端服务如何将用户身份转发给 Cloud Pak 的后端 API。例如，用户可能加载了一个 Palantir 仪表板，从而向仪表板后端服务出示了 Palantir JWT。此时，该后端服务需要向 Cloud Pak 发起请求，以获取该仪表板背后的底层数据。由于 Palantir 用户仅向 Palantir 后端服务传递了 Palantir JWT，因此该服务需要将用户的 Palantir JWT 换取有效的 Cloud Pak JWT，才能交给 Cloud Pak 后端使用。
-
-幸运的是，我们的 Multipass Cloud Pak 提供者知晓从 Palantir 用户到 Cloud Pak 用户的映射关系，能够提供一个合适的令牌交换 API 端点供 Palantir 后端服务调用。我们提取用户唯一的 Palantir 用户 ID，将其与唯一的 Cloud Pak 用户 ID 进行匹配，然后使用 Cloud Pak API 为该用户生成一个已签名且有效期较短的 JWT。
-
-为了方便我们的服务及开发人员，我们还决定实现一个 Palantir 到 Cloud Pak 的直通式 API 网关，在后台自动完成此令牌交换过程。作为对开发人员的额外便利，该网关还在我们标准的 RPC 框架《Conjure》中暴露了相关的 Cloud Pak API。
-
-## 总结
-
-整合两个具有变革意义的软件平台会带来大量有趣的技术挑战——正如本次的 Cloud Pak 认证与授权集成。但关键在于，这项集成立刻为现有和未来的 IBM Cloud Pak 客户释放了 Palantir 核心模块的全部潜力，极大提升了他们的运营决策能力，并加速了其数字化转型进程。
-
-## 作者
-Trey D., Robert F., Tom P., Gaurav T., Will M.</article>
+<article><figure><img alt="" height="367" loading="eager" src="https://miro.medium.com/v2/resize:fit:700/1*DEM748hlbA6tD9yemf3AEA.png" width="700"/></figure>
+<p>本周，Palantir 与 IBM 宣布达成合作，将通过易于部署的 AI 应用帮助企业大幅提升其数据影响力。新方案将 Palantir Foundry 的核心模块与 IBM 面向商业的 AI 能力及混合云数据平台——Cloud Pak for Data 融为一体。</p>
+<p>其中一个尤为有趣的技术挑战（也是本篇博文探讨的主题），在于 IBM Cloud Pak for Data 与 Palantir Foundry 各自的认证与授权子系统之间如何实现集成。</p>
+<p>为简洁起见，在本文中我们将 IBM Cloud Pak for Data 简称为“Cloud Pak for Data”或“Cloud Pak”，并将 Palantir Foundry 的核心模块简称为“Palantir”。</p>
+<h2>Cloud Pak 与 Palantir 中的认证与授权</h2>
+<figure><img alt="" height="449" loading="lazy" src="https://miro.medium.com/v2/resize:fit:700/1*oCxroZe1lt5hsYHBHcTMWw.jpeg" width="700"/></figure>
+<p>首先，我们来简要介绍一下 IBM Cloud Pak for Data 和 Palantir 各自的认证与授权架构。这两个平台都将认证与授权逻辑封装在一个中心组件中：Palantir 中是 Multipass，IBM Cloud Pak for Data 中则是用户管理服务。在常见的企业单点登录（SSO）配置中，该组件会通过 SAML 或 Kerberos+LDAP、X509+LDAP 等方式，与现有的身份提供者（如 Azure AD 或 Okta）协同处理用户登录。成功登录后，Multipass 和 Cloud Pak 的用户管理服务会颁发 JSON Web Token (JWT)，通常以 Cookie 形式存储在用户的浏览器会话中。随后，用户将 JWT 传递给 Cloud Pak 或 Palantir 的后端 API，以此证明其身份。</p>
+<figure><img alt="" height="415" loading="lazy" src="https://miro.medium.com/v2/resize:fit:700/1*3LiC8vywx2Lvd_YkuWDlSA.jpeg" width="700"/></figure>
+<p>在 Cloud Pak for Data 中，JWT 同时携带身份认证声明和访问授权许可。Cloud Pak 的授权组件将用户组映射至相应的权限许可，并将这些许可编码进颁发给 Cloud Pak 用户的 JWT 中。随后，每个 Cloud Pak 应用都会根据 JWT 中编码的权限许可，在本地决定是否授予用户访问特定资源或执行特定操作的权限。相比之下，Palantir 依赖中心的 Multipass 服务来处理授权决策：当用户试图在某个应用中对特定<em>资源</em>（例如数据集标识符）执行特定<em>操作</em>（例如“读取数据”）时，该应用会调用 Multipass 的 <em>hasOperation(token, operation, resource)</em> API，以此判断是否授予访问权限。将授权规则集中封装在一个中心服务中虽然增加了复杂性，但也正因如此，我们才得以实现诸如《溯源感知的访问控制》这类复杂的访问控制工作流。</p>
+<h2>无缝集成</h2>
+<figure><img alt="" height="547" loading="lazy" src="https://miro.medium.com/v2/resize:fit:700/1*fGzM23pBUBm1PL5PQghhGA.jpeg" width="700"/></figure>
+<p>为了在 Cloud Pak for Data 和 Palantir 之间提供无缝的用户体验，我们与 IBM 工程师共同设计了一套集成的认证与授权解决方案。用户通常通过 Cloud Pak 的 SSO 集成进行登录，获取对所有 Cloud Pak 应用均有效的 Cloud Pak JWT。当切换至 Palantir 应用时，我们会以透明方式将 Cloud Pak JWT 换取为 Palantir JWT，这样用户在访问 Palantir 应用前无需再次登录。下面我们来详细了解一下令牌交换的具体机制。</p>
+<p>Multipass 的核心认证系统分为所谓的<em>收集器</em>、<em>凭证</em>和<em>提供者</em>。收集器的职责是从外部系统获取用户凭证；例如，<em>表单</em>收集器允许用户通过界面输入用户名和密码作为凭证，而更复杂一些的 <em>SAML</em> 收集器则从上游身份提供者处接收已签名的 SAML 断言作为凭证。随后，Multipass 在内部将获取到的凭证转发给可配置的提供者；提供者的职责是返回用户组信息（例如在 Azure AD 配置下的用户 AD 组）和用户详情（例如用户的电子邮件地址）。</p>
+<p>值得注意的是，收集器和提供者不仅是可配置的，还具备多态性；这意味着 Multipass 可以将不同的收集器和提供者组合起来，融合它们的能力。我们正是利用了这种灵活性来实现与 Cloud Pak for Data 的集成：我们将一个用于提取并验证 Cloud Pak JWT 的 <em>CookieCollector</em>，与一个特定于 Cloud Pak 的提供者结合，该提供者会调用 Cloud Pak 用户管理 API 来获取额外的用户详情。当用户访问 Palantir 应用但未提供有效的 Palantir JWT 时，用户会被重定向（通过 OAuth2）至 Multipass。Multipass 会检查是否存在 Cloud Pak JWT，如有必要会引导用户走 Cloud Pak 的登录流程，随后调用收集器和提供者来验证 Cloud Pak JWT 并构建相应的 Palantir JWT。重定向完成后，浏览器将同时为用户保存 Cloud Pak JWT 和对应的 Palantir JWT。</p>
+<h2>API 网关</h2>
+<figure><img alt="" height="350" loading="lazy" src="https://miro.medium.com/v2/resize:fit:700/1*XFkI13-g6c1o1igxMY1fZA.jpeg" width="700"/></figure>
+<p>整个拼图中还缺最后一块：Palantir 的后端服务如何将用户身份转发给 Cloud Pak 的后端 API。例如，用户可能加载了一个 Palantir 仪表板，从而向仪表板后端服务出示了 Palantir JWT。此时，该后端服务需要向 Cloud Pak 发起请求，以获取该仪表板背后的底层数据。由于 Palantir 用户仅向 Palantir 后端服务传递了 Palantir JWT，因此该服务需要将用户的 Palantir JWT 换取有效的 Cloud Pak JWT，才能交给 Cloud Pak 后端使用。</p>
+<p>幸运的是，我们的 Multipass Cloud Pak 提供者知晓从 Palantir 用户到 Cloud Pak 用户的映射关系，能够提供一个合适的令牌交换 API 端点供 Palantir 后端服务调用。我们提取用户唯一的 Palantir 用户 ID，将其与唯一的 Cloud Pak 用户 ID 进行匹配，然后使用 Cloud Pak API 为该用户生成一个已签名且有效期较短的 JWT。</p>
+<p>为了方便我们的服务及开发人员，我们还决定实现一个 Palantir 到 Cloud Pak 的直通式 API 网关，在后台自动完成此令牌交换过程。作为对开发人员的额外便利，该网关还在我们标准的 RPC 框架《Conjure》中暴露了相关的 Cloud Pak API。</p>
+<h2>总结</h2>
+<p>整合两个具有变革意义的软件平台会带来大量有趣的技术挑战——正如本次的 Cloud Pak 认证与授权集成。但关键在于，这项集成立刻为现有和未来的 IBM Cloud Pak 客户释放了 Palantir 核心模块的全部潜力，极大提升了他们的运营决策能力，并加速了其数字化转型进程。</p>
+<h2>作者</h2>
+<p>Trey D., Robert F., Tom P., Gaurav T., Will M.</p></article>
 </body></html>

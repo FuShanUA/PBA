@@ -12,287 +12,206 @@ pre{overflow-x:auto;background:#f5f5f5;padding:16px}
 </style>
 </head>
 <body>
-<article>
-# 用于网络防御的 Windows 事件转发
-
-![](https://miro.medium.com/v2/resize:fit:700/1*ZsGlOWZRMdllJqqPt_iuzw.png)
-
-要对数千台主机进行事件检测与响应，必须深入理解用户、应用程序和设备之间的行为与操作。虽然端点检测与防护工具能提供一些开箱即用的辅助，但对安全相关事件进行深度洞察与分析，对于检测高级威胁至关重要。过去几年里，Palantir 维护着一套内部 Windows 事件转发（WEF）流水线，用于生成并集中收集来自 Microsoft Windows 主机具有取证和安全价值的日志。一旦完成这些事件的收集与索引，我们不仅可以针对高保真安全事件（如日志删除）构建告警与检测策略（ADS），还能针对偏离常态的行为进行检测，例如异常的服务账户访问、访问敏感文件系统或注册表位置，或者恶意软件持久化机制的安装。
-
-这篇博文有两个目的：首先是分享我们在 WEF 配置和管理工作流方面的经验与分步指南；其次是介绍我们最近开源的 WEF 配置、订阅和组策略对象整合库：http://github.com/palantir/windows-event-forwarding。该 GitHub 项目提供了必要的构建基石，帮助组织快速评估并将 WEF 部署到生产环境，同时集中社区力量来改进 WEF 订阅并鼓励大家采用。尽管近年来 WEF 越来越普及，但 comprehensive 部署指南寥寥无几。因此，我们认为 WEF 在社区中的受重视程度仍然远远不够，希望这个项目能鼓励大家将其用于事件检测与响应。在与全球客户合作保护其环境的过程中，我们相信我们的配置代表了一套坚实的安全标准，可应用于任何规模和成熟度的组织，为检测与响应带来立竿见影的安全成效。
-
-我们对 Microsoft、IAD 及其他贡献者在这一领域所做的努力表示认可，并感谢他们提供了本文涉及的许多订阅、理念和技术。
-
-## WEF 基础
-
-Windows 事件转发（WEF）是内置于现代版 Microsoft Windows 的一项强大日志转发解决方案，其官方文档页面提供了详尽的说明。简而言之：
-
-- Windows 事件转发允许通过推送或拉取机制，将事件日志发送到一台或多台集中管理的 Windows 事件收集器（WEC）服务器。
-- WEF 无需安装代理，依赖操作系统内集成的原生组件。Windows 的工作站版和服务器版均支持 WEF。
-- WEF 支持通过 Kerberos（在域内）进行双向身份验证和加密，也可以通过使用 TLS 进行扩展（用于附加身份验证或针对未加入域的计算机）。
-- WEF 拥有一套丰富的基于 XML 的语言，用于控制提交哪些事件 ID、抑制嘈杂的事件、将事件批量处理以及配置提交频率。订阅 XML 支持一部分 XPath，这简化了编写表达式以选择所需事件的过程。
-
-### 运行机制
-
-虽然 WEF 可以配置为源端或收集器端模型，但我们将重点关注源端发起的模型，即每台设备将自身的日志转发到中央收集器。这使得移动设备（如笔记本电脑）能够重新连接到网络，并按照自身的计划转发日志。
-
-一个 WEF 连接需要几个基本组件：
-
-- 用于控制安全审计和事件日志记录的组策略对象（GPO）。
-- 一台或多台配置了 Windows 事件日志收集器服务的服务器（通常称为“WEF 服务器”或“WEF 收集器”）。
-- 所有端点（域内）具备可用的 Kerberos，或者事件日志收集器服务器具备有效的 TLS 证书（非域环境）。
-- 在所有需要转发事件的工作站和服务器上启用 Windows 远程管理。
-- 允许设备之间建立 WinRM 连接的防火墙规则。
-- 用于指定 WEF 订阅管理器 URL 的 GPO。
-- 一个或多个事件日志订阅。订阅是基于事件 ID 或其他条件的事件集合，用于告知端点需要转发哪些事件日志。
-
-工作站首次接收到相应的 GPO 后，将执行以下操作：
-
-- 工作站配置安全审计，并开始写入本地事件日志。
-- 工作站使用 WinRM 连接到订阅管理器，通过 Kerberos 或 TLS 进行身份验证。在这两种情况下，都会应用传输层加密。
-- 工作站在事件日志收集器的注册表中注册自身，并下载所有相关 WEF 订阅的列表。
-- 工作站按照订阅文件中的定义，定期向事件日志收集器发送事件。此外，工作站会定期通过心跳连接进行通信。
-
-随着新设备加入域并接收到相应的安全日志记录和 WEF 订阅 GPO，它们会自动开始转发事件，从而减轻了确保日志覆盖范围和质量的管理负担。
-
-以下是部署场景的可视化示意图：
-
-![](https://miro.medium.com/v2/resize:fit:700/1*BEy-7deVVOWmi7WWBk6G-g.png)
-
-WEF 部署架构
-
-每个 Active Directory 站点（例如 US-WEST）都会部署一台 WEF 服务器（例如 WEST-WEF-01），运行事件日志收集器服务。一个组策略对象指示该站点内的所有客户端与 WEF 服务器进行通信，服务器会提供工作站应使用的订阅副本。这些订阅在 Git 中进行管理，并通过持续集成（CI）流水线部署。最后，转发的事件会被写入自定义事件通道，随后被标记并索引到安全信息和事件管理（SIEM）系统中。
-
-### 局限性
-
-尽管 WEF 具有巨大价值，但也并非毫无局限。在为您的组织评估 WEF 部署时，应考虑这些限制。
-
-- 负载均衡十分困难。使用 Kerberos 时，很难（甚至不可能）在多个节点之间有效地对转发的事件进行负载均衡。虽然事件可以转发到多台 WEF 服务器，但传统的流量负载均衡方法不起作用，因为服务主体名称（SPN）不能重复。
-- 主动诊断和故障排查受限。当 WEF 发生故障时，通常很难诊断原因。用于排查客户端问题或验证特定节点运行状况的工具非常有限。我们在本文后面的章节中专门讨论了如何解决这些问题。
-- WEF 学习曲线陡峭。开箱即用的情况下，WEF 需要服务器和客户端基础设施的多个组件、GPO、订阅以及可用的 Kerberos。对于许多组织来说，确保所有先决条件组件都能正常运行可能令人望而生畏，这使得 WEF 的部署变得困难。
-
-## WEF 订阅与通道
-
-订阅是 WEF 的核心配置机制，决定了应该转发哪些事件、如何存储这些事件，以及发送的频率和批量大小。
-
-### 定义 WEF 订阅
-
-WEF 订阅规则集的核心内容是由一组 XML 文档定义的。下图展示了一个具有代表性的订阅及其核心组件的注释：
-
-![](https://miro.medium.com/v2/resize:fit:700/1*YYctz2AeVvAtGNMdxrLrPA.png)
-
-WEF 订阅定义示例
-
-Microsoft MSDN 文档对此 XML 架构进行了解释。核心配置点包括：
-
-- **MaxItems。** 在发送之前应批量处理的最大项目数。对于日志删除等安全关键事件，建议使用较低的 MaxItems 值。
-- **MaxLatencyTime。** 在未超过 MaxItems 值的情况下，转发事件日志之前可经过的最大时间（以毫秒为单位）。这应被视为您愿意为等待任何给定事件而容忍的最大延迟。
-- **Query。** 查询是订阅的核心，定义了应该发送哪些事件 ID 以及应该抑制哪些事件 ID。可以使用 XPath 查询进行进一步的过滤，详见下文。
-- **ContentFormat。** 决定是发送事件条目的完整文本（体积更大，但更详尽）还是仅发送二进制数据。为了人类可读性和便于解析，我们在所有订阅中使用 `RenderedText`。
-- **LogFile。** 远程事件日志收集器上的日志目标位置。虽然 Windows 事件转发会使用原生的“Forwarded Logs”事件通道，但我们将依赖自定义日志通道，详见下文。
-
-由于订阅是 XML 文件，因此可以在 Git 存储库中进行源代码管理。结合持续集成（CI）流水线，WEF 订阅的修改、修订、协作和部署将变得可靠且可重复。一个示例工作流可以允许信息安全团队直接修改 WEF 订阅以收集安全关键事件日志，同时允许支持和运营团队提交拉取请求，包含用于收集崩溃日志以供自身使用的订阅。
-
-### 使用 XPath 过滤事件
-
-为了维护高保真的事件数据库或 SIEM，将事件过滤为与组织基础设施相关的子集非常重要。WEF 支持 XPath 作为实现此类过滤器的查询语言。以下仅是 WEF XPath 过滤的简短入门，但希望能帮助您开始制作和测试自己的自定义过滤器，以充分利用 WEF。
-
-XPath 本质上是一种从 XML 文档中选择特定 XML 节点的方法，而 WEF 支持一部分 XPath 1.0。主要的限制是，事件选择器只能选择代表事件的 XML 元素。所有有效的选择器都以 `Event` 或 `*` 开头。
-
-对于从单个源中选择事件的简单查询，使用 XPath 表达式即可。如果 XPath 表达式是包含 20 个以上表达式的复合表达式，或者您要查询来自多个源的事件，则必须使用结构化 XML 查询，请参阅《使用事件》。有关结构化 XML 查询元素的详细信息，请参阅《查询架构》。主要有 4 种选择器：
-
-- **QueryList。** 查询的根节点
-- **Query (QueryListType)。** 定义用于在结果集中包含和排除事件的选择器和抑制器集合
-- **Select。** 标识要包含在结果集中的内容的 XPath 查询
-- **Suppress。** 标识要在结果集中排除的内容的 XPath 查询
-
-以下展示了指定一组选择器和抑制器的结构化 XML 查询。此过滤器将抓取所有指定的事件 ID，但与 SECURITY_LOCAL_SYSTEM_RID 匹配的除外。
-
-```
-<Query><![CDATA[
-    <QueryList>
-      <Query Id="0" Path="Security">
-        <!-- 4624: An account was successfully logged on. -->
-        <!-- 4625: An account failed to log on. -->
-        <!-- 4634: An account was successfully logged off. -->
-        <!-- 4672: Special privileges assigned to a new logon, administrative logins -sa, -ada, etc. -->
-        <!-- 4775: An account could not be mapped for logon. -->
-        <!-- 4777: The domain controller failed to validate the credentials for an account. -->
-        <!-- Suppress SECURITY_LOCAL_SYSTEM_RID A special account used by the OS, noisy -->
-        <Select Path="Security">*[System[(EventID=4624 or EventID=4625 or EventID=4634 or EventID=4672 or EventID=4775 or EventID=4777)]]</Select>
-        <Suppress Path="Security">*[EventData[Data[1]="S-1-5-18"]]</Suppress>
-      </Query>
-    </QueryList>]]></Query>
-```
-
-您可以将事件架构元素作为选择器和抑制器查询的起点。这里有几个快速提示：
-
-- 您可以随时使用事件查看器 UI 构建过滤器，然后切换到 XML 视图，查看其在 XPath 中的表示方式。
-- 如果选择器和抑制器选择了同一个事件，则抑制器优先。
-- WEF 支持标准的 XML 概念，例如 `<!— comments -->` 或 `CDATA` 字面文本数据。
-
-### 自定义 Windows 事件通道
-
-正如博文《创建自定义 Windows 事件转发日志》中所述，WEF 可以通过额外的自定义事件通道进行扩展。增加可用事件通道的数量有几个主要好处：
-
-- 每个事件通道可以具有独立的最大大小和轮转策略。
-- 每个事件通道可以用作唯一标识符，为摄入 SIEM 的数据打标签。
-- 事件通道可以放置在不同的磁盘或存储设备上，以改善磁盘 I/O。
-
-有关定义和部署自定义事件通道的说明，请参见下文。
-
-## 部署 WEF
-
-以下是典型 WEF 部署的安装和配置步骤枚举。
-
-### 配置审计
-
-除了 Windows 默认生成的安全、系统和应用程序日志之外，还有一些默认未启用的额外审计设置。这些设置使 Windows 能够生成在调查过程中极具价值的事件。例如，您可以启用详细进程、注册表和文件审计等。
-
-配置这些设置最直接的方法是为它们创建组策略对象（GPO）。根据您的日志容量和风险状况，您可以考虑为域控制器、服务器和工作站分别创建单独的策略。审计建议可在《Microsoft — 安全审计》中找到。
-
-强烈建议您同时考虑 PowerShell 日志记录，并启用脚本块、模块和转录日志记录。
-
-### 部署 GPO
-
-大规模管理 WEF 最简单的方法是创建一系列 GPO，用于配置流水线的子组件。例如，在多站点网络中，您可能需要以下策略：
-
-- **工作站审计 GPO**：配置所有适合工作站的安全和 PowerShell 日志记录设置，调整事件日志大小和保留策略，调整防火墙规则，启用 WinRM 等。
-- **成员服务器审计 GPO**：配置所有适合服务器的安全和 PowerShell 日志记录设置，调整事件日志大小和保留策略，调整防火墙规则，启用 WinRM 等。
-- **域控制器审计 GPO**：配置所有适合域控制器的安全和 PowerShell 日志记录设置，调整事件日志大小和保留策略，调整防火墙规则，启用 WinRM 等。
-- **Windows 事件收集器 GPO**：配置 WEC 服务器使其自动启动 WEC 服务，启用 WinRM，调整防火墙规则等。
-- **US-WEST WEF 管理 GPO**：配置目标订阅管理器设置，指向您的西海岸 WEC 服务器。
-- **US-EAST WEF 管理 GPO**：配置目标订阅管理器设置，指向您的东海岸 WEC 服务器。
-
-有关如何配置 GPO 的示例，可在 Microsoft 的《使用 Windows 事件转发辅助入侵检测》博文中找到，或在我们 的 GitHub 存储库 中查看。
-
-### 定义和部署订阅
-
-在整个机群配置好审计设置后，下一步是确定您希望通过 WEF 基础设施收集和集中处理哪些日志。Palantir 的 WEF 库包含一系列经过精心筛选的订阅，供您采用或修改以满足您的需求，详见下文的详细描述。
-
-订阅可以从 XML 定义进行定义和部署，也可以在事件查看器 GUI 中手动创建。要从 XML 文件部署订阅，请将它们全部放在一个目录中，并使用 PowerShell 导航到该目录。以下脚本可用于创建和启用我们在本存储库中提供的订阅。
-
-**注意：** 此脚本专门设计用于与我们 WEF 库中提供的订阅文件名配合工作。如果您的 XML 文件名与实际的订阅名不匹配，可能需要进行修改。
-
-```
-Write-Output "Starting the Windows Event Collector Service"
+<article><h1>用于网络防御的 Windows 事件转发</h1>
+<p><img alt="" src="https://miro.medium.com/v2/resize:fit:700/1*ZsGlOWZRMdllJqqPt_iuzw.png" /></p>
+<p>要对数千台主机进行事件检测与响应，必须深入理解用户、应用程序和设备之间的行为与操作。虽然端点检测与防护工具能提供一些开箱即用的辅助，但对安全相关事件进行深度洞察与分析，对于检测高级威胁至关重要。过去几年里，Palantir 维护着一套内部 Windows 事件转发（WEF）流水线，用于生成并集中收集来自 Microsoft Windows 主机具有取证和安全价值的日志。一旦完成这些事件的收集与索引，我们不仅可以针对高保真安全事件（如日志删除）构建告警与检测策略（ADS），还能针对偏离常态的行为进行检测，例如异常的服务账户访问、访问敏感文件系统或注册表位置，或者恶意软件持久化机制的安装。</p>
+<p>这篇博文有两个目的：首先是分享我们在 WEF 配置和管理工作流方面的经验与分步指南；其次是介绍我们最近开源的 WEF 配置、订阅和组策略对象整合库：http://github.com/palantir/windows-event-forwarding。该 GitHub 项目提供了必要的构建基石，帮助组织快速评估并将 WEF 部署到生产环境，同时集中社区力量来改进 WEF 订阅并鼓励大家采用。尽管近年来 WEF 越来越普及，但 comprehensive 部署指南寥寥无几。因此，我们认为 WEF 在社区中的受重视程度仍然远远不够，希望这个项目能鼓励大家将其用于事件检测与响应。在与全球客户合作保护其环境的过程中，我们相信我们的配置代表了一套坚实的安全标准，可应用于任何规模和成熟度的组织，为检测与响应带来立竿见影的安全成效。</p>
+<p>我们对 Microsoft、IAD 及其他贡献者在这一领域所做的努力表示认可，并感谢他们提供了本文涉及的许多订阅、理念和技术。</p>
+<h2>WEF 基础</h2>
+<p>Windows 事件转发（WEF）是内置于现代版 Microsoft Windows 的一项强大日志转发解决方案，其官方文档页面提供了详尽的说明。简而言之：</p>
+<ul>
+<li>Windows 事件转发允许通过推送或拉取机制，将事件日志发送到一台或多台集中管理的 Windows 事件收集器（WEC）服务器。</li>
+<li>WEF 无需安装代理，依赖操作系统内集成的原生组件。Windows 的工作站版和服务器版均支持 WEF。</li>
+<li>WEF 支持通过 Kerberos（在域内）进行双向身份验证和加密，也可以通过使用 TLS 进行扩展（用于附加身份验证或针对未加入域的计算机）。</li>
+<li>WEF 拥有一套丰富的基于 XML 的语言，用于控制提交哪些事件 ID、抑制嘈杂的事件、将事件批量处理以及配置提交频率。订阅 XML 支持一部分 XPath，这简化了编写表达式以选择所需事件的过程。</li>
+</ul>
+<h3>运行机制</h3>
+<p>虽然 WEF 可以配置为源端或收集器端模型，但我们将重点关注源端发起的模型，即每台设备将自身的日志转发到中央收集器。这使得移动设备（如笔记本电脑）能够重新连接到网络，并按照自身的计划转发日志。</p>
+<p>一个 WEF 连接需要几个基本组件：</p>
+<ul>
+<li>用于控制安全审计和事件日志记录的组策略对象（GPO）。</li>
+<li>一台或多台配置了 Windows 事件日志收集器服务的服务器（通常称为“WEF 服务器”或“WEF 收集器”）。</li>
+<li>所有端点（域内）具备可用的 Kerberos，或者事件日志收集器服务器具备有效的 TLS 证书（非域环境）。</li>
+<li>在所有需要转发事件的工作站和服务器上启用 Windows 远程管理。</li>
+<li>允许设备之间建立 WinRM 连接的防火墙规则。</li>
+<li>用于指定 WEF 订阅管理器 URL 的 GPO。</li>
+<li>一个或多个事件日志订阅。订阅是基于事件 ID 或其他条件的事件集合，用于告知端点需要转发哪些事件日志。</li>
+</ul>
+<p>工作站首次接收到相应的 GPO 后，将执行以下操作：</p>
+<ul>
+<li>工作站配置安全审计，并开始写入本地事件日志。</li>
+<li>工作站使用 WinRM 连接到订阅管理器，通过 Kerberos 或 TLS 进行身份验证。在这两种情况下，都会应用传输层加密。</li>
+<li>工作站在事件日志收集器的注册表中注册自身，并下载所有相关 WEF 订阅的列表。</li>
+<li>工作站按照订阅文件中的定义，定期向事件日志收集器发送事件。此外，工作站会定期通过心跳连接进行通信。</li>
+</ul>
+<p>随着新设备加入域并接收到相应的安全日志记录和 WEF 订阅 GPO，它们会自动开始转发事件，从而减轻了确保日志覆盖范围和质量的管理负担。</p>
+<p>以下是部署场景的可视化示意图：</p>
+<p><img alt="" src="https://miro.medium.com/v2/resize:fit:700/1*BEy-7deVVOWmi7WWBk6G-g.png" /></p>
+<p>WEF 部署架构</p>
+<p>每个 Active Directory 站点（例如 US-WEST）都会部署一台 WEF 服务器（例如 WEST-WEF-01），运行事件日志收集器服务。一个组策略对象指示该站点内的所有客户端与 WEF 服务器进行通信，服务器会提供工作站应使用的订阅副本。这些订阅在 Git 中进行管理，并通过持续集成（CI）流水线部署。最后，转发的事件会被写入自定义事件通道，随后被标记并索引到安全信息和事件管理（SIEM）系统中。</p>
+<h3>局限性</h3>
+<p>尽管 WEF 具有巨大价值，但也并非毫无局限。在为您的组织评估 WEF 部署时，应考虑这些限制。</p>
+<ul>
+<li>负载均衡十分困难。使用 Kerberos 时，很难（甚至不可能）在多个节点之间有效地对转发的事件进行负载均衡。虽然事件可以转发到多台 WEF 服务器，但传统的流量负载均衡方法不起作用，因为服务主体名称（SPN）不能重复。</li>
+<li>主动诊断和故障排查受限。当 WEF 发生故障时，通常很难诊断原因。用于排查客户端问题或验证特定节点运行状况的工具非常有限。我们在本文后面的章节中专门讨论了如何解决这些问题。</li>
+<li>WEF 学习曲线陡峭。开箱即用的情况下，WEF 需要服务器和客户端基础设施的多个组件、GPO、订阅以及可用的 Kerberos。对于许多组织来说，确保所有先决条件组件都能正常运行可能令人望而生畏，这使得 WEF 的部署变得困难。</li>
+</ul>
+<h2>WEF 订阅与通道</h2>
+<p>订阅是 WEF 的核心配置机制，决定了应该转发哪些事件、如何存储这些事件，以及发送的频率和批量大小。</p>
+<h3>定义 WEF 订阅</h3>
+<p>WEF 订阅规则集的核心内容是由一组 XML 文档定义的。下图展示了一个具有代表性的订阅及其核心组件的注释：</p>
+<p><img alt="" src="https://miro.medium.com/v2/resize:fit:700/1*YYctz2AeVvAtGNMdxrLrPA.png" /></p>
+<p>WEF 订阅定义示例</p>
+<p>Microsoft MSDN 文档对此 XML 架构进行了解释。核心配置点包括：</p>
+<ul>
+<li><strong>MaxItems。</strong> 在发送之前应批量处理的最大项目数。对于日志删除等安全关键事件，建议使用较低的 MaxItems 值。</li>
+<li><strong>MaxLatencyTime。</strong> 在未超过 MaxItems 值的情况下，转发事件日志之前可经过的最大时间（以毫秒为单位）。这应被视为您愿意为等待任何给定事件而容忍的最大延迟。</li>
+<li><strong>Query。</strong> 查询是订阅的核心，定义了应该发送哪些事件 ID 以及应该抑制哪些事件 ID。可以使用 XPath 查询进行进一步的过滤，详见下文。</li>
+<li><strong>ContentFormat。</strong> 决定是发送事件条目的完整文本（体积更大，但更详尽）还是仅发送二进制数据。为了人类可读性和便于解析，我们在所有订阅中使用 <code>RenderedText</code>。</li>
+<li><strong>LogFile。</strong> 远程事件日志收集器上的日志目标位置。虽然 Windows 事件转发会使用原生的“Forwarded Logs”事件通道，但我们将依赖自定义日志通道，详见下文。</li>
+</ul>
+<p>由于订阅是 XML 文件，因此可以在 Git 存储库中进行源代码管理。结合持续集成（CI）流水线，WEF 订阅的修改、修订、协作和部署将变得可靠且可重复。一个示例工作流可以允许信息安全团队直接修改 WEF 订阅以收集安全关键事件日志，同时允许支持和运营团队提交拉取请求，包含用于收集崩溃日志以供自身使用的订阅。</p>
+<h3>使用 XPath 过滤事件</h3>
+<p>为了维护高保真的事件数据库或 SIEM，将事件过滤为与组织基础设施相关的子集非常重要。WEF 支持 XPath 作为实现此类过滤器的查询语言。以下仅是 WEF XPath 过滤的简短入门，但希望能帮助您开始制作和测试自己的自定义过滤器，以充分利用 WEF。</p>
+<p>XPath 本质上是一种从 XML 文档中选择特定 XML 节点的方法，而 WEF 支持一部分 XPath 1.0。主要的限制是，事件选择器只能选择代表事件的 XML 元素。所有有效的选择器都以 <code>Event</code> 或 <code>*</code> 开头。</p>
+<p>对于从单个源中选择事件的简单查询，使用 XPath 表达式即可。如果 XPath 表达式是包含 20 个以上表达式的复合表达式，或者您要查询来自多个源的事件，则必须使用结构化 XML 查询，请参阅《使用事件》。有关结构化 XML 查询元素的详细信息，请参阅《查询架构》。主要有 4 种选择器：</p>
+<ul>
+<li><strong>QueryList。</strong> 查询的根节点</li>
+<li><strong>Query (QueryListType)。</strong> 定义用于在结果集中包含和排除事件的选择器和抑制器集合</li>
+<li><strong>Select。</strong> 标识要包含在结果集中的内容的 XPath 查询</li>
+<li><strong>Suppress。</strong> 标识要在结果集中排除的内容的 XPath 查询</li>
+</ul>
+<p>以下展示了指定一组选择器和抑制器的结构化 XML 查询。此过滤器将抓取所有指定的事件 ID，但与 SECURITY_LOCAL_SYSTEM_RID 匹配的除外。</p>
+<pre><code>&lt;Query&gt;&lt;![CDATA[
+    &lt;QueryList&gt;
+      &lt;Query Id=&quot;0&quot; Path=&quot;Security&quot;&gt;
+        &lt;!-- 4624: An account was successfully logged on. --&gt;
+        &lt;!-- 4625: An account failed to log on. --&gt;
+        &lt;!-- 4634: An account was successfully logged off. --&gt;
+        &lt;!-- 4672: Special privileges assigned to a new logon, administrative logins -sa, -ada, etc. --&gt;
+        &lt;!-- 4775: An account could not be mapped for logon. --&gt;
+        &lt;!-- 4777: The domain controller failed to validate the credentials for an account. --&gt;
+        &lt;!-- Suppress SECURITY_LOCAL_SYSTEM_RID A special account used by the OS, noisy --&gt;
+        &lt;Select Path=&quot;Security&quot;&gt;*[System[(EventID=4624 or EventID=4625 or EventID=4634 or EventID=4672 or EventID=4775 or EventID=4777)]]&lt;/Select&gt;
+        &lt;Suppress Path=&quot;Security&quot;&gt;*[EventData[Data[1]=&quot;S-1-5-18&quot;]]&lt;/Suppress&gt;
+      &lt;/Query&gt;
+    &lt;/QueryList&gt;]]&gt;&lt;/Query&gt;
+</code></pre>
+<p>您可以将事件架构元素作为选择器和抑制器查询的起点。这里有几个快速提示：</p>
+<ul>
+<li>您可以随时使用事件查看器 UI 构建过滤器，然后切换到 XML 视图，查看其在 XPath 中的表示方式。</li>
+<li>如果选择器和抑制器选择了同一个事件，则抑制器优先。</li>
+<li>WEF 支持标准的 XML 概念，例如 <code>&lt;!— comments --&gt;</code> 或 <code>CDATA</code> 字面文本数据。</li>
+</ul>
+<h3>自定义 Windows 事件通道</h3>
+<p>正如博文《创建自定义 Windows 事件转发日志》中所述，WEF 可以通过额外的自定义事件通道进行扩展。增加可用事件通道的数量有几个主要好处：</p>
+<ul>
+<li>每个事件通道可以具有独立的最大大小和轮转策略。</li>
+<li>每个事件通道可以用作唯一标识符，为摄入 SIEM 的数据打标签。</li>
+<li>事件通道可以放置在不同的磁盘或存储设备上，以改善磁盘 I/O。</li>
+</ul>
+<p>有关定义和部署自定义事件通道的说明，请参见下文。</p>
+<h2>部署 WEF</h2>
+<p>以下是典型 WEF 部署的安装和配置步骤枚举。</p>
+<h3>配置审计</h3>
+<p>除了 Windows 默认生成的安全、系统和应用程序日志之外，还有一些默认未启用的额外审计设置。这些设置使 Windows 能够生成在调查过程中极具价值的事件。例如，您可以启用详细进程、注册表和文件审计等。</p>
+<p>配置这些设置最直接的方法是为它们创建组策略对象（GPO）。根据您的日志容量和风险状况，您可以考虑为域控制器、服务器和工作站分别创建单独的策略。审计建议可在《Microsoft — 安全审计》中找到。</p>
+<p>强烈建议您同时考虑 PowerShell 日志记录，并启用脚本块、模块和转录日志记录。</p>
+<h3>部署 GPO</h3>
+<p>大规模管理 WEF 最简单的方法是创建一系列 GPO，用于配置流水线的子组件。例如，在多站点网络中，您可能需要以下策略：</p>
+<ul>
+<li><strong>工作站审计 GPO</strong>：配置所有适合工作站的安全和 PowerShell 日志记录设置，调整事件日志大小和保留策略，调整防火墙规则，启用 WinRM 等。</li>
+<li><strong>成员服务器审计 GPO</strong>：配置所有适合服务器的安全和 PowerShell 日志记录设置，调整事件日志大小和保留策略，调整防火墙规则，启用 WinRM 等。</li>
+<li><strong>域控制器审计 GPO</strong>：配置所有适合域控制器的安全和 PowerShell 日志记录设置，调整事件日志大小和保留策略，调整防火墙规则，启用 WinRM 等。</li>
+<li><strong>Windows 事件收集器 GPO</strong>：配置 WEC 服务器使其自动启动 WEC 服务，启用 WinRM，调整防火墙规则等。</li>
+<li><strong>US-WEST WEF 管理 GPO</strong>：配置目标订阅管理器设置，指向您的西海岸 WEC 服务器。</li>
+<li><strong>US-EAST WEF 管理 GPO</strong>：配置目标订阅管理器设置，指向您的东海岸 WEC 服务器。</li>
+</ul>
+<p>有关如何配置 GPO 的示例，可在 Microsoft 的《使用 Windows 事件转发辅助入侵检测》博文中找到，或在我们 的 GitHub 存储库 中查看。</p>
+<h3>定义和部署订阅</h3>
+<p>在整个机群配置好审计设置后，下一步是确定您希望通过 WEF 基础设施收集和集中处理哪些日志。Palantir 的 WEF 库包含一系列经过精心筛选的订阅，供您采用或修改以满足您的需求，详见下文的详细描述。</p>
+<p>订阅可以从 XML 定义进行定义和部署，也可以在事件查看器 GUI 中手动创建。要从 XML 文件部署订阅，请将它们全部放在一个目录中，并使用 PowerShell 导航到该目录。以下脚本可用于创建和启用我们在本存储库中提供的订阅。</p>
+<p><strong>注意：</strong> 此脚本专门设计用于与我们 WEF 库中提供的订阅文件名配合工作。如果您的 XML 文件名与实际的订阅名不匹配，可能需要进行修改。</p>
+<pre><code>Write-Output &quot;Starting the Windows Event Collector Service&quot;
 Start-Service wecsvc
 Set-Service wecsvc -StartupType Automatic
-```
-```
-Write-Output "Creating custom event subscriptions"
+</code></pre>
+<pre><code>Write-Output &quot;Creating custom event subscriptions&quot;
 cd c:\folder-containing-xml-subscriptions\
-cmd /c "for /r %i in (*.xml) do wecutil cs %i"
-```
-```
-Write-Output "Enabling custom event subscriptions"
-cmd /c "for /r %i in (*.xml) do wecutil ss %~ni /e:true"
-```
-
-### 配置收集器
-
-通过订阅定义了想要收集的事件后，接下来需要配置一台或多台服务器作为事件收集器（通常也称为订阅管理器）。这通常也可以通过 GPO 来完成，如上文的“部署 GPO”部分所述。
-
-如果手动配置 WEC 服务器，重要的是启动“Windows 事件收集器”服务并将其配置为开机启动。您还需要启用 WinRM 并允许 TCP/5985（Kerberos）或 TCP/5986（HTTPS）上的入站连接。
-
-### 部署通道
-
-自定义事件通道在 WEF 设置中不是必需的，但它们确实提供了上文“Windows 事件通道部分”中所述的额外好处。通常，此过程涉及创建清单文件并从中构建生成的 DLL，详见《创建自定义 Windows 事件转发日志》。Palantir 的 WEF 库提供了一个清单和一个预编译的 DLL。必须在每个订阅管理器上执行以下步骤来部署 DLL：
-
-1. 通过 `wevtutil um C:\windows\system32\CustomEventChannels.man` 卸载现有清单
-2. 将新创建的 `CustomEventChannels.man` 和 `CustomEventChannels.dll` 文件复制到 `c:\windows\system32`。
-3. 通过 `wevtutil im C:\windows\system32\CustomEventChannels.man` 导入新清单。这将在 WEC 服务器上创建定义的通道和日志文件。
-4. 我们还建议将每个通道的大小增加到 4GB：
-
-```
-$xml = wevtutil el | select-string -pattern “WEC”
+cmd /c &quot;for /r %i in (*.xml) do wecutil cs %i&quot;
+</code></pre>
+<pre><code>Write-Output &quot;Enabling custom event subscriptions&quot;
+cmd /c &quot;for /r %i in (*.xml) do wecutil ss %~ni /e:true&quot;
+</code></pre>
+<h3>配置收集器</h3>
+<p>通过订阅定义了想要收集的事件后，接下来需要配置一台或多台服务器作为事件收集器（通常也称为订阅管理器）。这通常也可以通过 GPO 来完成，如上文的“部署 GPO”部分所述。</p>
+<p>如果手动配置 WEC 服务器，重要的是启动“Windows 事件收集器”服务并将其配置为开机启动。您还需要启用 WinRM 并允许 TCP/5985（Kerberos）或 TCP/5986（HTTPS）上的入站连接。</p>
+<h3>部署通道</h3>
+<p>自定义事件通道在 WEF 设置中不是必需的，但它们确实提供了上文“Windows 事件通道部分”中所述的额外好处。通常，此过程涉及创建清单文件并从中构建生成的 DLL，详见《创建自定义 Windows 事件转发日志》。Palantir 的 WEF 库提供了一个清单和一个预编译的 DLL。必须在每个订阅管理器上执行以下步骤来部署 DLL：</p>
+<ol>
+<li>通过 <code>wevtutil um C:\windows\system32\CustomEventChannels.man</code> 卸载现有清单</li>
+<li>将新创建的 <code>CustomEventChannels.man</code> 和 <code>CustomEventChannels.dll</code> 文件复制到 <code>c:\windows\system32</code>。</li>
+<li>通过 <code>wevtutil im C:\windows\system32\CustomEventChannels.man</code> 导入新清单。这将在 WEC 服务器上创建定义的通道和日志文件。</li>
+<li>我们还建议将每个通道的大小增加到 4GB：</li>
+</ol>
+<pre><code>$xml = wevtutil el | select-string -pattern “WEC”
 foreach ($subscription in $xml) { 
   wevtutil sl $subscription /ms:4194304
 }
-```
-
-### 部署 PowerShell 转录日志
-
-一旦您拥有可用的 WEC 服务器，您应该考虑将其转变为双用途的 PowerShell 转录服务器。由于 PowerShell 转录日志记录通过 SMB 共享创建文件，因此它不会使用原生的 WEF 流水线。
-
-我们可以利用现有基础设施，通过 SMB 共享、安全脚本和额外的 GPO 来简化聚合和收集。有关如何执行此操作概述，请参阅博文《Microsoft 爱蓝队》。
-
-### 扩展 WEF
-
-WEF 流水线一旦建立，就可以用于报告自定义事件。有了任何给定事件最终都会在 SIEM 中建立索引的可靠保证，安全和生产力工具就可以部署并写入统一的日志设施。我们的 WEF 库包含两个此类扩展，Autoruns-To-WineventLog 和 EMETDiag，详见下文。
-
-### 排除故障
-
-好不容易搭建起日志基础设施，却发现它根本没有发送您期望的任何日志，这确实令人沮丧。尽管有时不太直观，但您可以使用几个关键工具来深入了解故障发生在何处。
-
-首先，回顾一下上文“WEF 概述”部分中所述的必要组件。确保环境中存在所有必需的组件且配置正确。如果您正处于测试阶段，请考虑将订阅管理器刷新间隔设置为较小的值（例如 60 秒）。这将确保日志及时从客户端卸载，并减少您等待日志到达的时间。如果您需要强制将日志推送到订阅管理器，从客户端运行 `gpupdate /force` 也会强制进行签入。
-
-此外，在每个客户端的 Microsoft-Windows-Eventlog-ForwardingPlugin 事件日志通道中可以找到有关错误或配置不当的信息。此事件日志有助于确定事件日志上的 ACL 是否配置错误、订阅是否由于某种原因无效，或者主机上是否缺少日志记录通道。
-
-在订阅管理器上，事件查看器工具可以帮助您深入了解每个订阅的状态，方法是点击左列中的“订阅”选项，选择一个订阅，然后点击“运行时状态”。
-
-## Palantir 的 WEF 库
-
-以下章节描述了 Palantir 在 GitHub 上的 WEF 库中提供的配置和工具：https://github.com/palantir/windows-event-forwarding/。需要注意的是，所提供的订阅和配置并不能解决所有安全用例，也可能无法在所有环境中运行。强烈建议针对每个组织对配置进行测试和调整。虽然我们已尽力在信号和噪声之间找到良好的平衡，但我们非常欢迎并鼓励社区通过提交拉取请求或发起 GitHub 问题来参与此项目。
-
-### 订阅
-
-除了我们自己的定义外，我们的订阅库还包含了来自 IADGOV 优秀的《事件转发指南》存储库以及 Microsoft 文档中的订阅。WEF 订阅的详尽列表可在 GitHub 项目中找到；它们涵盖了以下场景：
-
-- 账户管理、锁定、Kerberos 和身份验证事件
-- 进程执行和终止事件
-- PowerShell 模块、脚本块和操作事件
-- 高级安全事件（如 autoruns、代码完整性、EMET 等）
-- 操作系统事件（如软件包安装、驱动程序加载、DNS 事件等）
-- 反取证事件（如日志删除）
-
-请注意，我们的 WEF 订阅假定您将使用所提供的事件通道，详见下文。如果不选择这样做，您将需要更改每个订阅中的目标日志文件。
-
-### 事件通道
-
-Palantir WEF 库包含一组自定义 Windows 事件通道，请参阅 README 获取完整列表。这些通道以标准清单文件以及预编译 DLL 的形式提供。如果您像我们一样不信任随机的 DLL，请随意使用我们的清单文件并构建您自己的 DLL。
-
-此项目中提供的事件通道清单由 16 个独立的提供程序组成，每个提供程序有 7 个通道。通道遵循 WEC[#] 的标准命名方案，其中数字与提供程序相关。
-
-### Autoruns-To-WineventLog
-
-Sysinternals 的 Autoruns 工具用于搜索 Windows 操作系统的不同组件，以枚举恶意软件和攻击工具常用的持久化区域。虽然取证调查人员通常临时使用它，但我们希望从整个机群获得这些信息的稳定流。在追踪恶意行为时，能够搜索最新报告的持久化指标是一套极具价值的数据集。
-
-为了实现这一点，我们编写了一个名为 Autoruns-to-Wineventlog 的 PowerShell 脚本。此脚本将最新版本的 Autoruns 下载到主机上，设置一个计划任务以每日启动 Autoruns，然后将生成的 CSV 数据解析到“Autoruns”Windows 事件日志通道中。随后，生成的数据通过 WEF 流水线被摄入到我们的 SIEM 中。
-
-Autoruns-to-Wineventlog 的代码作为一个代表性示例，展示了将自定义安全工具接入 WEF 流水线有多么容易。
-
-### EMETDiag
-
-虽然官方已停止支持并计划由 Defender Exploit Guard 取代，但增强缓解体验工具包（EMET）针对内存损坏和其他漏洞利用技术提供了极具价值的纵深防御层。虽然配置和使用 EMET 不在本文的讨论范围内，但在某些情况下，应用程序可能与提供的保护机制不兼容，从而导致不稳定和崩溃。
-
-在内部排查 EMET 崩溃时，我们依靠一个名为 EMETDiag 的自定义 PowerShell 脚本，该脚本可以通过我们的系统管理套件远程推送，也可以手动部署。部署后，它会自动查询 EMET 配置，提取最近的 EMET 事件、应用程序崩溃及其他相关数据，然后进行汇总并将数据写入由 WEF 索引的自定义事件。
-
-利用 WEF 可以近乎即时地生成、转发和索引用于故障排除的数据。一旦在 SIEM 中建立索引，桌面工程团队便可立即将其用于分析。
-
-EMETDiag 的代码计划在不久的将来发布到 GitHub 项目中。
-
-## 延伸阅读与致谢
-
-我们在开发 WEF 库时参考了许多开源出版物，我们希望对这些贡献者表示感谢：
-
-- 《Microsoft Windows 事件转发辅助入侵检测》
-- 《监控重要事项》
-- 《发现对手》
-- 《创建自定义 Windows 事件转发日志》
-- 《Windows 日志记录备忘单》
-- 《事件转发指南》
-- 《Windows 事件日志参考》：
-- 《Windows 事件日志使用事件》
-- 《高级 XML 过滤》
-- 《XPath 文档》
-
----
-
-**Authors**
-Chris L.
-Dane S.
-Joshua B.
-</article>
+</code></pre>
+<h3>部署 PowerShell 转录日志</h3>
+<p>一旦您拥有可用的 WEC 服务器，您应该考虑将其转变为双用途的 PowerShell 转录服务器。由于 PowerShell 转录日志记录通过 SMB 共享创建文件，因此它不会使用原生的 WEF 流水线。</p>
+<p>我们可以利用现有基础设施，通过 SMB 共享、安全脚本和额外的 GPO 来简化聚合和收集。有关如何执行此操作概述，请参阅博文《Microsoft 爱蓝队》。</p>
+<h3>扩展 WEF</h3>
+<p>WEF 流水线一旦建立，就可以用于报告自定义事件。有了任何给定事件最终都会在 SIEM 中建立索引的可靠保证，安全和生产力工具就可以部署并写入统一的日志设施。我们的 WEF 库包含两个此类扩展，Autoruns-To-WineventLog 和 EMETDiag，详见下文。</p>
+<h3>排除故障</h3>
+<p>好不容易搭建起日志基础设施，却发现它根本没有发送您期望的任何日志，这确实令人沮丧。尽管有时不太直观，但您可以使用几个关键工具来深入了解故障发生在何处。</p>
+<p>首先，回顾一下上文“WEF 概述”部分中所述的必要组件。确保环境中存在所有必需的组件且配置正确。如果您正处于测试阶段，请考虑将订阅管理器刷新间隔设置为较小的值（例如 60 秒）。这将确保日志及时从客户端卸载，并减少您等待日志到达的时间。如果您需要强制将日志推送到订阅管理器，从客户端运行 <code>gpupdate /force</code> 也会强制进行签入。</p>
+<p>此外，在每个客户端的 Microsoft-Windows-Eventlog-ForwardingPlugin 事件日志通道中可以找到有关错误或配置不当的信息。此事件日志有助于确定事件日志上的 ACL 是否配置错误、订阅是否由于某种原因无效，或者主机上是否缺少日志记录通道。</p>
+<p>在订阅管理器上，事件查看器工具可以帮助您深入了解每个订阅的状态，方法是点击左列中的“订阅”选项，选择一个订阅，然后点击“运行时状态”。</p>
+<h2>Palantir 的 WEF 库</h2>
+<p>以下章节描述了 Palantir 在 GitHub 上的 WEF 库中提供的配置和工具：https://github.com/palantir/windows-event-forwarding/。需要注意的是，所提供的订阅和配置并不能解决所有安全用例，也可能无法在所有环境中运行。强烈建议针对每个组织对配置进行测试和调整。虽然我们已尽力在信号和噪声之间找到良好的平衡，但我们非常欢迎并鼓励社区通过提交拉取请求或发起 GitHub 问题来参与此项目。</p>
+<h3>订阅</h3>
+<p>除了我们自己的定义外，我们的订阅库还包含了来自 IADGOV 优秀的《事件转发指南》存储库以及 Microsoft 文档中的订阅。WEF 订阅的详尽列表可在 GitHub 项目中找到；它们涵盖了以下场景：</p>
+<ul>
+<li>账户管理、锁定、Kerberos 和身份验证事件</li>
+<li>进程执行和终止事件</li>
+<li>PowerShell 模块、脚本块和操作事件</li>
+<li>高级安全事件（如 autoruns、代码完整性、EMET 等）</li>
+<li>操作系统事件（如软件包安装、驱动程序加载、DNS 事件等）</li>
+<li>反取证事件（如日志删除）</li>
+</ul>
+<p>请注意，我们的 WEF 订阅假定您将使用所提供的事件通道，详见下文。如果不选择这样做，您将需要更改每个订阅中的目标日志文件。</p>
+<h3>事件通道</h3>
+<p>Palantir WEF 库包含一组自定义 Windows 事件通道，请参阅 README 获取完整列表。这些通道以标准清单文件以及预编译 DLL 的形式提供。如果您像我们一样不信任随机的 DLL，请随意使用我们的清单文件并构建您自己的 DLL。</p>
+<p>此项目中提供的事件通道清单由 16 个独立的提供程序组成，每个提供程序有 7 个通道。通道遵循 WEC[#] 的标准命名方案，其中数字与提供程序相关。</p>
+<h3>Autoruns-To-WineventLog</h3>
+<p>Sysinternals 的 Autoruns 工具用于搜索 Windows 操作系统的不同组件，以枚举恶意软件和攻击工具常用的持久化区域。虽然取证调查人员通常临时使用它，但我们希望从整个机群获得这些信息的稳定流。在追踪恶意行为时，能够搜索最新报告的持久化指标是一套极具价值的数据集。</p>
+<p>为了实现这一点，我们编写了一个名为 Autoruns-to-Wineventlog 的 PowerShell 脚本。此脚本将最新版本的 Autoruns 下载到主机上，设置一个计划任务以每日启动 Autoruns，然后将生成的 CSV 数据解析到“Autoruns”Windows 事件日志通道中。随后，生成的数据通过 WEF 流水线被摄入到我们的 SIEM 中。</p>
+<p>Autoruns-to-Wineventlog 的代码作为一个代表性示例，展示了将自定义安全工具接入 WEF 流水线有多么容易。</p>
+<h3>EMETDiag</h3>
+<p>虽然官方已停止支持并计划由 Defender Exploit Guard 取代，但增强缓解体验工具包（EMET）针对内存损坏和其他漏洞利用技术提供了极具价值的纵深防御层。虽然配置和使用 EMET 不在本文的讨论范围内，但在某些情况下，应用程序可能与提供的保护机制不兼容，从而导致不稳定和崩溃。</p>
+<p>在内部排查 EMET 崩溃时，我们依靠一个名为 EMETDiag 的自定义 PowerShell 脚本，该脚本可以通过我们的系统管理套件远程推送，也可以手动部署。部署后，它会自动查询 EMET 配置，提取最近的 EMET 事件、应用程序崩溃及其他相关数据，然后进行汇总并将数据写入由 WEF 索引的自定义事件。</p>
+<p>利用 WEF 可以近乎即时地生成、转发和索引用于故障排除的数据。一旦在 SIEM 中建立索引，桌面工程团队便可立即将其用于分析。</p>
+<p>EMETDiag 的代码计划在不久的将来发布到 GitHub 项目中。</p>
+<h2>延伸阅读与致谢</h2>
+<p>我们在开发 WEF 库时参考了许多开源出版物，我们希望对这些贡献者表示感谢：</p>
+<ul>
+<li>《Microsoft Windows 事件转发辅助入侵检测》</li>
+<li>《监控重要事项》</li>
+<li>《发现对手》</li>
+<li>《创建自定义 Windows 事件转发日志》</li>
+<li>《Windows 日志记录备忘单》</li>
+<li>《事件转发指南》</li>
+<li>《Windows 事件日志参考》：</li>
+<li>《Windows 事件日志使用事件》</li>
+<li>《高级 XML 过滤》</li>
+<li>《XPath 文档》</li>
+</ul>
+<hr />
+<p><strong>Authors</strong><br />
+Chris L.<br />
+Dane S.<br />
+Joshua B.</p></article>
 </body>
 </html>

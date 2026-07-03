@@ -12,163 +12,125 @@ pre{overflow-x:auto;background:#f5f5f5;padding:16px}
 </style>
 </head>
 <body>
-<article>
-使用 Sentinel 保护 Terraform 资源
-
-我想向大家介绍一项我们最近在 Palantir 云基础设施中推出的酷功能：Terraform 中的 Sentinel 策略！这篇博文将展示一个简单的 Sentinel 实现，用于避免意外删除 Terraform 资源。
-
-我们使用 Terraform 来创建和维护大部分云资源和基础设施，供客户和内部开发使用。Terraform 让创建和跟踪我们管理的众多云资源变得非常简单，但遗憾的是，它也同样容易让人犯错（或遇到 Terraform 的 Bug），从而摧毁关键的基础设施。
-
-按照我们常规的变更流程，变更作者会仔细审查 GitHub PR 以及初步的 Terraform 计划，这些计划会告诉我们该 PR 合并后会产生什么影响。接着，我们需要另一位同样仔细审查过 PR 和计划的人员给出一个必须的 +1。PR 一旦合并，Terraform 后端就会启动并实际应用该变更。从过往经验来看，我们在合并经过审查的 PR 时，并未出现过意外摧毁资源的问题。但我们知道存在一些边缘情况，即更改工作区的后端设置可能会触发意外的计划/应用操作。为了避免这种行为可能导致的事故，我们需要某种自动化的健全性检查。
-
-于是 Sentinel 闪亮登场：这是一个可供 Terraform 使用的框架，用于确保 Terraform 计划执行我们期望的操作。通过 Sentinel，你可以编写策略来分析工作区的状态以及将要进行的更改。基于该分析，策略可以选择让变更通过或失败。在我们的场景中，我们需要一个后盾来防止那些不太可能或绝对不希望发生的删除操作。我们推出的第一版策略主要做两件事：
-
-确保某些关键类型的资源绝不会被删除（例如 AWS KMS 密钥或公网 IP）
-确保一次删除的资源比例不超过总数的 10%
-
-顺便提一下，目前只有在从 Terraform 云运行 Terraform 时才能使用 Sentinel。
-
-流程概览
-
-当 Terraform 工作区配置为使用该策略时，策略会在每次计划之后、应用之前运行，从而拥有阻止应用的权限：
-
-你可以看到，计划完成后策略开始运行。随后策略失败，阻止了本应在之后进行的应用步骤。如果我们确实想要删除某个敏感资源或一大批资源，我们可以覆盖该策略，但必须在管理员的协助下进行，管理员会看到以下界面：
-
-一旦执行覆盖操作，应用就会照常继续。或者，如果是意外触发或审查失误，也可以直接放弃应用。通过这种方式，意外或错误的应用操作就永远不会摧毁你的环境了。
-
-让我们深入看一下策略代码，了解其运作机制。
-
-策略的核心
-
-Sentinel 策略围绕一个布尔语句展开，该语句在评估后会告诉 Sentinel 策略是通过还是失败：
-
-main = rule {
-    validate_destroyed_resources(blacklist) and maximum_destroyed_resources(10)
-}
-
-main 规则决定策略是通过还是失败。在本例中，该规则要求 validate_destroyed_resources() 和 maximum_destroyed_resources() 函数均返回 true 才能允许应用。
-
-获取 Palantir 的故事到您的收件箱
-
-免费加入 Medium 以获取此作者的更新。
-
-在此输入您的电子邮件
-
-订阅
-
-订阅
-
-记住我以便更快登录
-
-到目前为止还算简单。让我们看看 validate_destroyed_resources() 函数是如何工作的：
-
-# Validate that resources of blacklisted types are not being destroyed,
-# even if it were to be recreated
-validate_destroyed_resources = func(blacklist) {
-    valid = true
-    for blacklist as type {
-        found_resources = find_resources_from_plan(type) else {}
-        for found_resources as address, r {
-            # note that even if something is being destroyed and recreated, it's marked invalid
-            if r.destroy {
-                print("You are trying to destroy a resource", address, "of blacklisted type", type)
-                valid = false
-            }
-        }
-    }
-    return valid
-}
-
-blacklist 是一个资源名称列表，例如 aws_iam_user。我们在这个函数中所做的，就是扫描计划中的资源，查找是否有黑名单中的类型。如果找到了，我们就检查它是否将被销毁。如果是，则标记我们将返回 false，并通知用户他们正试图销毁黑名单中的资源。find_resources_from_plan() 是一个辅助函数，它返回一个包含指定类型资源的映射：
-
-# Find all resources of a specific type from all modules using the tfplan import
-find_resources_from_plan = func(type) {
-    resources = {}
-    # Iterate over all modules in the tfplan import
-    for tfplan.module_paths as path {
-        # Iterate over the named resources of desired type in the module
-        for tfplan.module(path).resources[type] else {} as name, instances {
-            # Iterate over resource instances
-            for instances as index, r {
-                # Get the address of the instance
-                if length(path) == 0 {
-                    # root module
-                    address = type + "." + name + "[" + string(index) + "]"
-                } else {
-                    # non-root module
-                    address = "module." + strings.join(path, ".module.") + "." + type + "." + name + "[" + string(index) + "]"
-                }
-                # Add the instance to resources map, setting the key to the address
-                resources[address] = r
-            }
-        }
-    }
-    return resources
-}
-
-tfplan 是通过添加 import "tfplan" 获得的对象，该对象允许你遍历计划中出现的资源。最后，我们需要实际定义 blacklist 并将其传递给 validate_destroyed_resources()。具体如下所示：
-
-blacklist = [
-    "aws_vpc",
-    "aws_s3_bucket",
-    "aws_eip",
-    "aws_kms_key",
-    "azurerm_resource_group",
-    "azurerm_public_ip",
-    "azurerm_storage_account",
-    "azurerm_storage_container",
-]
-
-现在我们已经深入探讨了我们策略规则的一半。接下来让我们看看 maximum_destroyed_resources() 是如何工作的：
-
-# Validate that a threshold of destroyed resources hasn't been passed
-# percent: number between 1 and 100
-maximum_destroyed_resources = func(percent) {
-    destroyed = 0
-    for tfplan.module_paths as path {
-        for tfplan.module(path).resources else {} as type, names {
-            for names as name, instances {
-                for instances as index, r {
-                    if r.destroy {
-                        destroyed += 1
-                    }
-                }
-            }
-        }
-    }
-    num_resources = count_resources()
-    threshold = int((float(percent) / 100.0) * float(num_resources))
-    print("total number of resources:", num_resources)
-    print("number of destroyed resources:", destroyed)
-    print("threshold of failure (in destroyed resources):", threshold)
-    return destroyed < threshold
-}
-
-在这里，我们统计所有标记为将被销毁的资源，然后计算总资源量的百分之几是多少。统计所有资源（使用 count_resources()）很简单：
-
-count_resources = func() {
-    num_resources = 0
-    for tfstate.module_paths as path {
-        for tfstate.module(path).resources else {} as type, names {
-            for names as name, instances {
-                for instances as index, r {
-                    num_resources += 1
-                }
-            }
-        }
-    }
-    return num_resources
-}
-
-不过有一点需要注意。在这里，我们需要从通过 import "tfstate" 获取的 tfstate 对象中计算资源数量。
-
-结论
-
-正如你所见，Sentinel 是一种简单的语言，可用于保护你由 Terraform 管理的资源免遭意外删除。此外，它还能实现更多功能……想象一下，你可以防止创建某些类型的资源，或者确保特定资源必须带有特定名称的标签。无论你最终决定用 Sentinel 做什么，应用类似于我上面展示的策略大概都是个很不错的主意。保护好你的资源，避免痛苦的中断！
-
-作者
-
-Paul T.
-</article>
+<article><p>使用 Sentinel 保护 Terraform 资源</p>
+<p>我想向大家介绍一项我们最近在 Palantir 云基础设施中推出的酷功能：Terraform 中的 Sentinel 策略！这篇博文将展示一个简单的 Sentinel 实现，用于避免意外删除 Terraform 资源。</p>
+<p>我们使用 Terraform 来创建和维护大部分云资源和基础设施，供客户和内部开发使用。Terraform 让创建和跟踪我们管理的众多云资源变得非常简单，但遗憾的是，它也同样容易让人犯错（或遇到 Terraform 的 Bug），从而摧毁关键的基础设施。</p>
+<p>按照我们常规的变更流程，变更作者会仔细审查 GitHub PR 以及初步的 Terraform 计划，这些计划会告诉我们该 PR 合并后会产生什么影响。接着，我们需要另一位同样仔细审查过 PR 和计划的人员给出一个必须的 +1。PR 一旦合并，Terraform 后端就会启动并实际应用该变更。从过往经验来看，我们在合并经过审查的 PR 时，并未出现过意外摧毁资源的问题。但我们知道存在一些边缘情况，即更改工作区的后端设置可能会触发意外的计划/应用操作。为了避免这种行为可能导致的事故，我们需要某种自动化的健全性检查。</p>
+<p>于是 Sentinel 闪亮登场：这是一个可供 Terraform 使用的框架，用于确保 Terraform 计划执行我们期望的操作。通过 Sentinel，你可以编写策略来分析工作区的状态以及将要进行的更改。基于该分析，策略可以选择让变更通过或失败。在我们的场景中，我们需要一个后盾来防止那些不太可能或绝对不希望发生的删除操作。我们推出的第一版策略主要做两件事：</p>
+<p>确保某些关键类型的资源绝不会被删除（例如 AWS KMS 密钥或公网 IP）<br />
+确保一次删除的资源比例不超过总数的 10%</p>
+<p>顺便提一下，目前只有在从 Terraform 云运行 Terraform 时才能使用 Sentinel。</p>
+<p>流程概览</p>
+<p>当 Terraform 工作区配置为使用该策略时，策略会在每次计划之后、应用之前运行，从而拥有阻止应用的权限：</p>
+<p>你可以看到，计划完成后策略开始运行。随后策略失败，阻止了本应在之后进行的应用步骤。如果我们确实想要删除某个敏感资源或一大批资源，我们可以覆盖该策略，但必须在管理员的协助下进行，管理员会看到以下界面：</p>
+<p>一旦执行覆盖操作，应用就会照常继续。或者，如果是意外触发或审查失误，也可以直接放弃应用。通过这种方式，意外或错误的应用操作就永远不会摧毁你的环境了。</p>
+<p>让我们深入看一下策略代码，了解其运作机制。</p>
+<p>策略的核心</p>
+<p>Sentinel 策略围绕一个布尔语句展开，该语句在评估后会告诉 Sentinel 策略是通过还是失败：</p>
+<p>main = rule {<br />
+    validate_destroyed_resources(blacklist) and maximum_destroyed_resources(10)<br />
+}</p>
+<p>main 规则决定策略是通过还是失败。在本例中，该规则要求 validate_destroyed_resources() 和 maximum_destroyed_resources() 函数均返回 true 才能允许应用。</p>
+<p>获取 Palantir 的故事到您的收件箱</p>
+<p>免费加入 Medium 以获取此作者的更新。</p>
+<p>在此输入您的电子邮件</p>
+<p>订阅</p>
+<p>订阅</p>
+<p>记住我以便更快登录</p>
+<p>到目前为止还算简单。让我们看看 validate_destroyed_resources() 函数是如何工作的：</p>
+<h1>Validate that resources of blacklisted types are not being destroyed,</h1>
+<h1>even if it were to be recreated</h1>
+<p>validate_destroyed_resources = func(blacklist) {<br />
+    valid = true<br />
+    for blacklist as type {<br />
+        found_resources = find_resources_from_plan(type) else {}<br />
+        for found_resources as address, r {<br />
+            # note that even if something is being destroyed and recreated, it's marked invalid<br />
+            if r.destroy {<br />
+                print("You are trying to destroy a resource", address, "of blacklisted type", type)<br />
+                valid = false<br />
+            }<br />
+        }<br />
+    }<br />
+    return valid<br />
+}</p>
+<p>blacklist 是一个资源名称列表，例如 aws_iam_user。我们在这个函数中所做的，就是扫描计划中的资源，查找是否有黑名单中的类型。如果找到了，我们就检查它是否将被销毁。如果是，则标记我们将返回 false，并通知用户他们正试图销毁黑名单中的资源。find_resources_from_plan() 是一个辅助函数，它返回一个包含指定类型资源的映射：</p>
+<h1>Find all resources of a specific type from all modules using the tfplan import</h1>
+<p>find_resources_from_plan = func(type) {<br />
+    resources = {}<br />
+    # Iterate over all modules in the tfplan import<br />
+    for tfplan.module_paths as path {<br />
+        # Iterate over the named resources of desired type in the module<br />
+        for tfplan.module(path).resources[type] else {} as name, instances {<br />
+            # Iterate over resource instances<br />
+            for instances as index, r {<br />
+                # Get the address of the instance<br />
+                if length(path) == 0 {<br />
+                    # root module<br />
+                    address = type + "." + name + "[" + string(index) + "]"<br />
+                } else {<br />
+                    # non-root module<br />
+                    address = "module." + strings.join(path, ".module.") + "." + type + "." + name + "[" + string(index) + "]"<br />
+                }<br />
+                # Add the instance to resources map, setting the key to the address<br />
+                resources[address] = r<br />
+            }<br />
+        }<br />
+    }<br />
+    return resources<br />
+}</p>
+<p>tfplan 是通过添加 import "tfplan" 获得的对象，该对象允许你遍历计划中出现的资源。最后，我们需要实际定义 blacklist 并将其传递给 validate_destroyed_resources()。具体如下所示：</p>
+<p>blacklist = [<br />
+    "aws_vpc",<br />
+    "aws_s3_bucket",<br />
+    "aws_eip",<br />
+    "aws_kms_key",<br />
+    "azurerm_resource_group",<br />
+    "azurerm_public_ip",<br />
+    "azurerm_storage_account",<br />
+    "azurerm_storage_container",<br />
+]</p>
+<p>现在我们已经深入探讨了我们策略规则的一半。接下来让我们看看 maximum_destroyed_resources() 是如何工作的：</p>
+<h1>Validate that a threshold of destroyed resources hasn't been passed</h1>
+<h1>percent: number between 1 and 100</h1>
+<p>maximum_destroyed_resources = func(percent) {<br />
+    destroyed = 0<br />
+    for tfplan.module_paths as path {<br />
+        for tfplan.module(path).resources else {} as type, names {<br />
+            for names as name, instances {<br />
+                for instances as index, r {<br />
+                    if r.destroy {<br />
+                        destroyed += 1<br />
+                    }<br />
+                }<br />
+            }<br />
+        }<br />
+    }<br />
+    num_resources = count_resources()<br />
+    threshold = int((float(percent) / 100.0) * float(num_resources))<br />
+    print("total number of resources:", num_resources)<br />
+    print("number of destroyed resources:", destroyed)<br />
+    print("threshold of failure (in destroyed resources):", threshold)<br />
+    return destroyed &lt; threshold<br />
+}</p>
+<p>在这里，我们统计所有标记为将被销毁的资源，然后计算总资源量的百分之几是多少。统计所有资源（使用 count_resources()）很简单：</p>
+<p>count_resources = func() {<br />
+    num_resources = 0<br />
+    for tfstate.module_paths as path {<br />
+        for tfstate.module(path).resources else {} as type, names {<br />
+            for names as name, instances {<br />
+                for instances as index, r {<br />
+                    num_resources += 1<br />
+                }<br />
+            }<br />
+        }<br />
+    }<br />
+    return num_resources<br />
+}</p>
+<p>不过有一点需要注意。在这里，我们需要从通过 import "tfstate" 获取的 tfstate 对象中计算资源数量。</p>
+<p>结论</p>
+<p>正如你所见，Sentinel 是一种简单的语言，可用于保护你由 Terraform 管理的资源免遭意外删除。此外，它还能实现更多功能……想象一下，你可以防止创建某些类型的资源，或者确保特定资源必须带有特定名称的标签。无论你最终决定用 Sentinel 做什么，应用类似于我上面展示的策略大概都是个很不错的主意。保护好你的资源，避免痛苦的中断！</p>
+<p>作者</p>
+<p>Paul T.</p></article>
 </body>
 </html>

@@ -12,46 +12,35 @@ pre{overflow-x:auto;background:#f5f5f5;padding:16px}
 </style>
 </head>
 <body>
-<article>
-# 使用 osquery 进行审计：第一部分 — Linux 审计框架简介
-
-8 分钟阅读
-2018 年 12 月 14 日
-
-116
-
-![图片](https://miro.medium.com/v2/resize:fit:700/1*nfA3zFuZreQwMuIsip8f8g.png)
-
-在《《跨企业的 osquery 部署》》一文中，我们报告了在大型环境中部署 osquery 的高层概述，但仅简略涉及了实施细节。这篇博文是两部分系列中的第一部分，我们将深入探讨 osquery 的审计功能。本文将通过扩展 Linux 审计框架的基本概念来奠定基础。《第二部分重点介绍具体的 osquery 配置和实施步骤。》
-osquery 最强大的功能之一是能够记录进程执行和网络连接。在 osquery 的术语中，这些功能通常被称为进程和套接字审计。然而，我们观察到许多人在没有完全理解底层机制和性能影响的情况下就尝试启用这些功能。如果不深入了解 osquery 的审计功能是如何运作的，用户可能会遇到性能问题、资源冲突和排错困扰。此外，配置不当的审计可能导致数据不完整，从而使检测和告警程序的效果大打折扣。
-本文将描述审计在底层的运作方式，并提供关于如何实施和微调审计配置的实用指南。
-
-### 术语
-
-首先，我们将明确定义本文中使用的术语。当我们谈到“审计”时，指的是一个处理（通常还会记录）源自内核审计子系统的审计事件的程序。
-总结一下我们在这几篇文章中使用的术语：
-
-- **审计框架/子系统：** Linux 内核中的审计组件，它基于可配置的规则集生成审计消息。
-- **审计：** 使用审计子系统生成审计事件以供审计之用的过程
-- **审计消费者：** 处理内核发出的审计事件的用户态应用程序，如 auditd 或 osquery
-- **Auditd：** 负责收集审计事件并将其记录（通常记录到文件系统）的用户态守护进程
-
-就审计而言，osquery 和 auditd 扮演着几乎相同的角色。这两个守护进程都处理由审计子系统生成的传入审计事件，并生成旨在以某种方式记录或处理的输出。
-在开始讨论 osquery 之前，我们将先解释审计子系统是如何运作的。
-
-### 理解 audit
-
-如今 Linux 内核中存在的审计功能大约在 Linux 内核 2.6 版本时引入，其主要目的是允许更好地深入检查与安全相关的操作系统事件，如文件修改和系统调用。
-审计通过一组存储在文件系统上的规则（通常位于 `/etc/audit` 的子目录中）进行配置和管理。有三种不同类型的审计规则：
-
-- **控制规则：** 允许修改审计系统的行为及其部分配置。
-- **文件系统规则：** 也称为文件监视，允许审计对特定文件或目录的访问。
-- **系统调用规则：** 允许记录任何指定程序发出的系统调用。
-
-本文只涉及控制规则和系统调用规则。下面的清单展示了经过 osquery 更新后的 audit.rules 文件示例：
-
-```
-# This file contains the auditctl rules that are loaded
+<article><h1>使用 osquery 进行审计：第一部分 — Linux 审计框架简介</h1>
+<p>8 分钟阅读<br />
+2018 年 12 月 14 日</p>
+<p>116</p>
+<p><img alt="图片" src="https://miro.medium.com/v2/resize:fit:700/1*nfA3zFuZreQwMuIsip8f8g.png" /></p>
+<p>在《《跨企业的 osquery 部署》》一文中，我们报告了在大型环境中部署 osquery 的高层概述，但仅简略涉及了实施细节。这篇博文是两部分系列中的第一部分，我们将深入探讨 osquery 的审计功能。本文将通过扩展 Linux 审计框架的基本概念来奠定基础。《第二部分重点介绍具体的 osquery 配置和实施步骤。》<br />
+osquery 最强大的功能之一是能够记录进程执行和网络连接。在 osquery 的术语中，这些功能通常被称为进程和套接字审计。然而，我们观察到许多人在没有完全理解底层机制和性能影响的情况下就尝试启用这些功能。如果不深入了解 osquery 的审计功能是如何运作的，用户可能会遇到性能问题、资源冲突和排错困扰。此外，配置不当的审计可能导致数据不完整，从而使检测和告警程序的效果大打折扣。<br />
+本文将描述审计在底层的运作方式，并提供关于如何实施和微调审计配置的实用指南。</p>
+<h3>术语</h3>
+<p>首先，我们将明确定义本文中使用的术语。当我们谈到“审计”时，指的是一个处理（通常还会记录）源自内核审计子系统的审计事件的程序。<br />
+总结一下我们在这几篇文章中使用的术语：</p>
+<ul>
+<li><strong>审计框架/子系统：</strong> Linux 内核中的审计组件，它基于可配置的规则集生成审计消息。</li>
+<li><strong>审计：</strong> 使用审计子系统生成审计事件以供审计之用的过程</li>
+<li><strong>审计消费者：</strong> 处理内核发出的审计事件的用户态应用程序，如 auditd 或 osquery</li>
+<li><strong>Auditd：</strong> 负责收集审计事件并将其记录（通常记录到文件系统）的用户态守护进程</li>
+</ul>
+<p>就审计而言，osquery 和 auditd 扮演着几乎相同的角色。这两个守护进程都处理由审计子系统生成的传入审计事件，并生成旨在以某种方式记录或处理的输出。<br />
+在开始讨论 osquery 之前，我们将先解释审计子系统是如何运作的。</p>
+<h3>理解 audit</h3>
+<p>如今 Linux 内核中存在的审计功能大约在 Linux 内核 2.6 版本时引入，其主要目的是允许更好地深入检查与安全相关的操作系统事件，如文件修改和系统调用。<br />
+审计通过一组存储在文件系统上的规则（通常位于 <code>/etc/audit</code> 的子目录中）进行配置和管理。有三种不同类型的审计规则：</p>
+<ul>
+<li><strong>控制规则：</strong> 允许修改审计系统的行为及其部分配置。</li>
+<li><strong>文件系统规则：</strong> 也称为文件监视，允许审计对特定文件或目录的访问。</li>
+<li><strong>系统调用规则：</strong> 允许记录任何指定程序发出的系统调用。</li>
+</ul>
+<p>本文只涉及控制规则和系统调用规则。下面的清单展示了经过 osquery 更新后的 audit.rules 文件示例：</p>
+<pre><code># This file contains the auditctl rules that are loaded
 # whenever the audit daemon is started via the initscripts.
 # The rules are simply the parameters that would be passed
 # to auditctl 
@@ -64,39 +53,29 @@ osquery 最强大的功能之一是能够记录进程执行和网络连接。在
 -a always,exit -S execve
 -a always,exit -S bind
 -a always,exit -S connect
-```
-
-前两条规则是控制规则。它们通过删除任何预先存在的规则并设置缓冲区积压大小来修改 audit 的核心功能。接下来的三条规则是系统调用规则，告诉审计子系统**始终**监视此系统调用，并在该系统调用**退出**时执行。系统调用规则的语法为：
-
-```
-auditctl -a action,filter -S system_call -F field=value -k key_name`
-```
-
-系统调用通常是用户态程序与操作系统内核通信的方式。上图中的系统调用规则是同时启用进程和套接字审计时由 osquery 加载的规则。
-要启用进程事件，需记录 execve() 系统调用：
-
-- **execve()** — 执行程序
-
-要启用套接字事件，需记录 bind() 和 connect() 系统调用：
-
-- **bind()** — 为套接字分配地址
-- **connect()** — 在套接字上发起连接
-
-需要注意的是，上面列出的三个系统调用并不能涵盖系统上所有可能的进程和网络活动。此外，osquery 不支持处理所有可能的系统调用。例如，进程的 fork 和 clone 操作不会被 osquery 记录，因为这些操作使用 fork() 和 clone() 系统调用，而 osquery 无法原生解析它们。此外，如 osquery 的 issue #5084 中所述，目前也不支持传入的网络连接和非阻塞套接字上的连接。
-要确定特定程序发出了哪些系统调用，你可以使用 `strace`：
-
-```
-# strace curl google.com 2>&1 | egrep 'execve|bind|connect'
-execve("/bin/curl", ["curl", "google.com"], [/* 22 vars */]) = 0
-connect(3, {sa_family=AF_INET, sin_port=htons(80), sin_addr=inet_addr("216.58.194.174")}, 16) = -1 EINPROGRESS (Operation now in progress)
-```
-
-### 使用 auditctl 配置审计参数
-
-要从命令行更改 audit 的核心功能，你可以使用 `auditctl`。
-
-```
-root@localhost# auditctl -s
+</code></pre>
+<p>前两条规则是控制规则。它们通过删除任何预先存在的规则并设置缓冲区积压大小来修改 audit 的核心功能。接下来的三条规则是系统调用规则，告诉审计子系统<strong>始终</strong>监视此系统调用，并在该系统调用<strong>退出</strong>时执行。系统调用规则的语法为：</p>
+<pre><code>auditctl -a action,filter -S system_call -F field=value -k key_name`
+</code></pre>
+<p>系统调用通常是用户态程序与操作系统内核通信的方式。上图中的系统调用规则是同时启用进程和套接字审计时由 osquery 加载的规则。<br />
+要启用进程事件，需记录 execve() 系统调用：</p>
+<ul>
+<li><strong>execve()</strong> — 执行程序</li>
+</ul>
+<p>要启用套接字事件，需记录 bind() 和 connect() 系统调用：</p>
+<ul>
+<li><strong>bind()</strong> — 为套接字分配地址</li>
+<li><strong>connect()</strong> — 在套接字上发起连接</li>
+</ul>
+<p>需要注意的是，上面列出的三个系统调用并不能涵盖系统上所有可能的进程和网络活动。此外，osquery 不支持处理所有可能的系统调用。例如，进程的 fork 和 clone 操作不会被 osquery 记录，因为这些操作使用 fork() 和 clone() 系统调用，而 osquery 无法原生解析它们。此外，如 osquery 的 issue #5084 中所述，目前也不支持传入的网络连接和非阻塞套接字上的连接。<br />
+要确定特定程序发出了哪些系统调用，你可以使用 <code>strace</code>：</p>
+<pre><code># strace curl google.com 2&gt;&amp;1 | egrep 'execve|bind|connect'
+execve(&quot;/bin/curl&quot;, [&quot;curl&quot;, &quot;google.com&quot;], [/* 22 vars */]) = 0
+connect(3, {sa_family=AF_INET, sin_port=htons(80), sin_addr=inet_addr(&quot;216.58.194.174&quot;)}, 16) = -1 EINPROGRESS (Operation now in progress)
+</code></pre>
+<h3>使用 auditctl 配置审计参数</h3>
+<p>要从命令行更改 audit 的核心功能，你可以使用 <code>auditctl</code>。</p>
+<pre><code>root@localhost# auditctl -s
 enabled 1
 failure 0
 pid 2021
@@ -104,87 +83,66 @@ rate_limit 0
 backlog_limit 1024
 lost 0
 backlog 0
-```
-
-auditctl 允许你配置：
-
-- 是否启用审计
-- 系统是应静默失败、详细失败还是崩溃
-- 速率限制 — 在一秒内超过此限制的任何数量的事件都不会被记录，并且会设置失败标志
-- 积压限制 — 审计事件的套接字缓冲区队列大小。任何超过积压限制的事件都将被丢弃，并且会设置失败标志
-- 丢失：由于积压溢出而丢弃了多少事件
-
-速率和积压限制对于理解很重要，因为它们控制着 audit 将如何丢弃事件的行为。在大多数情况下，不应将 audit 视为无损解决方案。随着审计事件的生成，它们将被存储在缓冲区中，并根据速率和积压限制进行评估。积压限制实际上是缓冲区在任何给定时间点能够容纳的事件数量，而 auditd/osquery 会从该缓冲区中提取事件。如果审计消费者清空缓冲区的速度赶不上其填充速度，audit 将直接丢弃任何无法放入缓冲区的事件。丢弃的事件数量将显示在“lost”行中。此外，速率限制设置了每秒允许的事件数量。超过该阈值的任何事件都将被丢弃。如果超出速率和积压限制，两者都会将失败标志设置为“1”。
-
-### 基本审计架构
-
-也许理解 audit 最有用的可视化资源是 Slack 的《《大规模系统调用审计》》博文中的图表：
-
-![图片](https://miro.medium.com/v2/resize:fit:700/1*9YkT4oBcWf78_DwVQeUF5A.png)
-
-图片鸣谢：《大规模系统调用审计》（Slack 工程博客）
-
-在此图中，你可以想象“go-audit”节点可以与 auditd 和 osquery 互换。当软件运行时，它（通常）会生成系统调用。启用 audit 后，这些系统调用将由内核评估，并与已加载的任何审计规则进行比较。如果要根据配置的规则集生成审计事件，则该事件将被发送到 audit netlink 套接字，在那里，诸如 auditd、osquery 或 go-audit 之类的用户态进程将侦听并消费审计事件。
-osquery 文档明确指出，不要一次运行多个审计消费者：
-
-> 在使用 osquery 的进程审计时，不应运行 auditd，因为它会与 osqueryd 争夺对 audit netlink 套接字的访问权。
-
-似乎 3.16+ 内核版本支持多播 netlink 套接字，但我们目前尚不熟悉在使用 osquery 时支持此配置所需的具体细节。理论上，多播 netlink 套接字应该允许用户并发运行多个审计消费者，而不会遇到文档中提到的冲突。
-
-### 使用 osquery 进行审计
-
-与其他审计消费者和安全工具相比，使用 osquery 进行审计有几个优势。主要是：
-
-- 无需内核模块
-- 通过自定义查询进行输出过滤
-- JSON 格式的日志
-
-一些宣称能够记录网络和进程信息的安全产品需要安装内核模块，其源代码通常是专有的。尽管与 audit 相比，内核模块可能会提高性能，但它们有时会在不同的 Linux 发行版或内核版本上出现兼容性问题。
-使用 osquery，你可以选择使用通配符查询（`SELECT * FROM process_events`）记录所有进程和/或网络事件，也可以使用底层 SQL 引擎创建你感兴趣记录的事件的白名单或黑名单（例如，`SELECT * FROM process_events WHERE path!="/usr/bin/sed"`）。以这种方式过滤事件不会以任何方式减少性能开销，但它可以帮助减少 osquery 写入的日志量。这种过滤方法不降低性能开销的原因是，osquery 已经完成了解析传入审计事件并将其加载到虚拟表中的繁重工作。在本系列博文的第二部分，我们将提供同样能减少计算开销的额外过滤方法。
-最后，最好使用各自日志文件中的样本来展示 auditd 和 osquery 生成的日志之间的对比。以下是在主机上运行“curl google.com”时，auditd 和 osquery 分别生成的对应日志：
-
-## 在你的收件箱中获取 Palantir 的故事
-
-免费加入 Medium，获取这位作者的更新。
-
-记住我以便更快登录
-
-**auditd**
-
-```
-type=SYSCALL msg=audit(1521667806.157:217090): arch=c000003e syscall=59 success=yes exit=0 a0=fbb6c0 a1=fbb760 a2=fb55c0 a3=7ffe4ead6520 items=2 ppid=2000 pid=42971 auid=890466808 uid=0 gid=0 euid=0 suid=0 fsuid=0 egid=0 sgid=0 fsgid=0 tty=pts0 ses=26 comm="curl" exe="/usr/bin/curl" subj=unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 key=(null)
-type=EXECVE msg=audit(1521667806.157:217090): argc=2 a0="curl" a1="google.com"
-type=CWD msg=audit(1521667806.157:217090):  cwd="/etc/audit/rules.d"
-type=PATH msg=audit(1521667806.157:217090): item=0 name="/bin/curl" inode=306502 dev=fd:01 mode=0100755 ouid=0 ogid=0 rdev=00:00 obj=unconfined_u:object_r:bin_t:s0 objtype=NORMAL
-type=PATH msg=audit(1521667806.157:217090): item=1 name="/lib64/ld-linux-x86-64.so.2" inode=8485228 dev=fd:01 mode=0100755 ouid=0 ogid=0 rdev=00:00 obj=unconfined_u:object_r:ld_so_t:s0 objtype=NORMAL
+</code></pre>
+<p>auditctl 允许你配置：</p>
+<ul>
+<li>是否启用审计</li>
+<li>系统是应静默失败、详细失败还是崩溃</li>
+<li>速率限制 — 在一秒内超过此限制的任何数量的事件都不会被记录，并且会设置失败标志</li>
+<li>积压限制 — 审计事件的套接字缓冲区队列大小。任何超过积压限制的事件都将被丢弃，并且会设置失败标志</li>
+<li>丢失：由于积压溢出而丢弃了多少事件</li>
+</ul>
+<p>速率和积压限制对于理解很重要，因为它们控制着 audit 将如何丢弃事件的行为。在大多数情况下，不应将 audit 视为无损解决方案。随着审计事件的生成，它们将被存储在缓冲区中，并根据速率和积压限制进行评估。积压限制实际上是缓冲区在任何给定时间点能够容纳的事件数量，而 auditd/osquery 会从该缓冲区中提取事件。如果审计消费者清空缓冲区的速度赶不上其填充速度，audit 将直接丢弃任何无法放入缓冲区的事件。丢弃的事件数量将显示在“lost”行中。此外，速率限制设置了每秒允许的事件数量。超过该阈值的任何事件都将被丢弃。如果超出速率和积压限制，两者都会将失败标志设置为“1”。</p>
+<h3>基本审计架构</h3>
+<p>也许理解 audit 最有用的可视化资源是 Slack 的《《大规模系统调用审计》》博文中的图表：</p>
+<p><img alt="图片" src="https://miro.medium.com/v2/resize:fit:700/1*9YkT4oBcWf78_DwVQeUF5A.png" /></p>
+<p>图片鸣谢：《大规模系统调用审计》（Slack 工程博客）</p>
+<p>在此图中，你可以想象“go-audit”节点可以与 auditd 和 osquery 互换。当软件运行时，它（通常）会生成系统调用。启用 audit 后，这些系统调用将由内核评估，并与已加载的任何审计规则进行比较。如果要根据配置的规则集生成审计事件，则该事件将被发送到 audit netlink 套接字，在那里，诸如 auditd、osquery 或 go-audit 之类的用户态进程将侦听并消费审计事件。<br />
+osquery 文档明确指出，不要一次运行多个审计消费者：</p>
+<blockquote>
+<p>在使用 osquery 的进程审计时，不应运行 auditd，因为它会与 osqueryd 争夺对 audit netlink 套接字的访问权。</p>
+</blockquote>
+<p>似乎 3.16+ 内核版本支持多播 netlink 套接字，但我们目前尚不熟悉在使用 osquery 时支持此配置所需的具体细节。理论上，多播 netlink 套接字应该允许用户并发运行多个审计消费者，而不会遇到文档中提到的冲突。</p>
+<h3>使用 osquery 进行审计</h3>
+<p>与其他审计消费者和安全工具相比，使用 osquery 进行审计有几个优势。主要是：</p>
+<ul>
+<li>无需内核模块</li>
+<li>通过自定义查询进行输出过滤</li>
+<li>JSON 格式的日志</li>
+</ul>
+<p>一些宣称能够记录网络和进程信息的安全产品需要安装内核模块，其源代码通常是专有的。尽管与 audit 相比，内核模块可能会提高性能，但它们有时会在不同的 Linux 发行版或内核版本上出现兼容性问题。<br />
+使用 osquery，你可以选择使用通配符查询（<code>SELECT * FROM process_events</code>）记录所有进程和/或网络事件，也可以使用底层 SQL 引擎创建你感兴趣记录的事件的白名单或黑名单（例如，<code>SELECT * FROM process_events WHERE path!="/usr/bin/sed"</code>）。以这种方式过滤事件不会以任何方式减少性能开销，但它可以帮助减少 osquery 写入的日志量。这种过滤方法不降低性能开销的原因是，osquery 已经完成了解析传入审计事件并将其加载到虚拟表中的繁重工作。在本系列博文的第二部分，我们将提供同样能减少计算开销的额外过滤方法。<br />
+最后，最好使用各自日志文件中的样本来展示 auditd 和 osquery 生成的日志之间的对比。以下是在主机上运行“curl google.com”时，auditd 和 osquery 分别生成的对应日志：</p>
+<h2>在你的收件箱中获取 Palantir 的故事</h2>
+<p>免费加入 Medium，获取这位作者的更新。</p>
+<p>记住我以便更快登录</p>
+<p><strong>auditd</strong></p>
+<pre><code>type=SYSCALL msg=audit(1521667806.157:217090): arch=c000003e syscall=59 success=yes exit=0 a0=fbb6c0 a1=fbb760 a2=fb55c0 a3=7ffe4ead6520 items=2 ppid=2000 pid=42971 auid=890466808 uid=0 gid=0 euid=0 suid=0 fsuid=0 egid=0 sgid=0 fsgid=0 tty=pts0 ses=26 comm=&quot;curl&quot; exe=&quot;/usr/bin/curl&quot; subj=unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 key=(null)
+type=EXECVE msg=audit(1521667806.157:217090): argc=2 a0=&quot;curl&quot; a1=&quot;google.com&quot;
+type=CWD msg=audit(1521667806.157:217090):  cwd=&quot;/etc/audit/rules.d&quot;
+type=PATH msg=audit(1521667806.157:217090): item=0 name=&quot;/bin/curl&quot; inode=306502 dev=fd:01 mode=0100755 ouid=0 ogid=0 rdev=00:00 obj=unconfined_u:object_r:bin_t:s0 objtype=NORMAL
+type=PATH msg=audit(1521667806.157:217090): item=1 name=&quot;/lib64/ld-linux-x86-64.so.2&quot; inode=8485228 dev=fd:01 mode=0100755 ouid=0 ogid=0 rdev=00:00 obj=unconfined_u:object_r:ld_so_t:s0 objtype=NORMAL
 type=PROCTITLE msg=audit(1521667806.157:217090): proctitle=6375726C00676F6F676C652E636F6D
-type=SYSCALL msg=audit(1521667806.163:217091): arch=c000003e syscall=42 success=no exit=-2 a0=3 a1=7f1c7f451610 a2=6e a3=7f1c7f451b20 items=1 ppid=2000 pid=42971 auid=890466808 uid=0 gid=0 euid=0 suid=0 fsuid=0 egid=0 sgid=0 fsgid=0 tty=pts0 ses=26 comm="curl" exe="/usr/bin/curl" subj=unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 key=(null)
+type=SYSCALL msg=audit(1521667806.163:217091): arch=c000003e syscall=42 success=no exit=-2 a0=3 a1=7f1c7f451610 a2=6e a3=7f1c7f451b20 items=1 ppid=2000 pid=42971 auid=890466808 uid=0 gid=0 euid=0 suid=0 fsuid=0 egid=0 sgid=0 fsgid=0 tty=pts0 ses=26 comm=&quot;curl&quot; exe=&quot;/usr/bin/curl&quot; subj=unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 key=(null)
 type=SOCKADDR msg=audit(1521667806.163:217091): saddr=01002F7661722F72756E2F6E7363642F736F636B657400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-```
-
-**osqueryi**
-
-![图片](https://miro.medium.com/v2/resize:fit:700/1*9cFKME1PnefAevkCo4UqxA.png)
-
-**osqueryd**
-
-![图片](https://miro.medium.com/v2/resize:fit:700/1*NtskPO6NKo0n7bNIIz2CQw.png)
-
-根据我们的经验，使用 osquery 提供的整洁且可定制的 JSON 输出格式，远比使用其他审计解决方案提供的输出要好得多。在输出中添加或删除列，就像对进程或套接字事件表进行 SQL 查询的单行修改一样简单。
-然而，没有完美的解决方案，在考虑将 osquery 作为审计消费者时，有一些注意事项需要牢记：
-
-- Shell 内置命令（echo、env、export 等）不会生成进程事件
-- 如前所述，audit 不是无损解决方案，如果事件表溢出，osquery 也可能丢弃事件
-- osquery 不会实时记录事件（你可以配置 1 秒或更高的间隔，所以已经很接近了！）
-- 启用审计会带来一定程度的性能开销，运行像 osquery 这样的审计消费者也是如此。开销的多少取决于几个不同的因素，这将在本系列博文的第二部分中介绍。
-
-### 结论
-
-我们希望这篇文章能帮助你理解审计框架是如何工作的，以及有哪些配置选项可用于修改其行为。《本系列的第二部分提供了关于如何在 Linux 上为 osquery 启用审计的详细指南》。
-
-### 作者
-
-- Chris L.
-</article>
+</code></pre>
+<p><strong>osqueryi</strong></p>
+<p><img alt="图片" src="https://miro.medium.com/v2/resize:fit:700/1*9cFKME1PnefAevkCo4UqxA.png" /></p>
+<p><strong>osqueryd</strong></p>
+<p><img alt="图片" src="https://miro.medium.com/v2/resize:fit:700/1*NtskPO6NKo0n7bNIIz2CQw.png" /></p>
+<p>根据我们的经验，使用 osquery 提供的整洁且可定制的 JSON 输出格式，远比使用其他审计解决方案提供的输出要好得多。在输出中添加或删除列，就像对进程或套接字事件表进行 SQL 查询的单行修改一样简单。<br />
+然而，没有完美的解决方案，在考虑将 osquery 作为审计消费者时，有一些注意事项需要牢记：</p>
+<ul>
+<li>Shell 内置命令（echo、env、export 等）不会生成进程事件</li>
+<li>如前所述，audit 不是无损解决方案，如果事件表溢出，osquery 也可能丢弃事件</li>
+<li>osquery 不会实时记录事件（你可以配置 1 秒或更高的间隔，所以已经很接近了！）</li>
+<li>启用审计会带来一定程度的性能开销，运行像 osquery 这样的审计消费者也是如此。开销的多少取决于几个不同的因素，这将在本系列博文的第二部分中介绍。</li>
+</ul>
+<h3>结论</h3>
+<p>我们希望这篇文章能帮助你理解审计框架是如何工作的，以及有哪些配置选项可用于修改其行为。《本系列的第二部分提供了关于如何在 Linux 上为 osquery 启用审计的详细指南》。</p>
+<h3>作者</h3>
+<ul>
+<li>Chris L.</li>
+</ul></article>
 </body>
 </html>

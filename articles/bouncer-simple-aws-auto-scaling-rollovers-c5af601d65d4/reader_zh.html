@@ -12,168 +12,122 @@ pre{overflow-x:auto;background:#f5f5f5;padding:16px}
 </style>
 </head>
 <body>
-<article>
-Bouncer：简单的 AWS 自动伸缩组轮转
-
-8 分钟阅读
-2018年10月18日
-
-![图片](https://miro.medium.com/v2/resize:fit:700/1*YPnaYP1zP_yJkJFh4p2Dow.png)
-
-我们开发了 bouncer，旨在让 AWS 自动伸缩组（ASG）的运维变得更轻松。它会循环替换运行中的实例，确保它们与启动配置中定义的内容保持一致。自动伸缩组不仅可用于应对负载变化，还能有效提升系统可靠性。AWS 并未提供循环替换自动伸缩组的内置方法，除非使用 AWS CloudFormation，但对于许多环境而言，这并非一个足够健壮的工具。这导致向 ASG 部署新启动配置的过程既耗时又枯燥。bouncer 应运而生：它能够自动用新实例替换自动伸缩组中的所有实例。一个简单的 bouncer 调用如下所示：
-
-```
-bouncer serial -a <asg-name>:<desired-capacity>
-```
-
-bouncer 会查找未运行最新启动配置的实例，将其终止，然后等待替换实例成功启动后，再处理下一个实例。任何启动失败的实例都会中止 bouncer 的运行。
-
-### 自动伸缩组
-
-在云端构建基础设施，意味着要围绕故障进行工程设计。在瞬时故障频发的世界里，自动化恢复必不可少。自动伸缩组提供了一种有效的解决方案，无需人工干预即可恢复 EC2 实例。它们能够处理常见的工作流，如重启不健康的服务、替换降级的实例以及推出新版本。在 Palantir，我们几乎将所有的 EC2 实例都运行在自动伸缩组内，甚至包括一些只有一个实例的服务。
-
-自动伸缩组通过指定期望的主机数量和一个称为“启动配置”的模板来进行配置。启动配置指定了 AMI ID、实例类型、安全组和其他自定义设置。然而，启动配置只是关于如何创建新实例的指令，并非对现有实例应是什么样子的要求。更改自动伸缩组的启动配置不会触发任何操作，这意味着运维人员需要采取行动推出新节点并终止旧节点。这可能会使常规操作（如推出更新后的镜像）成本高昂。
-
-这使得运维人员面临一种局面：期望状态（启动配置）与已部署状态（已部署的节点）不匹配。在 AWS 控制台中，你也很难直观地看出你的自动伸缩组中同时包含了新旧节点。这个过程亟需自动化，以最大程度地降低期望状态与实际状态持续偏离的风险。
-
-为了自动化这一过程，你需要一个解决方案来：
-
-- 识别已创建的新启动配置
-- 确定哪些节点是旧的，哪些是最新的
-- 终止旧节点并等待新节点健康上线
-- 报告状态
-
-我们希望以一种简单的方式解决这个问题，既不需要构建有状态的应用程序，也不必去摆弄一套复杂的 Lambda 函数，于是我们开发了 bouncer。
-
-## Bouncer
-
-bouncer 是一个简单的 Go 二进制程序，用于自动化将 ASG 中的所有实例过渡到更新后的启动配置。它旨在作为独立二进制文件或持续交付（CD）流程的一部分来运行。它有两种操作模式：串行模式和金丝雀模式：
-
-- **串行模式是一种内联部署策略**，一次删除和添加一个实例。
-- **金丝雀模式是一种蓝/绿部署策略**：首先测试单个新实例，然后添加足够的新实例使期望容量翻倍，最后在新实例投入使用后移除所有旧实例。
-
-**串行模式**适用于不可水平扩展的服务。例如，我们的 Jenkins 服务器使用持久化 EBS 卷来存储作业数据。使用串行模式意味着旧实例必须先释放 EBS 卷，然后才能启动新实例。这通过保证 EBS 卷始终处于空闲状态，简化了自动化流程。
-
-**金丝雀模式**适用于可水平扩展的服务。例如，我们的 Jenkins 服务器可以轻松接纳 50 个新的 Jenkins 工作节点，并能容忍随后失去 50 个旧节点。
-
-### 规模化应用
-
-在 Palantir，我们在数千台主机上运行来自不同数据源的数百个服务。它们拥有各种不同的配置方法、文件系统布局和生命周期管理方式。手动管理所有这些配置是不切实际的，因此作为一家公司，我们已标准化使用 Terraform 和 Terraform Enterprise 作为基础设施的 CI/CD 工具。虽然 Terraform 可以管理和自动化更新我们所有服务的启动配置，但它并没有内置循环替换 AWS 自动伸缩组的机制。
-
-在 bouncer 出现之前，服务数据主人有各自的轮转方法，通常是按需循环替换节点的一次性脚本。我们希望将推出过程整合到 Terraform CI/CD 流水线中。解决方案是让 Terraform 在执行 apply 的过程中调用 bouncer 来执行轮转：
-
-```
-resource "null_resource" "instance_bouncer" {
+<article><p>Bouncer：简单的 AWS 自动伸缩组轮转</p>
+<p>8 分钟阅读<br />
+2018年10月18日</p>
+<p><img alt="图片" src="https://miro.medium.com/v2/resize:fit:700/1*YPnaYP1zP_yJkJFh4p2Dow.png" /></p>
+<p>我们开发了 bouncer，旨在让 AWS 自动伸缩组（ASG）的运维变得更轻松。它会循环替换运行中的实例，确保它们与启动配置中定义的内容保持一致。自动伸缩组不仅可用于应对负载变化，还能有效提升系统可靠性。AWS 并未提供循环替换自动伸缩组的内置方法，除非使用 AWS CloudFormation，但对于许多环境而言，这并非一个足够健壮的工具。这导致向 ASG 部署新启动配置的过程既耗时又枯燥。bouncer 应运而生：它能够自动用新实例替换自动伸缩组中的所有实例。一个简单的 bouncer 调用如下所示：</p>
+<pre><code>bouncer serial -a &lt;asg-name&gt;:&lt;desired-capacity&gt;
+</code></pre>
+<p>bouncer 会查找未运行最新启动配置的实例，将其终止，然后等待替换实例成功启动后，再处理下一个实例。任何启动失败的实例都会中止 bouncer 的运行。</p>
+<h3>自动伸缩组</h3>
+<p>在云端构建基础设施，意味着要围绕故障进行工程设计。在瞬时故障频发的世界里，自动化恢复必不可少。自动伸缩组提供了一种有效的解决方案，无需人工干预即可恢复 EC2 实例。它们能够处理常见的工作流，如重启不健康的服务、替换降级的实例以及推出新版本。在 Palantir，我们几乎将所有的 EC2 实例都运行在自动伸缩组内，甚至包括一些只有一个实例的服务。</p>
+<p>自动伸缩组通过指定期望的主机数量和一个称为“启动配置”的模板来进行配置。启动配置指定了 AMI ID、实例类型、安全组和其他自定义设置。然而，启动配置只是关于如何创建新实例的指令，并非对现有实例应是什么样子的要求。更改自动伸缩组的启动配置不会触发任何操作，这意味着运维人员需要采取行动推出新节点并终止旧节点。这可能会使常规操作（如推出更新后的镜像）成本高昂。</p>
+<p>这使得运维人员面临一种局面：期望状态（启动配置）与已部署状态（已部署的节点）不匹配。在 AWS 控制台中，你也很难直观地看出你的自动伸缩组中同时包含了新旧节点。这个过程亟需自动化，以最大程度地降低期望状态与实际状态持续偏离的风险。</p>
+<p>为了自动化这一过程，你需要一个解决方案来：</p>
+<ul>
+<li>识别已创建的新启动配置</li>
+<li>确定哪些节点是旧的，哪些是最新的</li>
+<li>终止旧节点并等待新节点健康上线</li>
+<li>报告状态</li>
+</ul>
+<p>我们希望以一种简单的方式解决这个问题，既不需要构建有状态的应用程序，也不必去摆弄一套复杂的 Lambda 函数，于是我们开发了 bouncer。</p>
+<h2>Bouncer</h2>
+<p>bouncer 是一个简单的 Go 二进制程序，用于自动化将 ASG 中的所有实例过渡到更新后的启动配置。它旨在作为独立二进制文件或持续交付（CD）流程的一部分来运行。它有两种操作模式：串行模式和金丝雀模式：</p>
+<ul>
+<li><strong>串行模式是一种内联部署策略</strong>，一次删除和添加一个实例。</li>
+<li><strong>金丝雀模式是一种蓝/绿部署策略</strong>：首先测试单个新实例，然后添加足够的新实例使期望容量翻倍，最后在新实例投入使用后移除所有旧实例。</li>
+</ul>
+<p><strong>串行模式</strong>适用于不可水平扩展的服务。例如，我们的 Jenkins 服务器使用持久化 EBS 卷来存储作业数据。使用串行模式意味着旧实例必须先释放 EBS 卷，然后才能启动新实例。这通过保证 EBS 卷始终处于空闲状态，简化了自动化流程。</p>
+<p><strong>金丝雀模式</strong>适用于可水平扩展的服务。例如，我们的 Jenkins 服务器可以轻松接纳 50 个新的 Jenkins 工作节点，并能容忍随后失去 50 个旧节点。</p>
+<h3>规模化应用</h3>
+<p>在 Palantir，我们在数千台主机上运行来自不同数据源的数百个服务。它们拥有各种不同的配置方法、文件系统布局和生命周期管理方式。手动管理所有这些配置是不切实际的，因此作为一家公司，我们已标准化使用 Terraform 和 Terraform Enterprise 作为基础设施的 CI/CD 工具。虽然 Terraform 可以管理和自动化更新我们所有服务的启动配置，但它并没有内置循环替换 AWS 自动伸缩组的机制。</p>
+<p>在 bouncer 出现之前，服务数据主人有各自的轮转方法，通常是按需循环替换节点的一次性脚本。我们希望将推出过程整合到 Terraform CI/CD 流水线中。解决方案是让 Terraform 在执行 apply 的过程中调用 bouncer 来执行轮转：</p>
+<pre><code>resource &quot;null_resource&quot; &quot;instance_bouncer&quot; {
   triggers {
-    lc_change = "${aws_autoscaling_group.service.launch_configuration}"
+    lc_change = &quot;${aws_autoscaling_group.service.launch_configuration}&quot;
   }
-  provisioner "local-exec" {
-    command = "./bouncerw serial -a '${aws_autoscaling_group.service.name}:${aws_autoscaling_group.service.desired_capacity}'"
+  provisioner &quot;local-exec&quot; {
+    command = &quot;./bouncerw serial -a '${aws_autoscaling_group.service.name}:${aws_autoscaling_group.service.desired_capacity}'&quot;
   }
 }
-```
-
-Terraform 的 `null_resource` 中的 `triggers` 部分是一个插值字符串，用于告知 Terraform 何时重新运行指定的配置器。在这种情况下，只要自动伸缩组的启动配置发生更改，这个 `null_resource` 就会重新运行，从而触发 bouncer。bouncer 会逐个遍历每个旧实例，将其终止，并等待替换实例启动并变得健康。这种与 Terraform 的集成运行非常顺畅。
-
-- 如果 Terraform apply 成功，意味着自动伸缩组已完成全面轮转。
-- 如果 bouncer 循环替换实例失败，将导致 Terraform apply 失败。
-- 服务数据主人随后可以进行调查，修复问题，并重新运行 Terraform apply。
-- bouncer 旨在平滑处理失败推出后的重新运行。有关更多详细信息，请参阅《README》。
-
-通过在 Terraform apply 的过程中循环替换节点，声明状态（代码）与部署状态之间形成了更紧密的闭环。如果节点在代码带外进行轮转，Terraform 代码与实际部署内容之间的差距就会扩大。
-
-**排序。** 有时服务包含许多组件，需要按特定顺序进行轮转。Terraform 旨在理解资源依赖关系并按正确顺序解析它们。我们通过 `null_resource` 对 bouncer 的调用使我们能够将顺序代码化。以 hashistack（一个 Consul、Vault 和 Nomad 集群）为例。Consul 和 Vault 服务器需要串行轮转以维持法定人数。然而，Nomad 工作节点可以使用金丝雀策略进行轮转：
-
-```
-resource "null_resource" "consul_server_bouncer" {
+</code></pre>
+<p>Terraform 的 <code>null_resource</code> 中的 <code>triggers</code> 部分是一个插值字符串，用于告知 Terraform 何时重新运行指定的配置器。在这种情况下，只要自动伸缩组的启动配置发生更改，这个 <code>null_resource</code> 就会重新运行，从而触发 bouncer。bouncer 会逐个遍历每个旧实例，将其终止，并等待替换实例启动并变得健康。这种与 Terraform 的集成运行非常顺畅。</p>
+<ul>
+<li>如果 Terraform apply 成功，意味着自动伸缩组已完成全面轮转。</li>
+<li>如果 bouncer 循环替换实例失败，将导致 Terraform apply 失败。</li>
+<li>服务数据主人随后可以进行调查，修复问题，并重新运行 Terraform apply。</li>
+<li>bouncer 旨在平滑处理失败推出后的重新运行。有关更多详细信息，请参阅《README》。</li>
+</ul>
+<p>通过在 Terraform apply 的过程中循环替换节点，声明状态（代码）与部署状态之间形成了更紧密的闭环。如果节点在代码带外进行轮转，Terraform 代码与实际部署内容之间的差距就会扩大。</p>
+<p><strong>排序。</strong> 有时服务包含许多组件，需要按特定顺序进行轮转。Terraform 旨在理解资源依赖关系并按正确顺序解析它们。我们通过 <code>null_resource</code> 对 bouncer 的调用使我们能够将顺序代码化。以 hashistack（一个 Consul、Vault 和 Nomad 集群）为例。Consul 和 Vault 服务器需要串行轮转以维持法定人数。然而，Nomad 工作节点可以使用金丝雀策略进行轮转：</p>
+<pre><code>resource &quot;null_resource&quot; &quot;consul_server_bouncer&quot; {
   # Changes to any instance of the cluster requires re-provisioning
   triggers {
-    lc_change = "${join(",", aws_autoscaling_group.consul_server.*.launch_configuration)}"
+    lc_change = &quot;${join(&quot;,&quot;, aws_autoscaling_group.consul_server.*.launch_configuration)}&quot;
   }
-  provisioner "local-exec" {
+  provisioner &quot;local-exec&quot; {
     # Redeploy all nodes in these ASGs
-    command = "./bouncerw serial -a '${join(",", aws_autoscaling_group.consul_server.*.name)}'"
+    command = &quot;./bouncerw serial -a '${join(&quot;,&quot;, aws_autoscaling_group.consul_server.*.name)}'&quot;
   }
 }
-resource "null_resource" "vault_server_bouncer" {
+resource &quot;null_resource&quot; &quot;vault_server_bouncer&quot; {
   # Changes to any instance of the cluster requires re-provisioning
   triggers {
-    lc_change = "${join(",", aws_autoscaling_group.vault_server_individual.*.launch_configuration)}"
+    lc_change = &quot;${join(&quot;,&quot;, aws_autoscaling_group.vault_server_individual.*.launch_configuration)}&quot;
   }
-  provisioner "local-exec" {
+  provisioner &quot;local-exec&quot; {
     # Redeploy all nodes in these ASGs
-    command = "./bouncerw serial -a '${join(",", aws_autoscaling_group.vault_server_individual.*.name)}' -p '${join(",", formatlist("./%s/vault-step-down.sh %s %s.%s", path.module, aws_autoscaling_group.vault_server_individual.*.name, var.vault_dns_name, var.zone_name))}'"
+    command = &quot;./bouncerw serial -a '${join(&quot;,&quot;, aws_autoscaling_group.vault_server_individual.*.name)}' -p '${join(&quot;,&quot;, formatlist(&quot;./%s/vault-step-down.sh %s %s.%s&quot;, path.module, aws_autoscaling_group.vault_server_individual.*.name, var.vault_dns_name, var.zone_name))}'&quot;
   }
   depends_on = [
-    "null_resource.consul_server_bouncer",
+    &quot;null_resource.consul_server_bouncer&quot;,
   ]
 }
-resource "null_resource" "nomad_worker_bouncer" {
+resource &quot;null_resource&quot; &quot;nomad_worker_bouncer&quot; {
   # Changes to any instance of the cluster requires re-provisioning
   triggers {
-    lc_change = "${aws_autoscaling_group.nomad_worker.launch_configuration}"
+    lc_change = &quot;${aws_autoscaling_group.nomad_worker.launch_configuration}&quot;
   }
-  provisioner "local-exec" {
+  provisioner &quot;local-exec&quot; {
     # Bounce all nodes in this ASG using the canary method
-    command = "./bouncerw canary -a '${aws_autoscaling_group.nomad_worker.name}:${var.worker_count}'"
+    command = &quot;./bouncerw canary -a '${aws_autoscaling_group.nomad_worker.name}:${var.worker_count}'&quot;
   }
   depends_on = [
-    "null_resource.consul_server_bouncer",
-    "null_resource.vault_server_bouncer",
+    &quot;null_resource.consul_server_bouncer&quot;,
+    &quot;null_resource.vault_server_bouncer&quot;,
   ]
 }
-```
-
-我们利用 Terraform 资源的 `depends_on` 属性，为我们的服务轮转显式定义了依赖图。现在我们可以按正确的顺序推出复杂的服务，并在发生任何上游错误时失败。
-
-你可能注意到，我们使用的是 `bouncerw` 而不是 `bouncer`。它是一个脚本，会下载最新版本的 bouncer，然后将所有参数传递给该二进制文件。这是我们在 Palantir 常用的一种模式，允许我们更新常用的二进制文件，而无需将二进制文件直接提交到源码中。该脚本包含下载和准备二进制文件的代码，从而使调用更简单。
-
-### 健康检查
-
-当你依赖自动化来执行基础设施轮转时，自动化必须能够在继续下一步之前评估新组件的健康状况，这一点至关重要。用不健康的新节点自动替换健康的旧节点并非理想之举。bouncer 必须能够在继续之前确定实例是否健康。
-
-bouncer 不一定拥有对它正在轮转的任何实例的网络访问权限，因此实例的健康状况是通过 AWS API 来确定的。AWS 自动伸缩组提供了两种基本方式来处理此问题：EC2 健康检查或 ELB 健康检查。对于大多数用途而言，EC2 健康检查几乎总是过于简单，因为它基本上只确认实例正在运行且可通过网络访问，这显然是必要条件但远远不够。ELB 健康检查在许多情况下很有用，因为这意味着用户流量正在流向该实例。然而，我们有几个在自动伸缩组中运行的集群，其中一个或多个实例是热备用节点。这些实例故意向 ELB 显示为不健康，以便不接收用户流量。于是便有了自动伸缩生命周期钩子。
-
-生命周期钩子会暂停 ASG 实例的启动或终止。我们使用启动钩子来等待实例变得健康，然后再继续启动过程。对于使用 bouncer 的自动伸缩组，其约定是：一旦实例达到“服务中”状态，就可以假定它是健康的。因此，如果健康检查失败，必须正确地向钩子报告，这一点至关重要。健康检查采用在每个实例上运行的脚本形式，评估本应运行的服务的就绪情况。这些脚本还负责进行 API 调用以决定是否继续。现在，每个服务都可以利用定制的健康检查，同时保持 bouncer 的逻辑简单，并与更基本的用例兼容。
-
-以下是一个简单的测试，用于检查 Jenkins 服务器是否已启动，并通知生命周期钩子可以安全继续。
-
-```
-while [ true ]; do
+</code></pre>
+<p>我们利用 Terraform 资源的 <code>depends_on</code> 属性，为我们的服务轮转显式定义了依赖图。现在我们可以按正确的顺序推出复杂的服务，并在发生任何上游错误时失败。</p>
+<p>你可能注意到，我们使用的是 <code>bouncerw</code> 而不是 <code>bouncer</code>。它是一个脚本，会下载最新版本的 bouncer，然后将所有参数传递给该二进制文件。这是我们在 Palantir 常用的一种模式，允许我们更新常用的二进制文件，而无需将二进制文件直接提交到源码中。该脚本包含下载和准备二进制文件的代码，从而使调用更简单。</p>
+<h3>健康检查</h3>
+<p>当你依赖自动化来执行基础设施轮转时，自动化必须能够在继续下一步之前评估新组件的健康状况，这一点至关重要。用不健康的新节点自动替换健康的旧节点并非理想之举。bouncer 必须能够在继续之前确定实例是否健康。</p>
+<p>bouncer 不一定拥有对它正在轮转的任何实例的网络访问权限，因此实例的健康状况是通过 AWS API 来确定的。AWS 自动伸缩组提供了两种基本方式来处理此问题：EC2 健康检查或 ELB 健康检查。对于大多数用途而言，EC2 健康检查几乎总是过于简单，因为它基本上只确认实例正在运行且可通过网络访问，这显然是必要条件但远远不够。ELB 健康检查在许多情况下很有用，因为这意味着用户流量正在流向该实例。然而，我们有几个在自动伸缩组中运行的集群，其中一个或多个实例是热备用节点。这些实例故意向 ELB 显示为不健康，以便不接收用户流量。于是便有了自动伸缩生命周期钩子。</p>
+<p>生命周期钩子会暂停 ASG 实例的启动或终止。我们使用启动钩子来等待实例变得健康，然后再继续启动过程。对于使用 bouncer 的自动伸缩组，其约定是：一旦实例达到“服务中”状态，就可以假定它是健康的。因此，如果健康检查失败，必须正确地向钩子报告，这一点至关重要。健康检查采用在每个实例上运行的脚本形式，评估本应运行的服务的就绪情况。这些脚本还负责进行 API 调用以决定是否继续。现在，每个服务都可以利用定制的健康检查，同时保持 bouncer 的逻辑简单，并与更基本的用例兼容。</p>
+<p>以下是一个简单的测试，用于检查 Jenkins 服务器是否已启动，并通知生命周期钩子可以安全继续。</p>
+<pre><code>while [ true ]; do
   curl --fail -sL localhost:8080/login -o /dev/null \
-  && break \
+  &amp;&amp; break \
   || sleep 10
 done
-```
-
-```
-aws autoscaling complete-lifecycle-action \
+</code></pre>
+<pre><code>aws autoscaling complete-lifecycle-action \
   --lifecycle-action-result CONTINUE \
   --instance-id $(ec2metadata --instance-id) \
   --lifecycle-hook-name my-launch-hook \
   --auto-scaling-group-name my-asg
-```
-
-### 总结
-
-此工作流产生最大影响的领域之一，是及时推出安全补丁。bouncer 允许我们获取新打补丁的 AMI，并依靠 Terraform Enterprise 将它们推出到我们所有的服务。如果出现失败，它们会显示为 Terraform apply 错误，因此运维人员不再需要手动检查每个服务。相反，他们只需在 Terraform Enterprise 中查找失败即可。现在，一个人可以以极少的精力为数十个服务打补丁。如果确实发生错误且未被捕获，我们可以轻松地向脚本中添加新的检查。因此，我们能够提高推出过程的质量。
-
-我们热衷于高效运营基础设施，如果你也是，请来与我们共事。有兴趣使用或为 bouncer 做贡献吗？在 GitHub 上查看它吧。
-
-## 在您的收件箱中获取 Palantir 的故事
-
-免费加入 Medium 以获取此作者的更新。
-
-[输入您的电子邮件]
-
-订阅
-订阅
-
-记住我以便更快登录
-
-—
-
-作者：Andrew K.、Elliot G.、Holt W.、Umer S.
-</article>
+</code></pre>
+<h3>总结</h3>
+<p>此工作流产生最大影响的领域之一，是及时推出安全补丁。bouncer 允许我们获取新打补丁的 AMI，并依靠 Terraform Enterprise 将它们推出到我们所有的服务。如果出现失败，它们会显示为 Terraform apply 错误，因此运维人员不再需要手动检查每个服务。相反，他们只需在 Terraform Enterprise 中查找失败即可。现在，一个人可以以极少的精力为数十个服务打补丁。如果确实发生错误且未被捕获，我们可以轻松地向脚本中添加新的检查。因此，我们能够提高推出过程的质量。</p>
+<p>我们热衷于高效运营基础设施，如果你也是，请来与我们共事。有兴趣使用或为 bouncer 做贡献吗？在 GitHub 上查看它吧。</p>
+<h2>在您的收件箱中获取 Palantir 的故事</h2>
+<p>免费加入 Medium 以获取此作者的更新。</p>
+<p>[输入您的电子邮件]</p>
+<p>订阅<br />
+订阅</p>
+<p>记住我以便更快登录</p>
+<p>—</p>
+<p>作者：Andrew K.、Elliot G.、Holt W.、Umer S.</p></article>
 </body>
 </html>

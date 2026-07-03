@@ -34,123 +34,81 @@ article a:hover{text-decoration:underline}
 <div class="nav"><a href="../../index.html">← Back to Archive</a></div>
 <h1>On Monotonicity in Relational Databases and Service-oriented Architecture</h1>
 <div class="meta">2020-11-19 · <a href="https://blog.palantir.com/on-monotonicity-in-relational-databases-and-service-oriented-architecture-90b0a848dd3d">Original →</a></div>
-<article>单调性是关系型数据库中的一个重要概念，正如我将在本篇博文中所展示的，它在面向服务架构的 API 中同样适用。
-![ ](https://miro.medium.com/v2/resize:fit:700/1*dJehAk9bDpeo5zqGEP0_zg.png)
-直观地看，如果信息“不会消失”，那么数据库或 API 就是单调的。单调的数据库查询比非单调查询更容易进行分析和优化，而单调的 API 则能帮助开发者规避竞态条件和未定义状态。在 Palantir，我们自然非常看重快捷的数据库查询和安全、行为良好的 API。在与我的团队讨论数据库或 API 架构时，我经常使用单调性框架。让我们深入探讨吧！
-
-## 关系型数据库
-
-我猜想大多数读者对微积分中单调函数的概念并不陌生：对于所有的 x 和 y，如果 x ≤ y，都有 f(x) ≤ f(y)，那么函数 f 就被称为单调递增。左侧的图表展示了这样一个函数。在数据库理论中，我们可以类比地定义单调查询的概念：对于所有的数据库 D1 和 D2，如果 D1 ⊆ D2，都有 Q(D1) ⊆ Q(D2)，那么查询 Q 就是单调的。通俗来说，如果我们在一个比 D1 拥有更多行的数据库 D2 上执行单调查询 Q，那么在较大的数据库 D2 上得到的查询结果总是会更大（或一样大）。
-
-现在，让我们回顾一下关系型数据库中关于查询优化的一些关键结论，重点关注单调查询。作为一个贯穿全文的示例，考虑一个包含两个实体的数据域：账户和访问策略（简称策略）。每个账户恰好关联一个策略，但同一个策略可以关联多个账户。我们可以将其建模为 `accounts` 和 `policies` 两张表，并通过以下 SQL 查询获取账户及对应访问策略的列表：
-
-```
--- Q1
+<article><p>单调性是关系型数据库中的一个重要概念，正如我将在本篇博文中所展示的，它在面向服务架构的 API 中同样适用。<br />
+<img alt=" " src="https://miro.medium.com/v2/resize:fit:700/1*dJehAk9bDpeo5zqGEP0_zg.png" /><br />
+直观地看，如果信息“不会消失”，那么数据库或 API 就是单调的。单调的数据库查询比非单调查询更容易进行分析和优化，而单调的 API 则能帮助开发者规避竞态条件和未定义状态。在 Palantir，我们自然非常看重快捷的数据库查询和安全、行为良好的 API。在与我的团队讨论数据库或 API 架构时，我经常使用单调性框架。让我们深入探讨吧！</p>
+<h2>关系型数据库</h2>
+<p>我猜想大多数读者对微积分中单调函数的概念并不陌生：对于所有的 x 和 y，如果 x ≤ y，都有 f(x) ≤ f(y)，那么函数 f 就被称为单调递增。左侧的图表展示了这样一个函数。在数据库理论中，我们可以类比地定义单调查询的概念：对于所有的数据库 D1 和 D2，如果 D1 ⊆ D2，都有 Q(D1) ⊆ Q(D2)，那么查询 Q 就是单调的。通俗来说，如果我们在一个比 D1 拥有更多行的数据库 D2 上执行单调查询 Q，那么在较大的数据库 D2 上得到的查询结果总是会更大（或一样大）。</p>
+<p>现在，让我们回顾一下关系型数据库中关于查询优化的一些关键结论，重点关注单调查询。作为一个贯穿全文的示例，考虑一个包含两个实体的数据域：账户和访问策略（简称策略）。每个账户恰好关联一个策略，但同一个策略可以关联多个账户。我们可以将其建模为 <code>accounts</code> 和 <code>policies</code> 两张表，并通过以下 SQL 查询获取账户及对应访问策略的列表：</p>
+<pre><code>-- Q1
 SELECT * FROM 
   accounts NATURAL JOIN policies;
-```
-
-如果我们将策略进一步划分为活跃策略和停用策略，这个例子会变得更有趣。如果要查询所有未关联停用策略的账户，可以写成如下查询语句。（注意，此数据库架构仅用于演示，现实中的停用策略我大概不会这么建模。）
-
-```
--- Q2
+</code></pre>
+<p>如果我们将策略进一步划分为活跃策略和停用策略，这个例子会变得更有趣。如果要查询所有未关联停用策略的账户，可以写成如下查询语句。（注意，此数据库架构仅用于演示，现实中的停用策略我大概不会这么建模。）</p>
+<pre><code>-- Q2
 SELECT * FROM
   accounts NATURAL JOIN (SELECT * FROM policies EXCEPT SELECT * FROM disabled_policies) AS active_policies;
-```
-
-查询 Q1 是单调的：直观上讲，这意味着如果我们向底层数据库添加更多行，该查询产生的结果不会减少。反之，查询 Q2 不是单调的，因为我们可以通过向 `disabled_policies` 表中添加行，从而从查询结果中移除行。否定操作（此处的 `EXCEPT` 语句）是数据库查询语言中非单调性的常见根源。
-
-那么，单调查询的意义何在？事实上，许多查询分析和优化问题对于单调查询是可以解决的，但对于一大类非单调查询则无法解决。例如，查询等价问题——给定查询 Q1 和 Q2，对于所有数据库 D 是否都满足 Q1(D) = Q2(D)？——对于单调查询是可判定的，但对于关系演算（包含非单调的差集运算符）则是不可判定的。
-
-就 SQL 查询而言，这意味着我们能够判定两个 select/project/join（选择/投影/连接）SQL 查询是否等价，但无法一般性地判定 select/project/join/union/difference（选择/投影/连接/并集/差集）SQL 查询的等价性（参见 Abiteboul 等人所著的《数据库基础》）。
-
-查询等价性在实际中最简单的例子就是谓词下推：很容易验证 `Q1: SELECT * FROM accounts NATURAL JOIN policies WHERE policy.id == 42` 与 `Q2: SELECT * FROM accounts NATURAL JOIN (SELECT * FROM policies WHERE policies.id ==42)` 是等价的。上述结论表明，对于单调的 select/project/join SQL 查询，我们总能判定 Q1 是否等于 Q2；而对于任意的 SQL 查询，则不存在判定 Q1=Q2 的通用算法。这个不可判定性结论有一个有趣的推论：关系演算无法实现全局语法查询优化——给定查询 Q，不存在任何算法能够计算出与 Q 等价的最小关系演算查询。
-
-非单调性并非关系查询语言复杂性的唯一来源；例如，对于 Datalog 查询（粗略地说，就是带递归的 select/project/join 查询），即使它们是单调的，其等价问题也是不可判定的。
-
-直观上讲，对于关系型数据库而言，非单调性是造成诸多查询分析任务相当困难的根源。
-
-## REST API
-
-让我们转换视角，看看我称之为“API 单调性”的概念在面向服务架构（特别是 REST API 场景）中的作用。沿用前文的账户/策略域，我们可以设想一个账户服务和一个独立的策略服务，分别管理账户对象和策略对象：
-
-```
-# 账户服务和策略服务的 HTTP/JSON 实现
+</code></pre>
+<p>查询 Q1 是单调的：直观上讲，这意味着如果我们向底层数据库添加更多行，该查询产生的结果不会减少。反之，查询 Q2 不是单调的，因为我们可以通过向 <code>disabled_policies</code> 表中添加行，从而从查询结果中移除行。否定操作（此处的 <code>EXCEPT</code> 语句）是数据库查询语言中非单调性的常见根源。</p>
+<p>那么，单调查询的意义何在？事实上，许多查询分析和优化问题对于单调查询是可以解决的，但对于一大类非单调查询则无法解决。例如，查询等价问题——给定查询 Q1 和 Q2，对于所有数据库 D 是否都满足 Q1(D) = Q2(D)？——对于单调查询是可判定的，但对于关系演算（包含非单调的差集运算符）则是不可判定的。</p>
+<p>就 SQL 查询而言，这意味着我们能够判定两个 select/project/join（选择/投影/连接）SQL 查询是否等价，但无法一般性地判定 select/project/join/union/difference（选择/投影/连接/并集/差集）SQL 查询的等价性（参见 Abiteboul 等人所著的《数据库基础》）。</p>
+<p>查询等价性在实际中最简单的例子就是谓词下推：很容易验证 <code>Q1: SELECT * FROM accounts NATURAL JOIN policies WHERE policy.id == 42</code> 与 <code>Q2: SELECT * FROM accounts NATURAL JOIN (SELECT * FROM policies WHERE policies.id ==42)</code> 是等价的。上述结论表明，对于单调的 select/project/join SQL 查询，我们总能判定 Q1 是否等于 Q2；而对于任意的 SQL 查询，则不存在判定 Q1=Q2 的通用算法。这个不可判定性结论有一个有趣的推论：关系演算无法实现全局语法查询优化——给定查询 Q，不存在任何算法能够计算出与 Q 等价的最小关系演算查询。</p>
+<p>非单调性并非关系查询语言复杂性的唯一来源；例如，对于 Datalog 查询（粗略地说，就是带递归的 select/project/join 查询），即使它们是单调的，其等价问题也是不可判定的。</p>
+<p>直观上讲，对于关系型数据库而言，非单调性是造成诸多查询分析任务相当困难的根源。</p>
+<h2>REST API</h2>
+<p>让我们转换视角，看看我称之为“API 单调性”的概念在面向服务架构（特别是 REST API 场景）中的作用。沿用前文的账户/策略域，我们可以设想一个账户服务和一个独立的策略服务，分别管理账户对象和策略对象：</p>
+<pre><code># 账户服务和策略服务的 HTTP/JSON 实现
 # 账户服务
---> {"account_id": {account_id}, "policy_id": {policy_id}}
+--&gt; {&quot;account_id&quot;: {account_id}, &quot;policy_id&quot;: {policy_id}}
 PUT /accounts/{account_id}
 GET /accounts/{account_id}
-<-- {"account_id": {account_id}, "policy_id": {policy_id}}
+&lt;-- {&quot;account_id&quot;: {account_id}, &quot;policy_id&quot;: {policy_id}}
 
 # 策略服务
---> {"policy_id": {policy_id}, "policy": { ... }}
+--&gt; {&quot;policy_id&quot;: {policy_id}, &quot;policy&quot;: { ... }}
 PUT /policies/{policy_id}
 GET /policies/{policy_id}
-<-- {"policy_id": {policy_id}, "policy": { ... }}
-```
-
-这些服务提供了添加和获取账户及策略对象的方法。在面向服务模型中，账户与策略之间的数据库连接是通过对象的标识符进行关联来实现的。由于这里是一个 1:N 的连接（即每个账户对应一个策略，而同一个策略可以适用于多个账户），我选择在账户对象中添加一个 `policy_id` 字段。
-
-类似于数据库对单调查询的定义，我会称这种 API 是单调的，意思是我们永远无法通过与 API 的交互来移除账户或策略。（我们可以用一个新的策略去覆盖某个具有特定 `policy_id` 的策略，但我们永远无法删除策略。账户同理。）如果增加 DELETE 端点，就会使 API 变成非单调的：
-
-```
-DELETE /accounts/{account_id}
+&lt;-- {&quot;policy_id&quot;: {policy_id}, &quot;policy&quot;: { ... }}
+</code></pre>
+<p>这些服务提供了添加和获取账户及策略对象的方法。在面向服务模型中，账户与策略之间的数据库连接是通过对象的标识符进行关联来实现的。由于这里是一个 1:N 的连接（即每个账户对应一个策略，而同一个策略可以适用于多个账户），我选择在账户对象中添加一个 <code>policy_id</code> 字段。</p>
+<p>类似于数据库对单调查询的定义，我会称这种 API 是单调的，意思是我们永远无法通过与 API 的交互来移除账户或策略。（我们可以用一个新的策略去覆盖某个具有特定 <code>policy_id</code> 的策略，但我们永远无法删除策略。账户同理。）如果增加 DELETE 端点，就会使 API 变成非单调的：</p>
+<pre><code>DELETE /accounts/{account_id}
 DELETE /policies/{policy_id}
-```
-
-此时，我们可以发出一系列请求来说明信息是如何消失的：
-
-```
---> {"policy_id": 123, "policy": { ... }}
+</code></pre>
+<p>此时，我们可以发出一系列请求来说明信息是如何消失的：</p>
+<pre><code>--&gt; {&quot;policy_id&quot;: 123, &quot;policy&quot;: { ... }}
 PUT /policies/123
 GET /policies/123
-<-- {"policy_id": 123, "policy": { ... }}
+&lt;-- {&quot;policy_id&quot;: 123, &quot;policy&quot;: { ... }}
 DELETE /policies/123
 GET /policies/123
-<-- 404 NOT FOUND
-```
-
-如果我们要保证跨服务边界的某些完整性约束，单调性属性就非常有用。例如，我们可能要求每个账户都必须拥有一个有效的策略：
-
-```
-def putAccount(account_id, policy_id):
+&lt;-- 404 NOT FOUND
+</code></pre>
+<p>如果我们要保证跨服务边界的某些完整性约束，单调性属性就非常有用。例如，我们可能要求每个账户都必须拥有一个有效的策略：</p>
+<pre><code>def putAccount(account_id, policy_id):
   if policyService.getPolicy(policy_id) == 404:
-    fail("No such policy: " + policy_id)
+    fail(&quot;No such policy: &quot; + policy_id)
   else:
     database.storeAccount(account_id, policy_id)
-```
-
-尽管我们没有使用任何形式的分布式事务系统，但在策略服务 API 具备单调性的前提下，上述代码也能正确维持“每个账户都有有效策略”这一不变式：我们在将账户信息存入数据库之前会检查所请求的策略是否存在，并且可以保证，只要该策略曾经存在过，它就永远不会消失。（如果有读者能用时序逻辑对这个论断进行建模，那就太棒了……）当然，如果策略服务 API 是非单调的，这个不变式就很容易被打破。
-
-我们能否在支持策略删除的同时，保持 API 的单调性以及“每个账户都有有效策略”的不变式呢？一个可行的解决方案是在策略对象中添加一个 `isDeleted` 字段：
-
-```
---> {"policy_id": 123, "policy": { ... }}
+</code></pre>
+<p>尽管我们没有使用任何形式的分布式事务系统，但在策略服务 API 具备单调性的前提下，上述代码也能正确维持“每个账户都有有效策略”这一不变式：我们在将账户信息存入数据库之前会检查所请求的策略是否存在，并且可以保证，只要该策略曾经存在过，它就永远不会消失。（如果有读者能用时序逻辑对这个论断进行建模，那就太棒了……）当然，如果策略服务 API 是非单调的，这个不变式就很容易被打破。</p>
+<p>我们能否在支持策略删除的同时，保持 API 的单调性以及“每个账户都有有效策略”的不变式呢？一个可行的解决方案是在策略对象中添加一个 <code>isDeleted</code> 字段：</p>
+<pre><code>--&gt; {&quot;policy_id&quot;: 123, &quot;policy&quot;: { ... }}
 PUT /policies/123
 GET /policies/123
-<-- {"policy_id": 123, "policy": { ... }, isDeleted: false}
+&lt;-- {&quot;policy_id&quot;: 123, &quot;policy&quot;: { ... }, isDeleted: false}
 DELETE /policies/123
 GET /policies/123
-<-- {"policy_id": 123, "policy": { ... }, isDeleted: true}
-```
-
-账户服务可以利用 `isDeleted` 标志来促使用户采取行动以修复不一致的状态，例如在显示账户的同时展示一条“策略无效：请选择新策略”的警告消息。更重要的是，如果账户服务只存储 `policy_id`（而非完整的策略对象），它就总能访问到所引用的策略，哪怕是已删除的策略。
-
-这里有一个有趣的推论：单调 API 与删除操作天生不合。举例来说，假设我们负有删除策略信息的法律义务，比如其中包含了个人身份信息（PII）。这种删除要求与单调性属性是相悖的，因为我们无法在删除策略的同时又保留它。API 设计者在平衡诸如 GDPR 中的数据最小化原则等法律约束与架构或性能方面的诉求时，必须牢记这种权衡。我知道这有点吊人胃口，但我想把关于这个话题的进一步思考留到未来的博文中，敬请期待！
-
-总而言之，单调的 API 能够帮助我们保证 REST API 中的跨服务不变式。
-
-## 事件溯源
-
-最后，让我们看看面向服务架构中用于跨服务通信的事件溯源范式。简而言之，事件溯源背后的理念是存储不可变的变更事件，而不是直接修改数据。API 消费者可以访问事件日志，并按顺序处理事件。
-
-前文提到的 PUT 和 DELETE 调用序列将产生包含两个事件的序列：`[putPolicy(123), deletePolicy(123)]`。账户服务会持续追踪策略服务的事件日志，从而在策略服务中维护一份可用策略的内部表示。例如，我们可以保留所有已创建的策略，并在收到 `deletePolicy(..)` 事件时将其标记为 `isDeleted`，由此即可实现上文 REST 示例中所述的单调行为。此外，请注意事件日志本身是只追加的，因此从定义上讲它就是单调的。
-
-如果你对事件溯源感兴趣，我也鼓励你阅读我之前的一篇博文：《重塑 Foundry 作业编排后端：从 CRUD 到事件溯源》。
-
-## 结论
-
-诸如单调性这类抽象概念往往适用于计算机科学与软件工程的各个领域。本篇博文阐明了单调的数据库查询更易于分析和优化，而单调的服务 API 则允许开发者强制实现理想的数据一致性不变式。
-
-作者：Robert Fink 是 Palantir Foundry 平台的创始工程师。</article>
+&lt;-- {&quot;policy_id&quot;: 123, &quot;policy&quot;: { ... }, isDeleted: true}
+</code></pre>
+<p>账户服务可以利用 <code>isDeleted</code> 标志来促使用户采取行动以修复不一致的状态，例如在显示账户的同时展示一条“策略无效：请选择新策略”的警告消息。更重要的是，如果账户服务只存储 <code>policy_id</code>（而非完整的策略对象），它就总能访问到所引用的策略，哪怕是已删除的策略。</p>
+<p>这里有一个有趣的推论：单调 API 与删除操作天生不合。举例来说，假设我们负有删除策略信息的法律义务，比如其中包含了个人身份信息（PII）。这种删除要求与单调性属性是相悖的，因为我们无法在删除策略的同时又保留它。API 设计者在平衡诸如 GDPR 中的数据最小化原则等法律约束与架构或性能方面的诉求时，必须牢记这种权衡。我知道这有点吊人胃口，但我想把关于这个话题的进一步思考留到未来的博文中，敬请期待！</p>
+<p>总而言之，单调的 API 能够帮助我们保证 REST API 中的跨服务不变式。</p>
+<h2>事件溯源</h2>
+<p>最后，让我们看看面向服务架构中用于跨服务通信的事件溯源范式。简而言之，事件溯源背后的理念是存储不可变的变更事件，而不是直接修改数据。API 消费者可以访问事件日志，并按顺序处理事件。</p>
+<p>前文提到的 PUT 和 DELETE 调用序列将产生包含两个事件的序列：<code>[putPolicy(123), deletePolicy(123)]</code>。账户服务会持续追踪策略服务的事件日志，从而在策略服务中维护一份可用策略的内部表示。例如，我们可以保留所有已创建的策略，并在收到 <code>deletePolicy(..)</code> 事件时将其标记为 <code>isDeleted</code>，由此即可实现上文 REST 示例中所述的单调行为。此外，请注意事件日志本身是只追加的，因此从定义上讲它就是单调的。</p>
+<p>如果你对事件溯源感兴趣，我也鼓励你阅读我之前的一篇博文：《重塑 Foundry 作业编排后端：从 CRUD 到事件溯源》。</p>
+<h2>结论</h2>
+<p>诸如单调性这类抽象概念往往适用于计算机科学与软件工程的各个领域。本篇博文阐明了单调的数据库查询更易于分析和优化，而单调的服务 API 则允许开发者强制实现理想的数据一致性不变式。</p>
+<p>作者：Robert Fink 是 Palantir Foundry 平台的创始工程师。</p></article>
 </body></html>

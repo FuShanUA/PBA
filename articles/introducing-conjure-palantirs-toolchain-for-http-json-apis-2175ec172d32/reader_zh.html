@@ -12,71 +12,39 @@ pre{overflow-x:auto;background:#f5f5f5;padding:16px}
 </style>
 </head>
 <body>
-<article>
-# Conjure：Palantir 面向 HTTP/JSON API 的工具链
-
-![](https://miro.medium.com/v2/resize:fit:700/1*sZynkPtTn679YYSnhFKPZA.png)
-
-今天我们正式开源了 Conjure，这是 Palantir 面向 HTTP/JSON API 的工具链。只需用 YAML 编写声明式的 API 定义，Conjure 就能生成多种语言的客户端与服务端绑定代码，包括 Java、Typescript 和 Python。
-
-Conjure 客户端会将方法调用转化为 HTTP 请求，并将方法参数序列化为 JSON 对象。Conjure 为 Palantir 旗下产品的数百个 API 提供了定义，并为内部应用及第三方应用提供了 RPC 基础设施，支撑范围涵盖 Java、Go 和 Python 后端服务，乃至运行在 Web 浏览器中的前端 Typescript 应用。
-
-我们打造 Conjure 的初衷是为了保持海量 HTTP/JSON API 的一致性，降低定义、讨论、评审及协同维护这些 API 的难度。起初，我们打算将 Conjure 作为迈向 gRPC 的跳板，但在实践过程中，我们逐渐体会到它对 API 设计施加的《限制》所带来的价值，正是这些约束赋予了设计更高的聚焦度与清晰度。需要指出的是，Conjure 并非什么高深莫测的技术；然而，正是它的这种简单性，切实提升了跨团队与开发者的工程效能。
-
-## 新手入门
-
-Conjure API 用于定义*数据类型*和*服务端点*。例如，一个简单的 `FlightSearch` API 大致如下：
-
-![](https://miro.medium.com/v2/resize:fit:700/1*-7-pAqtMuL-yjDHi-K7hyA.png)
-
-基于上述 API 定义，conjure-java 生成器会产出适用于 JAX-RS/Jersey 服务器的服务端桩代码，例如 Dropwizard：
-
-![](https://miro.medium.com/v2/resize:fit:700/1*-7-pAqtMuL-yjDHi-K7hyA.png)
-
-此外，生成器还会为 Conjure 定义的数据类型（例如 `Connection` 和 `SearchResult`）生成不可变的值类型，这些类型在内部通过 Jackson 对象映射器进行序列化与反序列化（见下文）。Conjure 的运行时库让客户端的创建变得十分简便，例如，Java 运行时的工作方式如下：
-
-![](https://miro.medium.com/v2/resize:fit:700/1*-7-pAqtMuL-yjDHi-K7hyA.png)
-
-## 在您的收件箱中获取 Palantir 的故事
-
-免费加入 Medium，获取来自此作者的最新动态。
-
-[输入您的电子邮件]
-[订阅]
-[订阅]
-☑ 记住我以便快速登录
-
-Conjure 同时支持 Python 和 Typescript 客户端，请查阅各自的 README 文件或《新手入门指南》获取示例及参考文档。我们目前正在推进 conjure-go 服务端与客户端工具链的开源工作，同时也在进行 conjure-rust 的试验，敬请期待！
-
-## 底层机制
-
-接下来详细探讨两个方面：代码生成器基础设施和 Conjure 的传输格式。核心的 conjure 仓库为 Conjure 定义规定了两种格式：一种是供服务端开发者编写 API 定义使用的简明、人类可读格式；另一种是供代码生成器作为输入的机器可读*中间表示*（IR）格式：
-
-![](https://miro.medium.com/v2/resize:fit:700/1*-7-pAqtMuL-yjDHi-K7hyA.png)
-
-Conjure 从 API 定义到特定语言绑定的编译步骤
-
-Conjure 的 IR 格式是自托管的，即它本身由一组 Conjure 数据类型定义而成。在完成引导启动后，代码生成器便可将 Conjure API 定义反序列化为抽象语法树（AST），该树由目标语言中符合原生习惯的特定语言值类型构建。例如，conjure-java 生成器使用 Square 的 JavaPoet 库，将代表 API 定义的 Java 值类型 AST 转换为服务端与客户端桩代码的 Java 源码；而将 API 定义反序列化为 AST 的过程是无需额外开发成本的。类似地，conjure-typescript 使用 ts-simple-ast 从 IR API 定义生成 Typescript 代码；同样，在完成生成器的引导启动后，反序列化步骤也是现成可用的。
-
-Conjure 传输格式规定了客户端与服务器之间的消息如何编码为 HTTP 请求与响应。基本类型（如整数或布尔值）参数会被编码为 HTTP 标头、路径或查询参数；而复杂对象则作为 JSON 格式的 HTTP 正文载荷进行传输。例如，对 `FlightSearchService.search(..)` 的调用会产生一个发往 `/flights/search` 的 HTTP POST 请求，并以 `{"from":"MUC", "to":"LHR", "number":"XY123"}` 这样的 JSON 对象格式来传输 `SearchRequest` 参数。在 Java 中，我们使用 Jackson 数据绑定库来实现 Java 对象与 JSON 对象间的序列化与反序列化。Conjure 验证框架定义了一系列测试用例，供客户端与服务端实现评估自身是否符合规范。
-
-## 探讨
-
-我们构建 Conjure 的目的在于提升开发者编写和维护前后端应用的速度。在 Conjure 刚起步时，不同开发团队使用着五花八门的 HTTP-JSON-RESTful 风格的 API 定义，其中大多是基于 Java 的 JAX-RS，部分使用 Golang，还有一部分使用 Python。这种差异导致不同服务需要定制专属客户端，且使得跨语言 RPC 极为脆弱；尤其是前端团队，往往只能靠猜测来判断这些 API 的确切语义，并反复重新实现相应的客户端。Conjure 最初被设计为这些 RPC 变体的共同基石，作为一种可向后兼容并改造现有服务端与客户端实现的机制，从而为前后端生态提供一套定义明确的共享 RPC 框架。
-
-在启动 Conjure 项目前，我们曾调研过 Swagger/OpenREST，发现它虽具备表达我们 API 的能力，但这种定义语言的表达力实则过剩：我们的目标之一是让微服务架构更具一致性，而 Conjure 的约束恰好有助于强制落实 API 的一致性。为此，Conjure 在设计上仅支持 HTTP 的一个小子集。
-
-如今，RPC 系统的 Bug 修复与功能改进统一由软件基础设施团队负责，并一致地推广至我们所有的软件平台。这种模式切实将 RPC 相关的繁琐事务从其他开发者的视线中剥离，使他们能够心无旁骛地聚焦于各自的核心业务领域。
-
-## 后续规划
-
-希望您能开始使用 Conjure！所有文档和代码均已在 Palantir 的 GitHub 上开源。当然，我们始终欢迎您在相应的代码库中以 GitHub issue 的形式反馈 Bug 或提出功能需求。我们乐于接受代码贡献，并鼓励您在着手实现较大功能或变更前，先在 GitHub issue 上展开讨论。与此同时，我们正致力于将 conjure-go 生态以及 Java 服务端工具链进行开源。我们还开发了一个命令行界面（CLI）工具的原型，用于检测 Conjure API 的变更是否会破坏向后兼容性，希望能尽快发布给大家。
-
----
-
-## 作者
-
-Dan F.、Dan S.、Felipe O.、Mark E.、Robert F. 以及其他众多贡献者
-</article>
+<article><h1>Conjure：Palantir 面向 HTTP/JSON API 的工具链</h1>
+<p><img alt="" src="https://miro.medium.com/v2/resize:fit:700/1*sZynkPtTn679YYSnhFKPZA.png" /></p>
+<p>今天我们正式开源了 Conjure，这是 Palantir 面向 HTTP/JSON API 的工具链。只需用 YAML 编写声明式的 API 定义，Conjure 就能生成多种语言的客户端与服务端绑定代码，包括 Java、Typescript 和 Python。</p>
+<p>Conjure 客户端会将方法调用转化为 HTTP 请求，并将方法参数序列化为 JSON 对象。Conjure 为 Palantir 旗下产品的数百个 API 提供了定义，并为内部应用及第三方应用提供了 RPC 基础设施，支撑范围涵盖 Java、Go 和 Python 后端服务，乃至运行在 Web 浏览器中的前端 Typescript 应用。</p>
+<p>我们打造 Conjure 的初衷是为了保持海量 HTTP/JSON API 的一致性，降低定义、讨论、评审及协同维护这些 API 的难度。起初，我们打算将 Conjure 作为迈向 gRPC 的跳板，但在实践过程中，我们逐渐体会到它对 API 设计施加的《限制》所带来的价值，正是这些约束赋予了设计更高的聚焦度与清晰度。需要指出的是，Conjure 并非什么高深莫测的技术；然而，正是它的这种简单性，切实提升了跨团队与开发者的工程效能。</p>
+<h2>新手入门</h2>
+<p>Conjure API 用于定义<em>数据类型</em>和<em>服务端点</em>。例如，一个简单的 <code>FlightSearch</code> API 大致如下：</p>
+<p><img alt="" src="https://miro.medium.com/v2/resize:fit:700/1*-7-pAqtMuL-yjDHi-K7hyA.png" /></p>
+<p>基于上述 API 定义，conjure-java 生成器会产出适用于 JAX-RS/Jersey 服务器的服务端桩代码，例如 Dropwizard：</p>
+<p><img alt="" src="https://miro.medium.com/v2/resize:fit:700/1*-7-pAqtMuL-yjDHi-K7hyA.png" /></p>
+<p>此外，生成器还会为 Conjure 定义的数据类型（例如 <code>Connection</code> 和 <code>SearchResult</code>）生成不可变的值类型，这些类型在内部通过 Jackson 对象映射器进行序列化与反序列化（见下文）。Conjure 的运行时库让客户端的创建变得十分简便，例如，Java 运行时的工作方式如下：</p>
+<p><img alt="" src="https://miro.medium.com/v2/resize:fit:700/1*-7-pAqtMuL-yjDHi-K7hyA.png" /></p>
+<h2>在您的收件箱中获取 Palantir 的故事</h2>
+<p>免费加入 Medium，获取来自此作者的最新动态。</p>
+<p>[输入您的电子邮件]<br />
+[订阅]<br />
+[订阅]<br />
+☑ 记住我以便快速登录</p>
+<p>Conjure 同时支持 Python 和 Typescript 客户端，请查阅各自的 README 文件或《新手入门指南》获取示例及参考文档。我们目前正在推进 conjure-go 服务端与客户端工具链的开源工作，同时也在进行 conjure-rust 的试验，敬请期待！</p>
+<h2>底层机制</h2>
+<p>接下来详细探讨两个方面：代码生成器基础设施和 Conjure 的传输格式。核心的 conjure 仓库为 Conjure 定义规定了两种格式：一种是供服务端开发者编写 API 定义使用的简明、人类可读格式；另一种是供代码生成器作为输入的机器可读<em>中间表示</em>（IR）格式：</p>
+<p><img alt="" src="https://miro.medium.com/v2/resize:fit:700/1*-7-pAqtMuL-yjDHi-K7hyA.png" /></p>
+<p>Conjure 从 API 定义到特定语言绑定的编译步骤</p>
+<p>Conjure 的 IR 格式是自托管的，即它本身由一组 Conjure 数据类型定义而成。在完成引导启动后，代码生成器便可将 Conjure API 定义反序列化为抽象语法树（AST），该树由目标语言中符合原生习惯的特定语言值类型构建。例如，conjure-java 生成器使用 Square 的 JavaPoet 库，将代表 API 定义的 Java 值类型 AST 转换为服务端与客户端桩代码的 Java 源码；而将 API 定义反序列化为 AST 的过程是无需额外开发成本的。类似地，conjure-typescript 使用 ts-simple-ast 从 IR API 定义生成 Typescript 代码；同样，在完成生成器的引导启动后，反序列化步骤也是现成可用的。</p>
+<p>Conjure 传输格式规定了客户端与服务器之间的消息如何编码为 HTTP 请求与响应。基本类型（如整数或布尔值）参数会被编码为 HTTP 标头、路径或查询参数；而复杂对象则作为 JSON 格式的 HTTP 正文载荷进行传输。例如，对 <code>FlightSearchService.search(..)</code> 的调用会产生一个发往 <code>/flights/search</code> 的 HTTP POST 请求，并以 <code>{"from":"MUC", "to":"LHR", "number":"XY123"}</code> 这样的 JSON 对象格式来传输 <code>SearchRequest</code> 参数。在 Java 中，我们使用 Jackson 数据绑定库来实现 Java 对象与 JSON 对象间的序列化与反序列化。Conjure 验证框架定义了一系列测试用例，供客户端与服务端实现评估自身是否符合规范。</p>
+<h2>探讨</h2>
+<p>我们构建 Conjure 的目的在于提升开发者编写和维护前后端应用的速度。在 Conjure 刚起步时，不同开发团队使用着五花八门的 HTTP-JSON-RESTful 风格的 API 定义，其中大多是基于 Java 的 JAX-RS，部分使用 Golang，还有一部分使用 Python。这种差异导致不同服务需要定制专属客户端，且使得跨语言 RPC 极为脆弱；尤其是前端团队，往往只能靠猜测来判断这些 API 的确切语义，并反复重新实现相应的客户端。Conjure 最初被设计为这些 RPC 变体的共同基石，作为一种可向后兼容并改造现有服务端与客户端实现的机制，从而为前后端生态提供一套定义明确的共享 RPC 框架。</p>
+<p>在启动 Conjure 项目前，我们曾调研过 Swagger/OpenREST，发现它虽具备表达我们 API 的能力，但这种定义语言的表达力实则过剩：我们的目标之一是让微服务架构更具一致性，而 Conjure 的约束恰好有助于强制落实 API 的一致性。为此，Conjure 在设计上仅支持 HTTP 的一个小子集。</p>
+<p>如今，RPC 系统的 Bug 修复与功能改进统一由软件基础设施团队负责，并一致地推广至我们所有的软件平台。这种模式切实将 RPC 相关的繁琐事务从其他开发者的视线中剥离，使他们能够心无旁骛地聚焦于各自的核心业务领域。</p>
+<h2>后续规划</h2>
+<p>希望您能开始使用 Conjure！所有文档和代码均已在 Palantir 的 GitHub 上开源。当然，我们始终欢迎您在相应的代码库中以 GitHub issue 的形式反馈 Bug 或提出功能需求。我们乐于接受代码贡献，并鼓励您在着手实现较大功能或变更前，先在 GitHub issue 上展开讨论。与此同时，我们正致力于将 conjure-go 生态以及 Java 服务端工具链进行开源。我们还开发了一个命令行界面（CLI）工具的原型，用于检测 Conjure API 的变更是否会破坏向后兼容性，希望能尽快发布给大家。</p>
+<hr />
+<h2>作者</h2>
+<p>Dan F.、Dan S.、Felipe O.、Mark E.、Robert F. 以及其他众多贡献者</p></article>
 </body>
 </html>

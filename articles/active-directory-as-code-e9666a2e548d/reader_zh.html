@@ -12,72 +12,45 @@ pre{overflow-x:auto;background:#f5f5f5;padding:16px}
 </style>
 </head>
 <body>
-<article>
-# 活动目录即代码
-
-[Palantir](https://palantir.medium.com/?source=post_page---byline--e9666a2e548d---------------------------------------)
-
-Follow
-
-9 分钟阅读 · 2018年12月7日
-
-236
-
-2
-
-Listen
-
-Share
-
-![图片描述](https://miro.medium.com/v2/resize:fit:700/1*RXuLu0f3Y51JzZVr_hS6dg.png)
-
-Windows 自动化过去常常困难重重，或者至少不那么直接，往往表现为通过一路右击来完成部署，而基于 API 的管理只是事后才考虑的事情。但是，*时代在变！* 随着 DevOps 的兴起、Windows Server 2016 的发布，以及 PowerShell 生态系统的壮大，重新设计传统 Windows 基础设施的契机已经出现。
-
-基于 Windows 的主流系统之一是活动目录（Active Directory，AD）——它是大多数企业环境中的基石，对许多人来说，它一直是一种本地部署。在 Palantir，我们 ❤️ 基础设施即代码（参见《Terraforming Stackoverflow》和《Bouncer》），因此当我们接到任务，要在 AWS 中部署一个隔离、高可用且安全的 AD 基础设施时，我们开始探索如何将基础架构即代码实践应用于 AD。目标是将 AD 部署实现自动化、可重复，并通过代码进行配置。此外，我们希望将任何与补丁和配置管理相关的更新集成到我们的 CI/CD 流水线中。
-
-本文将介绍我们解决该问题的方法，概述整个部署过程，包括使用 Packer 构建 AD AMI、使用 Terraform 配置 AD 基础设施，以及在 Vault 中存储配置密钥。
-
-## Packer 化活动目录
-
-我们关于基础架构即代码的方法，涉及通过更新和部署分层的、不可变的镜像来管理配置。根据我们的经验，这能降低熵值、将配置代码化，并且更契合 CI/CD 工作流，从而实现更快的迭代。
-
-我们的 AD 镜像是在标准 Windows 镜像之上的一个下游层，使用由 Packer、Jenkins 和 AWS CodeBuild 构建的自定义流水线进行构建。基础镜像包含自定义的期望状态配置模块，用于管理 Windows 的各种组件、自动扩缩组（ASG）生命周期钩子，以及最重要的安全工具。通过在基础镜像中执行这些配置，无论镜像如何被使用，我们都能强制执行安全和最佳实践。
-
-### 创建标准化的 AD 镜像
-
-AD 镜像可以分解为实例生命周期的几个逻辑组件：初始镜像创建、实例引导启动和退役。
-
-![图片描述](https://miro.medium.com/v2/resize:fit:700/1*CiuiDn-A4ZYJkiZl3WZMsw.png)
-
-### 镜像创建
-
-通常的最佳实践是，在初始构建阶段前置加载尽可能多的逻辑，因为这个过程只执行一次，而引导启动则会在每个实例上运行。对于 AD 镜像而言，这一点相关性不大，因为它们通常是轻量级的，包依赖极少。
-
-### 期望状态配置（DSC）模块
-
-AD 配置过去一直是一个非常依赖图形界面的工作流程，极难实现自动化。近年来，PowerShell 已成为提高工程师工作效率的强大选项，但管理配置漂移始终是一项挑战。这时候 DSC 模块派上用场了🎉。
-
-DSC 模块是配置和保持 Windows 环境配置状态的绝佳方式，且只需最少的用户交互。DSC 配置会在主机上定期运行，不仅能报告漂移，还能强化期望状态（类似于第三方的配置工具）。
-
-其中一个模块是微软的 AD DSC 模块。为了说明 DSC 如何发挥倍增器的作用，这里有一个创建组的快速调用示例。对于单个组来说，这可能显得有些大动干戈，但真正的好处在于，你可以用同样的精力遍历一组群组列表，如下所示。`Groups` 的初始内容可以在 Packer 构建中指定（静态 CSV），也可以从外部查找中动态生成。
-
-**DSC 配置示例**
-
-```
-<#
+<article><h1>活动目录即代码</h1>
+<p><a href="https://palantir.medium.com/?source=post_page---byline--e9666a2e548d---------------------------------------">Palantir</a></p>
+<p>Follow</p>
+<p>9 分钟阅读 · 2018年12月7日</p>
+<p>236</p>
+<p>2</p>
+<p>Listen</p>
+<p>Share</p>
+<p><img alt="图片描述" src="https://miro.medium.com/v2/resize:fit:700/1*RXuLu0f3Y51JzZVr_hS6dg.png" /></p>
+<p>Windows 自动化过去常常困难重重，或者至少不那么直接，往往表现为通过一路右击来完成部署，而基于 API 的管理只是事后才考虑的事情。但是，<em>时代在变！</em> 随着 DevOps 的兴起、Windows Server 2016 的发布，以及 PowerShell 生态系统的壮大，重新设计传统 Windows 基础设施的契机已经出现。</p>
+<p>基于 Windows 的主流系统之一是活动目录（Active Directory，AD）——它是大多数企业环境中的基石，对许多人来说，它一直是一种本地部署。在 Palantir，我们 ❤️ 基础设施即代码（参见《Terraforming Stackoverflow》和《Bouncer》），因此当我们接到任务，要在 AWS 中部署一个隔离、高可用且安全的 AD 基础设施时，我们开始探索如何将基础架构即代码实践应用于 AD。目标是将 AD 部署实现自动化、可重复，并通过代码进行配置。此外，我们希望将任何与补丁和配置管理相关的更新集成到我们的 CI/CD 流水线中。</p>
+<p>本文将介绍我们解决该问题的方法，概述整个部署过程，包括使用 Packer 构建 AD AMI、使用 Terraform 配置 AD 基础设施，以及在 Vault 中存储配置密钥。</p>
+<h2>Packer 化活动目录</h2>
+<p>我们关于基础架构即代码的方法，涉及通过更新和部署分层的、不可变的镜像来管理配置。根据我们的经验，这能降低熵值、将配置代码化，并且更契合 CI/CD 工作流，从而实现更快的迭代。</p>
+<p>我们的 AD 镜像是在标准 Windows 镜像之上的一个下游层，使用由 Packer、Jenkins 和 AWS CodeBuild 构建的自定义流水线进行构建。基础镜像包含自定义的期望状态配置模块，用于管理 Windows 的各种组件、自动扩缩组（ASG）生命周期钩子，以及最重要的安全工具。通过在基础镜像中执行这些配置，无论镜像如何被使用，我们都能强制执行安全和最佳实践。</p>
+<h3>创建标准化的 AD 镜像</h3>
+<p>AD 镜像可以分解为实例生命周期的几个逻辑组件：初始镜像创建、实例引导启动和退役。</p>
+<p><img alt="图片描述" src="https://miro.medium.com/v2/resize:fit:700/1*CiuiDn-A4ZYJkiZl3WZMsw.png" /></p>
+<h3>镜像创建</h3>
+<p>通常的最佳实践是，在初始构建阶段前置加载尽可能多的逻辑，因为这个过程只执行一次，而引导启动则会在每个实例上运行。对于 AD 镜像而言，这一点相关性不大，因为它们通常是轻量级的，包依赖极少。</p>
+<h3>期望状态配置（DSC）模块</h3>
+<p>AD 配置过去一直是一个非常依赖图形界面的工作流程，极难实现自动化。近年来，PowerShell 已成为提高工程师工作效率的强大选项，但管理配置漂移始终是一项挑战。这时候 DSC 模块派上用场了🎉。</p>
+<p>DSC 模块是配置和保持 Windows 环境配置状态的绝佳方式，且只需最少的用户交互。DSC 配置会在主机上定期运行，不仅能报告漂移，还能强化期望状态（类似于第三方的配置工具）。</p>
+<p>其中一个模块是微软的 AD DSC 模块。为了说明 DSC 如何发挥倍增器的作用，这里有一个创建组的快速调用示例。对于单个组来说，这可能显得有些大动干戈，但真正的好处在于，你可以用同样的精力遍历一组群组列表，如下所示。<code>Groups</code> 的初始内容可以在 Packer 构建中指定（静态 CSV），也可以从外部查找中动态生成。</p>
+<p><strong>DSC 配置示例</strong></p>
+<pre><code>&lt;#
     .SYNOPSIS
         Example demonstrating ingesting a list of N AD groups
         and creating their respective resources using a single code
         block
         The AD groups can be baked in the AMI or retrieved from an
         external source
-#>
+#&gt;
 
 $ConfigData = @{
     AllNodes = @(
         @{
             NodeName = '*'
-            Groups = (Get-Content "C:\dsc\groups.csv")
+            Groups = (Get-Content &quot;C:\dsc\groups.csv&quot;)
         }
     )
 }
@@ -85,13 +58,13 @@ $ConfigData = @{
 Configuration NodeConfiguration 
 {
     Import-DSCResource -ModuleName xActiveDirectory
-    
+
     Node $AllNodes.NodeName {
         foreach ($group in $node.Groups) {
             xADGroup $group
             {
                 GroupName = $group
-                Ensure = "Present"
+                Ensure = &quot;Present&quot;
                 # additional params
             }
         }
@@ -99,154 +72,112 @@ Configuration NodeConfiguration
 }
 
 NodeConfiguration -ConfigurationData $ConfigData
-```
+</code></pre>
+<p>我们更进一步，构建了额外的模块来从零开始搭建集群。这些模块处理从配置 Windows 核心功能到部署新域控的一切事务。通过将这些任务实现为模块，我们免费获得了 DSC 固有的优势，例如重启弹性和对配置漂移的缓解。</p>
+<h3>引导脚本</h3>
+<p><strong>密钥管理。</strong> 在像 AD 这样敏感的环境中，处理静态凭证等配置密钥的问题需要额外的考量。将加密的密钥存储在磁盘上、在引导时手动输入，或者两者结合，都不是理想的解决方案。我们寻找的解决方案需满足以下条件：</p>
+<ul>
+<li>基于 API 驱动，以便接入我们的自动化流程</li>
+<li>解决安全引入问题，确保只有受信任的实例才能获得访问权限</li>
+<li>强制执行基于角色的访问控制，确保管理员（创建密钥者）和实例（消费密钥者）之间的职责分离</li>
+<li>强制执行一个可配置的访问窗口，实例只能在此期间访问所需密钥</li>
+</ul>
+<p>基于上述标准，我们决定在大多数自动化流程中使用 Vault 来存储密钥。我们通过创建一个自动化管理角色和策略的生态系统对其进行了进一步增强，使我们能够规模化扩展，同时将管理开销降至最低。通过将 Vault 与 AWS 的 IAM 服务集成，这使我们能够轻松地为密钥授权，并控制哪些对象可以访问它们以及访问时长。再加上适当的审计和控制，我们便集两者优势于一身：自动化与安全的密钥管理。</p>
+<p>以下示例展示了 EC2 实例如何从 Vault 集群获取令牌，并使用该令牌检索密钥：</p>
+<p><img alt="图片描述" src="https://miro.medium.com/v2/resize:fit:634/1*g8czro5Vi7yZ89kq6CWP4g.png" /></p>
+<p><strong>配置实例。</strong> AWS ASG 会自动执行其启动配置中指定的用户数据（通常是 PowerShell 脚本）。我们还可以选择将变量动态传递到脚本中，以便在启动时配置实例。例如，这里我们设置了短域名和完整域名，并通过将它们作为 <code>bootstrap.ps1</code> 的参数来指定 Vault 端点：</p>
+<p><strong>获取 Palantir 的故事到您的收件箱</strong></p>
+<p>加入 Medium 免费获取此作者的更新。</p>
+<p>[输入您的电子邮件]</p>
+<p>订阅</p>
+<p>记住我以便更快登录</p>
+<p><strong>Terraform 调用</strong></p>
+<pre><code>data &quot;template_file&quot; &quot;userdata&quot; {
+     template = &quot;${file(&quot;${path.module}/bootstrap/bootstrap.ps1&quot;)}&quot;
 
-我们更进一步，构建了额外的模块来从零开始搭建集群。这些模块处理从配置 Windows 核心功能到部署新域控的一切事务。通过将这些任务实现为模块，我们免费获得了 DSC 固有的优势，例如重启弹性和对配置漂移的缓解。
-
-### 引导脚本
-
-**密钥管理。** 在像 AD 这样敏感的环境中，处理静态凭证等配置密钥的问题需要额外的考量。将加密的密钥存储在磁盘上、在引导时手动输入，或者两者结合，都不是理想的解决方案。我们寻找的解决方案需满足以下条件：
-
-- 基于 API 驱动，以便接入我们的自动化流程
-- 解决安全引入问题，确保只有受信任的实例才能获得访问权限
-- 强制执行基于角色的访问控制，确保管理员（创建密钥者）和实例（消费密钥者）之间的职责分离
-- 强制执行一个可配置的访问窗口，实例只能在此期间访问所需密钥
-
-基于上述标准，我们决定在大多数自动化流程中使用 Vault 来存储密钥。我们通过创建一个自动化管理角色和策略的生态系统对其进行了进一步增强，使我们能够规模化扩展，同时将管理开销降至最低。通过将 Vault 与 AWS 的 IAM 服务集成，这使我们能够轻松地为密钥授权，并控制哪些对象可以访问它们以及访问时长。再加上适当的审计和控制，我们便集两者优势于一身：自动化与安全的密钥管理。
-
-以下示例展示了 EC2 实例如何从 Vault 集群获取令牌，并使用该令牌检索密钥：
-
-![图片描述](https://miro.medium.com/v2/resize:fit:634/1*g8czro5Vi7yZ89kq6CWP4g.png)
-
-**配置实例。** AWS ASG 会自动执行其启动配置中指定的用户数据（通常是 PowerShell 脚本）。我们还可以选择将变量动态传递到脚本中，以便在启动时配置实例。例如，这里我们设置了短域名和完整域名，并通过将它们作为 `bootstrap.ps1` 的参数来指定 Vault 端点：
-
-**获取 Palantir 的故事到您的收件箱**
-
-加入 Medium 免费获取此作者的更新。
-
-[输入您的电子邮件]
-
-订阅
-
-记住我以便更快登录
-
-**Terraform 调用**
-
-```
-data "template_file" "userdata" {
-     template = "${file("${path.module}/bootstrap/bootstrap.ps1")}"
-     
       vars {
-        domain              = "${var.domain_name}"
-        shortname           = "${var.domain_short_name}"
-        vaultaddress        = "${var.vault_addr}"
+        domain              = &quot;${var.domain_name}&quot;
+        shortname           = &quot;${var.domain_short_name}&quot;
+        vaultaddress        = &quot;${var.vault_addr}&quot;
       }
 }
 
-resource "aws_auto_scaling_group" "my_asg" {
+resource &quot;aws_auto_scaling_group&quot; &quot;my_asg&quot; {
     # ...
-    user_data = "${data.template_file.userdata.rendered}"
+    user_data = &quot;${data.template_file.userdata.rendered}&quot;
 }
-```
-
-**引导脚本**
-
-```
-<powershell>
-Write-Host "My domain name is ${domain} (${shortname})"
-Write-Host "I get secrets from ${vaultaddress}"
+</code></pre>
+<p><strong>引导脚本</strong></p>
+<pre><code>&lt;powershell&gt;
+Write-Host &quot;My domain name is ${domain} (${shortname})&quot;
+Write-Host &quot;I get secrets from ${vaultaddress}&quot;
 
 # ... continue configuration
-</powershell>
-```
-
-除了确保配置实例的逻辑正确无误外，同样重要的是进行验证，以减少将实例投入服务时的误报。AWS 提供了一个名为生命周期钩子的工具来实现这一点。由于生命周期钩点的完成是在引导脚本中手动调用的，因此该脚本可以包含额外的逻辑，在声明实例投入服务之前验证各项设置和服务。
-
-### 实例清理
-
-需要解决的生命周期最后一部分是实例退役。在云中启动实例为我们提供了极大的灵活性，但我们也必须为不可避免的节点故障或用户主动发起的替换做好准备。发生这种情况时，我们会尝试尽可能优雅地终止实例。例如，我们可能需要转移灵活单主机操作（FSMO）角色并清理 DNS 条目。
-
-我们选择使用一个简单的计划任务来实现生命周期钩点，以检查实例在 ASG 中的状态。当状态被设置为 `Terminating:Wait` 时，我们运行清理逻辑并显式完成终止钩点。我们知道生命周期钩点不保证一定会完成或触发（例如，当实例遇到硬件故障时），因此如果您对一致性有要求，应该考虑实现一个外部清理服务或在引导启动中加入额外逻辑。
-
-## 整合在一起：Terraforming 活动目录
-
-![图片描述](https://miro.medium.com/v2/resize:fit:586/1*O2b6epLQJCn5g5vVopMltA.png)
-
-### 引导启动基础设施
-
-现在 Packer 配置已完成，是时候使用 Terraform 来配置我们的 AD 基础设施并部署 AMI 了。我们通过创建和调用一个 Terraform 模块来实现这一点，该模块会自动引导启动我们的新林。引导启动一个新林涉及部署一个主域控作为 FSMO 角色持有者，然后更新 VPC 的 DHCP 选项集，以便实例可以解析 AD DNS。
-
-我们选择用于自动化 AD 林引导启动的设计模式，是将该过程分为两个不同的状态，并通过在 Terraform 模块中更新所需的变量（`lifecycle, configure_dhcp_os`）并应用它来在两者之间切换。
-
-让我们看看这两个状态下的模块调用，首先是引导状态，在此状态下我们将主 DC 部署到 VPC：
-
-```
-# Bootstrap Forest
-module "ad" {
-    source = "git@private-github:ad/terraform.git"
-    env      = "staging"
-    mod_name = "MyADForest"
-    key_pair_name = "myawesomekeypair"
-    vpc_id        = "vpc-12345"
-    subnet_ids    = ["subnet-54321", "subnet-64533"]
-    trusted_cidrs = ["15.0.0.0/8"]
-    need_trusted_cidrs = "true"
-    domain_name       = "ad.forest"
-    domain_short_name = "ad"
-    base_fqdn         = "DC=ad,DC=forest"
-    vault_addr        = "https://vault.secret.place"
-    need_fsmo   = "true"
+&lt;/powershell&gt;
+</code></pre>
+<p>除了确保配置实例的逻辑正确无误外，同样重要的是进行验证，以减少将实例投入服务时的误报。AWS 提供了一个名为生命周期钩子的工具来实现这一点。由于生命周期钩点的完成是在引导脚本中手动调用的，因此该脚本可以包含额外的逻辑，在声明实例投入服务之前验证各项设置和服务。</p>
+<h3>实例清理</h3>
+<p>需要解决的生命周期最后一部分是实例退役。在云中启动实例为我们提供了极大的灵活性，但我们也必须为不可避免的节点故障或用户主动发起的替换做好准备。发生这种情况时，我们会尝试尽可能优雅地终止实例。例如，我们可能需要转移灵活单主机操作（FSMO）角色并清理 DNS 条目。</p>
+<p>我们选择使用一个简单的计划任务来实现生命周期钩点，以检查实例在 ASG 中的状态。当状态被设置为 <code>Terminating:Wait</code> 时，我们运行清理逻辑并显式完成终止钩点。我们知道生命周期钩点不保证一定会完成或触发（例如，当实例遇到硬件故障时），因此如果您对一致性有要求，应该考虑实现一个外部清理服务或在引导启动中加入额外逻辑。</p>
+<h2>整合在一起：Terraforming 活动目录</h2>
+<p><img alt="图片描述" src="https://miro.medium.com/v2/resize:fit:586/1*O2b6epLQJCn5g5vVopMltA.png" /></p>
+<h3>引导启动基础设施</h3>
+<p>现在 Packer 配置已完成，是时候使用 Terraform 来配置我们的 AD 基础设施并部署 AMI 了。我们通过创建和调用一个 Terraform 模块来实现这一点，该模块会自动引导启动我们的新林。引导启动一个新林涉及部署一个主域控作为 FSMO 角色持有者，然后更新 VPC 的 DHCP 选项集，以便实例可以解析 AD DNS。</p>
+<p>我们选择用于自动化 AD 林引导启动的设计模式，是将该过程分为两个不同的状态，并通过在 Terraform 模块中更新所需的变量（<code>lifecycle, configure_dhcp_os</code>）并应用它来在两者之间切换。</p>
+<p>让我们看看这两个状态下的模块调用，首先是引导状态，在此状态下我们将主 DC 部署到 VPC：</p>
+<pre><code># Bootstrap Forest
+module &quot;ad&quot; {
+    source = &quot;git@private-github:ad/terraform.git&quot;
+    env      = &quot;staging&quot;
+    mod_name = &quot;MyADForest&quot;
+    key_pair_name = &quot;myawesomekeypair&quot;
+    vpc_id        = &quot;vpc-12345&quot;
+    subnet_ids    = [&quot;subnet-54321&quot;, &quot;subnet-64533&quot;]
+    trusted_cidrs = [&quot;15.0.0.0/8&quot;]
+    need_trusted_cidrs = &quot;true&quot;
+    domain_name       = &quot;ad.forest&quot;
+    domain_short_name = &quot;ad&quot;
+    base_fqdn         = &quot;DC=ad,DC=forest&quot;
+    vault_addr        = &quot;https://vault.secret.place&quot;
+    need_fsmo   = &quot;true&quot;
     # Add me for step 1 and swap me out for step 2
-    lifecycle = "bootstrap"
-    
-    # Set me to true when lifecyle = "steady"
-    configure_dhcp_os = "false"
+    lifecycle = &quot;bootstrap&quot;
+
+    # Set me to true when lifecyle = &quot;steady&quot;
+    configure_dhcp_os = &quot;false&quot;
 }
-```
+</code></pre>
+<p>引导状态完成后，我们切换到稳定状态，在此状态下部署第二个 DC 并更新 DHCP 选项集。模块调用完全相同，除了对 <code>lifecycle</code> 和 <code>configure_dhcp_os</code> 变量所做的更改：</p>
+<pre><code># Apply Steady State
+module &quot;ad&quot; {
+    source = &quot;git@private-github:ad/terraform.git&quot;
+    env      = &quot;staging&quot;
+    mod_name = &quot;MyADForest&quot;
+    key_pair_name = &quot;myawesomekeypair&quot;
+    vpc_id        = &quot;vpc-12345&quot;
+    subnet_ids    = [&quot;subnet-54321&quot;, &quot;subnet-64533&quot;]
+    trusted_cidrs = [&quot;15.0.0.0/8&quot;]
+    need_trusted_cidrs = &quot;true&quot;
+    domain_name       = &quot;ad.forest&quot;
+    domain_short_name = &quot;ad&quot;
+    base_fqdn         = &quot;DC=ad,DC=forest&quot;
+    vault_addr        = &quot;https://vault.secret.place&quot;
+    need_fsmo   = &quot;true&quot;
 
-引导状态完成后，我们切换到稳定状态，在此状态下部署第二个 DC 并更新 DHCP 选项集。模块调用完全相同，除了对 `lifecycle` 和 `configure_dhcp_os` 变量所做的更改：
-
-```
-# Apply Steady State
-module "ad" {
-    source = "git@private-github:ad/terraform.git"
-    env      = "staging"
-    mod_name = "MyADForest"
-    key_pair_name = "myawesomekeypair"
-    vpc_id        = "vpc-12345"
-    subnet_ids    = ["subnet-54321", "subnet-64533"]
-    trusted_cidrs = ["15.0.0.0/8"]
-    need_trusted_cidrs = "true"
-    domain_name       = "ad.forest"
-    domain_short_name = "ad"
-    base_fqdn         = "DC=ad,DC=forest"
-    vault_addr        = "https://vault.secret.place"
-    need_fsmo   = "true"
-    
     # Add me for step 1 and swap me out for step 2
-    lifecycle = "steady"
-    # Set me to true when lifecyle = "steady"
-    configure_dhcp_os = "true"
+    lifecycle = &quot;steady&quot;
+    # Set me to true when lifecyle = &quot;steady&quot;
+    configure_dhcp_os = &quot;true&quot;
 }
-```
-
-使用这种设计模式，我们能够自动化整个部署过程，并根据需要手动在两种状态之间切换。通过在 Terraform 中使用 count 原语和插值函数，在两种状态下有条件地配置相关资源。
-
-### 管理稳定状态
-
-一旦我们的 AD 基础设施处于稳定状态，我们就通过使用 Bouncer 用更新后的 AMI 替换实例，从而更新配置并应用补丁。我们以串行模式运行 Bouncer，以优雅地让 DC 退役，并通过启动带有新镜像的 DC 来替换它，如上文“实例清理”部分所述。一旦第一个 DC 被替换，Bouncer 将继续轮换下一个 DC。
-
-## 结论
-
-使用上述方法，我们能够创建一个隔离、高可用的 AD 环境，并完全使用代码对其进行管理。它让做安全的事情变得轻松，因为我们能够使用基于 Git 的工作流，结合 2-FA，来拦截和批准更改，因为所有配置都存在于源代码控制中。此外，我们发现这种将补丁管理流程与 CI/CD 流水线绑定的方法，由于减少了摩擦，大大提高了补丁合规性。
-
-除了安全方面的收益外，我们还通过缓解配置漂移并将代码作为文档来源，改善了运营体验。我们对这个林的灾难恢复策略，仅仅是在不同的区域重新部署代码，这也带来了便利。此外，像变更跟踪和同行评审这些通常专用于软件开发的优势，现在也应用到了我们的 AD 运维流程中。
-
-如果您和我们一样，热衷于打造能够同时提升安全和效率的基础设施和工作流，请加入我们！
-
-## 作者与贡献者
-
-Andrew C., Andrew S., Ashir A., Glenn W., Riff K.
-</article>
+</code></pre>
+<p>使用这种设计模式，我们能够自动化整个部署过程，并根据需要手动在两种状态之间切换。通过在 Terraform 中使用 count 原语和插值函数，在两种状态下有条件地配置相关资源。</p>
+<h3>管理稳定状态</h3>
+<p>一旦我们的 AD 基础设施处于稳定状态，我们就通过使用 Bouncer 用更新后的 AMI 替换实例，从而更新配置并应用补丁。我们以串行模式运行 Bouncer，以优雅地让 DC 退役，并通过启动带有新镜像的 DC 来替换它，如上文“实例清理”部分所述。一旦第一个 DC 被替换，Bouncer 将继续轮换下一个 DC。</p>
+<h2>结论</h2>
+<p>使用上述方法，我们能够创建一个隔离、高可用的 AD 环境，并完全使用代码对其进行管理。它让做安全的事情变得轻松，因为我们能够使用基于 Git 的工作流，结合 2-FA，来拦截和批准更改，因为所有配置都存在于源代码控制中。此外，我们发现这种将补丁管理流程与 CI/CD 流水线绑定的方法，由于减少了摩擦，大大提高了补丁合规性。</p>
+<p>除了安全方面的收益外，我们还通过缓解配置漂移并将代码作为文档来源，改善了运营体验。我们对这个林的灾难恢复策略，仅仅是在不同的区域重新部署代码，这也带来了便利。此外，像变更跟踪和同行评审这些通常专用于软件开发的优势，现在也应用到了我们的 AD 运维流程中。</p>
+<p>如果您和我们一样，热衷于打造能够同时提升安全和效率的基础设施和工作流，请加入我们！</p>
+<h2>作者与贡献者</h2>
+<p>Andrew C., Andrew S., Ashir A., Glenn W., Riff K.</p></article>
 </body>
 </html>

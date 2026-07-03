@@ -12,78 +12,51 @@ pre{overflow-x:auto;background:#f5f5f5;padding:16px}
 </style>
 </head>
 <body>
-<article>
-# 利用静态代码分析改进日志解析
-
-## 引言
-
-Palantir 在支持远程调试工作流方面投入了大量资源，这些工作流由我们的日志和遥测基础设施提供支持。有时我们需要调查所运行的第三方软件的问题，因此非常关注如何捕获这些组件的日志和指标。通过结合正则表达式和静态代码分析，我们成功地从这些原本非结构化的日志中提取出了结构化信息。这篇博文将概述我们的具体做法。
-
-![图片描述](https://miro.medium.com/v2/resize:fit:700/1*I--qIniuZGpzHdnhOiN6VQ.png)
-
-## 我们的日志与遥测基础设施
-
-Palantir 的产品 Gotham 和 Foundry 的后端与前端组件均以结构化的 JSON 格式（而非非结构化文本）输出日志和指标信息。这些结构化的日志行如下所示：
-
-```
-{
-  "type": "service.1,
-  "message": "Accessing dataset.",
-  "level": "DEBUG",
-  "params": {
-    "dataset": "my-dataset",
+<article><h1>利用静态代码分析改进日志解析</h1>
+<h2>引言</h2>
+<p>Palantir 在支持远程调试工作流方面投入了大量资源，这些工作流由我们的日志和遥测基础设施提供支持。有时我们需要调查所运行的第三方软件的问题，因此非常关注如何捕获这些组件的日志和指标。通过结合正则表达式和静态代码分析，我们成功地从这些原本非结构化的日志中提取出了结构化信息。这篇博文将概述我们的具体做法。</p>
+<p><img alt="图片描述" src="https://miro.medium.com/v2/resize:fit:700/1*I--qIniuZGpzHdnhOiN6VQ.png" /></p>
+<h2>我们的日志与遥测基础设施</h2>
+<p>Palantir 的产品 Gotham 和 Foundry 的后端与前端组件均以结构化的 JSON 格式（而非非结构化文本）输出日志和指标信息。这些结构化的日志行如下所示：</p>
+<pre><code>{
+  &quot;type&quot;: &quot;service.1,
+  &quot;message&quot;: &quot;Accessing dataset.&quot;,
+  &quot;level&quot;: &quot;DEBUG&quot;,
+  &quot;params&quot;: {
+    &quot;dataset&quot;: &quot;my-dataset&quot;,
   },
-  "time": "2019-07-28T09:31:04.46165-07:00"
+  &quot;time&quot;: &quot;2019-07-28T09:31:04.46165-07:00&quot;
 }
-```
-
-需要注意的是，这些结构化日志避免了一种常见的日志记录做法，即通过字符串格式化将参数插入日志消息中从而生成可变消息。具有已知模式的结构化日志有助于对日志信息进行索引、搜索和分析。例如，我们可以针对日志数据库运行查询，统计特定日志条目的出现次数：
-
-```
-SELECT *
+</code></pre>
+<p>需要注意的是，这些结构化日志避免了一种常见的日志记录做法，即通过字符串格式化将参数插入日志消息中从而生成可变消息。具有已知模式的结构化日志有助于对日志信息进行索引、搜索和分析。例如，我们可以针对日志数据库运行查询，统计特定日志条目的出现次数：</p>
+<pre><code>SELECT *
 FROM service.1-logs 
-WHERE message = "Accessing dataset."
-```
-
-结构化日志还允许执行更复杂的查询，例如对日志中的特定字段进行聚合。日志聚合提供了一种层层递进的调试方法。例如，如果我们按 `params.dataset` 字段对查询结果进行分组，或许能发现一些问题：
-
-```
-SELECT COUNT(*)
+WHERE message = &quot;Accessing dataset.&quot;
+</code></pre>
+<p>结构化日志还允许执行更复杂的查询，例如对日志中的特定字段进行聚合。日志聚合提供了一种层层递进的调试方法。例如，如果我们按 <code>params.dataset</code> 字段对查询结果进行分组，或许能发现一些问题：</p>
+<pre><code>SELECT COUNT(*)
 from service.1-logs
-WHERE message = "Accessing dataset."
+WHERE message = &quot;Accessing dataset.&quot;
 GROUP BY params.dataset
-```
-
-（旁注：我们在查询这些日志时实际上并不使用 SQL，但此处因其在业内广为人知而用作示例。）该查询的结果可能会揭示某个数据集周围的异常行为，从而为我们提供下一步排查的线索。这种日志查询的灵活性极大地提升了产品团队对其软件的运维负责能力，并使得支持在所有部署位置（通常是数百个安装点）的产品对于小型团队来说也变得切实可行。然而，这里存在一个覆盖盲区——对于那些不按我们预期格式输出日志的开源软件，我们该如何提供支持和调试？
-
-## 让第三方日志变得可用
-
-我们的 Rubix 团队（Rubix 是我们对 Kubernetes 基础设施的内部称呼）负责运行 etcd、vault 和 Kubernetes 等第三方软件，这些软件**并不产出**这种格式的日志，但我们仍希望这些日志能流经我们的处理管道，以便产品开发人员能够针对 Palantir 自研软件和第三方软件统一使用相同的调试工作流。一年多前，我们编写了一个名为 planer 的小工具来解决这个问题。Planer 使用正则表达式将 Palantir 的标准日志结构强加于第三方软件的非结构化日志行上，从而允许我们通过同一套日志管道对第三方日志进行索引和分析。
-
-## Planer 的缺陷
-
-编写正则表达式**很难**——手工编写这些正则表达式非常耗时，且生成的正则往往很脆弱。此外，planer 会丢弃任何与其配置的正则表达式不匹配的日志行。由于这个原因，我们早期的大多数 planer 配置都使用了过于宽泛的正则表达式——这意味着我们在调试问题时搜索的日志行，其参数大多只是作为消息的一部分**夹杂在其中**，而未被提取到 params 字段中。注意，这意味着我们确实捕获了所有想要的日志，只是没有对它们施加任何有用的结构，这导致我们在生产环境调试时承受了相当大的痛苦，并浪费了宝贵的时间。
-
-我们有哪些选择可以改进 planer 配置？我们可以：
-
-- 搜索现有日志，查看哪些消息看起来包含参数，然后手工编写正则表达式来匹配这些行。
-- 检查第三方产品的源代码，从代码中的日志记录调用反推正则表达式。
-
-这两种方法都既缓慢又容易出错。因此，我们开始寻找一种能够提升编写更实用 planer 配置的速度和准确性的方法。
-
-## 以编程方式生成 planer 配置
-
-Rubix 团队部署和支持的大多数第三方软件都是用 Golang 编写的。Golang 的标准库包含了 `go/ast` 包，它使使用者能够读取并遍历 go 包的抽象语法树（AST）——**任何** go 包都可以。go AST 中的每个节点都有一个具体的类型。Golang 中的日志记录调用（或者更广泛地说，所有方法调用）都表现为这些具体类型之一：`*ast.CallExpr`（CallExpr 是调用表达式的简称）。对于 etcd 代码库，这些日志记录调用表达式如下所示：
-
-```
-plog.Printf("finished scheduled compaction at %d (took %v)", compactMainRev, time.Since(totalStart))
-plog.Warningf("%srequest %q with result %q took too long (%v) to execute", prefix, reqStringer.String(), result, d)
-```
-
-利用这些日志记录调用表达式的已知方法签名（与标准库的 `fmt.Printf` 方法相同），我们可以遍历代码库中每个包的 AST，当遇到我们识别为日志记录调用的调用表达式时，根据该调用表达式的参数构造一个正则表达式。其伪代码如下：
-
-```
-configure AST reader with a list of call expressions to match:
+</code></pre>
+<p>（旁注：我们在查询这些日志时实际上并不使用 SQL，但此处因其在业内广为人知而用作示例。）该查询的结果可能会揭示某个数据集周围的异常行为，从而为我们提供下一步排查的线索。这种日志查询的灵活性极大地提升了产品团队对其软件的运维负责能力，并使得支持在所有部署位置（通常是数百个安装点）的产品对于小型团队来说也变得切实可行。然而，这里存在一个覆盖盲区——对于那些不按我们预期格式输出日志的开源软件，我们该如何提供支持和调试？</p>
+<h2>让第三方日志变得可用</h2>
+<p>我们的 Rubix 团队（Rubix 是我们对 Kubernetes 基础设施的内部称呼）负责运行 etcd、vault 和 Kubernetes 等第三方软件，这些软件<strong>并不产出</strong>这种格式的日志，但我们仍希望这些日志能流经我们的处理管道，以便产品开发人员能够针对 Palantir 自研软件和第三方软件统一使用相同的调试工作流。一年多前，我们编写了一个名为 planer 的小工具来解决这个问题。Planer 使用正则表达式将 Palantir 的标准日志结构强加于第三方软件的非结构化日志行上，从而允许我们通过同一套日志管道对第三方日志进行索引和分析。</p>
+<h2>Planer 的缺陷</h2>
+<p>编写正则表达式<strong>很难</strong>——手工编写这些正则表达式非常耗时，且生成的正则往往很脆弱。此外，planer 会丢弃任何与其配置的正则表达式不匹配的日志行。由于这个原因，我们早期的大多数 planer 配置都使用了过于宽泛的正则表达式——这意味着我们在调试问题时搜索的日志行，其参数大多只是作为消息的一部分<strong>夹杂在其中</strong>，而未被提取到 params 字段中。注意，这意味着我们确实捕获了所有想要的日志，只是没有对它们施加任何有用的结构，这导致我们在生产环境调试时承受了相当大的痛苦，并浪费了宝贵的时间。</p>
+<p>我们有哪些选择可以改进 planer 配置？我们可以：</p>
+<ul>
+<li>搜索现有日志，查看哪些消息看起来包含参数，然后手工编写正则表达式来匹配这些行。</li>
+<li>检查第三方产品的源代码，从代码中的日志记录调用反推正则表达式。</li>
+</ul>
+<p>这两种方法都既缓慢又容易出错。因此，我们开始寻找一种能够提升编写更实用 planer 配置的速度和准确性的方法。</p>
+<h2>以编程方式生成 planer 配置</h2>
+<p>Rubix 团队部署和支持的大多数第三方软件都是用 Golang 编写的。Golang 的标准库包含了 <code>go/ast</code> 包，它使使用者能够读取并遍历 go 包的抽象语法树（AST）——<strong>任何</strong> go 包都可以。go AST 中的每个节点都有一个具体的类型。Golang 中的日志记录调用（或者更广泛地说，所有方法调用）都表现为这些具体类型之一：<code>*ast.CallExpr</code>（CallExpr 是调用表达式的简称）。对于 etcd 代码库，这些日志记录调用表达式如下所示：</p>
+<pre><code>plog.Printf(&quot;finished scheduled compaction at %d (took %v)&quot;, compactMainRev, time.Since(totalStart))
+plog.Warningf(&quot;%srequest %q with result %q took too long (%v) to execute&quot;, prefix, reqStringer.String(), result, d)
+</code></pre>
+<p>利用这些日志记录调用表达式的已知方法签名（与标准库的 <code>fmt.Printf</code> 方法相同），我们可以遍历代码库中每个包的 AST，当遇到我们识别为日志记录调用的调用表达式时，根据该调用表达式的参数构造一个正则表达式。其伪代码如下：</p>
+<pre><code>configure AST reader with a list of call expressions to match:
   - plog.Printf
   - plog.Warningf
 
@@ -96,14 +69,11 @@ for each package p in repository:
           create regex by inspecting the arguments of the call expression.
           add regex to proposedRegexes
 return proposedRegexes
-```
-
-一个从匹配的调用表达式构造正则表达式的简化版 Golang 示例（为简洁起见省略了类型断言和切片长度检查）如下所示：
-
-```
-func extractRegex(callExpr *ast.CallExpr) (*regexp.Regexp, []string, bool) {
+</code></pre>
+<p>一个从匹配的调用表达式构造正则表达式的简化版 Golang 示例（为简洁起见省略了类型断言和切片长度检查）如下所示：</p>
+<pre><code>func extractRegex(callExpr *ast.CallExpr) (*regexp.Regexp, []string, bool) {
   logArgs := callExpr.Args
-  message := strings.Trim(logArgs[0].(*ast.BasicLit).Value, "\"")
+  message := strings.Trim(logArgs[0].(*ast.BasicLit).Value, &quot;\&quot;&quot;)
   logParams := make([]string, 0, len(logArgs)-1)
   logFmtArgs := logArgs[1:]
   for i, logArg := range logFmtArgs {
@@ -123,59 +93,40 @@ func proposeRegex(message string, logParams []string) *regexp.Regexp {
   for i, param := range logParams {
     matchRange := fmtPlaceHolders[i]
     if currPos != matchRange[0] {
-      fmt.Sprintf("(?P<%s>%s)", fmt.Sprintf("message%d", messageIndex), utils.EscapeMessageSpecialChars(message[currPos:matchRange[0]]))
+      fmt.Sprintf(&quot;(?P&lt;%s&gt;%s)&quot;, fmt.Sprintf(&quot;message%d&quot;, messageIndex), utils.EscapeMessageSpecialChars(message[currPos:matchRange[0]]))
       proposedRegex += formattedMessageGroup
       messageIndex++
     }
     currPos = matchRange[1]
-    proposedRegex += fmt.Sprintf("(?P<%s>.+)", param)
+    proposedRegex += fmt.Sprintf(&quot;(?P&lt;%s&gt;.+)&quot;, param)
   }
   return regexp.MustCompile(proprosedRegex)
 }
-```
-
-这段代码会处理我们上面提到的 etcd 日志记录调用表达式：
-
-```
-plog.Printf("finished scheduled compaction at %d (took %v)", compactMainRev, time.Since(totalStart))
-```
-
-并返回以下正则表达式：
-
-```
-(?P<message1>finished scheduled compaction at )(?P<compactmainrev>.+)(?P<message2> \(took )(?P<timesince>.+)(?P<message3>\))$
-```
-
-现在，我们得到了一个正则表达式列表，这些表达式可以保证（当然，前提是生成代码没有 bug）与记录的日志消息相匹配！
-
-## 决定使用哪些正则表达式
-
-现在我们拥有了所需的所有正则表达式——实际上甚至太多了。在 etcd 代码库上运行此操作**生成了 441 个正则表达式**。当我们为 planer 配置如此多的正则表达式时，观察到了性能问题——单行匹配的平均时间和 P95 时间分别为 0.32 毫秒和 1.53 毫秒。在我们 etcd 具有高日志输出量的大规模部署中，这样的匹配速度会导致 planer 处理日志行不够快。为了匹配一条日志行，planer 会遍历其配置的正则表达式，一旦找到匹配该日志行的正则表达式便立即返回。因此，基于匹配该日志行的正则表达式在我们生成的配置中出现的位置不同，不同日志行的匹配时间也会有所差异。
-
-我们可以使用一个简单的技巧来减少平均处理时间：让我们对正则表达式进行排序，使得匹配日志行最多的那些表达式优先被检查。为了实现这种排序，我们需要查询现有的日志数据，看看哪些消息出现得最频繁。利用我们的日志基础设施，我们能够：
-
-- 运行一个按 `message` 字段对日志进行聚合的查询（`SELECT COUNT(*) FROM service.1-logs GROUP BY message`）。此查询实际上会生成一个包含二元组的列表，每个元组的形式为（消息，该消息出现的次数）。
-- 维护一个从正则表达式到该正则匹配的日志行数量的映射
-- 将每条消息通过**每一个**正则表达式进行匹配——如果它们匹配，则将该正则的匹配数增加该消息出现的日志行数。
-- 按照每个正则表达式匹配的日志行数量从大到小输出正则表达式。如果某个正则表达式没有匹配到任何日志行，它将不会出现在输出结果中。
-
-使用这种方法，我们简化了 planer 配置，并将平均和 P95 行匹配时间分别降至 0.25 毫秒和 0.42 毫秒。
-
-## 不足与局限
-
-我们这种通过检查源代码生成正则表达式的方法仍存在一些问题。有些代码库使用多种不同的调用表达式进行日志记录，这使得用这些表达式配置我们的正则表达式生成器的手动过程变得更加困难。我们的正则构造还依赖于静态定义捕获组的模式——在这里使用 `.+` 或 `.*` 将允许生成的正则匹配广泛的值，但会导致正则性能开销。如果我们检查捕获组旨在捕获的变量类型，就可以为捕获组构造性能更高的搜索模式——例如，如果我们要为布尔变量构造捕获组（`fmt.Printf("some boolean variable = %t", boolVar)`），我们可以使用正则表达式 `(true|false)` 来代替 `.+`。
-
-我们同样依赖于 planer 处理后的日志行中参数具有有意义且一致的变量名，以便简化日志索引和分析。例如，如果某个代码库在一行日志中指定了名为 `username` 的变量，而在另一行日志中指定了名为 `userName` 的变量，我们希望能对它们进行去重。将所有参数名小写的方法对我们有一点帮助，但还存在更复杂的情况，比如对 `user` 和 `username` 进行去重。
-
-## 结论
-
-虽然这个过程给许多不重要的日志行强加了结构，但我们新结构化的一些日志为调试提供了坚实的价值；一个例子是 etcd 对执行时间超过预期的请求进行的 warn 级别日志记录。多亏了我们新的 planer 配置，我们可以按请求类型聚合这些日志行，从而更轻松地识别出有问题的 etcd 查询。解析给定代码库的所有日志记录表达式还允许我们通过 planer 配置中的另一个节点将某些日志行列入黑名单，这意味着我们可以丢弃无用的噪声，并减少日志管道必须处理的日志量。（这对于控制 kubelet 日志量尤为有用，因为 kubelet 日志量会随着我们在所有部署中运行的 Kubernetes 节点数量而增加。）
-
-该项目目前在 Rubix 团队中运行得相当好，因为我们的团队在 Palantir 运行着最多的 Golang 开源组件。为了让其他团队从中受益，我们需要为其他语言编写正则表达式生成器。像 Javaparser 这样的库能够让我们捕捉到由 Log4j 等库提供的日志记录调用表达式，不过这也带来了额外的挑战，即需要弄清楚 Log4j 被设置为使用哪些日志编码器。
-
-## 作者
-
-James R.
-</article>
+</code></pre>
+<p>这段代码会处理我们上面提到的 etcd 日志记录调用表达式：</p>
+<pre><code>plog.Printf(&quot;finished scheduled compaction at %d (took %v)&quot;, compactMainRev, time.Since(totalStart))
+</code></pre>
+<p>并返回以下正则表达式：</p>
+<pre><code>(?P&lt;message1&gt;finished scheduled compaction at )(?P&lt;compactmainrev&gt;.+)(?P&lt;message2&gt; \(took )(?P&lt;timesince&gt;.+)(?P&lt;message3&gt;\))$
+</code></pre>
+<p>现在，我们得到了一个正则表达式列表，这些表达式可以保证（当然，前提是生成代码没有 bug）与记录的日志消息相匹配！</p>
+<h2>决定使用哪些正则表达式</h2>
+<p>现在我们拥有了所需的所有正则表达式——实际上甚至太多了。在 etcd 代码库上运行此操作<strong>生成了 441 个正则表达式</strong>。当我们为 planer 配置如此多的正则表达式时，观察到了性能问题——单行匹配的平均时间和 P95 时间分别为 0.32 毫秒和 1.53 毫秒。在我们 etcd 具有高日志输出量的大规模部署中，这样的匹配速度会导致 planer 处理日志行不够快。为了匹配一条日志行，planer 会遍历其配置的正则表达式，一旦找到匹配该日志行的正则表达式便立即返回。因此，基于匹配该日志行的正则表达式在我们生成的配置中出现的位置不同，不同日志行的匹配时间也会有所差异。</p>
+<p>我们可以使用一个简单的技巧来减少平均处理时间：让我们对正则表达式进行排序，使得匹配日志行最多的那些表达式优先被检查。为了实现这种排序，我们需要查询现有的日志数据，看看哪些消息出现得最频繁。利用我们的日志基础设施，我们能够：</p>
+<ul>
+<li>运行一个按 <code>message</code> 字段对日志进行聚合的查询（<code>SELECT COUNT(*) FROM service.1-logs GROUP BY message</code>）。此查询实际上会生成一个包含二元组的列表，每个元组的形式为（消息，该消息出现的次数）。</li>
+<li>维护一个从正则表达式到该正则匹配的日志行数量的映射</li>
+<li>将每条消息通过<strong>每一个</strong>正则表达式进行匹配——如果它们匹配，则将该正则的匹配数增加该消息出现的日志行数。</li>
+<li>按照每个正则表达式匹配的日志行数量从大到小输出正则表达式。如果某个正则表达式没有匹配到任何日志行，它将不会出现在输出结果中。</li>
+</ul>
+<p>使用这种方法，我们简化了 planer 配置，并将平均和 P95 行匹配时间分别降至 0.25 毫秒和 0.42 毫秒。</p>
+<h2>不足与局限</h2>
+<p>我们这种通过检查源代码生成正则表达式的方法仍存在一些问题。有些代码库使用多种不同的调用表达式进行日志记录，这使得用这些表达式配置我们的正则表达式生成器的手动过程变得更加困难。我们的正则构造还依赖于静态定义捕获组的模式——在这里使用 <code>.+</code> 或 <code>.*</code> 将允许生成的正则匹配广泛的值，但会导致正则性能开销。如果我们检查捕获组旨在捕获的变量类型，就可以为捕获组构造性能更高的搜索模式——例如，如果我们要为布尔变量构造捕获组（<code>fmt.Printf("some boolean variable = %t", boolVar)</code>），我们可以使用正则表达式 <code>(true|false)</code> 来代替 <code>.+</code>。</p>
+<p>我们同样依赖于 planer 处理后的日志行中参数具有有意义且一致的变量名，以便简化日志索引和分析。例如，如果某个代码库在一行日志中指定了名为 <code>username</code> 的变量，而在另一行日志中指定了名为 <code>userName</code> 的变量，我们希望能对它们进行去重。将所有参数名小写的方法对我们有一点帮助，但还存在更复杂的情况，比如对 <code>user</code> 和 <code>username</code> 进行去重。</p>
+<h2>结论</h2>
+<p>虽然这个过程给许多不重要的日志行强加了结构，但我们新结构化的一些日志为调试提供了坚实的价值；一个例子是 etcd 对执行时间超过预期的请求进行的 warn 级别日志记录。多亏了我们新的 planer 配置，我们可以按请求类型聚合这些日志行，从而更轻松地识别出有问题的 etcd 查询。解析给定代码库的所有日志记录表达式还允许我们通过 planer 配置中的另一个节点将某些日志行列入黑名单，这意味着我们可以丢弃无用的噪声，并减少日志管道必须处理的日志量。（这对于控制 kubelet 日志量尤为有用，因为 kubelet 日志量会随着我们在所有部署中运行的 Kubernetes 节点数量而增加。）</p>
+<p>该项目目前在 Rubix 团队中运行得相当好，因为我们的团队在 Palantir 运行着最多的 Golang 开源组件。为了让其他团队从中受益，我们需要为其他语言编写正则表达式生成器。像 Javaparser 这样的库能够让我们捕捉到由 Log4j 等库提供的日志记录调用表达式，不过这也带来了额外的挑战，即需要弄清楚 Log4j 被设置为使用哪些日志编码器。</p>
+<h2>作者</h2>
+<p>James R.</p></article>
 </body>
 </html>

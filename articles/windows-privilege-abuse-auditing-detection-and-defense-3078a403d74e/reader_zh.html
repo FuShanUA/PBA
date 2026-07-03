@@ -12,143 +12,93 @@ pre{overflow-x:auto;background:#f5f5f5;padding:16px}
 </style>
 </head>
 <body>
-<article>
-Windows 权限滥用：审计、检测与防御
-
-![Palantir](https://miro.medium.com/v2/resize:fill:32:32/1*yFp1VmXHPcrYrYrDNlD_7A.png)
-
-Palantir
-
-关注
-
-10 分钟阅读 · 2019年1月30日
-
-![clap](https://miro.medium.com/v2/resize:fit:700/1*AAjd0RtOe0OrDaE-ZPTAeA.png)
-
-[权限](https://docs.microsoft.com/en-us/windows/desktop/secauthz/privilege-constants)是 Windows 中一项重要的原生安全控制机制。顾名思义，权限授予账户在操作系统内执行特权操作的权利：调试、模拟等。理解权限机制及攻击者如何滥用权限的防守者，能够提升自身的检测能力和攻击面收敛能力。
-
-在这篇博文中，我们将简要介绍权限，并分享关于检测和防止权限滥用的建议。我们将梳理防守者保护权限所需理解的关键概念，并提供一个示例，说明如何通过审计、检测策略和定向移除权限来提升安全性。
-
-## Windows 权限简介
-
-权限是授予账户在操作系统内执行特权操作的权利。区分权限（适用于系统相关资源）和访问权限（适用于[安全对象](https://docs.microsoft.com/en-us/windows/desktop/secauthz/securable-objects)）非常重要。微软在其[访问控制文档](https://docs.microsoft.com/en-us/windows/desktop/secauthz/privileges)中提供了对 Windows 权限的详细说明。下面，我们将梳理一些最重要的概念，帮助您更好地防御权限滥用。
-
-### 访问令牌
-
-[访问令牌](https://docs.microsoft.com/en-us/windows/desktop/secauthz/access-tokens)是操作系统上托管的安全资源所有授权决策的基础。本地安全机构 (LSA) 将其授予已授权用户。访问令牌包含用户的安全标识符 (SID)、组 SID、权限、完整性级别以及其他与安全相关的信息。
-
-![User Access Token and a Securable Object. Reference: Microsoft Security Principals Documentation](https://miro.medium.com/v2/resize:fit:700/1*LHWGRh9KnTCnJxijUlh-lQ.png)
-
-用户访问令牌与安全对象。参考：《微软安全主体文档》
-
-用户创建的每个进程或线程都会继承其令牌的副本。在访问安全对象或在操作系统内执行特权操作时，系统使用此令牌执行访问检查。
-
-访问令牌可以表现为*主令牌*或*模拟令牌*。主令牌的功能如前所述，用于呈现进程或线程的默认安全信息。
-
-模拟允许线程使用来自其他用户或客户端的访问令牌执行操作。模拟令牌通常用于客户端/服务端通信。例如，当用户访问 SMB 文件共享时，服务端需要一份用户令牌的副本，以验证用户是否拥有足够的权限。执行的服务端线程除了包含自身的主令牌外，还包含该用户的模拟令牌，并使用模拟令牌对用户的操作执行访问检查。
-
-### 受限访问令牌
-
-[受限令牌](https://docs.microsoft.com/en-us/windows/desktop/secauthz/restricted-tokens)（也称为*过滤管理员令牌*）是主令牌或模拟令牌的子集，经过修改以控制权限或权限。受限访问令牌允许系统移除权限、添加拒绝访问控制条目或执行其他访问权限更改。
-
-假设在初始令牌创建过程中用户账户控制 (UAC) 正在运行，LSA 将尝试使用类似于 [IsTokenRestricted 函数](https://docs.microsoft.com/en-us/windows/desktop/api/securitybaseapi/nf-securitybaseapi-istokenrestricted)的功能，识别用户是否是特权组的成员或已被授予敏感权限。存在受限 SID 将导致系统调用生成一个具有减少权限的新访问令牌。
-
-以下截图展示了受限访问令牌的示例：
-
-![restricted token](https://miro.medium.com/v2/resize:fit:700/1*JsOrR1Axc_ReJv5mzClmFw.png)
-
-尽管该用户是本地管理员，但未提权的 cmd.exe shell 携带的令牌仅限于极少数权限。当提权以管理员身份运行时，进程携带用户的主令牌，包含更长的权限列表：
-
-![elevated token](https://miro.medium.com/v2/resize:fit:700/1*7xLSoBI7cVICpnjf3iGWIg.png)
-
-也可以使用 Process Explorer 检查主令牌。以下截图显示了附加到未提权进程的受限访问令牌。
-
-![Process Explorer restricted token](https://miro.medium.com/v2/resize:fit:553/1*CvsJ4OTkZiYC1dcZHGujzg.png)
-
-以下截图显示了附加到提权进程的主访问令牌：
-
-![Process Explorer primary token](https://miro.medium.com/v2/resize:fit:651/1*gDar3TWC_6yFA4PhNSdClg.png)
-
-### 常被滥用的权限
-
-微软提供了[概述 Windows 中权限常量的文档](https://docs.microsoft.com/en-us/windows/desktop/secauthz/privilege-constants)。这些权限可以直接分配给用户，也可以通过组成员身份继承。虽然其中许多权限都可能被滥用，但在恶意软件和攻击者技术中，以下是最[常被滥用](https://github.com/hatRiot/token-priv/blob/master/abusing_token_eop_1.0.txt)的权限常量：
-
-- **SeBackupPrivilege**
-描述：此权限使系统授予对任何文件的所有读取访问控制权限，无论文件指定了何种[访问控制列表](https://msdn.microsoft.com/library/windows/desktop/ms721532#-security-access-control-list-gly) (ACL)。
-攻击者技术：数据收集。
-- **SeCreateTokenPrivilege**
-描述：创建主令牌所需。
-攻击者技术：权限提升
-- **SeDebugPrivilege**
-描述：调试和调整由其他账户拥有的进程内存所需。
-攻击者技术：权限提升；防御规避；凭证获取
-- **SeLoadDriverPrivilege**
-描述：加载或卸载设备驱动程序所需。
-攻击者技术：持久化；防御规避
-- **SeRestorePrivilege**
-描述：执行还原操作所需。此权限使系统授予对任何文件的所有写入访问控制权限，无论文件指定了何种 ACL。
-攻击者技术：持久化；防御规避
-- **SeTakeOwnershipPrivilege**
-描述：在未被授予自主访问权限的情况下获取对象所有权所需。
-攻击者技术：持久化；防御规避；数据收集
-- **SeTcbPrivilege**
-描述：此权限将其持有者标识为受信任计算机库的一部分。某些受信任的受保护子系统会被授予此权限。
-攻击者技术：权限提升
-
-《[滥用令牌权限进行本地权限提升](https://github.com/hatRiot/token-priv/blob/master/abusing_token_eop_1.0.txt)》白皮书提供了关于权限滥用技术的综合参考，请参阅“3.1 — 可利用的权限”章节获取更多信息。
-
-## 权限审计与移除
-
-既然我们已经阐述了权限的一些关键概念，接下来我们将通过一个代表性示例进行说明：识别并缓解对**调试程序**权限 的滥用。
-
-SeDebugPrivilege 允许进程检查和调整其他进程的内存，并且[长期以来一直](https://leastprivilege.com/2004/08/19/sedebugprivilege-and-debugger-users/)是[安全隐患](https://blogs.msdn.microsoft.com/oldnewthing/20080314-00/?p=23113)。SeDebugPrivilege 允许令牌持有者访问任何进程或线程，无视安全描述符。Windows 凭证收割工具 [Lsadump](https://github.com/gentilkiwi/mimikatz/wiki/module-~-lsadump) 利用此技术为进程提供对本地系统机构 (LSASS) 内存空间的读取访问权限。恶意软件也滥用此权限向原本可信的进程执行代码注入，因为它[允许在目标进程中创建新的远程线程](https://support.microsoft.com/en-us/help/131065/how-to-obtain-a-handle-to-any-process-with-sedebugprivilege)。
-
-SeDebugPrivilege 确实有许多合法的用例。许多管理工具需要检查其他进程的内存以进行故障排除或性能分析。同样，许多将自身代码注入系统运行进程的商业应用程序出于正当理由需要 SeDebugPrivilege。（例如，参见[这篇文章](https://support.symantec.com/en_US/article.TECH196734.html)，解释了 Symantec Endpoint Protection 如何依赖 SeDebugPrivilege。）
-
-关于 SeDebugPrivilege 及其在恶意软件中使用的更多背景信息，可以在若干书籍和出版物中找到。我们参考的部分包括[**《内存取证的艺术》**](https://www.memoryanalysis.net/amf)（页码：173, 186, 197–199）、[**《恶意软件分析师手册》**](https://www.wiley.com/en-us/Malware+Analyst%27s+Cookbook+and+DVD%3A+Tools+and+Techniques+for+Fighting+Malicious+Code-p-9780470613030)（页码：58, 231, 589）和[**《Windows 恶意软件分析基础》**](https://www.oreilly.com/library/view/windows-malware-analysis/9781785281518/)（页码：143）。
-
-### 启用权限审计
-
-现在让我们看看如何将审计作为一种技术，收集识别潜在权限滥用所需的事件。在 Palantir，我们使用原生的 Windows 事件转发 (WEF) 将审计日志集中收集到一个位置。如果您想部署 WEF，请参阅我们[之前的博文](https://medium.com/palantir/windows-event-forwarding-for-network-defense-cb208d5ff86f)和 [GitHub 仓库](https://github.com/palantir/windows-event-forwarding)获取配置和管理详情。
-
-Windows 10 和 Server 2016 中的原生事件日志记录功能支持审计操作系统内的权限使用。可以通过组策略对象 (GPO) 启用对[敏感权限使用](https://docs.microsoft.com/en-us/windows/security/threat-protection/auditing/audit-sensitive-privilege-use)和[非敏感权限使用](https://docs.microsoft.com/en-us/windows/security/threat-protection/auditing/audit-non-sensitive-privilege-use)的审计，并通过 WEF 订阅进行收集。此外，审计[分配给新登录的特殊权限](https://docs.microsoft.com/en-us/windows/security/threat-protection/auditing/event-4672)以识别特权访问令牌的创建位置也是很有价值的。
-
-在大多数环境中，我们建议您仅收集与敏感权限使用相关的事件，并[禁用对备份和还原权限使用的审计](https://docs.microsoft.com/en-us/previous-versions/windows/it-pro/windows-server-2012-R2-and-2012/jj852206(v=ws.11))。虽然恶意行为者可以将这些技术用作数据收集、持久化和防御规避技术的一部分，但它们会产生数量庞大的事件，导致成本过高。
-
-应用正确的审计 GPO 后，我们收集以下权限的使用情况：
-
-- 作为操作系统的一部分运行
-- 创建令牌对象
-- 调试程序
-- 启用计算机和用户账户以使其受到信任以便进行委派
-- 生成安全审计
-- 身份验证后模拟客户端
-- 加载和卸载设备驱动程序
-- 管理审计和安全日志
-- 修改固件环境值
-- 替换进程级令牌
-- 获取文件或其他对象的所有权
-
-### 识别权限使用
-
-既然事件日志已集中收集，我们就可以通过定向搜索来识别潜在可滥用的权限原语。
-
-获取 Palantir 的故事到您的收件箱
-
-免费加入 Medium，获取这位作者的最新动态。
-
-输入您的电子邮箱
-
-订阅
-
-订阅
-
-记住我以便更快登录
-
-现在我们正在收集事件代码为 4672（*分配给新登录的特殊权限*）的事件，我们可以跨整个系统执行搜索，以识别生成带有 SeDebugPrivilege 的用户令牌的位置。事件示例如下：
-
-```
-LogName=Security
+<article><p>Windows 权限滥用：审计、检测与防御</p>
+<p><img alt="Palantir" src="https://miro.medium.com/v2/resize:fill:32:32/1*yFp1VmXHPcrYrYrDNlD_7A.png" /></p>
+<p>Palantir</p>
+<p>关注</p>
+<p>10 分钟阅读 · 2019年1月30日</p>
+<p><img alt="clap" src="https://miro.medium.com/v2/resize:fit:700/1*AAjd0RtOe0OrDaE-ZPTAeA.png" /></p>
+<p><a href="https://docs.microsoft.com/en-us/windows/desktop/secauthz/privilege-constants">权限</a>是 Windows 中一项重要的原生安全控制机制。顾名思义，权限授予账户在操作系统内执行特权操作的权利：调试、模拟等。理解权限机制及攻击者如何滥用权限的防守者，能够提升自身的检测能力和攻击面收敛能力。</p>
+<p>在这篇博文中，我们将简要介绍权限，并分享关于检测和防止权限滥用的建议。我们将梳理防守者保护权限所需理解的关键概念，并提供一个示例，说明如何通过审计、检测策略和定向移除权限来提升安全性。</p>
+<h2>Windows 权限简介</h2>
+<p>权限是授予账户在操作系统内执行特权操作的权利。区分权限（适用于系统相关资源）和访问权限（适用于<a href="https://docs.microsoft.com/en-us/windows/desktop/secauthz/securable-objects">安全对象</a>）非常重要。微软在其<a href="https://docs.microsoft.com/en-us/windows/desktop/secauthz/privileges">访问控制文档</a>中提供了对 Windows 权限的详细说明。下面，我们将梳理一些最重要的概念，帮助您更好地防御权限滥用。</p>
+<h3>访问令牌</h3>
+<p><a href="https://docs.microsoft.com/en-us/windows/desktop/secauthz/access-tokens">访问令牌</a>是操作系统上托管的安全资源所有授权决策的基础。本地安全机构 (LSA) 将其授予已授权用户。访问令牌包含用户的安全标识符 (SID)、组 SID、权限、完整性级别以及其他与安全相关的信息。</p>
+<p><img alt="User Access Token and a Securable Object. Reference: Microsoft Security Principals Documentation" src="https://miro.medium.com/v2/resize:fit:700/1*LHWGRh9KnTCnJxijUlh-lQ.png" /></p>
+<p>用户访问令牌与安全对象。参考：《微软安全主体文档》</p>
+<p>用户创建的每个进程或线程都会继承其令牌的副本。在访问安全对象或在操作系统内执行特权操作时，系统使用此令牌执行访问检查。</p>
+<p>访问令牌可以表现为<em>主令牌</em>或<em>模拟令牌</em>。主令牌的功能如前所述，用于呈现进程或线程的默认安全信息。</p>
+<p>模拟允许线程使用来自其他用户或客户端的访问令牌执行操作。模拟令牌通常用于客户端/服务端通信。例如，当用户访问 SMB 文件共享时，服务端需要一份用户令牌的副本，以验证用户是否拥有足够的权限。执行的服务端线程除了包含自身的主令牌外，还包含该用户的模拟令牌，并使用模拟令牌对用户的操作执行访问检查。</p>
+<h3>受限访问令牌</h3>
+<p><a href="https://docs.microsoft.com/en-us/windows/desktop/secauthz/restricted-tokens">受限令牌</a>（也称为<em>过滤管理员令牌</em>）是主令牌或模拟令牌的子集，经过修改以控制权限或权限。受限访问令牌允许系统移除权限、添加拒绝访问控制条目或执行其他访问权限更改。</p>
+<p>假设在初始令牌创建过程中用户账户控制 (UAC) 正在运行，LSA 将尝试使用类似于 <a href="https://docs.microsoft.com/en-us/windows/desktop/api/securitybaseapi/nf-securitybaseapi-istokenrestricted">IsTokenRestricted 函数</a>的功能，识别用户是否是特权组的成员或已被授予敏感权限。存在受限 SID 将导致系统调用生成一个具有减少权限的新访问令牌。</p>
+<p>以下截图展示了受限访问令牌的示例：</p>
+<p><img alt="restricted token" src="https://miro.medium.com/v2/resize:fit:700/1*JsOrR1Axc_ReJv5mzClmFw.png" /></p>
+<p>尽管该用户是本地管理员，但未提权的 cmd.exe shell 携带的令牌仅限于极少数权限。当提权以管理员身份运行时，进程携带用户的主令牌，包含更长的权限列表：</p>
+<p><img alt="elevated token" src="https://miro.medium.com/v2/resize:fit:700/1*7xLSoBI7cVICpnjf3iGWIg.png" /></p>
+<p>也可以使用 Process Explorer 检查主令牌。以下截图显示了附加到未提权进程的受限访问令牌。</p>
+<p><img alt="Process Explorer restricted token" src="https://miro.medium.com/v2/resize:fit:553/1*CvsJ4OTkZiYC1dcZHGujzg.png" /></p>
+<p>以下截图显示了附加到提权进程的主访问令牌：</p>
+<p><img alt="Process Explorer primary token" src="https://miro.medium.com/v2/resize:fit:651/1*gDar3TWC_6yFA4PhNSdClg.png" /></p>
+<h3>常被滥用的权限</h3>
+<p>微软提供了<a href="https://docs.microsoft.com/en-us/windows/desktop/secauthz/privilege-constants">概述 Windows 中权限常量的文档</a>。这些权限可以直接分配给用户，也可以通过组成员身份继承。虽然其中许多权限都可能被滥用，但在恶意软件和攻击者技术中，以下是最<a href="https://github.com/hatRiot/token-priv/blob/master/abusing_token_eop_1.0.txt">常被滥用</a>的权限常量：</p>
+<ul>
+<li><strong>SeBackupPrivilege</strong><br />
+描述：此权限使系统授予对任何文件的所有读取访问控制权限，无论文件指定了何种<a href="https://msdn.microsoft.com/library/windows/desktop/ms721532#-security-access-control-list-gly">访问控制列表</a> (ACL)。<br />
+攻击者技术：数据收集。</li>
+<li><strong>SeCreateTokenPrivilege</strong><br />
+描述：创建主令牌所需。<br />
+攻击者技术：权限提升</li>
+<li><strong>SeDebugPrivilege</strong><br />
+描述：调试和调整由其他账户拥有的进程内存所需。<br />
+攻击者技术：权限提升；防御规避；凭证获取</li>
+<li><strong>SeLoadDriverPrivilege</strong><br />
+描述：加载或卸载设备驱动程序所需。<br />
+攻击者技术：持久化；防御规避</li>
+<li><strong>SeRestorePrivilege</strong><br />
+描述：执行还原操作所需。此权限使系统授予对任何文件的所有写入访问控制权限，无论文件指定了何种 ACL。<br />
+攻击者技术：持久化；防御规避</li>
+<li><strong>SeTakeOwnershipPrivilege</strong><br />
+描述：在未被授予自主访问权限的情况下获取对象所有权所需。<br />
+攻击者技术：持久化；防御规避；数据收集</li>
+<li><strong>SeTcbPrivilege</strong><br />
+描述：此权限将其持有者标识为受信任计算机库的一部分。某些受信任的受保护子系统会被授予此权限。<br />
+攻击者技术：权限提升</li>
+</ul>
+<p>《<a href="https://github.com/hatRiot/token-priv/blob/master/abusing_token_eop_1.0.txt">滥用令牌权限进行本地权限提升</a>》白皮书提供了关于权限滥用技术的综合参考，请参阅“3.1 — 可利用的权限”章节获取更多信息。</p>
+<h2>权限审计与移除</h2>
+<p>既然我们已经阐述了权限的一些关键概念，接下来我们将通过一个代表性示例进行说明：识别并缓解对<strong>调试程序</strong>权限 的滥用。</p>
+<p>SeDebugPrivilege 允许进程检查和调整其他进程的内存，并且<a href="https://leastprivilege.com/2004/08/19/sedebugprivilege-and-debugger-users/">长期以来一直</a>是<a href="https://blogs.msdn.microsoft.com/oldnewthing/20080314-00/?p=23113">安全隐患</a>。SeDebugPrivilege 允许令牌持有者访问任何进程或线程，无视安全描述符。Windows 凭证收割工具 <a href="https://github.com/gentilkiwi/mimikatz/wiki/module-~-lsadump">Lsadump</a> 利用此技术为进程提供对本地系统机构 (LSASS) 内存空间的读取访问权限。恶意软件也滥用此权限向原本可信的进程执行代码注入，因为它<a href="https://support.microsoft.com/en-us/help/131065/how-to-obtain-a-handle-to-any-process-with-sedebugprivilege">允许在目标进程中创建新的远程线程</a>。</p>
+<p>SeDebugPrivilege 确实有许多合法的用例。许多管理工具需要检查其他进程的内存以进行故障排除或性能分析。同样，许多将自身代码注入系统运行进程的商业应用程序出于正当理由需要 SeDebugPrivilege。（例如，参见<a href="https://support.symantec.com/en_US/article.TECH196734.html">这篇文章</a>，解释了 Symantec Endpoint Protection 如何依赖 SeDebugPrivilege。）</p>
+<p>关于 SeDebugPrivilege 及其在恶意软件中使用的更多背景信息，可以在若干书籍和出版物中找到。我们参考的部分包括<a href="https://www.memoryanalysis.net/amf"><strong>《内存取证的艺术》</strong></a>（页码：173, 186, 197–199）、<a href="https://www.wiley.com/en-us/Malware+Analyst%27s+Cookbook+and+DVD%3A+Tools+and+Techniques+for+Fighting+Malicious+Code-p-9780470613030"><strong>《恶意软件分析师手册》</strong></a>（页码：58, 231, 589）和<a href="https://www.oreilly.com/library/view/windows-malware-analysis/9781785281518/"><strong>《Windows 恶意软件分析基础》</strong></a>（页码：143）。</p>
+<h3>启用权限审计</h3>
+<p>现在让我们看看如何将审计作为一种技术，收集识别潜在权限滥用所需的事件。在 Palantir，我们使用原生的 Windows 事件转发 (WEF) 将审计日志集中收集到一个位置。如果您想部署 WEF，请参阅我们<a href="https://medium.com/palantir/windows-event-forwarding-for-network-defense-cb208d5ff86f">之前的博文</a>和 <a href="https://github.com/palantir/windows-event-forwarding">GitHub 仓库</a>获取配置和管理详情。</p>
+<p>Windows 10 和 Server 2016 中的原生事件日志记录功能支持审计操作系统内的权限使用。可以通过组策略对象 (GPO) 启用对<a href="https://docs.microsoft.com/en-us/windows/security/threat-protection/auditing/audit-sensitive-privilege-use">敏感权限使用</a>和<a href="https://docs.microsoft.com/en-us/windows/security/threat-protection/auditing/audit-non-sensitive-privilege-use">非敏感权限使用</a>的审计，并通过 WEF 订阅进行收集。此外，审计<a href="https://docs.microsoft.com/en-us/windows/security/threat-protection/auditing/event-4672">分配给新登录的特殊权限</a>以识别特权访问令牌的创建位置也是很有价值的。</p>
+<p>在大多数环境中，我们建议您仅收集与敏感权限使用相关的事件，并<a href="https://docs.microsoft.com/en-us/previous-versions/windows/it-pro/windows-server-2012-R2-and-2012/jj852206(v=ws.11)">禁用对备份和还原权限使用的审计</a>。虽然恶意行为者可以将这些技术用作数据收集、持久化和防御规避技术的一部分，但它们会产生数量庞大的事件，导致成本过高。</p>
+<p>应用正确的审计 GPO 后，我们收集以下权限的使用情况：</p>
+<ul>
+<li>作为操作系统的一部分运行</li>
+<li>创建令牌对象</li>
+<li>调试程序</li>
+<li>启用计算机和用户账户以使其受到信任以便进行委派</li>
+<li>生成安全审计</li>
+<li>身份验证后模拟客户端</li>
+<li>加载和卸载设备驱动程序</li>
+<li>管理审计和安全日志</li>
+<li>修改固件环境值</li>
+<li>替换进程级令牌</li>
+<li>获取文件或其他对象的所有权</li>
+</ul>
+<h3>识别权限使用</h3>
+<p>既然事件日志已集中收集，我们就可以通过定向搜索来识别潜在可滥用的权限原语。</p>
+<p>获取 Palantir 的故事到您的收件箱</p>
+<p>免费加入 Medium，获取这位作者的最新动态。</p>
+<p>输入您的电子邮箱</p>
+<p>订阅</p>
+<p>订阅</p>
+<p>记住我以便更快登录</p>
+<p>现在我们正在收集事件代码为 4672（<em>分配给新登录的特殊权限</em>）的事件，我们可以跨整个系统执行搜索，以识别生成带有 SeDebugPrivilege 的用户令牌的位置。事件示例如下：</p>
+<pre><code>LogName=Security
 SourceName=Microsoft Windows security auditing.
 EventCode=4672
 EventType=0
@@ -175,14 +125,10 @@ Privileges:        SeSecurityPrivilege
             SeSystemEnvironmentPrivilege
             SeImpersonatePrivilege
             SeDelegateSessionUserImpersonatePrivilege
-```
-
-在此例中，用户账户作为登录事件的一部分被授予了 SeDebugPrivilege。这表明在此机器上生成的用户令牌可能成为拥有系统访问权限的恶意行为者的攻击和滥用目标。
-
-如果启用了[授权策略更改](https://docs.microsoft.com/en-us/windows/security/threat-protection/auditing/audit-authorization-policy-change)审计，当令牌权限被启用或禁用时，我们还可以额外接收到事件通知。以下是 4703 事件（*用户权限已调整*）的示例：
-
-```
-LogName=Security
+</code></pre>
+<p>在此例中，用户账户作为登录事件的一部分被授予了 SeDebugPrivilege。这表明在此机器上生成的用户令牌可能成为拥有系统访问权限的恶意行为者的攻击和滥用目标。</p>
+<p>如果启用了<a href="https://docs.microsoft.com/en-us/windows/security/threat-protection/auditing/audit-authorization-policy-change">授权策略更改</a>审计，当令牌权限被启用或禁用时，我们还可以额外接收到事件通知。以下是 4703 事件（<em>用户权限已调整</em>）的示例：</p>
+<pre><code>LogName=Security
 SourceName=Microsoft Windows security auditing.
 EventCode=4703
 EventType=0
@@ -215,14 +161,10 @@ Enabled Privileges:
 
 Disabled Privileges:
             -
-```
-
-在此例中，用户账户令牌被修改以启用 SeDebugPrivilege。虽然这本身并非恶意行为，但这可能表明对手正在使用 PowerShell 二进制文件执行代码注入或受保护的凭证访问。
-
-最后，事件 ID [4673](https://docs.microsoft.com/en-us/windows/security/threat-protection/auditing/event-4673)（*调用了特权服务*）和 [4674](https://docs.microsoft.com/en-us/windows/security/threat-protection/auditing/event-4674)（*尝试对特权对象执行操作*）可能包含额外的上下文或其他权限调用。以下是 4673 事件的示例：
-
-```
-LogName=Security
+</code></pre>
+<p>在此例中，用户账户令牌被修改以启用 SeDebugPrivilege。虽然这本身并非恶意行为，但这可能表明对手正在使用 PowerShell 二进制文件执行代码注入或受保护的凭证访问。</p>
+<p>最后，事件 ID <a href="https://docs.microsoft.com/en-us/windows/security/threat-protection/auditing/event-4673">4673</a>（<em>调用了特权服务</em>）和 <a href="https://docs.microsoft.com/en-us/windows/security/threat-protection/auditing/event-4674">4674</a>（<em>尝试对特权对象执行操作</em>）可能包含额外的上下文或其他权限调用。以下是 4673 事件的示例：</p>
+<pre><code>LogName=Security
 SourceName=Microsoft Windows security auditing.
 EventCode=4673
 EventType=0
@@ -250,55 +192,33 @@ Process:
 
 Service Request Information:
     Privileges:        SeTcbPrivilege
-```
-
-在此例中，PowerShell 二进制文件以普通用户身份调用了 SeTcbPrivilege 权限。攻击者可以滥用 SeTcbPrivilege 生成带有额外权限或功能的新令牌，然后将其用于模拟。
-
-### 跨全系统移除权限
-
-既然我们已经分析了 SeDebugPrivilege 事件日志并验证了它们可以被安全移除，我们就执行移除操作，以确保只有需要此权限的用户才拥有它。
-
-首先，我们在 Active Directory 中创建一个安全组（*SeDebug-Exceptions-sg*）。添加到此安全组中的任何用户都可以继续在其系统上使用 SeDebugPrivilege（例如，执行系统级调试的管理员），而任何其他用户将丧失此权限（例如，招聘人员、服务台）。
-
-接下来，我们生成一个组策略对象 (GPO) 并将其配置为仅向 SeDebug-Exceptions-sg 组中的用户分配“调试程序”权限。可以在以下位置配置该设置：**计算机配置\Windows 设置\安全设置\本地策略\用户权限分配**。
-
-然后，我们使用安全筛选将 GPO 部署到整个系统中的测试机器和用户。
-
-### 测试与验证
-
-部署到测试系统后，我们进行测试和验证演练，以识别任何负面影响或问题。利用源自 Windows 安全性的数据，我们对可能受影响的用户账户进行细粒度的白名单过滤。在测试阶段结束时，没有发现或归因于该更改的任何报告或问题。随后，我们可以将权限移除 GPO 应用于系统其余部分。
-
-下图是我们其中一台机器上的管理员命令提示符。请注意，即使与提权的 cmd.exe 进程相关联，令牌中也不再存在 SeDebugPrivilege：
-
-![SeDebugPrivilege removed](https://miro.medium.com/v2/resize:fit:700/1*Pi67kPyY7YMHuyEyy_rDdw.png)
-
-结合使用 Windows 事件和基于主机的脚本，我们持续监控和跟踪 SeDebugPrivilege，直到我们验证整个系统已接收到更改且状态稳定。
-
-### 问题与限制
-
-最后，让我们讨论一下所讨论的权限移除技术的局限性。
-
-首先，并非所有易受滥用影响的权限都能被移除（例如 SeBackupPrivilege、SeImpersonatePrivilege 等）。因此，此技术应被视为纵深防御策略的众多层之一，而不是万灵药。
-
-其次，修改权限不会限制系统级账户。为了使操作系统及相关工具能够正常运行，这些权限是必需的且无法撤销。以下截图是 SYSTEM 用户主访问令牌关联权限的示例。此类操作会在检测和告警中被捕获，但值得一提的是，在系统上获取该权限并没有硬性阻断。
-
-![SYSTEM token privileges](https://miro.medium.com/v2/resize:fit:700/1*Y8n8YsNSLEQEr3gnhM_3Jg.png)
-
-在此例中，管理员用户执行了 psexec 以 NT AUTHORITY\SYSTEM 身份生成 cmd.exe shell。请注意关联权限表中存在 SeDebugPrivilege。如果用户被授予其机器的管理员权限，将有多种机制可以绕过此安全控制。
-
-## 结论
-
-虽然所提出的技术本身无法阻止坚定的攻击者，但它是一项有价值的纵深防御控制措施，可以关闭自动化的恶意软件功能，并[破坏某些开箱即用的攻击者工具](https://github.com/search?q=SeDebugPrivilege&type=Code)。凭借对权限及攻击者如何滥用权限的理解，防守者可以为其系统开发并实施增强的检测和攻击面收敛能力。
-
-## 延伸阅读
-
-- [安全主体](https://docs.microsoft.com/en-us/windows/security/identity-protection/access-control/security-principals)
-- [通过 GPO 枚举远程访问策略](https://labs.mwrinfosecurity.com/blog/enumerating-remote-access-policies-through-gpo/)
-- [滥用令牌权限进行本地权限提升](https://github.com/hatRiot/token-priv/blob/master/abusing_token_eop_1.0.txt)
-
-## 作者
-
-Chad D., Dane S., Tyler B.
-</article>
+</code></pre>
+<p>在此例中，PowerShell 二进制文件以普通用户身份调用了 SeTcbPrivilege 权限。攻击者可以滥用 SeTcbPrivilege 生成带有额外权限或功能的新令牌，然后将其用于模拟。</p>
+<h3>跨全系统移除权限</h3>
+<p>既然我们已经分析了 SeDebugPrivilege 事件日志并验证了它们可以被安全移除，我们就执行移除操作，以确保只有需要此权限的用户才拥有它。</p>
+<p>首先，我们在 Active Directory 中创建一个安全组（<em>SeDebug-Exceptions-sg</em>）。添加到此安全组中的任何用户都可以继续在其系统上使用 SeDebugPrivilege（例如，执行系统级调试的管理员），而任何其他用户将丧失此权限（例如，招聘人员、服务台）。</p>
+<p>接下来，我们生成一个组策略对象 (GPO) 并将其配置为仅向 SeDebug-Exceptions-sg 组中的用户分配“调试程序”权限。可以在以下位置配置该设置：<strong>计算机配置\Windows 设置\安全设置\本地策略\用户权限分配</strong>。</p>
+<p>然后，我们使用安全筛选将 GPO 部署到整个系统中的测试机器和用户。</p>
+<h3>测试与验证</h3>
+<p>部署到测试系统后，我们进行测试和验证演练，以识别任何负面影响或问题。利用源自 Windows 安全性的数据，我们对可能受影响的用户账户进行细粒度的白名单过滤。在测试阶段结束时，没有发现或归因于该更改的任何报告或问题。随后，我们可以将权限移除 GPO 应用于系统其余部分。</p>
+<p>下图是我们其中一台机器上的管理员命令提示符。请注意，即使与提权的 cmd.exe 进程相关联，令牌中也不再存在 SeDebugPrivilege：</p>
+<p><img alt="SeDebugPrivilege removed" src="https://miro.medium.com/v2/resize:fit:700/1*Pi67kPyY7YMHuyEyy_rDdw.png" /></p>
+<p>结合使用 Windows 事件和基于主机的脚本，我们持续监控和跟踪 SeDebugPrivilege，直到我们验证整个系统已接收到更改且状态稳定。</p>
+<h3>问题与限制</h3>
+<p>最后，让我们讨论一下所讨论的权限移除技术的局限性。</p>
+<p>首先，并非所有易受滥用影响的权限都能被移除（例如 SeBackupPrivilege、SeImpersonatePrivilege 等）。因此，此技术应被视为纵深防御策略的众多层之一，而不是万灵药。</p>
+<p>其次，修改权限不会限制系统级账户。为了使操作系统及相关工具能够正常运行，这些权限是必需的且无法撤销。以下截图是 SYSTEM 用户主访问令牌关联权限的示例。此类操作会在检测和告警中被捕获，但值得一提的是，在系统上获取该权限并没有硬性阻断。</p>
+<p><img alt="SYSTEM token privileges" src="https://miro.medium.com/v2/resize:fit:700/1*Y8n8YsNSLEQEr3gnhM_3Jg.png" /></p>
+<p>在此例中，管理员用户执行了 psexec 以 NT AUTHORITY\SYSTEM 身份生成 cmd.exe shell。请注意关联权限表中存在 SeDebugPrivilege。如果用户被授予其机器的管理员权限，将有多种机制可以绕过此安全控制。</p>
+<h2>结论</h2>
+<p>虽然所提出的技术本身无法阻止坚定的攻击者，但它是一项有价值的纵深防御控制措施，可以关闭自动化的恶意软件功能，并<a href="https://github.com/search?q=SeDebugPrivilege&amp;type=Code">破坏某些开箱即用的攻击者工具</a>。凭借对权限及攻击者如何滥用权限的理解，防守者可以为其系统开发并实施增强的检测和攻击面收敛能力。</p>
+<h2>延伸阅读</h2>
+<ul>
+<li><a href="https://docs.microsoft.com/en-us/windows/security/identity-protection/access-control/security-principals">安全主体</a></li>
+<li><a href="https://labs.mwrinfosecurity.com/blog/enumerating-remote-access-policies-through-gpo/">通过 GPO 枚举远程访问策略</a></li>
+<li><a href="https://github.com/hatRiot/token-priv/blob/master/abusing_token_eop_1.0.txt">滥用令牌权限进行本地权限提升</a></li>
+</ul>
+<h2>作者</h2>
+<p>Chad D., Dane S., Tyler B.</p></article>
 </body>
 </html>
