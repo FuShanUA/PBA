@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RoboSlack: A Java library for planet-scale messaging with Slack</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;max-width:680px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em}
+img{max-width:100%;height:auto}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px}
+</style>
+</head>
+<body>
+<article>
+# RoboSlack：用于与 Slack 进行星球级规模消息传递的 Java 库
+
+![](https://miro.medium.com/v2/resize:fit:700/1*4auDLpVwypbrXamUYewVbA.png)
+
+*RoboSlack* 是一个用于 *Slack HTTP API* 的 Java 库。它最初由 Palantir 的运维团队为内部使用而开发，此后在各业务和产品团队中获得了广泛应用，如今支撑着从问题分发到系统监控的多种用例。*RoboSlack 已在 Github 上开源*，我们很高兴看到它在 Palantir 之外继续发展。
+
+### 引言
+
+RoboSlack 是 Slack HTTP API 实用子集的 Java 8 实现，旨在通过简单、流畅的 API 表达最常见的 Slack 用例：
+
+```
+WebHookToken token = WebHookToken.fromString("<token>");
+MessageRequest message = MessageRequest.builder()
+  .text("Hello, Slack!")
+  .username("roboslack")
+  .channel("#your-channel")
+  .build();
+ResponseCode response =
+  SlackWebHookService.with(token).sendMessage(message);
+```
+
+在底层，RoboSlack 会发起相应的 HTTP 请求：
+
+```
+POST https://hooks.slack.com/services/<token>
+{
+  "text": "Hello, Slack!",
+  "username": "roboslack",
+  "channel": "#your-channel"
+}
+```
+
+大约一年前，Palantir 内部对类似 RoboSlack 工具的需求变得非常迫切。当时，我们的团队正在研究一种将支持工单自动分发给工程师的方法。我们很快发现，某些工单需要一个比 JIRA 邮件更引人注意，但又不像 PagerDuty 警报那样刺耳的通知渠道。Slack 完美符合要求，因为它具备上下文感知的通知模式、个人与频道交互的模型，以及简单的消息送达保证机制。我们开始将 RoboSlack 的基础架构作为支持工单分发器的一个子模块进行构建。然而，在研究《Slack Incoming Webhook API》文档并与一些业务开发团队交流想法后，我们突然意识到，可以轻松地将这个 Slack 模块提取出来，将其转变为一个可复用的 Slack 库，这既能满足我们的需求，又能为 Palantir 的其他软件开发人员提供一个有用的构建模块。于是，RoboSlack 诞生了。
+
+### 用例
+
+RoboSlack 支持包含标题、图片、字段、页脚以及十六进制彩虹所有颜色的消息。我们发现 RoboSlack 代码在不同的项目中具有很高的可读性和可复用性，这些项目通常共享一种 `MessageRequest` 设置，作为配方或应用生态系统内遵循的风格指南。以下是 RoboSlack 的一些可能应用场景：
+
+分享谷歌地图截图和深度链接：
+
+![](https://miro.medium.com/v2/resize:fit:700/1*JvYuhmO6aNy-fcdpRs0S-w.png)
+
+源码：https://gist.github.com/elektron9/d029c433e4014c7f3fffcd0d882cc20f
+
+向客户发送有关在线商店商品的消息：
+
+![](https://miro.medium.com/v2/resize:fit:494/1*25r5WBuliVJZW1HlJKbwiA.png)
+
+源码：https://gist.github.com/elektron9/d0e7509b34acdbbf01db0b5d224cc440
+
+将 Slack 用作高优先级事件的记录器：
+
+![](https://miro.medium.com/v2/resize:fit:700/1*YNS6oGGpdK7XrNgkZYPyXg.png)
+
+源码：https://gist.github.com/elektron9/6b7ce6e6d4000519d12d3c6cb5efb47e
+
+### 幕后原理
+
+既然您已经对如何以及何时使用 RoboSlack 有了一些了解，让我们深入看看一些 API 和实现细节。
+
+<div class="wq gr wr ws v j cs"><div class="wt wu wv ww wx e fj"><h2 class="wy b wz xa xb xc xd">在收件箱中获取 Palantir 的故事</h2></div><div class="cp e fj"><p class="bb b bc u dy">免费加入 Medium，获取此作者的最新动态。</p></div><div class="xh sv xi xj su xk v"><span class="bb b bc u bg"><div class="xl v cs"><div class="v xl fg ff bl xm xn db ng xo xp xq xr xs xt xu"><input class="xv af ac ah xw xx gh mt bh xy bd" placeholder="输入您的电子邮箱" type="text" value=""></div></div></span><div class="au bt tk bx"><div class="xe xf xg"><button class="bb b bc u xz rw ya yb yc yd ye ez fa yf yg yh fe ff fg fh bi fi fj">订阅</button></div></div><div class="bd by r s"><button class="bb b bc u xz rw ya yb yc yd ye ez fa yf yg yh fe bd ff fg fh bi fi fj">订阅</button></div></div><div class="id e"><label class="v j"><div class="yv yw yx v uw bx fw"><input class="yi yj yk gb hw yl ym yn yo yp yq yr" type="checkbox" checked=""><span class="j ys yt ff fg hz fh xz ak v ya yu cf" data-checkbox="true"><svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 11 11" class="ya"><path d="m0 6.313 3.704 3.705.904.904.66-1.095 5.296-8.795L8.85 0 3.554 8.795l1.563-.191-3.704-3.705z"></path></svg></span></div><div class="e"><p class="bb b bc u bg">记住我以便更快登录</p></div></label></div><div class="tx e"><div id="g-recaptcha"></div></div></div>
+
+**身份验证**
+RoboSlack 使用《Slack Incoming Webhook API》来发送消息。使用 `WebHookToken`（通常以 `https://hooks.slack.com/REDACTED` 或 `TXXXXX/BXXXXX/XXXXXXXXXX` 形式提供），客户端可以通过 `SlackWebHookService` 发送消息。`WebHookToken` 应被视为机密信息，因为它在发送消息时充当客户端的身份验证令牌和默认提交目标（用户或频道）。由于使用的是 Webhook API，RoboSlack 目前不支持诸如按钮和其他高级 Slack 交互等核心 API 操作。
+
+**错误传播**
+假设使用 RoboSlack 发送消息的应用程序或客户端具备网络访问权限，并且能够访问 `WebHookToken` URL（即 `https://hooks.slack.com/REDACTED`），则每一个 `MessageRequest` 都能确保被 Slack 处理并在发送后送达相应的频道或用户。返回的 `ResponseCode` 是对 Slack 在处理您的消息时遇到的任何错误代码的人类可读封装。示例包括：`channel_is_archived`、`action_prohibited`、`channel_not_found` 和 `user_not_found`。
+
+发送的每个 `MessageRequest` 要么返回一个包含提交至 `SlackWebHookService` 的元数据的 `ResponseCode`，要么在 Slack 外部出现问题时抛出 `RuntimeException`。例如，如果存在网络连接问题，您可能会看到：
+
+```
+java.lang.IllegalStateException: Could not connect to any of the following servers:[https://hooks.slack.com/services/]. Please check that the URIs are correct and servers are accessible.
+```
+
+**MessageRequests 构建器 API**
+`MessageRequest` 类表示核心《Incoming Webhook》和《chat.postMessage API》的简化模型。我们选择为所有 `MessageRequests` 实现构建器模式，因为它与 Slack 用户倾向于通过文本组织想法的方式高度相似。Slack 消息通常是由作者从头到尾，随着想法的不断涌现，通过追加文本和特殊的 Slack Markdown 来完成一个想法的。构建器模式允许我们通过在现有内容末尾追加新内容来逻辑组合 `MessageRequests`，这符合上述理念，并赋予我们在最终将 `MessageRequests` 发送到 Slack 频道或用户之前，进行创建和“动态”修改的灵活性：
+
+```
+MessageRequest.Builder message = MessageRequest.builder()
+  .username("roboslack")                
+  .iconEmoji("smile")
+  .text("Hello, Slack!");
+if (someCondition) {
+  message.attachment(Attachment.builder()
+    .fallback("text")
+    .pretext("pretext")
+    .build());
+}
+slackWebHookService.sendMessage(message.build());
+```
+
+通过这种方式，`MessageRequests` 在代码中扮演了单个“想法”的角色，如果您事后在 Slack 频道中看到不满意的内容，调试起来也很简单。
+
+**底层 HTTP 调用**
+使用上面的示例，RoboSlack 将 `MessageRequest` 转换为 HTTP POST 调用：
+
+```
+POST https://hooks.slack.com/services/REDACTED
+{
+  "text": "Hello, Slack!", 
+  "icon_emoji": ":smile:",
+  "username": "roboslack",
+  "attachments": [
+    {
+      "fallback": "text",
+      "pretext": "pretext"
+    }
+  ]
+}
+```
+
+**Slack Markdown 作为装饰器**
+就 JSON 消息结构而言，检查 `MessageRequests` 的有效性很简单：任何有效的 Java `MessageRequest`（通过上述构建器构建）都能产生有效的 Slack API 调用。但是，文本和《附件》字段可能包含《Slack Markdown》，这需要遵循额外的语法规则，例如嵌套星号符号以表示粗体或斜体字体。为了帮助用户避免格式错误的 Markdown（例如，多余的星号），RoboSlack 为标准格式化操作提供了简单的 `Decorators`。这种机制保证了格式良好的 Markdown，并使消息格式化代码更易读：
+
+```
+// Either use free-form Markdown in text, ...
+MessageRequest message = MessageRequest.builder()
+  .username("roboslack")                
+  .iconEmoji("smile")
+  .text("Free-form *bold text* and `code snippets`");
+                
+// ... or use decorators.
+MessageRequest message = MessageRequest.builder()
+  .username("roboslack")                
+  .iconEmoji("smile")
+  .text(String.format("Free-form %s and %s",
+      SlackMarkdown.BOLD.decorate("bold text"),
+      SlackMarkdown.PREFORMAT.decorate("code snippets")
+  ));
+```
+
+此外，我们通过以 Immutables 库的 `@Value.Check` 注解实现的正则表达式检查来处理每个字段，从而防止在纯文本字段中出现 Markdown，并确保 `MessageRequests` 在传递给 Slack API 之前，在允许的字段中包含有效的 Markdown。
+
+### 结论
+
+我们希望您喜欢这次 RoboSlack 的快速之旅，并期待您创造性地应用这个库。与此同时，Slack 的 API 在不断演进，因此保持 RoboSlack 的更新总有很多工作要做。我们鼓励开源社区的贡献——提交拉取请求，并来 RoboSlack Slack 团队中查看您的工作成果！
+</article>
+</body>
+</html>
