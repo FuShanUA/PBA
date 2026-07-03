@@ -12,111 +12,110 @@ pre{overflow-x:auto;background:#f5f5f5;padding:16px}
 </style>
 </head>
 <body>
-<article><h1>使用 osquery 进行审计：第二部分 — 配置与实现</h1>
+<article>
+<h1>使用 osquery 进行审计：第二部分 —— 配置与实现</h1>
+<p>8 分钟阅读·2018 年 12 月 14 日</p>
 <p><img alt="" src="https://miro.medium.com/v2/resize:fit:700/1*VdbOuGDB6Qo0tPiCRIiaoQ.png" /></p>
-<p>在《本系列的第一部分》中，我们介绍了 Linux 审计框架的基础知识。在这篇博文中，我们将重点讨论 osquery 审计的实现细节。除了配置审计外，我们还将为读者提供一些策略，以减少大多数审计配置伴随而来的性能影响和日志量。</p>
+<p>在《使用 osquery 进行审计：第一部分 —— Linux 审计框架简介》中，我们介绍了 Linux 审计框架的基础知识。在这篇文章中，我们将重点探讨 osquery 审计的实现细节。除了配置审计功能外，我们还将为读者提供降低性能开销和日志数据量的策略，这两者通常伴随大多数审计配置而生。</p>
 <h2>使用 osquery 启用审计</h2>
-<p>命令行标志是更改 osquery 核心行为的主要方法。基础配置中与审计相关的标志列表如下：</p>
+<p>命令行标志是改变 osquery 核心行为的主要方式。基础配置所需的相关审计标志如下所示：</p>
 <ul>
 <li><strong>--audit_allow_sockets=true</strong><br />
-  告诉 osquery 记录网络连接（bind() 和 connect() 系统调用）</li>
+指示 osquery 记录网络连接（bind() 和 connect() 系统调用）</li>
 <li><strong>--audit_allow_process_events=true</strong><br />
-  告诉 osquery 记录进程执行（execve() 系统调用）</li>
+指示 osquery 记录进程执行情况（execve() 系统调用）</li>
 <li><strong>--audit_allow_config=true</strong><br />
-  告诉 osquery 允许更改审计配置选项。如果你使用自定义审计规则，可能需要禁用此选项。</li>
+指示 osquery 允许更改审计配置选项。如果使用自定义审计规则，可能需要禁用此项。</li>
 <li><strong>--audit_persist=true</strong><br />
-  告诉 osquery 在失去连接时重新获取对 netlink 套接字的访问权限</li>
+指示 osquery 在失去连接时重新获取对 netlink 套接字的访问权限</li>
 <li><strong>--disable_audit=false</strong><br />
-  告诉 osquery 启用审计</li>
+指示 osquery 启用审计</li>
 <li><strong>--events_expiry=1</strong><br />
-  告诉 osquery 在单次选择后使事件过期</li>
+指示 osquery 在单次查询后使事件过期</li>
 <li><strong>--events_max=500000</strong><br />
-  告诉 osquery 在查询间隔定义的 SELECT 之间缓冲 500,000 个事件</li>
+指示 osquery 在由查询间隔定义的 SELECT 操作之间缓冲 500,000 个事件</li>
 <li><strong>--logger_plugin=filesystem</strong><br />
-  告诉 osquery 将日志记录到文件系统</li>
+指示 osquery 将日志记录到文件系统</li>
 <li><strong>--watchdog_memory_limit=350</strong><br />
-  告诉 osquery 将内存限制提升至 350mb</li>
+指示 osquery 将内存限制提升至 350mb</li>
 </ul>
-<p>这些命令行标志通常保存在 <code>/etc/osquery/osquery.flags</code> 中。</p>
-<p>除了命令行标志之外，你还需要确保在 <code>osquery.conf</code> 配置文件中查询 <code>process_events</code> 和 <code>socket_events</code> 表。</p>
-<p>Palantir 已经在这里开源了我们的 osquery 配置：</p>
+<p>这些命令行标志通常保存到 <code>/etc/osquery/osquery.flags</code>。</p>
+<p>除了命令行标志外，还需要确保在 <code>osquery.conf</code> 配置文件中查询 <code>process_events</code> 和 <code>socket_events</code> 表。</p>
+<p>Palantir 已在此处开源了我们的 osquery 配置：</p>
 <ul>
-<li>osquery-configuration</li>
-<li>osquery.conf</li>
-<li>osquery.flags</li>
+<li>《osquery-configuration》</li>
+<li>《osquery.conf》</li>
+<li>《osquery.flags》</li>
 </ul>
-<h2>日志记录注意事项</h2>
-<h3>选择要从每个表记录的特定列</h3>
-<p>虽然在查询中简单地使用通配符很诱人（例如 <code>SELECT * FROM process_events</code> 和 <code>SELECT * FROM socket_events</code>），但请考虑一下，当这些数据扩展到 10 台、1000 台甚至 10,000 台主机时，会消耗多少空间。如果你能通过只选择某些列将平均进程和套接字事件大小减少 25%，那么你整体的 osquery 审计日志量就会缩减 25%。在收集数据时要有所选择，以尽量减少 osquery 生成的日志量。</p>
-<h3>使用 SQL 过滤无关事件</h3>
-<p>考虑一下你是否需要记录系统上每个二进制文件的进程执行情况。有许多工具使用非常频繁，但提供的安全或取证价值很小，例如 <code>awk</code>、<code>sed</code>、<code>tr</code>、<code>cut</code>。</p>
-<p>简单地创建如下查询对 osquery 的性能影响微乎其微，却可以节省大量的日志量：<br />
+<h2>日志注意事项</h2>
+<h3>从每个表中选择特定列进行记录</h3>
+<p>虽然在查询中使用通配符（例如 <code>SELECT * FROM process_events</code> 和 <code>SELECT * FROM socket_events</code>）很方便，但请考虑一下，当规模扩展到 10 台、1000 台甚至 10,000 台主机时，这些数据会消耗多少存储空间。如果只查询特定列，能够将平均进程和套接字事件大小减少 25%，那么整体的 osquery 审计日志数据量就会缩减 25%。在收集数据时要有所选择，以最大程度减少 osquery 生成的日志数据量。</p>
+<h3>使用 SQL 过滤多余事件</h3>
+<p>考虑是否需要记录系统上每个二进制文件的进程执行情况。有许多工具会被频繁使用，但几乎不提供安全或取证价值，例如 <code>awk</code>、<code>sed</code>、<code>tr</code>、<code>cut</code>。</p>
+<p>只需创建如下查询，对 osquery 的性能影响微乎其微，却能节省大量日志数据量：<br />
 <code>SELECT * FROM process_events WHERE path NOT IN ('/usr/bin/awk', '/usr/bin/sed', '/usr/bin/tr');</code></p>
-<p>注意：正如本博文第一部分所述，以这种方式排除事件并不会降低性能开销。osquery 仍然必须处理通过 SQL 过滤掉的事件，只是不记录它们而已。</p>
+<p>注意：如本系列博文第一部分所述，以这种方式排除事件并不会降低性能开销。osquery 仍然必须处理通过 SQL 过滤掉的事件，只是不记录它们而已。</p>
 <h3>仅记录成功的套接字事件</h3>
-<p><code>socket_events</code> 表包含一个名为“success”的列，指示连接是否成功。根据你的日志量要求，确定成功与不成功的套接字事件各占多少百分比，并可能过滤掉所有不成功的连接，这可能值得一试。显然，这是在可见性和日志量之间的一种权衡。</p>
-<h3>按计数监控前 10 个进程</h3>
-<p>在 Palantir，我们维护着一个审计仪表板，用于密切关注生成日志最多的进程。如果我们发现特定进程在系统上生成的事件比其他进程多几个数量级，我们就能采取行动，通过一行修改来过滤它们。</p>
+<p><code>socket_events</code> 表包含一个名为“success”的列，用于指示连接是否成功。根据日志数据量的要求，统计成功与失败套接字事件的比例，并考虑过滤掉所有失败的连接，可能是有价值的。显然，这是在可见性与日志数据量之间做出的权衡。</p>
+<h3>按数量监控前 10 名进程</h3>
+<p>在 Palantir，我们维护着一个审计仪表板，用于监控生成日志最多的进程。如果发现特定进程在系统上生成的事件数量比其他进程多出几个数量级，我们就能采取行动，通过单行修改将其过滤掉。</p>
 <h2>审计故障排除</h2>
-<p>如果你在让 osquery 记录进程和审计事件时遇到问题，请检查清单上的每一项：</p>
+<p>如果在让 osquery 记录进程和审计事件时遇到问题，请逐一检查以下清单：</p>
 <ul>
-<li>确保 osquery 以 root 身份运行</li>
-<li>osquery.flags 中存在（本文档中记录的）正确标志</li>
+<li>确保 osquery 以 root 权限运行</li>
+<li>osquery.flags 中包含本文档中记录的正确标志</li>
 <li>osquery.conf 中存在针对进程和/或套接字事件表的查询</li>
-<li>osquery.flags 和 osquery.conf 位于正确的位置（Linux 上为 <code>/etc/osquery</code>）</li>
+<li>osquery.flags 和 osquery.conf 位于正确的目录（Linux 上为 <code>/etc/osquery</code>）</li>
 <li>osquery 已安装并正在运行</li>
-<li><code>auditctl -s</code> 输出中列出的 pid 映射到 osqueryd 进程并且不会改变</li>
-<li>没有其他审计消费者（auditd/go-audit/auditbeat）同时运行</li>
-<li><code>auditctl -l</code> 的输出中至少列出了一条系统调用规则</li>
-<li>如果使用 syslog，请确保其配置为允许大消息且不进行速率限制</li>
+<li><code>auditctl -s</code> 输出中列出的 PID 映射到 osqueryd 进程，且该 PID 保持不变</li>
+<li>没有其他审计消费者（auditd/go-audit/auditbeat）在同时运行</li>
+<li><code>auditctl -l</code> 输出中至少列出了一条系统调用规则</li>
+<li>如果使用 syslog，请确保其配置为允许大消息传输且未进行速率限制</li>
 </ul>
-<p>如果你已经验证了所有这些项目，我们有两种主要的故障排除策略：</p>
+<p>如果以上所有项均已确认无误，我们主要使用以下两种故障排除策略：</p>
 <ol>
-<li>停止任何正在运行的 osquery 进程，并使用 <code>--verbose</code> 标志将 osqueryd 作为前台进程运行，检查输出中是否有错误：<br />
-   (a) <code>$ osqueryctl stop; osqueryd --flagfile=/etc/osquery/osquery.flags --verbose</code></li>
-<li>停止任何正在运行的 osquery 进程，并使用隐藏的<br />
-<code>--audit_debug=true</code> 标志运行 osqueryi：<br />
-   (a) <code>$ osqueryctl stop; osqueryi --flagfile=/etc/osquery/osquery.flags --audit_debug=true --verbose</code><br />
-   (b) osqueryi 将让你进入一个交互式 shell，类似于 sqlite 呈现的 shell<br />
-   (c) <code>--audit_debug</code> 标志将输出 osqueryd 从 netlink 套接字接收到的原始审计事件，然后再将其处理成内部表。如果没有出现审计事件，很可能是某些配置有误。</li>
+<li>停止所有正在运行的 osquery 进程，并使用 <code>--verbose</code> 标志将 osqueryd 作为前台进程运行，检查输出是否存在错误：<br />
+(a) <code>$ osqueryctl stop; osqueryd --flagfile=/etc/osquery/osquery.flags --verbose</code></li>
+<li>停止所有正在运行的 osquery 进程，并使用隐藏的 <code>--audit_debug=true</code> 标志运行 osqueryi：<br />
+(a) <code>$ osqueryctl stop; osqueryi --flagfile=/etc/osquery/osquery.flags --audit_debug=true --verbose</code><br />
+(b) osqueryi 会将你带入交互式 shell，类似于 sqlite 呈现的界面<br />
+(c) <code>--audit_debug</code> 标志将输出 osqueryd 从 netlink 套接字接收到的、尚未处理为内部表格格式的原始审计事件。如果没有出现审计事件，很可能是某些配置有误。</li>
 </ol>
-<h2>了解性能影响</h2>
-<p>使用 osquery 进行审计主要以两种方式引入性能开销：</p>
+<h2>理解性能影响</h2>
+<p>使用 osquery 进行审计主要通过两种方式引入性能开销：</p>
 <ol>
-<li>当在内核中启用审计并且存在审计规则时，内核必须执行额外的操作，将每个系统调用与审计规则列表进行比较，并生成实际的审计事件。</li>
-<li>审计消费者（在本例中为 osquery）从内核 netlink 套接字提取事件，将事件数据解析为其内部表格式，并将该事件存储在 RocksDB 中。一旦事件被查询选择，该事件就会被写入日志文件或通过日志插件发送。</li>
+<li>在内核中启用审计并存在审计规则时，内核必须执行额外操作，将每个系统调用与审计规则列表进行比较，并生成实际的审计事件。</li>
+<li>审计消费者（此处为 osquery）从内核 netlink 套接字中拉取事件，将事件数据解析为内部表格格式，并将该事件存储在 RocksDB 中。一旦查询对该事件执行了 SELECT 操作，该事件就会被写入日志文件或通过日志插件发送。</li>
 </ol>
-<p>正如我们之前提到的，根据启用的审计选项，osquery 仅监控 1-3 个特定的系统调用。因此，每次内核中发生这些系统调用之一时，都会生成一个审计事件。审计事件越多，内核生成它们的工作就越多，osquery 解析它们并将其存储在数据库中的工作也就越多。这对底层发生的事情进行了极度简化的说明，但理解这一点至关重要。</p>
+<p>如前所述，取决于启用了哪些审计选项，osquery 仅监控 1 到 3 个特定的系统调用。因此，每当内核中发生这些系统调用时，就会生成一个审计事件。审计事件越多，内核生成事件的工作量就越大，osquery 解析事件并将其存入数据库的工作量也就越大。这虽然是对底层机制极其粗略的简化，但却是理解其原理的关键。</p>
 <h3>osquery 压力测试</h3>
-<p>osquery 的官方 git 仓库包含一个用 Python 编写的初级压力测试。这个压力测试只是创建用户定义数量的 shell，并将数据发送到 UDP 套接字。通过将此压力测试与 <code>perf</code> 工具结合使用，你可以观察运行审计和 osquery 产生的计算开销。</p>
-<p>注意：如果你在虚拟机上使用 perf 工具，请务必先启用虚拟机上的性能计数器/代码分析。</p>
-<p><strong>审计与 osquery 禁用：</strong></p>
+<p>osquery 的官方 git 仓库中包含一个用 Python 编写的《基础压力测试》。该压力测试仅创建用户指定数量的 shell，并向 UDP 套接字发送数据。通过将该压力测试与 <code>perf</code> 工具结合使用，可以观察运行审计和 osquery 所产生的计算开销。</p>
+<p>注意：如果在虚拟机上使用 perf 工具，请务必先《在虚拟机上启用性能计数器/代码分析》。</p>
+<p><strong>审计与 osquery 均禁用：</strong></p>
 <pre><code># perf stat python system_stress.py -i lo -n 10
 Expecting 10240 (default shell) processes
 Executed 10240 (default shell) processes
 Elapsed: 41.857626915
-
- Performance counter stats for 'python system_stress.py -i lo -n 10':
-
+</code></pre>
+<pre><code> Performance counter stats for 'python system_stress.py -i lo -n 10':
       83219.491922      task-clock (msec)         #    1.986 CPUs utilized
 &lt;snip&gt;
       41.897018727 seconds time elapsed
 </code></pre>
-<p><strong>审计与 osquery 启用：</strong></p>
+<p><strong>审计与 osquery 均启用：</strong></p>
 <pre><code># perf stat python system_stress.py -i lo -n 10
 Expecting 10240 (default shell) processes
 Executed 10240 (default shell) processes
 Elapsed: 47.5021560192
-
- Performance counter stats for 'python system_stress.py -i lo -n 10':
-
+</code></pre>
+<pre><code> Performance counter stats for 'python system_stress.py -i lo -n 10':
       84672.567230      task-clock (msec)         #    1.781 CPUs utilized
 &lt;snip&gt;
       47.535512135 seconds time elapsed
 </code></pre>
-<p>如你所见，启用 osquery 审计后，压力测试完成的时间多了约 6 秒。虽然这是一种非常粗略且不精确的计算计算开销的方法，但它确实非常清楚地说明了问题。当审计和 osquery 未运行时，压力测试能够更快地完成其操作。</p>
-<h3>测量进程生成的系统调用</h3>
-<p>要基本了解哪些进程正在生成哪些系统调用，你可以结合使用 auditd、ausearch 和 aureport。Auditd 将审计事件记录到日志文件中，而 ausearch 结合 aureport 对 auditd 日志文件进行一些方便的解析，以显示每个进程生成了多少特定类型的系统调用。</p>
+<p>如你所见，启用 osquery 审计后，压力测试完成时间多了约 6 秒。尽管这是一种极其生硬且不精确的计算开销衡量方式，但它已经相当清楚地说明了问题。在不运行审计和 osquery 时，压力测试能够更快地完成操作。</p>
+<h3>衡量进程生成的系统调用</h3>
+<p>要初步了解哪些进程生成了哪些系统调用，可以结合使用 auditd、ausearch 和 aureport。Auditd 将审计事件记录到日志文件中，而 ausearch 结合 aureport 可以方便地解析 auditd 日志文件，展示每个进程生成了多少特定类型的系统调用。</p>
 <pre><code># Stop osquery so it doesn’t conflict with auditd
 sudo osqueryctl stop
 # Clear out any existing audit rules
@@ -151,21 +150,21 @@ total  file
 532  /usr/sbin/aureport
 14  /usr/sbin/asearch
 </code></pre>
-<p>运行此报告的主要目的是了解特定系统上生成了多少每种系统调用，并确定是否有任何异常进程生成的系统调用比其他进程多得多。这些异常进程最有可能引起性能问题。如果收集这些进程的日志并不重要，请考虑通过审计规则过滤它们。</p>
+<p>运行此报告的主要目的是了解特定系统上生成了多少各类系统调用，并确定是否存在某些异常进程，其生成的系统调用数量远超其他进程。这些异常进程最有可能引发性能问题。如果收集来自这些进程的日志并不重要，请考虑通过审计规则将其过滤掉。</p>
 <h2>使用审计规则排除进程</h2>
-<p>在某些情况下，我怀疑用户曾试图在系统上使用 osquery 启用审计，却发现 osquery 消耗了不可接受的 CPU 周期。由于没有明显的解决方案，他们认定它不是合适的工具，并放弃了将其用于审计目的的想法。</p>
-<p>虽然承认审计框架在某些方面存在不足，但我们还是希望提供一些选项，以减少在系统上启用它带来的性能影响。</p>
-<p>一种选项是为那些你不感兴趣监控的进程创建自定义审计规则列表。考虑一下上面压力测试生成的报告。<code>/usr/bin/python2.7</code> 负责生成 10240 次 connect() 系统调用。我们可以将此二进制文件作为创建排除审计规则时的示例。</p>
+<p>在某些情况下，我怀疑用户曾尝试在系统上使用 osquery 启用审计，却发现 osquery 消耗了无法接受的 CPU 周期。由于找不到明显的解决方案，他们认定这不是合适的工具，并放弃了将其用于审计目的的想法。</p>
+<p>虽然承认审计框架在某些方面存在不足，但我们仍希望提供一些选项，以降低在系统上启用该框架所带来的性能影响。</p>
+<p>一种方案是为不感兴趣的进程创建自定义审计规则列表。参考上述压力测试生成的报告。<code>/usr/bin/python2.7</code> 生成了 10240 次 connect() 系统调用。我们可以将此二进制文件作为创建排除审计规则的示例。</p>
 <p>这些“过滤”审计规则的格式如下：<br />
 <code>-a never,exit -F exe=/path/to/bin -S [all|syscall_name]</code></p>
-<p>我们告诉审计对于位于 <code>/path/to/bin</code> 的二进制文件，<strong>永远不要</strong>为<strong>所有</strong>系统调用或特定系统调用生成审计事件。</p>
-<h3>使用审计规则过滤嘈杂的进程</h3>
+<p>我们指示审计系统针对位于 <code>/path/to/bin</code> 的二进制文件，<strong>永远不</strong>为其 <strong>all</strong> 系统调用或特定系统调用生成审计事件。</p>
+<h3>使用审计规则过滤嘈杂进程</h3>
 <ol>
-<li>停止审计和 osquery</li>
-<li>编辑审计规则文件（有时位于 <code>/etc/audit/rules.d/audit.rules</code>）</li>
-<li>以上面提到的格式添加“过滤”审计规则</li>
+<li>停止 audit 和 osquery</li>
+<li>编辑审计规则文件（通常位于 <code>/etc/audit/rules.d/audit.rules</code>）</li>
+<li>按上述格式添加“过滤”审计规则</li>
 <li>添加 osquery 所需的审计规则</li>
-<li>生成的 audit.rules 文件应如下所示：</li>
+<li>最终生成的 audit.rules 文件应如下所示：</li>
 </ol>
 <pre><code># Delete any pre-existing rules
 -D
@@ -181,17 +180,17 @@ total  file
 # Enable audit
 -e 1
 </code></pre>
-<ol start="6">
-<li>在 <code>osquery.flags</code> 文件中将 <code>--audit_allow_config</code> 标志设置为 <code>false</code>。我们不再希望 osquery 管理我们的审计配置，因为我们现在使用的是自定义规则。</li>
+<ol>
+<li>在 <code>osquery.flags</code> 文件中将 <code>--audit_allow_config</code> 标志设置为 <code>false</code>。我们不再需要 osquery 管理审计配置，因为我们现在使用的是自定义规则。</li>
 <li>启动 osquery</li>
-<li>运行 <code>augenrules --load</code> 以合并规则并将其加载到内核中。你可能会看到有关指定架构的消息——它们可以被忽略。</li>
+<li>运行 <code>augenrules --load</code> 合并规则并将其加载到内核中。你可能会看到关于指定架构的提示信息——可以忽略。</li>
 <li>运行 <code>auditctl -l</code> 列出活动的审计规则，并确认你添加的审计规则已存在</li>
 </ol>
-<p>遗憾的是，审计规则在 exe 字段中不支持通配符，因此你必须逐个显式地将二进制文件加入白名单。除了通过路径将二进制文件加入白名单外，审计还支持通过 PID、UID 和 SELinux 上下文进行过滤。</p>
-<p>我们认识到这个过程有些棘手，因此我们提交了以下 osquery 功能请求以简化此工作流程：https://github.com/facebook/osquery/issues/5308</p>
-<h2>结论</h2>
-<p>这篇分为两部分的博文系列介绍了对审计框架的基本理解，为在审计模式下配置 osquery 提供了指导，并提出了减少审计和审计消费者在系统上的性能占用空间的策略。展望未来，很明显审计正迅速成为一种过时的解决方案，而 eBPF 等较新的技术可能会成为性能强得多的替代品。在那成为现实之前，我们将专注于为当前可用的工具提供最佳指导。</p>
-<h2>参考</h2>
+<p>遗憾的是，审计规则在 exe 字段中不支持通配符，因此必须逐个将二进制文件加入白名单。除了按路径将二进制文件加入白名单外，审计还支持按 PID、UID 和 SELinux 上下文进行过滤。</p>
+<p>我们认识到这个过程有些繁琐，因此我们提交了以下 osquery 功能请求，以简化此工作流程：https://github.com/facebook/osquery/issues/5308</p>
+<h2>总结</h2>
+<p>这两部分组成的博文系列提供了对审计框架的基础理解，为在审计模式下配置 osquery 提供了指导，并提出了缩减审计及审计消费者对系统性能影响的策略。展望未来，很明显审计正在迅速成为一种过时的解决方案，而诸如 eBPF 等新兴技术很可能会成为性能更优的替代品。在那一天到来之前，我们将致力于为当前可用的工具提供最佳指导。</p>
+<h2>参考资源</h2>
 <ul>
 <li>https://slack.engineering/syscall-auditing-at-scale-e6a3ca8ac1b8</li>
 <li>http://blog.thinkst.com/2018/05/using-linux-audit-system-to-detect.html</li>
@@ -202,6 +201,7 @@ total  file
 <li>https://wiki.archlinux.org/index.php/Audit_framework</li>
 </ul>
 <h2>作者</h2>
-<p>Chris L.</p></article>
+<p>Chris L.</p>
+</article>
 </body>
 </html>
