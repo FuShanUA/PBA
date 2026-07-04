@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Configure SLT (SAP Landscape Transformation Replication Server)</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-configure-slt-sap-landscape-transformation-replication-server" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#configure-slt-sap-landscape-transformation-replication-server"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>配置 SLT（SAP 景观转换复制服务器）</h1>
+<p>SAP 景观转换复制服务器（SLT）是一款数据复制工具，它利用数据库触发器来执行变更数据捕获（CDC），从而实现从源 SAP 系统到目标系统的高效数据复制。</p>
+<p>可以对 SLT 和面向 SAP 应用的 Palantir Foundry 连接器 2.0（“连接器”）进行配置以协同工作，从而实现从 SAP 到 Foundry 的 CDC 复制。</p>
+<p>在此设置中，将创建一个带有专用上下文（队列别名）的 SLT 配置。</p>
+<p>若要将 SAP 表复制到 Foundry，需要为每个对象配置一个 Foundry 数据集同步。配置好数据集同步后，SLT 将在相关 SAP 对象上配置触发器，随后 SAP 中对该对象的变更将被捕获并存储在 SLT 服务器的队列中，以用于 ODP（操作数据分发）场景。Foundry 将按照预设的计划轮询此队列，以便将这些变更同步到 Foundry 数据集中。</p>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>从 2.34 (SP34) 及以上版本开始，该连接器使用《基于 OData 的 ODP 数据提取 ↗》来与 ODP 进行交互。</p></div>
+<p>当首次为 SAP 对象配置 Foundry 数据集同步时，SLT 将执行全量加载。后续的触发器将仅获取该对象的变更。SLT 队列的清除工作由 SLT 负责管理。</p>
+<p>您还可以配置 Foundry 数据集同步，让 SLT 对特定 SAP 对象执行全量加载（快照），而不是在 CDC 模式（增量）下运行。</p>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>本指南假定该连接器已安装在实例上。您可以查阅《连接器安装说明》。</p></div>
+<h2 id="user-content-prerequisites" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#prerequisites"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>先决条件</h2>
+<h3 id="user-content-use-odp-directly-connector-version-233-sp33-and-below" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#use-odp-directly-connector-version-233-sp33-and-below"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>直接使用 ODP（连接器版本 2.33 (SP33) 及以下）</h3>
+<ul>
+<li>SAP_BASIS（技术组件版本，适用于 SAP NetWeaver 和 SAP S/4HANA 系统）7.4 SP14+ 用于安装连接器</li>
+<li>DMIS 2011_1_730 组件 SP15+ 用于 SAP SLT 和源系统</li>
+<li>允许所有海量传输 ID (MTID) 进行 1:N 复制的 SAP SLT 配置</li>
+</ul>
+<p>请确保在 SLT 系统上实施了以下 SAP 说明：</p>
+<ul>
+<li>SAP OSS 说明 <code>1660374</code> – <em>获取等待时间不够长；超时</em></li>
+<li>SAP OSS 说明 <code>2215583</code> – <em>从 ODQ 提取期间因数据内容移动而导致的错误</em></li>
+</ul>
+<p>请确保已阅读以下 SAP 说明，并在适用情况下执行相关步骤：</p>
+<ul>
+<li>SAP OSS 说明 <code>2697016</code> – <em>无法在 CNV_IUUC_DB_CONN131 中复制表 - 其他配置具有不同的触发器设置 - SAP 景观转换复制服务器。</em></li>
+<li>SAP OSS 说明 <code>2787584</code> - <em>尽管用户拥有 SAP_ALL，LTRC 中仍出现授权问题 - SLT</em></li>
+<li>SAP OSS 说明 <code>3032108</code> - <em>是否支持 1:N 复制？ - SLT</em></li>
+</ul>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>在 SAP SLT 场景中，旧版 DMIS 中的一张表最多可以有 1:4 的注册（最多 4 个消费者）。从 DMIS 2018 SP4 开始，SAP 启用了新的 CDC 功能，消费者数量不再受限。</p></div>
+<h3 id="user-content-use-odp-via-odata-connector-version-234-sp34-and-above" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#use-odp-via-odata-connector-version-234-sp34-and-above"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>通过 OData 使用 ODP（连接器版本 2.34 (SP34) 及以上）</h3>
+<p>连接器版本 2.34 引入了 <code>PALODATA</code> 组件，允许您使用 OData API 配置同步，这也是《SAP 推荐的做法 ↗》。</p>
+<p>鉴于 OData 的较新特性，该组件对 SAP_BASIS 版本有更高的先决条件要求，需 <strong>7.50 SP09+</strong>。
+此外，请确保已阅读以下 SAP 说明，并在适用情况下予以实施：</p>
+<ul>
+<li>SAP OSS 说明 <code>2854759</code> - <em>通过 OData V2 提取期间对日期字段的处理</em></li>
+<li>SAP OSS 说明 <code>2878969</code> - <em>ODP 提取 ODATA 函数导入名称被截断</em></li>
+<li>SAP OSS 说明 <code>3062232</code> - <em>ODP ODATA V2 - 指针的最后一个 skiptoken 未提供 deltatoken</em></li>
+<li>SAP OSS 说明 <code>3023446</code> - <em>ODP 与 oData version2：odata.maxpagesize 在增量请求中被忽略</em></li>
+<li>SAP OSS 说明 <code>2888122</code> - <em>如果源系统中最新的增量请求被删除，则无法进行 ODATA ODP 增量</em></li>
+</ul>
+<h3 id="user-content-resource-sizing" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#resource-sizing"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>资源容量规划</h3>
+<p>
+
+在 SAP 系统中，将 Connector 与 SLT 结合使用可能会占用大量资源。因此，在启动数据复制之前，应查阅 SAP 官方关于 SLT 的系统规模评估文档。从 SAP 环境中提取数据之前，请确保 SLT 服务器上（如果 SLT 与 Connector 位于不同服务器，则还需确保安装 Connector 的 SAP 应用服务器上）有可用的后台进程和对话进程。</p>
+<ul>
+<li>转到事务 <code>SM50</code> 查看是否有空闲的后台和对话进程。如果没有可用进程，向 Foundry 传输数据将会失败。</li>
+<li>有关系统规模评估的更多指导，请参阅 SAP 官方的《SLT 规模评估指南 ↗》。</li>
+</ul>
+<h2 id="user-content-slt-configuration" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#slt-configuration"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>SLT 配置</h2>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>步骤 2a 和 2b 仅需执行其一。建议按照步骤 2a 使用安装后向导进行操作。步骤 3 和 4 仅在远程 SLT 场景下需要执行。</p></div>
+<ul>
+<li><a href="#1-create-an-rfc-destination-connection-to-the-source-system">1. 创建指向源系统的 RFC 目标连接</a></li>
+<li><a href="#2a-create-an-slt-configuration-for-the-source-system-using-the-post-installation-wizard">2a. 推荐：使用安装后向导为源系统创建 SLT 配置</a></li>
+<li><a href="#2b-create-an-slt-configuration-for-the-source-system-using-the-slt-tools">2b. 使用 SLT 工具为源系统创建 SLT 配置</a></li>
+<li><a href="#3-create-an-rfc-destination-connection-to-the-connector-remote-slt-scenario">3. 创建指向 Connector 的 RFC 目标连接（远程 SLT 场景）</a></li>
+<li><a href="#4-configure-the-connector-to-use-sap-slt-remote-slt-scenario">4. 配置 Connector 以使用 SAP SLT（远程 SLT 场景）</a></li>
+</ul>
+<h3 id="user-content-1-create-an-rfc-destination-connection-to-the-source-system" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#1-create-an-rfc-destination-connection-to-the-source-system"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>1. 创建指向源系统的 RFC 目标连接</h3>
+<p>要创建供 SLT 用于从 SAP 源系统复制数据的远程函数调用（RFC）连接，请参阅《创建 RFC 连接》。</p>
+<h3 id="user-content-2a-create-an-slt-configuration-for-the-source-system-using-the-post-installation-wizard" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#2a-create-an-slt-configuration-for-the-source-system-using-the-post-installation-wizard"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>2a. 使用安装后向导为源系统创建 SLT 配置</h3>
+<p>要使用 Connector 安装后向导创建 SLT 配置，请使用事务代码 <code>/n/PALANTIR/POST_INST</code>，并且仅启用第 7 步 <strong>创建 SLT 配置</strong>。SLT 配置的参数如下：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>参数</th><th>描述</th></tr></thead><tbody><tr><td><code>Context Name</code></td><td>唯一的配置名称</td></tr><tr><td><code>Context Description</code></td><td>将在 SAP 事务 <code>LTRC</code> 和 Foundry 中向用户展示的上下文描述</td></tr><tr><td><code>Data Transfer Jobs</code></td><td>数据传输作业数</td></tr><tr><td><code>Initial Load Jobs</code></td><td>初始加载作业数</td></tr><tr><td><code>Calculation Jobs</code></td><td>用于初始加载范围计算的计算作业数</td></tr><tr><td><code>Authorization Group</code></td><td>默认无授权组</td></tr><tr><td><code>Source RFC Destination</code></td><td>逻辑目标 - 源系统的 RFC 目标名称</td></tr><tr><td><code>Read from Single Client</code></td><td>如果从单一客户端读取数据，请勾选此选项</td></tr><tr><td><code>Allow Multiple Usage</code></td><td>如果允许重复使用，请勾选此选项</td></tr></tbody></table></div>
+<h3 id="user-content-2b-create-an-slt-configuration-for-the-source-system-using-the-slt-tools" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#2b-create-an-slt-configuration-for-the-source-system-using-the-slt-tools"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>2b. 使用 SLT 工具为源系统创建 SLT 配置</h3>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>步骤 2a 和 2b 仅需执行其一。建议使用步骤 2a 中详述的安装后向导。</p></div>
+<ol>
+<li>
+<p>要创建 SLT 配置，请使用事务代码 <code>LTRC</code>。</p>
+</li>
+<li>
+<p>创建新配置。</p>
+</li>
+<li>
+<p>在 <strong>General Data</strong> 部分，填写 <strong>Configuration Name</strong> 和 <strong>Description</strong>。</p>
+</li>
+<li>
+<p>在源系统部分：</p>
+<ul>
+<li>选择 <strong>RFC Connection</strong>。</li>
+<li>选择我们先前创建的 <strong>RFC Destination</strong> 连接（例如，本示例中的 SAP_SOURCE）。</li>
+</ul>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>配置源系统时，不要被“RFC Destination”这个名称所迷惑——在此设置中，您应选择指向源系统的连接。</p></div>
+<ul>
+<li>启用 <strong>Allow Multiple Usage</strong>。</li>
+</ul>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>此设置允许多个订阅者从源系统获取复制数据，且在配置创建后无法更改。由于仅使用单个订阅者时 <strong>Allow Multiple Usage</strong> 不会产生影响，我们建议在首次配置时即启用此项。若要后续再启用多重使用，必须删除当前配置并重新创建新配置。</p></div>
+<ul>
+<li>在生产环境中，请启用 <strong>Read from Single Client</strong>。所使用的客户端编号将在 RFC 连接中定义。此设置将确保仅生产数据被复制到 Foundry。在现有的 SLT 环境中，所有配置应具有相同的设置。因此，请查阅 SAP OSS 说明 《2372636 - 当存在不同的触发选项时无法复制数据 - SLT》。</li>
+</ul>
+</li>
+<li>
+<p>在目标系统部分：</p>
+<ul>
+<li>选择 <strong>RFC Connection</strong>。</li>
+<li>
+
+为<strong>场景</strong>选择<strong>操作数据提供 (ODP)</strong>。对于较高支持包级别的 SAP_BASIS，该场景会列在<strong>其他</strong>项下，而非<strong>RFC 连接</strong>。</li>
+<li>将<strong>RFC 目标</strong>设置为 <code>NONE</code>。</li>
+<li>将任意别名设置为队列别名。建议队列名称能够体现源系统的 SAP 系统 ID (SID)。后续在定义 Foundry 数据集同步时，将使用此队列别名作为上下文。</li>
+</ul>
+</li>
+<li>
+<p>在<strong>数据传输设置</strong>部分，设置要在 SAP SLT 服务器上运行的数据传输作业数、初始加载作业数和数据计算作业数。关于复杂场景所需的作业数，请参阅《SLT 规模调整指南 ↗》。</p>
+</li>
+<li>
+<p>检查并创建连接。</p>
+</li>
+<li>
+<p>返回 SLT 主界面，针对事务代码 <code>LTRC</code>，确保 SLT 系统上已激活适用于 ODP 场景的 BAdI 实现。如需检查此设置，请选择配置名称打开配置，然后点击<strong>专家功能</strong>选项卡。务必确保 BAdI 实现已激活，否则 ODP 将无法正常运行。</p>
+</li>
+<li>
+<p>从主菜单进入 <code>SA38</code> 事务。按照 SAP OSS 说明 <code>1660374 - Fetch does not wait long enough; timeout</code> 所述，运行程序 <code>SAP_RSADMIN_MAINTAIN</code> 以设置参数 <code>RODPS_FETCH_TIMEOUT</code>。请以秒为单位指定值。</p>
+</li>
+</ol>
+<h3 id="user-content-3-create-an-rfc-destination-connection-to-the-connector-remote-slt-scenario" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#3-create-an-rfc-destination-connection-to-the-connector-remote-slt-scenario"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>3. 创建与连接器的 RFC 目标连接（远程 SLT 场景）</h3>
+<p>连接器可部署在满足要求的独立 SAP 实例上。在此情况下，连接器通过 RFC 连接与 SLT 服务器通信。因此，需要建立 RFC 连接以打通通信渠道。</p>
+<p>有关设置说明，请参阅《RFC 连接指南》。</p>
+<h3 id="user-content-4-configure-the-connector-to-use-sap-slt-remote-slt-scenario" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#4-configure-the-connector-to-use-sap-slt-remote-slt-scenario"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>4. 配置连接器以使用 SAP SLT（远程 SLT 场景）</h3>
+<p>如果 SLT 与连接器位于不同实例，请按以下额外步骤进行配置：</p>
+<ul>
+<li>打开事务 <code>/n/PALANTIR/PARAM</code></li>
+<li>输入以下参数值：
+<ul>
+<li>Param ID：<code>SLT</code></li>
+<li>Param Name：<code>RFC_CONFIGURATION</code></li>
+<li>Param Value：<code>本节开头创建的 RFC 配置名称（例如：SLT_SERVER_RFC）</code></li>
+</ul>
+</li>
+</ul>
+<p>如果未在配置表中设置这些参数，它们将默认采用以下值：</p>
+<ul>
+<li>timestamp：OFF</li>
+<li>fetchOption：XML</li>
+<li>pageSize：50000</li>
+</ul>
+<h2 id="user-content-performance-considerations-for-large-table-syncs" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#performance-considerations-for-large-table-syncs"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>大型表同步的性能考量</h2>
+<p>连接器使用 SAP 的 ODP 框架将数据复制到 Foundry。ODP 会将数据从源系统复制到 ODP 队列（表名 <code>ODQDATA_F</code>）。数据暂存在 <code>ODQ</code> 中，一旦数据传输至 ODP 队列，连接器便开始将请求的数据分页存入 <code>/PALANTIR/PAG_01</code> 和 <code>/PALANTIR/PAG_02</code> 表。所有分页成功传输至 Foundry 后，Foundry 会发出关闭请求以清理这些表，该请求将删除 <code>/PALANTIR/PAG*</code> 表中的条目。</p>
+<p>在执行初始同步（例如历史数据或批量数据同步）时，请仔细审查数据库容量规划并充分考虑空间需求。空间不足可能导致 SLT 复制作业失败以及向 Foundry 的传输中断，因此请务必根据需复制的表提前做好数据库容量规划工作。</p>
+<h2 id="user-content-parameters-used-to-address-known-sap-issues" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#parameters-used-to-address-known-sap-issues"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>用于解决 SAP 已知问题的参数</h2>
+<p>另外还有两个参数可用于解决 SAP 的已知问题。</p>
+<h3 id="user-content-issue-the-sap-slt-server-does-not-provide-the-exact-field-length-of-datetime-fields" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#issue-the-sap-slt-server-does-not-provide-the-exact-field-length-of-datetime-fields"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>问题：SAP SLT 服务器未提供日期/时间字段的确切长度</h3>
+<p>问题现象：SAP SLT 服务器未提供日期/时间字段的确切长度。该问题已通过 SAP 说明修复。但是，如果在数据类型长度方面仍遇到任何问题，在应用该说明之前可设置以下参数：</p>
+<ul>
+<li>Param ID = <code>SLT</code></li>
+<li>Param Name = <code>SLT_DATA_XXX</code>（<code>XXX</code> 指代字段的技术名称）</li>
+<li>Param Value = <code>数据类型的长度</code></li>
+</ul>
+<p>在早期版本的 SAP_BASIS 支持包 (SP 14) 中，SAP 将 <code>DATS</code> 字段设置为 16 个字符。然而，<code>DATS</code> 字段应为 8 个字符 (<code>YYYYMMDD</code>)。SAP 也将 <code>TIMS</code> 字段设置为 16 个字符；而 <code>TIMS</code> 数据应为 6 个字符 (<code>HHMMSS</code>)。</p>
+<p>要解决此问题，请设置以下参数：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5">
+
+<table><thead><tr><th>参数 ID</th><th>参数名称</th><th>参数值</th></tr></thead><tbody><tr><td>SLT</td><td>SLT_DATA_DATS</td><td>8</td></tr><tr><td>SLT</td><td>SLT_DATA_TIMS</td><td>6</td></tr></tbody></table></div>
+<h3 id="user-content-issue-sap-quan-data-types-that-do-not-have-3-decimal-places" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#issue-sap-quan-data-types-that-do-not-have-3-decimal-places"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>问题：SAP 中小数位数不等于 3 的 QUAN 数据类型</h3>
+<p>问题描述：SAP 具有专门用于数量和金额的数据类型。数量数据类型 QUAN 默认包含 3 位小数。连接器尝试抓取包含 QUAN 数据类型的数据时，会自动为这些 QUAN 数据类型生成 3 位小数。然而，部分包含 QUAN 数据类型的 SAP 表具有不同的小数位数，但发送至 Foundry 时仍被视为具有 3 位小数。</p>
+<p>要解决此问题，请使用以下参数：</p>
+<ul>
+<li>参数 ID = <code>SLT</code></li>
+<li>参数名称 = <code>SLT_DTYPE_XXX</code>（<code>XXX</code> 代表该字段的数据类型）</li>
+<li>参数值 = <code>将采用的数据类型名称</code></li>
+</ul>
+<p>按如下方式设置参数，将 QUAN 数据类型更改为 decimal 数据类型：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>参数 ID</th><th>参数名称</th><th>参数值</th></tr></thead><tbody><tr><td>SLT</td><td>SLT_DTYPE_QUAN</td><td>DEC</td></tr></tbody></table></div>
+</article>
+</body>
+</html>

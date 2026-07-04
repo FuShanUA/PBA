@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Building pipelines</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-building-pipelines" level="1" node="[object Object]" data-pagefind-weight="7"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#building-pipelines"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>构建管道</h1>
+<p>创建<a href="/docs/foundry/data-integration/data-pipeline/">数据管道</a>的首要步骤，是将组织的数据源接入 Foundry 并让数据在系统中流转。起初，重点应放在验证数据是否具备高质量，从而为用例开发、模型开发和数据分析提供可靠的基础。</p>
+<p>本部分文档重点关注管道创建的初始阶段，此时业务需求可能仍在调整，管道逻辑也会频繁变更。在此阶段，核心在于打下坚实基础——既要支撑目标用例，又要保障管道未来的可维护性。</p>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__success__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><div class="ptcom-design__title__19o1cwu">Palantir 学习门户</div><p>你可以在 <a href="https://learn.palantir.com/deep-dive-building-your-first-pipeline">learn.palantir.com ↗</a> 找到关于构建首个管道的深度解析课程。</p></div>
+<h2 id="user-content-initial-steps" level="2" node="[object Object]" data-pagefind-weight="6.3"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#initial-steps"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>初始步骤</h2>
+<p>在大多数情况下，管道开发应遵循以下初始步骤：</p>
+<ul>
+<li>设置<a href="/docs/foundry/building-pipelines/recommended-project-structure/">推荐的项目结构</a>，以便从开发流程的最初阶段就妥善管理数据安全和数据治理。</li>
+<li>在 <a href="/docs/foundry/building-pipelines/create-batch-pipeline-pb/">Pipeline Builder</a> 或 <a href="/docs/foundry/building-pipelines/create-batch-pipeline-cr/">Code Repositories</a> 中创建批处理管道，对输入数据集进行处理、清洗和过滤，并与其他数据集进行关联，生成高质量的数据集，将其输入<a href="/docs/foundry/ontology/overview/">本体</a>以支持工作流开发。</li>
+<li>将最终的数据集映射为本体中的<a href="/docs/foundry/object-link-types/object-types-overview/">对象类型</a>和<a href="/docs/foundry/object-link-types/link-types-overview/">链接类型</a>。</li>
+<li>设置<a href="/docs/foundry/building-pipelines/scheduling-overview/">调度</a>，使数据开始定期流转。</li>
+</ul>
+<p>除上述步骤外，你还可以采取多项措施来提升管道的健壮性和可扩展性，包括添加单元测试、建立分支与发布流程以及定义健康检查。<a href="/docs/foundry/building-pipelines/development-best-practices/">了解管道开发的最佳实践</a>。</p>
+<h2 id="user-content-incremental-pipelines" level="2" node="[object Object]" data-pagefind-weight="6.3"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#incremental-pipelines"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>增量管道</h2>
+<p>如果流入管道的输入数据变更规模很大，最好创建一个<a href="/docs/foundry/building-pipelines/incremental-overview/">增量管道</a>，以高性能的方式处理变更数据。在大多数情况下，你可以从批处理管道起步，随后再引入增量管道来提升性能并降低延迟。</p>
+<p>在某些场景下，最好从一开始就将管道设计为增量模式，特别是当你预判流入管道的新数据规模将非常庞大时。然而，增量管道的编写和维护远比批处理管道复杂。<a href="/docs/foundry/building-pipelines/pipeline-types/">进一步了解 Foundry 中不同类型的管道</a>。</p>
+<h2 id="user-content-streaming-pipelines" level="2" node="[object Object]" data-pagefind-weight="6.3"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#streaming-pipelines"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>流式管道</h2>
+<p>如果对数据延迟的要求极低，最好创建一个<a href="/docs/foundry/building-pipelines/streaming-overview/">流式管道</a>，以高性能的方式处理输入数据。鉴于流式管道的速度受限于最慢的组件，因此必须从设计之初就统筹规划，以确保管道达到目标延迟和吞吐量。阅读我们的<a href="/docs/foundry/building-pipelines/stream-vs-batch/">流处理与批处理对比</a>，获取更细致的分析。</p>
+</article>
+</body>
+</html>

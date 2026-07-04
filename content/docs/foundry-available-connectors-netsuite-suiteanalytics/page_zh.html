@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Oracle NetSuite SuiteAnalytics</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="oracle-netsuite-suiteanalytics">Oracle NetSuite SuiteAnalytics</h1>
+<p>通过 SuiteAnalytics Connect 将 Foundry 连接到 Oracle NetSuite，将 NetSuite ERP 中的数据同步至 Foundry。</p>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>必须在 NetSuite 实例中启用 SuiteAnalytics。请参阅《NetSuite 文档》↗以启用该功能。</p></div>
+<h2 id="supported-capabilities">支持的功能</h2>
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>功能</th><th>状态</th></tr></thead><tbody><tr><td>数据探索</td><td>🟢 正式发布</td></tr><tr><td>批量同步</td><td>🟢 正式发布</td></tr><tr><td>增量同步</td><td>🟢 正式发布</td></tr></tbody></table></div>
+<h2 id="setup">设置</h2>
+<ol>
+<li>打开《数据连接》应用，并在屏幕右上角选择 <strong>+ 新建源</strong>。</li>
+<li>从可用的连接器类型中选择 <strong>JDBC</strong>。</li>
+<li>按照后续配置提示，结合下方各节的信息继续完成连接器设置。</li>
+</ol>
+<p>进一步了解如何在 Foundry 中《设置连接器》。</p>
+<h2 id="authentication">身份验证</h2>
+<p>可以通过<strong>用户名/密码</strong>组合对 SuiteAnalytics 进行身份验证。建议使用服务用户凭据，而非个人用户凭据。</p>
+<h3 id="configure-user-roles-and-permissions-in-netsuite">在 NetSuite 中配置用户角色和权限</h3>
+<p>在 NetSuite 中，为了控制访问权限，每个用户会被分配一个或多个角色，每个角色包含一组权限，定义了用户可执行的操作及可访问的数据。对于将要连接到 Foundry 的用户，建议进行如下配置：</p>
+<ol>
+<li>创建具有适当权限的专用角色。
+<ol>
+<li>在 NetSuite 工具栏中，选择 <strong>设置</strong> &gt; <strong>用户/角色</strong> &gt; <strong>管理角色</strong> &gt; <strong>新建</strong>，并为该角色指定明确的名称。建议使用 <code>foundry-role</code>。</li>
+<li>导航至角色页面底部，选择 <strong>权限</strong> &gt; <strong>设置</strong>，为该角色添加系统级权限。选择 <strong>SuiteAnalytics Connect</strong>，点击 <strong>添加</strong>，然后点击 <strong>保存</strong>。
+<ul>
+<li><em>注意：NetSuite 文档建议添加 <strong>SuiteAnalytics Connect: 读取全部</strong> 权限，但该权限对 NetSuite2.com 数据源无效（详见此处 ↗）。添加此权限不会产生任何效果。</em></li>
+</ul>
+</li>
+<li>导航至角色页面底部，选择 <strong>权限</strong> &gt; <strong>列表</strong>，为希望在 Foundry 中查询的表添加相应的表权限。选择所需的表，点击 <strong>添加</strong>，然后点击 <strong>保存</strong>。</li>
+</ol>
+</li>
+<li>将新角色分配给用户。
+<ol>
+<li>在 NetSuite 工具栏中，选择 <strong>设置</strong> &gt; <strong>用户/角色</strong> &gt; <strong>管理用户</strong>。选择要用于连接 Foundry 的用户，然后点击 <strong>编辑</strong>。</li>
+<li>导航至 <strong>访问</strong> 选项卡，确保已勾选 <strong>授予访问权限</strong> 复选框。</li>
+<li>在 <strong>角色</strong> 选项卡中，从下拉列表中选择新创建的角色 (<code>foundry-role</code>)，点击 <strong>添加</strong>，然后点击 <strong>保存</strong>。
+<ul>
+<li><em>注意：NetSuite 文档或者建议使用 <strong>数据仓库集成器</strong> 角色来替代自定义角色。然而，该角色要求使用基于令牌的身份验证进行访问（详见此处 ↗），而 Foundry 暂不支持此方式。</em></li>
+</ul>
+</li>
+</ol>
+</li>
+</ol>
+<p>要验证添加的权限是否正确，请以分配了新角色的用户身份登录，并检查能否查看所有预期的数据。</p>
+<h2 id="networking">网络配置</h2>
+<p>SuiteAnalytics 连接器需要对目标 NetSuite Connect 实例的网络访问权限。</p>
+<h3 id="foundry-worker-connection">Foundry worker 连接</h3>
+<p>如果连接运行在《Foundry worker》上，则必须在设置源时添加相应的《出口策略》。</p>
+<p>允许访问的<strong>服务主机</strong>和<strong>端口</strong>可在 <strong>NetSuite 配置主页</strong>的 <code>https://&lt;YOUR_ACCOUNT_ID&gt;.app.netsuite.com/app/external/odbc/suiteAnalyticsConnectDownload.nl</code> 找到。在无 NetSuite 账户 ID 的情况下访问此页面：</p>
+<ol>
+<li>登录 NetSuite 账户主页。</li>
+<li>找到左下角的 <strong>设置</strong> 面板，选择 <strong>设置 SuiteAnalytics Connect</strong>。</li>
+</ol>
+<p><strong>服务主机</strong>通常采用 <strong>&lt;ACCOUNT_ID&gt;.connect.api.netsuite.com</strong> 格式，端口为 <strong>1708</strong>。</p>
+<p>如果不存在此类出口策略，可以《申请新策略》；否则可以《添加策略》。</p>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu">
+
+<svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>由于此处采用了非 HTTPS 协议，您需要同时添加以下两项策略：</p><ul>
+<li>通过名称引用您的服务主机的 DNS 策略，以及</li>
+<li>显式引用 IP 范围的 CIDR 策略。您可以在终端中运行 <code>nslookup you-service-host</code> 来获取 NetSuite 实例的 IP 范围。NetSuite 服务的 IP 地址可能会随时变更，恕不另行通知。</li>
+</ul></div>
+<h2 id="user-content-connection-details" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#connection-details"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>连接详情</h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>选项</th><th>是否必填？</th><th>描述</th></tr></thead><tbody><tr><td><code>URL</code></td><td>是</td><td>格式为 <code>jdbc:ns://&lt;SERVICE_HOST&gt;:&lt;SERVICE_PORT&gt;</code>，其中 <code>SERVICE_HOST</code> 和 <code>SERVICE_PORT</code> 可从 <a href="#foundry-worker-connection">NetSuite 的配置主页</a> 获取。通常格式为 <strong><code>jdbc:ns://&lt;ACCOUNT_ID&gt;.connect.api.netsuite.com:1708</code></strong></td></tr><tr><td><code>Driver class</code></td><td>是</td><td>必须为 <strong>com.netsuite.jdbc.openaccess.OpenAccessDriver</strong></td></tr><tr><td><code>Drivers</code></td><td>是</td><td>对于 <a href="/docs/foundry/data-connection/core-concepts/#foundry-worker">Foundry worker</a>，请从 <a href="#foundry-worker-connection">NetSuite 的配置主页</a> 上传最新的 JDBC 驱动。对于传统的 <a href="/docs/foundry/data-connection/core-concepts/#agent-worker">agent worker</a> 连接，在智能体上上传前必须对同一 JDBC 驱动进行正确签名——请联系 Palantir 技术支持。有关更多详细信息，请参阅如何 <a href="/docs/foundry/available-connectors/custom-jdbc-sources/#jdbc-drivers">向智能体添加驱动</a>。</td></tr><tr><td><code>Credentials</code></td><td>是</td><td>用于连接至 Foundry 的用户的<strong>用户名</strong>和<strong>密码</strong>。</td></tr><tr><td><code>JDBC properties</code></td><td>是</td><td>可用属性的完整列表请见 <a href="https://docs.oracle.com/en/cloud/saas/netsuite/ns-online-help/section_4425626714.html#Connection-Properties">此处 ↗</a>。以下属性为必填项：<br><br>&nbsp;&nbsp;- <strong>CustomProperties</strong> : <code>(AccountID=&lt;ACCOUNT_ID&gt;;RoleID=&lt;ROLE_ID&gt;)</code> <br><em><strong>ROLE_ID</strong> 是与您分配给用户（<code>foundry-role</code>）的角色关联的内部 ID。您可以在 <strong>Setup</strong> &gt; <strong>Users/Roles</strong> &gt; <strong>Manage Roles</strong> 页面上角色名称旁边找到此值。如果未显示内部 ID，请参阅 <a href="https://docs.oracle.com/en/cloud/saas/netsuite/ns-online-help/section_N3423996.html#Setting-the-Internal-ID-Preference">如何开启此功能 ↗</a>。</em>  <br><br>&nbsp;&nbsp;- <strong>NegotiateSSLClose</strong> : <code>false</code> <br><br>&nbsp;&nbsp;- <strong>ServerDataSource</strong> : <code>NetSuite2.com</code>  <br> <em>自 2021 年 11 月 8 日起，新的 Connect 用户只能使用 NetSuite2.com 数据源访问 Connect Service。有关更多详细信息，请参阅 <a href="https://docs.oracle.com/en/cloud/saas/netsuite/ns-online-help/chapter_N752122.html#Connect-Data-Source">Oracle NetSuite 文档 ↗</a>。</em> <br><br>&nbsp;&nbsp;- <strong>encrypted</strong> : <code>1</code></td></tr></tbody></table></div>
+<p>其他连接参数与任何 <a href="/docs/foundry/available-connectors/custom-jdbc-sources/#jdbc-properties">JDBC 源</a> 相同。</p>
+<h2 id="user-content-creating-a-sync" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#creating-a-sync"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>创建同步</h2>
+<p>可以通过 <a href="/docs/foundry/data-connection/source-exploration/">探索</a> NetSuite SuiteAnalytics 源来发现数据表并创建新的同步。
+您也可以从该源的概览页面 <a href="/docs/foundry/data-connection/set-up-sync/">手动创建新的同步</a>。</p>
+</article>
+</body>
+</html>

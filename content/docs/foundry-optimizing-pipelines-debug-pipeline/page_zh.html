@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Debug a failing pipeline</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-debug-a-failing-pipeline" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#debug-a-failing-pipeline"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>调试故障流水线</h1>
+<p>快速调试并解决流水线问题是流水线维护工作的核心环节。这能确保为组织重要工作流提供数据的生产流水线保持可靠且有效。</p>
+<p>本页面提供了一套框架，当你在轮值期间作为流水线维护者收到健康检查失败的通知时，可将其作为标准操作程序（SOP）的基础。</p>
+<h2 id="user-content-prerequisite-knowledge" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#prerequisite-knowledge"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>前置知识</h2>
+<p>本页面假定你已熟悉各种 Foundry 工具和工作流。相关章节中会提供链接：</p>
+<ul>
+<li>代码仓库</li>
+<li>构建应用程序</li>
+<li>调度和调度指标</li>
+<li>数据血缘关系</li>
+</ul>
+<p>此外，还假定你的流水线维护团队记录了事件日志或其他文档，用于记录流水线中反复出现的问题。这是一项最佳实践，如果目前没有此类文档，应当予以落实。</p>
+<h2 id="user-content-debugging-framework-overview" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#debugging-framework-overview"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>调试框架概述</h2>
+<p>务必按顺序提出以下三个问题：</p>
+<ol>
+<li><strong>缓解：</strong>能否尽快缓解此问题？一些示例包括：
+<ul>
+<li>重新构建调度。建议重建调度，而不是重建单个数据集或失败作业，因为这会记录在你的调度历史中。调度历史允许你追踪流水线的历史，而不是单个数据集的历史。</li>
+<li>如果排队过多，查找并取消重叠或密集的调度。</li>
+<li>如果手动上传中断，将事务回滚到已知稳定版本。</li>
+</ul>
+</li>
+<li><strong>分类：</strong>问题属于哪个类别？
+<ul>
+<li>我们对问题进行分类的原因是，这有助于识别根本原因，并确定是否需要其他团队参与解决。</li>
+<li>有关如何思考和识别问题类型的更多详情，请参见<a href="#problem-category-classification">下文</a>。</li>
+</ul>
+</li>
+<li><strong>广泛影响：</strong>此问题是否会影响平台的其他部分？</li>
+</ol>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__success__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><div class="ptcom-design__title__19o1cwu">提示</div><p>阅读你的流水线文档！也许这个问题之前已经解决过。或者可能有警告提示在缓解期间不能做什么。例如，某些构建成本非常高，可能会在高峰使用时段影响环境的性能。这类细节应当为整个团队做好完善的文档记录。</p></div>
+<h2 id="user-content-problem-category-classification" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#problem-category-classification"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>问题类别分类</h2>
+<p>尝试缓解问题后，作为流水线维护者，你需要深入探查以理解并修复根本原因。在调试过程中对问题进行分类之所以有帮助，是因为它有助于我们识别根本原因，最重要的是，能帮助你快速判断是可以自行修复问题，还是需要联系其他团队。</p>
+>问题分为三类：</p>
+<ul>
+<li><strong>上游问题：</strong>与由他人管理的基础设施或产出物相关
+<ul>
+<li><strong>Foundry 之外：</strong>上游数据源的问题</li>
+<li><strong>Foundry 之内：</strong>由所涉流水线上游的数据集/项目引起的问题</li>
+</ul>
+</li>
+<li><strong>平台问题：</strong>由 Foundry 平台服务未按预期工作引起的问题。</li>
+<li><strong>变更：</strong><em>在你负责监控的流水线范围内</em>发生的任何变更。这是最常见的问题类别，通常由用户变更引起。一些示例包括：
+<ul>
+<li>代码变更</li>
+<li>调度变更</li>
+<li>流水线中数据量增加</li>
+</ul>
+</li>
+</ul>
+<h3 id="user-content-steps-to-issue-resolution-by-category-of-problem" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#steps-to-issue-resolution-by-category-of-problem"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>按问题类别解决问题的步骤：</h3>
+<p><img alt="debugging-framework" height="600" src="/docs/resources/foundry/optimizing-pipelines/maintenance-debugging-framework.png" style="aspect-ratio:1635 / 1000" width="981" node="[object Object]"></p>
+<p>具体而言，上述突出的步骤如下：</p>
+<ul>
+<li>
+<p><strong>识别：</strong>在执行上述步骤时，精准确认何处发生故障至关重要。回答以下问题：</p>
+<ul>
+<li>问题是何时开始的？</li>
+<li>在流水线的哪个步骤出现了失败？</li>
+<li>哪些健康检查失败了？</li>
+<li>流水线中是否有变更导致了此故障状态？</li>
+</ul>
+<p>这能让你在遇到上游问题和平台问题时，与其他团队进行有效沟通，从而缩短解决时间。同时也能提升你在平台上的调试技能。</p>
+</li>
+<li>
+<p><strong>行动：</strong></p>
+<ul>
+
+<li><strong>上游问题：</strong>确认问题确实由管道上游项目或数据源的数据延迟、缺失或错误引发后，请联系上游数据负责团队。
+<ul>
+<li><strong>提示：</strong>建议在开始监控前，提前记录上游团队的联系方式，以便值班人员随时与他们沟通。</li>
+</ul>
+</li>
+<li><strong>平台问题：</strong>若发现 Foundry 出现异常行为，且已排除管道中的用户变更因素，请联系您的 Palantir 代表。尽可能提供详尽的问题细节，包括观察到的任何变更信息。有关如何识别此类问题的技巧，请参阅<a href="#identifying-platform-issues">下文</a>章节。</li>
+<li><strong>变更：</strong>确认监控管道内部发生变更后，通常可直接采取措施修复。某些情况下，可能需要联系变更操作者以获取更多信息。如需帮助判断管道中是否发生变更，请参阅下一章节。</li>
+</ul>
+</li>
+<li>
+<p><strong>[可选] 下游用户通报：</strong>上图未提及的一个步骤是，问题定级并完成根因分析后，可视情况向管道下游消费方发出通知。具体是否需要通报，取决于问题的影响范围、持续时间以及该管道的业务场景。</p>
+</li>
+<li>
+<p><strong>临时方案：</strong>若等待其他团队或用户修复需要较长时间，可实施中期临时方案，确保管道健康部分继续为下游提供服务。具体的临时措施取决于问题本身和用户需求，例如：</p>
+<ul>
+<li>从调度计划中移除故障数据集或管道分支，将问题隔离。</li>
+<li>若问题根因为此，可固定特定 Python 库的版本。在 <a href="/docs/foundry/transforms-python/project-structure/#metayaml">meta.yml</a> 文件中，通过在库名旁边指定显式版本号即可完成配置。</li>
+</ul>
+</li>
+</ul>
+<h3 id="user-content-identifying-change-in-your-pipeline" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#identifying-change-in-your-pipeline"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>识别管道中的变更</h3>
+<p>管道维护者遇到的最常见问题，往往源于所监控管道内部发生某些变更带来的意外影响。在这类问题中，管道维护者拥有最高控制权，能够直接修复问题，无需依赖其他团队。</p>
+<p>具体操作步骤如下：</p>
+<ol>
+<li>
+<p>尽可能精准定位管道中问题的源头。例如，明确是调度计划、数据集、事务还是代码变更引发的问题。</p>
+</li>
+<li>
+<p>将此前正常运行的状态与当前故障状态进行对比，找出差异。
+建立一套大脑核查清单会很有帮助。以下提供一组问题示例，并附带可用于寻找答案的工具示例：</p>
+<ul>
+<li>运行比平时慢？原因是任务排队，还是计算耗时增加？</li>
+<li>文件/数据大小发生变化？</li>
+<li>代码变更？Schema（表结构）变更？</li>
+<li>调度计划变更？</li>
+<li>平台正在发生故障？</li>
+</ul>
+</li>
+</ol>
+<h3 id="user-content-tools" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#tools"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>工具</h3>
+<p>若您对 Foundry 中用于解答上述问题的工具不够熟悉，以下列表列出了排查过程中最常用的模式示例。该列表无法覆盖所有情况，仅作为入门指南：</p>
+<p><strong>我的作业/构建是否比平时慢？</strong></p>
+<ul>
+<li>
+<p><a href="/docs/foundry/data-integration/application-reference/#builds">构建应用程序</a>可用于对比指定数据集的作业。在构建概览页右上角的进度详情开关中，您可以查看构建的排队时间与计算时间进度。</p>
+<ul>
+<li>若失败的作业作为调度计划的一部分执行，构建详情页左下角会显示调度卡片。点击代表先前构建的圆点，即可打开该调度的历史运行记录。 <br><br>
+<img alt="builds-application-schedule-card" height="600" src="/docs/resources/foundry/optimizing-pipelines/builds-schedule-card.png" style="aspect-ratio:1174 / 753" width="935.4581673306773" node="[object Object]"> <br><br></li>
+</ul>
+</li>
+<li>
+<p><a href="/docs/foundry/building-pipelines/view-modify-schedules/#view-metrics">调度指标</a>可用于查看调度的历史运行记录，并提供指标与图表以对比不同运行情况。</p>
+</li>
+</ul>
+<p><strong>我的数据集大小是否发生变化？转换任务是否处理了更多数据？</strong></p>
+<ul>
+<li>
+<p>
+
+<a href="/docs/foundry/dataset-preview/overview/">数据集预览</a>：任何 Foundry 数据集的历史记录和比较选项卡提供了数据集历史记录的概览，并允许您与数据集的先前事务进行比较，从而了解发生了哪些变化。 <br><br>
+<img alt="dataset-app-tabs" height="62" src="/docs/resources/foundry/optimizing-pipelines/dataset-app-tabs.png" style="aspect-ratio:660 / 62" width="660" node="[object Object]"> <br><br>
+- <a href="/docs/foundry/contour/overview/">Contour</a> 提供了历史视图的访问权限，您可以使用<a href="/docs/foundry/contour/change-dataset-version/">汇总面板</a>比较行数；或者，如果您有一个表示数据添加/创建日期的列，您可以创建图表，将行数与添加日期进行比较。
+- <a href="/docs/foundry/optimizing-pipelines/understand-spark-details/">Spark 详情</a>：通过点击任何作业上的“Spark 详情”按钮（见下图），您将能够看到有助于判断管道中是否包含更多数据的信息，例如<code>任务计数</code>指标。 <br><br>
+<img alt="spark-details-button" height="551" src="/docs/resources/foundry/optimizing-pipelines/view-spark-details.png" style="aspect-ratio:1188 / 551" width="1188" node="[object Object]"> <br><br>
+
+**我的管道中的代码是否发生了变化？**
+
+- 数据集预览的**比较**选项卡允许您在比较数据集上的历史事务时，查看直接转换文件上的代码更改。
+- 在代码仓库中，<a href="/docs/foundry/code-repositories/navigation/#code-tab">代码选项卡</a>中的**文件更改**（提交历史）助手允许您查看代码更改。
+- <a href="/docs/foundry/data-lineage/overview/">数据血缘关系</a>工具允许您快速概览整个管道中的模式。侧面板**属性与直方图**对于跟踪管道中哪些数据集包含特定列特别有用。
+
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>如果使用支持导入库的语言（如 <a href="/docs/foundry/transforms-python/use-python-libraries/">Python</a> 或 <a href="/docs/foundry/transforms-java/share-code/">Java</a>），转换中的导入库可能会发生代码更改。如果您在转换中没有看到更改，请考虑检查库函数中是否存在逻辑更改。</p></div>
+
+**我的调度是否已被修改？**
+
+- 平台各个部分中的调度卡片将允许您查看调度上次更改的时间。
+- 调度指标页面上的<a href="/docs/foundry/building-pipelines/view-modify-schedules/#view-schedule-edit-history">调度版本选项卡</a>将允许您准确识别对调度配置进行了哪些更改。
+
+<h2 id="user-content-identifying-platform-issues" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#identifying-platform-issues"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>识别平台问题</h2>
+
+如果您根据看到的症状不确定问题出在哪里，检查其他作业、构建或相关平台组件中是否存在类似症状可能是一条有用的调查途径。
+
+具体来说，您应该寻找以下问题的答案：
+
+- 是否**可重现**？
+  - 此问题是否持续发生？
+  - 是否遵循某种模式？例如，是否在每周周末后的周一上午 9 点失败？
+- **影响范围**是什么？
+  - 如果您的作业缓慢或失败，您是否在其他转换作业中也看到了这种情况？或者可能仅在其他 Python 作业中？
+
+使用<a href="/docs/foundry/data-integration/application-reference/#builds">构建应用程序</a>过滤整个平台的作业历史记录，可以帮助您回答上述问题。
+
+快速调试和解决管道问题是管道维护人员工作的核心部分。它确保为重要组织工作流提供数据的生产管道保持可靠且有意义。如果您发现自己遵循了本页概述的指南仍然无法识别当前问题，请联系您的 Palantir 代表。
+</article>
+</body>
+</html>

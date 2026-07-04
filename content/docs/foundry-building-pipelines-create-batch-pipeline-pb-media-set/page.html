@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Create a media set batch pipeline with Pipeline Builder</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-create-a-media-set-batch-pipeline-with-pipeline-builder" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#create-a-media-set-batch-pipeline-with-pipeline-builder"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Create a media set batch pipeline with Pipeline Builder</h1>
+<p>In this tutorial, you will use Pipeline Builder to create a standard batch pipeline with media sets to extract text from PDF.</p>
+<p>This example uses PDFs of publicly available documents published by Palantir.</p>
+<p>At the end of this tutorial, you will have a pipeline that looks like the following:</p>
+<p><img alt="A complete Pipeline Builder pipeline." height="600" src="/docs/resources/foundry/building-pipelines/pb-media-sets-overview.png" style="aspect-ratio:2292 / 1088" width="1263.9705882352941" node="[object Object]"></p>
+<p>The pipeline will produce a new Object output of the extracted PDF text, which can be used for further exploration.</p>
+<h2 id="user-content-part-1-initial-setup" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#part-1-initial-setup"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Part 1: Initial setup</h2>
+<p>First, create a new pipeline.</p>
+<ol>
+<li>
+<p>When logged into Foundry, access <strong>Pipeline Builder</strong> from the left navigation bar. If Pipeline Builder is not in the list of applications, select <strong>View all</strong> and find <strong>Pipeline Builder</strong> under the <strong>Build &amp; Monitor Pipelines</strong> section.</p>
+<p><img alt="The Pipeline Builder application, found in the application search." height="387" src="/docs/resources/foundry/building-pipelines/application-pipeline-builder.png" style="aspect-ratio:1165 / 387" width="1165" node="[object Object]"></p>
+</li>
+<li>
+<p>Next, on the top right of the Pipeline Builder landing page, create a new pipeline by selecting <strong>New pipeline</strong>, then choose <strong>Batch pipeline</strong>. Under <strong>Select batch compute</strong>, choose <strong>Standard</strong> or <strong>Faster</strong>. For this example, choose <strong>Standard</strong>.</p>
+<p><img alt="Choose to create a standard batch pipeline." height="422" src="/docs/resources/foundry/building-pipelines/new-pipeline-choice-standard-faster.png" style="aspect-ratio:827 / 422" width="827" node="[object Object]"></p>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>The ability to create a streaming pipeline is not available on all Foundry environments. Contact Palantir Support for more information if your use case requires it.</p></div>
+</li>
+<li>
+<p>Select a location to save your pipeline. Note that pipelines cannot be saved in personal folders.</p>
+<p><img alt="The choose pipeline location popover." height="600" src="/docs/resources/foundry/building-pipelines/choose-pipeline-location.png" style="aspect-ratio:2010 / 1210" width="996.6942148760331" node="[object Object]"></p>
+</li>
+<li>
+<p>Choose <strong>Create pipeline</strong>.</p>
+</li>
+</ol>
+<h2 id="user-content-part-2-add-media-sets" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#part-2-add-media-sets"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Part 2: Add media sets</h2>
+<p>Now, you can add datasets to your pipeline workflow. For this tutorial, you will use PDFs of publicly available documents from Palantir.</p>
+<ol>
+<li>
+<p>From the Pipeline Builder page, select <strong>Add Foundry data</strong> on the home page. <br><br>
+<img alt="Add media sets to your pipeline." height="600" src="/docs/resources/foundry/building-pipelines/welcome-to-pipeline-builder-updated.png" style="aspect-ratio:1220 / 1018" width="719.056974459725" node="[object Object]"> <br><br></p>
+<p>You can also select the <strong>Add data</strong> action on the top panel. <br><br>
+<img alt="The Add data option in the pipeline graph." height="272" src="/docs/resources/foundry/building-pipelines/pb-add-data-option.png" style="aspect-ratio:1554 / 272" width="1554" node="[object Object]"> <br><br></p>
+<p>Alternatively, you can drag and drop a file from your computer to use as your media set.</p>
+</li>
+<li>
+<p>If you selected <strong>Add data</strong> or <strong>Add Foundry data</strong>, you will have the option to select your desired media sets. <br><br>
+<img alt="Screenshot of Add media set from location popover" height="600" src="/docs/resources/foundry/building-pipelines/add-media-set-pipeline-builder.png" style="aspect-ratio:2234 / 1196" width="1120.7357859531774" node="[object Object]"> <br><br></p>
+</li>
+<li>
+<p>When all media sets are selected, choose <strong>Add data</strong>.</p>
+</li>
+<li>
+<p>When you have imported your media set you will be able to see the media set with thumbnail preview. <br><br>
+<img alt="Screenshot of imported media set" height="600" src="/docs/resources/foundry/building-pipelines/pb-imported-preview-media-set.png" style="aspect-ratio:2418 / 1972" width="735.6997971602435" node="[object Object]"> <br><br></p>
+</li>
+</ol>
+<h2 id="user-content-part-3-media-set-transformations" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#part-3-media-set-transformations"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Part 3: Media set transformations</h2>
+<p>After adding raw media sets, you can perform some basic transformations. For this workflow, you will extract the text from these PDF files.</p>
+<h3 id="user-content-extract-text-from-pdf" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#extract-text-from-pdf"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Extract text from PDF</h3>
+<p>You can directly transform media or extract information from media using <a href="/docs/foundry/data-integration/media-sets/">media references</a>. In this example, you will extract text from the <code>Media set of Annual Letters</code> media set.</p>
+<ol>
+<li>
+<p>Choose the <code>Media set of Annual Letters</code> node in your graph.</p>
+</li>
+<li>
+<p>Select <strong>Transform</strong>. <br><br>
+<img alt="Screenshot of Media set of Annual Letters node" height="328" src="/docs/resources/foundry/building-pipelines/pb-transform-mediaset.png" style="aspect-ratio:964 / 328" width="964" node="[object Object]"> <br><br></p>
+</li>
+<li>
+<p>Search for and select the <strong>Extract text from PDF</strong> transform from the dropdown to open the board. <br><br>
+<img alt="Extract text transform options" height="600" src="/docs/resources/foundry/building-pipelines/extract_text_expression_list.png" style="aspect-ratio:1466 / 686" width="1282.2157434402332" node="[object Object]"> <br><br></p>
+</li>
+<li>
+<p>Select the extract method according to your needs and fill out the rest of the parameters.</p>
+</li>
+</ol>
+<ul>
+<li><code>Raw text</code>: Computer-generated PDFs</li>
+<li><code>OCR</code>: Photocopies</li>
+<li><code>Layout aware</code>: Text and bounding boxes <br><br>
+<img alt="Text Extraction options" height="600" src="/docs/resources/foundry/building-pipelines/extract_text_pdf_ocr_options.png" style="aspect-ratio:1944 / 1198" width="973.6227045075125" node="[object Object]"> <br><br></li>
+</ul>
+<ol start="5">
+<li>
+<p>Choose <strong>Apply</strong> to add the transform to your pipeline.</p>
+</li>
+<li>
+<p>Your output should look like this when you hover over the extracted text: <br><br>
+<img alt="Text extraction output with Hover" height="600" src="/docs/resources/foundry/building-pipelines/pb-text-extraction-output-hover.png" style="aspect-ratio:3204 / 1972" width="974.8478701825559" node="[object Object]"> <br><br></p>
+<p>You can now run available string transformations on the extracted text column.</p>
+</li>
+<li>
+<p>Select <strong>Close</strong> at the top right to return to your pipeline graph. <br><br>
+<img alt="Screenshot of the transform" height="280" src="/docs/resources/foundry/building-pipelines/pb-transforms-mediaset-graph.png" style="aspect-ratio:1308 / 280" width="1308" node="[object Object]"> <br><br></p>
+</li>
+</ol>
+<h4 id="user-content-optional-semantic-search-workflow"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#optional-semantic-search-workflow"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>(Optional) Semantic search workflow</h4>
+<p>If desired, you can continue with a <a href="/docs/foundry/ontology/overview-semantic-search/">semantic search workflow</a> with your extracted text.</p>
+<h2 id="user-content-part-4-add-an-output" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#part-4-add-an-output"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Part 4: Add an output</h2>
+<p>Now that you have finished extracting text from your PDFs and potentially running extra string transformations, you can add an output. For this tutorial, you will add an object output.</p>
+<ol>
+<li>
+<p>In the <code>Transforms</code> node where you have completed your transformations, select <strong>Add output</strong>. <br><br>
+<img alt="Add output from media set transformation" height="540" src="/docs/resources/foundry/building-pipelines/pb-media-sets-add-output.png" style="aspect-ratio:1530 / 540" width="1530" node="[object Object]"> <br><br></p>
+</li>
+<li>
+<p>Select <strong>New object type</strong>. <br><br>
+<img alt="Add new object type" height="312" src="/docs/resources/foundry/building-pipelines/pb-mediasets-create-new-obj-type.png" style="aspect-ratio:1652 / 312" width="1652" node="[object Object]"> <br><br></p>
+</li>
+<li>
+<p>Name your object type and set the Ontology by choosing <strong>Please select an ontology</strong>. <br><br>
+<img alt="Rename and set ontology output" height="600" src="/docs/resources/foundry/building-pipelines/pb-rename-and-set-ontology.png" style="aspect-ratio:780 / 818" width="572.1271393643032" node="[object Object]"> <br><br></p>
+</li>
+<li>
+<p>Select <strong>Edit</strong> and edit any column mapping. Ensure that you choose a valid column for the primary key. <br><br>
+<img alt="Edit column mapping" height="600" src="/docs/resources/foundry/building-pipelines/pb-media-set-ontology-col-mapping.png" style="aspect-ratio:768 / 980" width="470.2040816326531" node="[object Object]"> <br><br></p>
+</li>
+</ol>
+<h2 id="user-content-part-5-build-the-pipeline" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#part-5-build-the-pipeline"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Part 5: Build the pipeline</h2>
+<ol>
+<li>
+<p>To build your pipeline, make sure to select <strong>Save</strong>, then <strong>Deploy &gt; Deploy pipeline</strong>. <br><br>
+<img alt="Screenshot of scheme-filled dataset output pane" height="336" src="/docs/resources/foundry/building-pipelines/deploy-this-pipeline.png" style="aspect-ratio:646 / 336" width="646" node="[object Object]"> <br><br></p>
+</li>
+<li>
+<p>You should see <code>Intializing deployment</code> under the <code>Deploy Pipeline</code> sidebar option. <br><br>
+<img alt="Initializing deployment" height="600" src="/docs/resources/foundry/building-pipelines/pb-initializing-deployment.png" style="aspect-ratio:758 / 632" width="719.620253164557" node="[object Object]"> <br><br></p>
+</li>
+<li>
+<p>Select <strong>View deployment history</strong> to track the progress of your deployment. You should be led to the <code>History</code> tab in your pipeline where you can view the statuses and history of your deployments: <br><br>
+<img alt="Deployment in progress" height="328" src="/docs/resources/foundry/building-pipelines/pb-deployment-history-deploying.png" style="aspect-ratio:1550 / 328" width="1550" node="[object Object]"> <br><br>
+<img alt="Deployment complete" height="312" src="/docs/resources/foundry/building-pipelines/pb-deployment-history-deployed.png" style="aspect-ratio:1550 / 312" width="1550" node="[object Object]"> <br><br></p>
+</li>
+</ol>
+<h2 id="user-content-optional-part-6-north-of-the-ontology" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#optional-part-6-north-of-the-ontology"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>(Optional) Part 6: North of the Ontology</h2>
+<p>Once deployment has completed and your object is initialized, you should be able to directly action on your object output. Select <strong>Create Workshop module</strong> to generate a Workshop module with your pipeline output.</p>
+<p><img alt="Create Workshop module" height="506" src="/docs/resources/foundry/building-pipelines/pb-create-workshop-module.png" style="aspect-ratio:1106 / 506" width="1106" node="[object Object]"></p>
+<p>With this last step, you have generated your pipeline output and a Workshop module.</p>
+<h2 id="user-content-faq" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#faq"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>FAQ</h2>
+<h3 id="user-content-can-i-transform-media-before-extracting-data-from-it" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#can-i-transform-media-before-extracting-data-from-it"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Can I transform media before extracting data from it?</h3>
+<p>Yes, you can transform media before extracting data from it, and this works with many extraction operations including extracting text and using large language models (LLMs). As an example, consider a media set containing landscape-oriented images that need to be rotated clockwise 90 degrees before performing OCR-based text extraction. You can add an expression to rotate images and subsequently add an expression to extract text with OCR.</p>
+<p><img alt="Pipeline diagram showing a media set being transformed and then processed by a tabular extraction expression." height="352" src="/docs/resources/foundry/building-pipelines/pb-media-set-tabular-media-pipeline.png" style="aspect-ratio:2878 / 352" width="2878" node="[object Object]"></p>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>To safely write the pipeline results to a dataset output, you must remove the media reference column from the output schema as transformed media references are not valid column outputs.</p><p>To do this, remove the column using the output dialog.</p></div>
+</article>
+</body>
+</html>

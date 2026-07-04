@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Exports</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-exports" level="1" node="[object Object]" data-pagefind-weight="7"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#exports"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Exports</h1>
+<p>Data Connection supports exporting <a href="/docs/foundry/data-integration/datasets/">datasets</a> and <a href="/docs/foundry/data-integration/streams/">streams</a> from Foundry to external systems. This can be useful for a variety of purposes:</p>
+<ul>
+<li>Data cleaned and transformed in Foundry using data pipelines can be synced to systems such as data warehouses or data lakes. This pattern is described in greater detail in <a href="https://blog.palantir.com/how-palantir-foundry-fuels-your-data-platform-c65c15c30e70">"How Palantir Foundry Fuels Your Data Platform" ↗</a>.</li>
+<li>Inference results from machine learning models created using <a href="/docs/foundry/model-integration/objectives/#batch-deployments">batch deployments</a> can be exported to other systems to enable operationalizing ML projects across the organization.</li>
+<li>Operational data captured from end users in the <a href="/docs/foundry/ontology/why-ontology/">Ontology</a> can be written to other systems for analysis outside of Foundry.</li>
+</ul>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>Data Connection exports are not yet supported for all source types. Review the individual source pages listed in the <a href="/docs/foundry/data-integration/source-type-overview/">source type overview</a> documentation to check availability. Each source page will list either <a href="#file-exports"><strong>file export</strong></a>, <a href="#streaming-exports"><strong>streaming export</strong></a>, <a href="#table-exports"><strong>table export</strong></a>, or <a href="/docs/foundry/data-connection/export-tasks/"><strong>legacy export task</strong></a> support if export capabilities are available. For example, the <a href="/docs/foundry/available-connectors/amazon-s3/">Amazon S3</a> source type supports <a href="#file-exports">file exports</a> while the <a href="/docs/foundry/available-connectors/bigquery/">BigQuery</a> source requires export tasks. <br>
+Some sources that do not yet support the file, streaming, or table export capability may support <a href="/docs/foundry/data-connection/export-tasks/">legacy export task configuration</a>. Export tasks are no longer recommended for source types that implement the updated export capability.</p></div>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><div class="ptcom-design__title__19o1cwu">Updated export behavior</div><p>Prior to June 2025, exports have been marked as <code>failed</code> if there are no new files or rows to be exported during a build. From June 2025 onward, exports with no new files or rows to be exported will be marked as <code>success</code>. This change may impact workflows that depend on the original failure behavior; users will need to adjust affected workflows accordingly.</p></div>
+<h2 id="user-content-export-types" level="2" node="[object Object]" data-pagefind-weight="6.3"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#export-types"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Export types</h2>
+<p>The behavior of exports will depend on the type of data the destination system can accept.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>Export type</th><th>Summary</th></tr></thead><tbody><tr><td><a href="#file-exports">File export</a></td><td>Used for exporting to systems without a schema. Raw files from a dataset are copied on a schedule and written to the target system.</td></tr><tr><td><a href="#streaming-exports">Streaming export</a></td><td>Used for exporting continuously to a system that supports event streaming. Records from a Foundry stream are pushed to the target system continously.</td></tr><tr><td><a href="#table-exports">Table export</a></td><td>Used for exporting to systems with a schema. Rows of a dataset are inserted on a schedule to the target system according to the selected <a href="#table-export-modes">export mode</a>.</td></tr></tbody></table></div>
+<h3 id="user-content-file-exports" level="3" node="[object Object]" data-pagefind-weight="5.6"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#file-exports"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>File exports</h3>
+<p>An example of a system supporting file exports is <a href="/docs/foundry/available-connectors/amazon-s3/">S3</a>.</p>
+<p>File exports write files from the selected Foundry dataset to the configured destination. By default, only files that were modified since the last successfully exported transaction on the upstream dataset will be written. This means that if a file was not updated in a given transaction, it will not be re-exported on the next scheduled or manual run of any downstream exports.</p>
+<p>If the entire dataset must be re-exported, set up a new export on the same source or ensure your upstream transformation overwrites all files that must be exported.</p>
+<p>By default, if a file already exists in the destination, export jobs will overwrite that file with the exported data. This behavior may vary by source type. To avoid accidentally overwriting data stored in the destination system, we recommend creating a dedicated sub-folder in which to land exported data from Foundry.</p>
+<h3 id="user-content-streaming-exports" level="3" node="[object Object]" data-pagefind-weight="5.6"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#streaming-exports"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Streaming exports</h3>
+<p>Exports to streaming destinations will stream records to the destination as long as the export job is running in Foundry. If the job is stopped and restarted, it will resume streaming records from where it left off.</p>
+<p>The following source types support streaming exports:</p>
+<ul>
+<li><a href="/docs/foundry/available-connectors/amazon-kinesis/">Amazon Kinesis</a></li>
+<li>Amazon SQS</li>
+<li><a href="/docs/foundry/available-connectors/pubsub/">Google Pub/Sub</a></li>
+<li><a href="/docs/foundry/available-connectors/kafka/">Kafka</a></li>
+<li><a href="/docs/foundry/available-connectors/postgresql/">PostgreSQL</a></li>
+<li>Solace</li>
+</ul>
+<h4 id="user-content-streaming-export-replay-behavior"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#streaming-export-replay-behavior"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Streaming export replay behavior</h4>
+<p>When configuring an export to a streaming destination, you must specify the desired behavior for when the stream is replayed in Foundry. Normally, streams are <a href="/docs/foundry/pipeline-builder/outputs-deliver-pipeline/#additional-options-for-streaming-pipelines">replayed</a> after making breaking changes to the processing logic. In this case, previously processed records must be re-processed using the new logic in one of the following ways:</p>
+<ul>
+<li>
+<p><strong>Export replayed records:</strong> Re-export all records when the stream is replayed. Note that any previously exported records will be exported again, and the external system must be configured to handle duplicates.</p>
+</li>
+<li>
+<p><strong>Do not export replayed records:</strong> Pause exports until the replayed offset matches the most recent offset in the export job. Because offsets are not guaranteed to match across replayed streams, this option often results in some number of dropped records that will never be exported.</p>
+</li>
+</ul>
+<h3 id="user-content-table-exports" level="3" node="[object Object]" data-pagefind-weight="5.6"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#table-exports"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Table exports</h3>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>As of June 2024, table exports are generally available but may not be available for all source types. When available, table exports are recommended over <a href="/docs/foundry/data-connection/export-tasks/">export tasks</a>. To check if a source type supports table exports, visit the new source page in Data Connection and look for the <code>Table exports</code> tag, or visit the documentation page for the relevant source type.</p></div>
+<p>Table exports allow exports to systems that contain tabular data with a known schema, where the external target schema matches the schema of a Foundry dataset you wish to export. Table exports will execute the system-specific <code>INSERT</code> statements or equivalent API calls to write rows into the target table according to the selected table export mode as described below.</p>
+<h4 id="user-content-table-export-modes"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#table-export-modes"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Table export modes</h4>
+<p>The selected <strong>export mode</strong> specifies how data will be exported during a table export. The following export modes are available for all table exports and are also explained on the export setup page in Data Connection.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>Table export mode</th><th>Description</th></tr></thead><tbody><tr><td>Efficiently mirror dataset to external table (<em>recommended</em>)</td><td>The external table will always match what you see in the Foundry dataset. <br><br> This is achieved by always incrementally exporting any unexported transactions from the current dataset view and truncating the external table when there is a <code>SNAPSHOT</code> transaction on the Foundry dataset being exported. <br><br>This mode does not support <code>UPDATE</code> and <code>DELETE</code> transactions in the dataset being exported.</td></tr><tr><td>Full dataset without truncation</td><td>Always export a snapshot of the entire view of the Foundry dataset, without truncating the external table first. <br><br>Note: This option will almost always result in duplicates in the external table. This option can be useful when external systems consume and remove rows after each run or if you want to re-export already exported rows.</td></tr><tr><td>Full dataset with truncation</td><td>This option will truncate (drop) the target table, and then export a snapshot of the full current dataset view. <br><br>This will result in the external table always mirroring the Foundry dataset but is less efficient than the incremental option to "efficiently mirror to external table".<br><br>This option may be useful if edits to the external table happened between exports and you wish to always overwrite them.</td></tr><tr><td>Export incrementally</td><td>Exports <em>only</em> unexported transactions from the current view without truncating the target table. <br><br>This mode does not support <code>UPDATE</code> and <code>DELETE</code> transactions in the dataset being exported. This option mirrors the dataset with <code>APPEND</code> transactions only to avoid exporting the same data again. This mode may produce duplicate records in the target table if the upstream dataset has a <code>SNAPSHOT</code> transaction.</td></tr><tr><td>Export incrementally with truncation</td><td>This option truncates (drops) the target table, then exports only transactions from the current view that have not previously been exported. <br><br>This mode is useful when treating the target table like a message queue (for example, when another task picks up rows from the table and writes them elsewhere). <br><br>Note: This mode does not support <code>UPDATE</code> and <code>DELETE</code> transactions in the upstream dataset.</td></tr><tr><td>Export incrementally and fail if not <code>APPEND</code></td><td>Exports only unexported transactions from the current view, failing if there is a <code>SNAPSHOT</code>, <code>UPDATE</code>, or <code>DELETE</code> transaction (after the first run). <br><br> This option mirrors the Foundry dataset as long as it only contains <code>APPEND</code> transactions. It protects against potentially re-exporting all data in case there is a snapshot in the Foundry dataset and guarantees there will never be duplicate data exported to the target table.</td></tr></tbody></table></div>
+<p>Export modes are not available for legacy export tasks.</p>
+<p><img alt="On the configuration page users see a form that allows them to input the names for the destination table, schema, and dataset" height="600" src="/docs/resources/foundry/data-connection/table-exports-full-screen.png" style="aspect-ratio:1506 / 915" width="987.5409836065573" node="[object Object]"></p>
+<h4 id="user-content-special-considerations-for-table-exports"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#special-considerations-for-table-exports"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Special considerations for table exports</h4>
+<ul>
+<li>The dataset you export from Foundry must have a 1:1 match with the external source, including exact column names (case-sensitive) and data types. For example, exporting <code>COLUMN_ABC</code> of type <code>LONG</code> to a destination where <code>COLUMN_ABC</code> is of type <code>STRING</code> will fail at runtime.</li>
+<li>When setting up a table export, ensure that <code>DATABASE</code>, <code>SCHEMA</code>, and <code>TABLE</code> fields are filled out if required by your source. Missing any of these fields will cause the export to fail at runtime. Similarly, including unnecessary fields can also result in failure. For highest reliability, use explore source and autofill to select the destination in your source.</li>
+<li>When using an <a href="/docs/foundry/data-connection/set-up-agent/">agent worker</a> with table exports, the agent must be running on a Linux host. Windows agents are not supported for running table exports.</li>
+<li>The underlying files for a dataset being exported to a tabular destination must be in Parquet format. CSV and other file types that support a schema will fail to export.</li>
+<li>The destination table must already exist in the source system; it will not be automatically created by Foundry.</li>
+<li>When using an export mode that does truncation, the credentials entered in the Foundry source configuration must have permissions to truncate the table in the external system.</li>
+<li><code>Array</code>, <code>Map</code>, and <code>Struct</code> types are not supported for exports. If the dataset you are exporting contains a column with type <code>Array</code>, <code>Map</code>, or <code>Struct</code>, the export will fail.</li>
+</ul>
+<h4 id="user-content-sql-dialects-in-table-exports"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#sql-dialects-in-table-exports"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>SQL dialects in table exports</h4>
+<p>Table exports are currently supported for custom JDBC source types. Though Foundry provides dedicated connectors for specific systems such as Oracle, the table exports source capability will not appear as an option unless the connection is established via the <a href="/docs/foundry/available-connectors/custom-jdbc-sources/#custom-jdbc-sources">custom JDBC connection</a>.</p>
+<p>When performing table exports to a custom JDBC source for which you've provided your own driver JAR file, you must confirm that Palantir's INSERT statement syntax for exporting data is compatible with the SQL dialect that your system will accept.</p>
+<p>Below, you can find examples of the INSERT statements used by Palantir for exports to <a href="/docs/foundry/available-connectors/custom-jdbc-sources/#custom-jdbc-sources">custom JDBC sources</a>. These statements cannot currently be customized. If your system does not accept the statements used when running exports, you can fall back on code-based connectivity options to write to your system.</p>
+<p>You must also ensure that the types used in your database are compatible with the supported types listed below.</p>
+<h5 id="user-content-supported-jdbc-types"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#supported-jdbc-types"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Supported JDBC types</h5>
+<p>Supported JDBC source types include:</p>
+<ul>
+<li><code>DECIMAL</code></li>
+<li><code>BIGINT</code></li>
+<li><code>BINARY</code></li>
+<li><code>BOOLEAN</code></li>
+<li><code>SMALLINT</code></li>
+<li><code>DATE</code></li>
+<li><code>DOUBLE</code></li>
+<li><code>FLOAT</code></li>
+<li><code>INTEGER</code></li>
+<li><code>VARCHAR</code></li>
+<li><code>TIMESTAMP</code></li>
+</ul>
+<h5 id="user-content-unsupported-jdbc-types"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#unsupported-jdbc-types"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Unsupported JDBC types</h5>
+<p>Unsupported JDBC source types include:</p>
+<ul>
+<li><code>ARRAY</code></li>
+<li><code>MAP</code></li>
+<li><code>STRUCT</code></li>
+<li>Other types not listed as supported above (such as less-common types like <code>GEOGRAPHY</code>)</li>
+</ul>
+<p>If your dataset contains columns of unsupported types (such as <code>ARRAY</code>, <code>MAP</code>, or <code>STRUCT</code>), the export will fail.</p>
+<h5 id="user-content-insert-statement-examples"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#insert-statement-examples"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>INSERT statement examples</h5>
+<p>The examples below provide more information about the syntax used by table exports. If your source system does not support INSERT statements in this format, the INSERT statements will fail at runtime.</p>
+<p>Assume that a <code>target_table</code> exists within our source system, with the same schema as the corresponding dataset in Foundry. Both the names and datatypes of the columns must match between the external source and Foundry. Below is a mock example of a dataset in Foundry:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>column1</th><th>column2</th><th>column3</th></tr></thead><tbody><tr><td>value1</td><td>value2</td><td>value3</td></tr><tr><td>value4</td><td>value5</td><td>value6</td></tr><tr><td>value7</td><td>value8</td><td>value9</td></tr></tbody></table></div>
+<p>The <code>INSERT</code> statement for a single row follows the general format below:</p>
+<pre><code>INSERT INTO target_table (column1, column2, column3) VALUES ('value1', 'value2', 'value3');
+</code></pre>
+<p>Depending on source type, an insert statement will be applied against one or multiple rows of data. For example, Snowflake supports <code>batch inserts</code> and thus permits multiple rows to be written at once.</p>
+<pre><code>INSERT INTO target_table (column1, column2, column3) VALUES ('value1', 'value2', 'value3'), ('value4', 'value5', 'value6'), ('value7', 'value8', 'value9');
+</code></pre>
+<p>By contrast, a source like Apache Hive has limited support for <code>batch inserts</code> and will undergo an export via three subsequent insert statements.</p>
+<pre><code>INSERT INTO target_table (column1, column2, column3) VALUES ('value1', 'value2', 'value3');
+INSERT INTO target_table (column1, column2, column3) VALUES ('value4', 'value5', 'value6');
+INSERT INTO target_table (column1, column2, column3) VALUES ('value7', 'value8', 'value9');
+</code></pre>
+<h5 id="user-content-truncate-table-statement-example"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#truncate-table-statement-example"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>TRUNCATE TABLE statement example</h5>
+<p>Export options like <code>Full dataset with truncation</code> will first truncate the target table at the external source, then run an insert statement. The actual code to accomplish this would look like the example below:</p>
+<pre><code>TRUNCATE TABLE table_name;
+INSERT INTO target_table (column1, column2, column3) VALUES ('value1', 'value2', 'value3');
+</code></pre>
+<p>If a more specific dialect is needed, we recommend one of Foundry's <a href="/docs/foundry/data-connection/core-concepts/#use-in-code">code-based connectivity options</a> such as <a href="/docs/foundry/data-connection/external-transforms/">external transforms</a>.</p>
+<h4 id="user-content-multi-threaded-table-exports"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#multi-threaded-table-exports"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Multi-threaded table exports</h4>
+<p>Some source types support multi-threaded table exports, which can improve export performance. When using multi-threaded exports, Foundry creates a temporary staging table in the destination system to maintain atomicity. Data is written to this staging table in parallel, then copied to the final destination table when the export completes. The staging table is automatically deleted after the export finishes.</p>
+<p>When using multi-threaded exports, credentials must have <code>CREATE</code>, <code>READ</code>, <code>UPDATE</code>, and <code>DELETE</code> permissions on tables in the destination system.</p>
+<h2 id="user-content-prepare-data-for-export" level="2" node="[object Object]" data-pagefind-weight="6.3"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#prepare-data-for-export"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Prepare data for export</h2>
+<p>In general, exports do not support any data transformations executed as part of the export job. This means that the dataset or stream you select to export should already be in your desired format, including filters, renamed or repartitioned files, and any other transformations of the data.</p>
+<p><a href="/docs/foundry/pipeline-builder/overview/">Pipeline Builder</a> and <a href="/docs/foundry/code-repositories/overview/">Code Repositories</a> are Foundry's tools for building data transformation pipelines; both applications should provide the complete tooling you need to prepare your data for export, including job scalability, monitoring, version-control, and the flexibility to write arbitrary logic as necessary.</p>
+<h3 id="user-content-controlling-output-file-structure" level="3" node="[object Object]" data-pagefind-weight="5.6"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#controlling-output-file-structure"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Controlling output file structure</h3>
+<p>Foundry datasets containing structured data store their underlying files under a <code>spark/</code> directory by default. If you need files to land in a specific directory structure when exported - for example, organized by date partition - you can use a <a href="/docs/foundry/transforms-python/overview/">Python transform</a> to write the dataset with the desired layout before exporting.</p>
+<p>The following Python transform uses the <a href="/docs/foundry/transforms-python/unstructured-files/">filesystem API</a> to copy files directly to a date-based path:</p>
+<pre><div class="ptcom-design__wrapper__12wpwnx" data-pagefind-weight="0.5"><span class="ptcom-design__clipboard__1l1gb20 ptcom-design__clipboard__12wpwnx"><span data-pagefind-ignore="true" class="ptcom-design__confirmation__1l1gb20">Copied!</span><svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1" width="16" data-view-component="true" aria-label="clipboard"><path fill-rule="evenodd" fill="currentColor" d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z"></path><path fill-rule="evenodd" fill="currentColor" d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z"></path></svg></span><div style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;overflow:auto;position:relative;margin:0;padding:0.75em"><code class="language-python" style="white-space: pre; text-align: left; word-spacing: normal; word-break: normal; overflow-wrap: normal; color: rgb(195, 206, 227); background: rgb(38, 50, 56); font-family: &quot;SF Mono&quot;, Menlo, Consolas, Monaco, Inconsolata, &quot;Fira Mono&quot;, &quot;Droid Sans Mono&quot;, &quot;Source Code Pro&quot;, monospace; font-size: 14px; line-height: 1.5em; tab-size: 4; hyphens: none;"><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">1</span><span class="token token" style="color: rgb(199, 146, 234); font-style: italic;">from</span><span> transforms</span><span class="token token" style="color: rgb(137, 221, 255);">.</span><span>api </span><span class="token token" style="color: rgb(199, 146, 234); font-style: italic;">import</span><span> transform</span><span class="token token" style="color: rgb(137, 221, 255);">,</span><span> Input</span><span class="token token" style="color: rgb(137, 221, 255);">,</span><span> Output
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">2</span><span></span><span class="token token" style="color: rgb(199, 146, 234); font-style: italic;">import</span><span> datetime
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">3</span><span></span><span class="token token" style="color: rgb(199, 146, 234); font-style: italic;">import</span><span> shutil
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">4</span>
+</span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">5</span><span></span><span class="token token decorator annotation" style="color: rgb(137, 221, 255);">@transform</span><span class="token token" style="color: rgb(137, 221, 255);">(</span><span>
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">6</span><span>    output_dataset</span><span class="token token" style="color: rgb(137, 221, 255);">=</span><span>Output</span><span class="token token" style="color: rgb(137, 221, 255);">(</span><span class="token token" style="color: rgb(195, 232, 141);">"/path/to/output/dataset"</span><span class="token token" style="color: rgb(137, 221, 255);">)</span><span class="token token" style="color: rgb(137, 221, 255);">,</span><span>
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">7</span><span>    input_dataset</span><span class="token token" style="color: rgb(137, 221, 255);">=</span><span>Input</span><span class="token token" style="color: rgb(137, 221, 255);">(</span><span class="token token" style="color: rgb(195, 232, 141);">"/path/to/input/dataset"</span><span class="token token" style="color: rgb(137, 221, 255);">)</span><span class="token token" style="color: rgb(137, 221, 255);">,</span><span>
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">8</span><span></span><span class="token token" style="color: rgb(137, 221, 255);">)</span><span>
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">9</span><span></span><span class="token token" style="color: rgb(199, 146, 234); font-style: italic;">def</span><span> </span><span class="token token" style="color: rgb(199, 146, 234);">compute</span><span class="token token" style="color: rgb(137, 221, 255);">(</span><span>input_dataset</span><span class="token token" style="color: rgb(137, 221, 255);">,</span><span> output_dataset</span><span class="token token" style="color: rgb(137, 221, 255);">)</span><span class="token token" style="color: rgb(137, 221, 255);">:</span><span>
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">10</span><span>    dt </span><span class="token token" style="color: rgb(137, 221, 255);">=</span><span> datetime</span><span class="token token" style="color: rgb(137, 221, 255);">.</span><span>date</span><span class="token token" style="color: rgb(137, 221, 255);">.</span><span>today</span><span class="token token" style="color: rgb(137, 221, 255);">(</span><span class="token token" style="color: rgb(137, 221, 255);">)</span><span class="token token" style="color: rgb(137, 221, 255);">.</span><span>strftime</span><span class="token token" style="color: rgb(137, 221, 255);">(</span><span class="token token" style="color: rgb(195, 232, 141);">"%Y%m%d"</span><span class="token token" style="color: rgb(137, 221, 255);">)</span><span>
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">11</span><span>    </span><span class="token token" style="color: rgb(199, 146, 234); font-style: italic;">for</span><span> file_status </span><span class="token token" style="color: rgb(199, 146, 234); font-style: italic;">in</span><span> input_dataset</span><span class="token token" style="color: rgb(137, 221, 255);">.</span><span>filesystem</span><span class="token token" style="color: rgb(137, 221, 255);">(</span><span class="token token" style="color: rgb(137, 221, 255);">)</span><span class="token token" style="color: rgb(137, 221, 255);">.</span><span>ls</span><span class="token token" style="color: rgb(137, 221, 255);">(</span><span class="token token" style="color: rgb(137, 221, 255);">)</span><span class="token token" style="color: rgb(137, 221, 255);">:</span><span>
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">12</span><span>        relative_path </span><span class="token token" style="color: rgb(137, 221, 255);">=</span><span> file_status</span><span class="token token" style="color: rgb(137, 221, 255);">.</span><span>path</span><span class="token token" style="color: rgb(137, 221, 255);">[</span><span class="token token" style="color: rgb(255, 203, 107);">len</span><span class="token token" style="color: rgb(137, 221, 255);">(</span><span class="token token" style="color: rgb(195, 232, 141);">"spark/"</span><span class="token token" style="color: rgb(137, 221, 255);">)</span><span class="token token" style="color: rgb(137, 221, 255);">:</span><span class="token token" style="color: rgb(137, 221, 255);">]</span><span> </span><span class="token token" style="color: rgb(199, 146, 234); font-style: italic;">if</span><span> file_status</span><span class="token token" style="color: rgb(137, 221, 255);">.</span><span>path</span><span class="token token" style="color: rgb(137, 221, 255);">.</span><span>startswith</span><span class="token token" style="color: rgb(137, 221, 255);">(</span><span class="token token" style="color: rgb(195, 232, 141);">"spark/"</span><span class="token token" style="color: rgb(137, 221, 255);">)</span><span> </span><span class="token token" style="color: rgb(199, 146, 234); font-style: italic;">else</span><span> file_status</span><span class="token token" style="color: rgb(137, 221, 255);">.</span><span>path
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">13</span><span>        </span><span class="token token" style="color: rgb(199, 146, 234); font-style: italic;">with</span><span> input_dataset</span><span class="token token" style="color: rgb(137, 221, 255);">.</span><span>filesystem</span><span class="token token" style="color: rgb(137, 221, 255);">(</span><span class="token token" style="color: rgb(137, 221, 255);">)</span><span class="token token" style="color: rgb(137, 221, 255);">.</span><span class="token token" style="color: rgb(255, 203, 107);">open</span><span class="token token" style="color: rgb(137, 221, 255);">(</span><span>file_status</span><span class="token token" style="color: rgb(137, 221, 255);">.</span><span>path</span><span class="token token" style="color: rgb(137, 221, 255);">,</span><span> </span><span class="token token" style="color: rgb(195, 232, 141);">"rb"</span><span class="token token" style="color: rgb(137, 221, 255);">)</span><span> </span><span class="token token" style="color: rgb(199, 146, 234); font-style: italic;">as</span><span> in_f</span><span class="token token" style="color: rgb(137, 221, 255);">:</span><span>
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">14</span><span>            </span><span class="token token" style="color: rgb(199, 146, 234); font-style: italic;">with</span><span> output_dataset</span><span class="token token" style="color: rgb(137, 221, 255);">.</span><span>filesystem</span><span class="token token" style="color: rgb(137, 221, 255);">(</span><span class="token token" style="color: rgb(137, 221, 255);">)</span><span class="token token" style="color: rgb(137, 221, 255);">.</span><span class="token token" style="color: rgb(255, 203, 107);">open</span><span class="token token" style="color: rgb(137, 221, 255);">(</span><span class="token token string-interpolation" style="color: rgb(195, 232, 141);">f"data_dt=</span><span class="token token string-interpolation interpolation" style="color: rgb(137, 221, 255);">{</span><span class="token token string-interpolation interpolation">dt</span><span class="token token string-interpolation interpolation" style="color: rgb(137, 221, 255);">}</span><span class="token token string-interpolation" style="color: rgb(195, 232, 141);">/</span><span class="token token string-interpolation interpolation" style="color: rgb(137, 221, 255);">{</span><span class="token token string-interpolation interpolation">relative_path</span><span class="token token string-interpolation interpolation" style="color: rgb(137, 221, 255);">}</span><span class="token token string-interpolation" style="color: rgb(195, 232, 141);">"</span><span class="token token" style="color: rgb(137, 221, 255);">,</span><span> </span><span class="token token" style="color: rgb(195, 232, 141);">"wb"</span><span class="token token" style="color: rgb(137, 221, 255);">)</span><span> </span><span class="token token" style="color: rgb(199, 146, 234); font-style: italic;">as</span><span> out_f</span><span class="token token" style="color: rgb(137, 221, 255);">:</span><span>
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">15</span><span>                shutil</span><span class="token token" style="color: rgb(137, 221, 255);">.</span><span>copyfileobj</span><span class="token token" style="color: rgb(137, 221, 255);">(</span><span>in_f</span><span class="token token" style="color: rgb(137, 221, 255);">,</span><span> out_f</span><span class="token token" style="color: rgb(137, 221, 255);">)</span></span></code></div></div></pre>
+<p>With this transform, the exported dataset will contain files at paths such as <code>data_dt=20240101/part-00000-xxx.parquet</code> instead of <code>spark/part-00000-xxx.parquet</code>. Configure the file export to use this transformed dataset as the dataset to export. After the first build, select <strong>Apply schema</strong> on the dataset to make it viewable as tabular data in Foundry.</p>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>It is possible to allow Base64 decoding of stream records when exporting to Kafka. For more information on Kafka exports, review the full <a href="/docs/foundry/available-connectors/kafka/#export-data-to-kafka">Kafka connector documentation</a>.</p></div>
+<h2 id="user-content-set-up-an-export" level="2" node="[object Object]" data-pagefind-weight="6.3"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#set-up-an-export"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Set up an export</h2>
+<h3 id="user-content-enable-exports-for-source" level="3" node="[object Object]" data-pagefind-weight="5.6"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#enable-exports-for-source"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Enable exports for source</h3>
+<p>To export data, you must enable exports in the <strong>Connection settings</strong> section of the source to which you are exporting. Source types that support exports will show an <strong>Export configuration</strong> tab to the left of the screen. A Foundry user with the <code>Information Security Officer</code> role should navigate to this tab and toggle on the option to <strong>Enable exports to this source</strong>.</p>
+<p>The <code>Information Security Officer</code> is a default role in Foundry; users can be granted the <code>Information Security Officer</code> role in <a href="/docs/foundry/administration/enrollments-and-organizations-permissions/">Control Panel</a> under <strong>Enrollment permissions</strong>.</p>
+<p>After enabling exports, you must provide the set of <a href="/docs/foundry/security/markings/">markings</a> that may be exported to this source. If markings and organizations are not added in the export configuration, data with those markings or organizations will fail to export to this source. To add an exportable marking, a user must be both an <code>Information Security Officer</code> and have unmarking permission on the markings or organizations they wish to allow to be exported to this source.</p>
+<p>As an example, you may have a dataset with a <code>Sensitive</code> marking in the <code>Palantir</code> organization. To export this dataset, you must add both the <code>Sensitive</code> marking and the <code>Palantir</code> organization to the set of <strong>Exportable markings</strong> for this source.</p>
+<p>Exportable markings also control which resource metadata can appear in <a href="/docs/foundry/monitoring-views/external-systems/#configure-exportable-markings-for-resource-name-visibility">Slack notifications from monitoring views</a>.</p>
+<p><img alt="enable exports for source" height="600" src="/docs/resources/foundry/data-connection/exports-enable-and-configure-exportable-markings.png" style="aspect-ratio:1391 / 745" width="1120.268456375839" node="[object Object]"></p>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>The credentials entered in the Data Connection source configuration must have write access on the table in the external system. For example, <a href="/docs/foundry/available-connectors/amazon-s3/">S3</a> requires the <code>"s3:PutObject"</code> permission. Other <a href="#file-exports">file exports</a> may require specific permissions to create directories if the target path does not already exist. <a href="#table-exports">Table exports</a> may require additional permissions <a href="#special-considerations-for-table-exports">when using an export mode that does truncation</a>.</p><p>Review the individual source pages listed in the <a href="/docs/foundry/data-integration/source-type-overview/">source type overview</a> documentation for source-specific considerations.</p></div>
+<h3 id="user-content-create-a-new-export" level="3" node="[object Object]" data-pagefind-weight="5.6"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#create-a-new-export"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Create a new export</h3>
+<p>To create an export, first navigate to the <strong>Overview</strong> page of the source to which you want to export.</p>
+<p>If this is the first export you are setting up for the given source, you will see an empty table and a button to create an export.</p>
+<p><img alt="An empty table on a source export page with a blue Create Export button." height="600" src="/docs/resources/foundry/data-connection/exports-overview-no-exports-created.png" style="aspect-ratio:1642 / 650" width="1515.6923076923078" node="[object Object]"></p>
+<p>Select <strong>Create export</strong>, then select the dataset or stream to export and any source-specific export configuration options. These options will vary by source connector and are explained on the corresponding <a href="/docs/foundry/data-integration/source-type-overview/">source type</a> pages in our documentation. If multiple branches exist on the exported dataset, only data on the master branch will be exported.</p>
+<p>The example below shows the export configuration interface for the <a href="/docs/foundry/available-connectors/amazon-s3/">S3</a> connector:</p>
+<p><img alt="The S3 source export configuration page. Available configurations include the dataset and destination for export, the export name, and source-specific settings." height="600" src="/docs/resources/foundry/data-connection/exports-new-s3.png" style="aspect-ratio:2880 / 1594" width="1084.065244667503" node="[object Object]"></p>
+<p>After saving the export, you will land on the export management page where you can do the following:</p>
+<ul>
+<li>Manually run the export.</li>
+<li>Set a schedule for the export.</li>
+<li>View export history.</li>
+<li>Modify configuration options.</li>
+</ul>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>Streaming exports use a <strong>start/stop</strong> button instead of a <strong>run</strong> button. If a schedule is configured on a streaming export, it will behave similarly to schedules on other streams; if the stream is stopped when the schedule triggers, it will be automatically restarted. If the stream is not stopped when the schedule triggers, it will continue to run.</p></div>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>Some source export options may not be editable after initial setup. If immutable options must be changed, you must delete and re-create the export.</p></div>
+<h2 id="user-content-scheduling-exports" level="2" node="[object Object]" data-pagefind-weight="6.3"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#scheduling-exports"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Scheduling exports</h2>
+<p>Exports should be scheduled to run regularly, exporting recent data to the external destination. Streaming exports do not need to be scheduled since they should simply be started or stopped.</p>
+<p>To schedule an export, navigate to the <strong>Overview</strong> page for the export. Then, select <strong>Add schedule</strong> to open the export in <a href="/docs/foundry/data-lineage/overview/">Data Lineage</a>. From there, select <strong>Create new schedule</strong> to the right of your screen and configure as you would for any other job. Learn more about <a href="/docs/foundry/data-integration/schedules/">available scheduling options</a>.</p>
+<p>View any schedules that trigger a specific export on the <strong>Overview</strong> page for that export, as shown below:</p>
+<p><img alt="A preview of a schedule set to build an export job at 12:30 AM in Europe/London time." height="500" src="/docs/resources/foundry/data-connection/exports-existing-schedule.png" style="aspect-ratio:1296 / 500" width="1296" node="[object Object]"></p>
+<h2 id="user-content-export-history" level="2" node="[object Object]" data-pagefind-weight="6.3"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#export-history"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Export history</h2>
+<p>Similar to <a href="/docs/foundry/data-connection/set-up-sync/">syncs</a>, exports run as jobs using the Foundry <a href="/docs/foundry/data-integration/builds/">build system</a>. The <strong>History</strong> view of an export shows the history of the jobs associated with it. Each job may be opened and viewed in the <strong>Builds</strong> application by selecting <strong>View build report</strong> to the upper right of the <strong>Job details</strong> section.</p>
+<p>For streaming exports, the export history will also display if the streaming export job is currently running or stopped.</p>
+<h2 id="user-content-exports-vs-export-tasks" level="2" node="[object Object]" data-pagefind-weight="6.3"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#exports-vs-export-tasks"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Exports vs. export tasks</h2>
+<p>Table exports are intended to fully replace the now sunsetted <a href="/docs/foundry/data-connection/export-tasks/">export tasks</a> that will eventually be deprecated according to the published <a href="/docs/foundry/platform-overview/development-life-cycle/#sunset">product lifecycle</a>. While much of the functionality offered by export tasks is available in the new export options, there are some differences in the features and configurations.</p>
+<h3 id="user-content-migrating-from-export-tasks-to-table-exports" level="3" node="[object Object]" data-pagefind-weight="5.6"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#migrating-from-export-tasks-to-table-exports"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Migrating from export tasks to table exports</h3>
+<p>Migrations from export tasks to new export options must be performed manually. Configure your export using the options documented below; once the new export process is working as expected, manually delete the export task that was previously used.</p>
+<p>If a feature available in export tasks has no equivalent option in new exports, the recommended migration is to switch to using <a href="/docs/foundry/data-connection/external-transforms/">external transforms</a>. External transforms provide a flexible alternative for executing custom logic that interacts with an external system, and are intended to be used when the UI configuration options for source capabilities do not cover the required functionality.</p>
+<h3 id="user-content-feature-comparison-between-exports-and-export-tasks" level="3" node="[object Object]" data-pagefind-weight="5.6"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#feature-comparison-between-exports-and-export-tasks"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Feature comparison between exports and export tasks</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>Export task option</th><th>Supported in new exports?</th><th>Details</th></tr></thead><tbody><tr><td><code>parallelize: &lt;boolean&gt;</code></td><td>Depends on the source type</td><td>This may be relevant on a per-source basis, and support for it will be documented in source-specific export settings if available</td></tr><tr><td><code>preSql: &lt;sql statements&gt;</code></td><td>Not supported</td><td>If this is needed for your use case, use <a href="/docs/foundry/data-connection/external-transforms/">external transforms</a>.</td></tr><tr><td><code>stagingSql: &lt;sql statements&gt;</code></td><td>Not supported</td><td>If this is needed for your use case, use <a href="/docs/foundry/data-connection/external-transforms/">external transforms</a>.</td></tr><tr><td><code>afterSql: &lt;sql statements&gt;</code></td><td>Not supported</td><td>If this is needed for your use case, use <a href="/docs/foundry/data-connection/external-transforms/">external transforms</a>.</td></tr><tr><td><code>manualTransactionManagement: &lt;boolean&gt;</code></td><td>Not supported</td><td>If this is needed for your use case, use <a href="/docs/foundry/data-connection/external-transforms/">external transforms</a>.</td></tr><tr><td><code>transactionIsolation: READ_COMMITTED</code></td><td>Not configurable</td><td>This may be available as a source configuration option, and it will be applied when performing exports. Check source-specific documentation to see if this configuration option is available.</td></tr><tr><td><code>datasetRid: &lt;dataset rid&gt;</code></td><td>Supported</td><td>The dataset or stream you wish to export</td></tr><tr><td><code>branchId: &lt;branch-id&gt;</code></td><td>Not configurable</td><td>Data is always exported from the <code>master</code> branch.</td></tr><tr><td><code>table:</code><br>&nbsp;&nbsp;&nbsp;&nbsp;<code>database: mydb # Optional</code><br>&nbsp;&nbsp;&nbsp;&nbsp;<code>schema: public # Optional</code><br>&nbsp;&nbsp;&nbsp;&nbsp;<code>table: mytable</code></td><td>Supported</td><td>These options are specific to <a href="#table-exports">table exports</a> on the <a href="/docs/foundry/available-connectors/custom-jdbc-sources/#export-data-to-jdbc-sources">JDBC source</a>.</td></tr><tr><td><code>writeDirectly: &lt;boolean&gt;</code></td><td>Not configurable</td><td>New exports always use the option equivalent to <code>writeDirectly: true</code>.</td></tr><tr><td><code>copyMode: &lt;insert|directCopy&gt;</code></td><td>Not configurable</td><td>New exports always use the option equivalent to <code>copyMode: insert</code>.</td></tr><tr><td><code>batchSize: &lt;integer&gt;</code></td><td>Depends on the source type</td><td>Batch size is supported for exports on the <a href="/docs/foundry/available-connectors/custom-jdbc-sources/#export-configuration-options-for-jdbc-sources">JDBC source</a> but may not be supported for other source types.</td></tr><tr><td><code>writeMode: &lt;ErrorIfExists|Append|Overwrite|AppendIfPossible&gt;</code><br><br><code>incrementalType: &lt;snapshot|incremental&gt;</code></td><td>Supported</td><td>Together, these options are similar to the <a href="#table-export-modes">table export modes</a> documented above. Not all combinations are valid for export tasks, and the combinations have been <a href="https://en.wikipedia.org/wiki/Database_normalization">normalized ↗</a> into the six modes offered for table exports.</td></tr><tr><td><code>exporterThreads: &lt;integer&gt;</code></td><td>Not supported</td><td>If you need granular control over exporter threads, use <a href="/docs/foundry/data-connection/external-transforms/">external transforms</a>.</td></tr><tr><td><code>quoteIdentifiers: &lt;boolean&gt;</code></td><td>Not supported</td><td>This option is only relevant when creating tables in the target system, which is not supported in new exports. The table must exist before an export can be configured.</td></tr><tr><td><code>exportTransactionIsolation: READ_UNCOMMITTED</code></td><td>Not configurable</td><td>As with <code>transactionIsolation: READ_COMMITTED</code>, the transaction isolation will be taken from the source configuration if available and configured.</td></tr></tbody></table></div>
+</article>
+</body>
+</html>

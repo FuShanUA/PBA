@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Architecture examples</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-architecture-examples" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#architecture-examples"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>架构示例</h1>
+<h2 id="user-content-foundry-worker-with-direct-connection-policies" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#foundry-worker-with-direct-connection-policies"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>采用直连策略的 Foundry worker</h2>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>此类连接也可称为“直连”。</p></div>
+<p>对于访问接受 Foundry 入站流量的外部系统（例如 REST API 和云/SaaS 系统），采用直连策略的 Foundry worker 是推荐的默认方式。</p>
+<p>在此场景中，数据连接运行于一个被称为 <a href="/docs/foundry/data-connection/core-concepts/#foundry-worker">Foundry worker</a> 的隔离计算容器内，由该容器处理经过身份验证的加密网络请求。
+外部系统必须接受来自 Foundry 的入站流量。来自 Foundry 的网络出站流量通过平台内的<a href="/docs/foundry/administration/configure-egress/#direct-connection-egress-policies">直连出站策略</a>进行管理和控制。</p>
+<p>外部系统凭据采用 AES-256-GCM 服务端加密进行存储，且仅能由授权用户触发的容器进行解密。</p>
+<p>要创建直连，请参阅有关<a href="/docs/foundry/data-connection/set-up-source/">设置数据源</a>的说明。</p>
+<p><img alt="Architecture diagram of direct connection." height="394" src="/docs/resources/foundry/data-connection/direct-connection-architecture.png" style="aspect-ratio:1118 / 394" width="1118" node="[object Object]"></p>
+<h2 id="user-content-foundry-worker-with-agent-proxy-policy" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#foundry-worker-with-agent-proxy-policy"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>采用智能体代理策略的 Foundry worker</h2>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>此类连接也可称为“智能体代理”或“智能体精简模式”连接。</p></div>
+<p>对于访问托管在私有网络上的外部系统，采用智能体代理策略的 Foundry worker 是推荐架构。这需要使用<a href="/docs/foundry/data-connection/core-concepts/#agents">数据连接智能体</a>。</p>
+<p>在此场景中，智能体充当简单的网络隧道，本身不执行任何数据处理。</p>
+<p>智能体向 Foundry 发起网络请求以建立 websocket 连接。<a href="/docs/foundry/data-connection/agent-proxy/#security-controls-specific-to-agent-proxy">进一步了解智能体上可用的网络控制功能。</a></p>
+<p>所有数据连接和计算能力均由 <a href="/docs/foundry/data-connection/core-concepts/#foundry-worker">Foundry worker</a> 执行，这是一个具有可扩展计算资源的隔离容器，负责处理数据并通过提供的 websocket 与外部系统通信。</p>
+<p>将智能体用作代理的功能，可通过平台内的<a href="/docs/foundry/administration/configure-egress/#agent-proxy-egress-policies">智能体代理出站策略</a>进行细粒度的管理和控制。</p>
+<p>可使用多个智能体在多个外部系统之间实现工作负载均衡。</p>
+<p>与<a href="#foundry-worker-with-direct-connection-policies">直连</a>类似，外部系统凭据采用 AES-256-GCM 服务端加密进行存储，且仅能由授权用户触发的容器进行解密。</p>
+<p>要创建智能体代理连接，您需要：</p>
+<ul>
+<li><a href="/docs/foundry/data-connection/set-up-agent/">设置智能体。</a></li>
+<li>创建一个或多个<a href="/docs/foundry/administration/configure-egress/#agent-proxy-egress-policies">智能体代理策略</a>。</li>
+<li>使用上述策略<a href="/docs/foundry/data-connection/set-up-direct-connection/">设置 Foundry worker 数据源</a>。</li>
+</ul>
+<p><img alt="Architecture diagram of agent proxy connection." height="394" src="/docs/resources/foundry/data-connection/agent-proxy-architecture.png" style="aspect-ratio:1118 / 394" width="1118" node="[object Object]"></p>
+<h2 id="user-content-legacy-architecture-agent-worker" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#legacy-architecture-agent-worker"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>旧版架构：智能体 worker</h2>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><div class="ptcom-design__title__19o1cwu">旧版</div><p>智能体 worker 处于开发生命周期的<a href="/docs/foundry/platform-overview/development-life-cycle/">旧版</a>阶段。对于本地部署和私有托管系统，我们推荐使用<a href="#foundry-worker-with-agent-proxy-policy">采用智能体代理的 Foundry worker</a>。有关对比，请参阅<a href="/docs/foundry/data-connection/foundry-worker-vs-agent-worker/">Foundry worker 与智能体 worker 对比</a>。</p></div>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>此类连接也可称为“智能体胖模式”。</p></div>
+<p>智能体 worker 连接是历史上用于从 Foundry 访问托管在私有网络上的外部系统的架构。这需要使用<a href="/docs/foundry/data-connection/core-concepts/#agents">数据连接智能体</a>。<a href="/docs/foundry/data-connection/agent-worker/#known-limitations">进一步了解智能体 worker 的已知限制。</a></p>
+<p>要将现有的智能体 worker 数据源迁移至 Foundry worker，请遵循<a href="/docs/foundry/data-connection/foundry-worker-vs-agent-worker/#switch-source-from-agent-worker-to-foundry-worker">迁移指南</a>。</p>
+<p>在此场景中，智能体通过由 HTTPS 保护的单向出站连接不断轮询 Foundry，以获取待执行的新任务。接收到任务后，任务由智能体本身（也称为<a href="/docs/foundry/data-connection/core-concepts/#agent-worker">智能体 worker</a>）执行，结果通过同一单向连接发回 Foundry。智能体与内部源系统通信所需的所有网络配置均<a href="/docs/foundry/data-connection/set-up-agent/#configure-agent-network-access">在智能体宿主机上进行配置</a>。</p>
+<p>外部系统凭据采用 AES-128-GCM 加密存储在平台上，密钥则保存在智能体上。在执行功能期间，智能体从 Foundry 检索加密凭据，在本地进行解密，并将其用于查询。执行完成后，解密后的凭据将自动从内存中删除。</p>
+<p>要创建智能体 worker 连接，您需要：</p>
+<ul>
+<li><a href="/docs/foundry/data-connection/set-up-agent/">设置智能体。</a></li>
+<li>将其配置为<a href="/docs/foundry/data-connection/agent-worker/">智能体 worker</a>。</li>
+<li><a href="/docs/foundry/data-connection/set-up-source/">设置智能体 worker 数据源</a>并为其分配该智能体。</li>
+</ul>
+
+<p><img alt="智能体工作节点架构图。" height="394" src="/docs/resources/foundry/data-connection/agent-worker-architecture.png" style="aspect-ratio:1118 / 394" width="1118" node="[object Object]"></p>
+<h2 id="user-content-summary" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#summary"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>摘要</h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th style="text-align:center">连接类型</th><th style="text-align:center">能力执行</th><th style="text-align:center">网络</th><th style="text-align:center">系统凭证</th></tr></thead><tbody><tr><td style="text-align:center"><a href="#foundry-worker-with-direct-connection-policies">直连</a></td><td style="text-align:center">在 Foundry 中</td><td style="text-align:center">从 Foundry 直连至源系统。</td><td style="text-align:center">在平台中加密存储，加密密钥保留在平台中。</td></tr><tr><td style="text-align:center"><a href="#foundry-worker-with-agent-proxy-policy">智能体代理</a></td><td style="text-align:center">在 Foundry 中</td><td style="text-align:center">从智能体到 Foundry 的出站连接，用于建立 websocket 并代理流量。</td><td style="text-align:center">在平台中加密存储，加密密钥保留在平台中。</td></tr><tr><td style="text-align:center"><a href="#legacy-architecture-agent-worker">智能体工作节点（旧版）</a></td><td style="text-align:center">在智能体主机上</td><td style="text-align:center">从智能体到 Foundry 的出站连接以轮询任务。从智能体到源系统的入站连接。</td><td style="text-align:center">在平台中加密存储，加密密钥保留在智能体上。</td></tr></tbody></table></div>
+</article>
+</body>
+</html>

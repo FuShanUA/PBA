@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Debug a failing pipeline</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-debug-a-failing-pipeline" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#debug-a-failing-pipeline"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Debug a failing pipeline</h1>
+<p>The ability to debug and resolve pipeline problems quickly is a core part of pipeline maintenance work. It ensures production pipelines feeding important organizational workflows remain reliable and meaningful.</p>
+<p>This page provides a framework which you can use as the basis of a standard operating procedure (SOP) when receiving a notification for a health check failure during an on-call rotation as a pipeline maintainer.</p>
+<h2 id="user-content-prerequisite-knowledge" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#prerequisite-knowledge"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Prerequisite knowledge</h2>
+<p>This page assumes you are familiar with a variety of Foundry tools and workflows. Links will be provided in the relevant sections:</p>
+<ul>
+<li><a href="/docs/foundry/code-repositories/overview/">Code Repositories</a></li>
+<li><a href="/docs/foundry/data-integration/application-reference/#builds">Builds application</a></li>
+<li><a href="/docs/foundry/building-pipelines/scheduling-overview/">Scheduling</a> and <a href="/docs/foundry/building-pipelines/view-modify-schedules/#view-metrics">schedule metrics</a></li>
+<li><a href="/docs/foundry/data-lineage/overview/">Data Lineage</a></li>
+</ul>
+<p>It also assumes that your pipeline maintainer team records an incident log or other documentation for recurring issues in your pipeline. This is a best practice and should be implemented if there is not currently such a document.</p>
+<h2 id="user-content-debugging-framework-overview" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#debugging-framework-overview"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Debugging framework overview</h2>
+<p>Always begin by asking the following three questions, in order:</p>
+<ol>
+<li><strong>Mitigation:</strong> Can I mitigate this problem as soon as possible? Some examples would be to:
+<ul>
+<li>Rebuild the schedule. We recommend rebuilding a schedule rather than a single dataset or failing job, as this will appear in your schedule history. Schedule history allows you to track the history of your pipeline, rather than the history of an individual dataset.</li>
+<li>If there’s too much queuing, seeking out and canceling overlapping or intensive schedules.</li>
+<li>If a manual upload is broken, revert the transaction to a known stable version.</li>
+</ul>
+</li>
+<li><strong>Classification:</strong> What is the problem category?
+<ul>
+<li>The reason we classify a problem is to assist in root cause identification and to determine if the resolution will require involvement from another team.</li>
+<li>More details on how to think about problem categories and identify them <a href="#problem-category-classification">below</a>.</li>
+</ul>
+</li>
+<li><strong>Broader impact:</strong> Could this problem be affecting other parts of the platform?</li>
+</ol>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__success__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><div class="ptcom-design__title__19o1cwu">Tip</div><p>Read your pipeline’s documentation! Perhaps this problem has previously been solved. Or there may be warnings of what not to do during mitigation. For example, some builds can be very expensive and may impact the performance of your environment during peak usage times. These kinds of details should be well-documented for your whole team.</p></div>
+<h2 id="user-content-problem-category-classification" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#problem-category-classification"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Problem category classification</h2>
+<p>After attempting to mitigate the problem, as a pipeline maintainer you will need to go deeper to understand and remedy the root cause. The reason classifying a problem is helpful during debugging, is that it helps us identify the root cause and most importantly, helps you quickly identify whether you can fix the issue or whether you’ll need to contact another team.</p>
+<p>There are three categories of problems:</p>
+<ul>
+<li><strong>Upstream issues:</strong> related to infrastructure or artifacts managed by others
+<ul>
+<li><strong>Outside of Foundry:</strong> Issues with upstream data sources</li>
+<li><strong>Within Foundry:</strong> Issues caused by datasets/projects upstream of the pipeline in question</li>
+</ul>
+</li>
+<li><strong>Platform Issues:</strong> issues caused by the Foundry Platform services not working as expected.</li>
+<li><strong>Change:</strong> anything that’s changed <em>within the scope of the pipeline that you are responsible for monitoring.</em> This is the most common category of problem and is often caused by user changes. Some examples include:
+<ul>
+<li>Code changes</li>
+<li>Schedule changes</li>
+<li>Increased data size in pipeline</li>
+</ul>
+</li>
+</ul>
+<h3 id="user-content-steps-to-issue-resolution-by-category-of-problem" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#steps-to-issue-resolution-by-category-of-problem"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Steps to issue resolution by category of problem:</h3>
+<p><img alt="debugging-framework" height="600" src="/docs/resources/foundry/optimizing-pipelines/maintenance-debugging-framework.png" style="aspect-ratio:1635 / 1000" width="981" node="[object Object]"></p>
+<p>In detail, the steps highlighted above are:</p>
+<ul>
+<li>
+<p><strong>Identification:</strong> When going through the steps above, it is important to identify very precisely what is broken. Answer questions like:</p>
+<ul>
+<li>When did the issue begin?</li>
+<li>At what step in the pipeline did something fail?</li>
+<li>What health checks are failing?</li>
+<li>Did something in the pipeline change to cause this broken state?</li>
+</ul>
+<p>This allows you to communicate effectively with other teams if needed for upstream issues and platform issues and reduces resolution time. It also improves debugging skills in the platform.</p>
+</li>
+<li>
+<p><strong>Action:</strong></p>
+<ul>
+<li><strong>Upstream issue:</strong> Once you’ve confirmed the issue is indeed caused by delayed, missing or incorrect data from a project or datasource upstream from your pipeline, contact the team responsible for the upstream data.
+<ul>
+<li><strong>Tip:</strong> It’s helpful before you begin monitoring that you document the contact details of the upstream team. This makes it easy for the on-call person to contact them.</li>
+</ul>
+</li>
+<li><strong>Platform issue:</strong> if you’ve identified unexpected behavior from Foundry and ruled out any user-change in your pipeline, contact your Palantir representative. Provide them with as much specific information about the problem as you can, including the details of any changes that were observed. See the section <a href="#identifying-platform-issues">below here</a> for some tips on how to spot these.</li>
+<li><strong>Change:</strong> After identifying something has changed within the monitored pipeline, you are usually able to take an action to fix it. In some cases, it may be necessary to reach out to whoever has made the change for more information. See the next section for help identifying if something has changed in your pipeline.</li>
+</ul>
+</li>
+<li>
+<p><strong>[Optional] Downstream user communications:</strong> A step not mentioned in the above diagram is that when an issue has been classified and further root caused, it may be appropriate to notify downstream consumers of the pipeline. This depends on the problem impact, scope, duration and the use case of the pipeline.</p>
+</li>
+<li>
+<p><strong>Workarounds:</strong> if a fix from another team or from a user is going to take some time, it may be useful to implement medium-term workarounds to ensure the healthy part of your pipeline continues to run for downstream consumers. The exact temporary fix depends on the issue and needs of your users. Examples include:</p>
+<ul>
+<li>Isolate the problem by removing the broken dataset or pipeline branch from your schedule.</li>
+<li>Pinning another python library version if this is the root cause of issues. This can be done in the <a href="/docs/foundry/transforms-python/project-structure/#metayaml">meta.yml</a> by specifying an explicit version number next to the library name.</li>
+</ul>
+</li>
+</ul>
+<h3 id="user-content-identifying-change-in-your-pipeline" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#identifying-change-in-your-pipeline"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Identifying change in your pipeline</h3>
+<p>The most common issues that arises for a pipeline maintainer result as an unintended consequence of something changing within a pipeline you monitor. It is also the category where, as a pipeline maintainer, you have the most control and are able to fix the problem directly without needing to rely on another team.</p>
+<p>In more detail, the steps to take are:</p>
+<ol>
+<li>
+<p>Track down precisely where the issue is coming from in your pipeline as best you can. For example, try and identify the schedule, the dataset, the transaction, the code change, and so on.</p>
+</li>
+<li>
+<p>Compare a healthy previous run to the current broken state to identify what changed.
+It can be useful to have a mental checklist of questions. Below is an example set of questions, along with some example tools that could help you find an answer:</p>
+<ul>
+<li>Slower than usual? Is this caused by queuing or is the build actually taking longer to compute?</li>
+<li>Changes to file/data size?</li>
+<li>Code changes? Schema changes?</li>
+<li>Schedule changes?</li>
+<li>Ongoing platform incidents?</li>
+</ul>
+</li>
+</ol>
+<h3 id="user-content-tools" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#tools"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Tools</h3>
+<p>If you are not familiar with the tooling in Foundry used to answer some of the above questions, the list below provides examples of the most common patterns to use during your investigation. This list does not cover all possibilities but rather serves as a starting guide:</p>
+<p><strong>Is my job/build slower than usual?</strong></p>
+<ul>
+<li>
+<p><a href="/docs/foundry/data-integration/application-reference/#builds">Builds application</a> for comparing jobs for a given dataset. The progress details toggle in the top-right of a Build overview will allow you to see the progress of your build by queuing time vs compute time.</p>
+<ul>
+<li>If a failed job was built as a part of a schedule, a schedule card will be shown in the bottom left of your Build details page. You can open a previous run of a schedule by clicking on a dot representing a previous build. <br><br>
+<img alt="builds-application-schedule-card" height="600" src="/docs/resources/foundry/optimizing-pipelines/builds-schedule-card.png" style="aspect-ratio:1174 / 753" width="935.4581673306773" node="[object Object]"> <br><br></li>
+</ul>
+</li>
+<li>
+<p><a href="/docs/foundry/building-pipelines/view-modify-schedules/#view-metrics">Schedule metrics</a> which allows you to see historical runs of a schedule as well as metrics and graphs to compare runs</p>
+</li>
+</ul>
+<p><strong>Are there any changes to the size of my dataset? Is my transform running with more data?</strong></p>
+<ul>
+<li>
+<p><a href="/docs/foundry/dataset-preview/overview/">Dataset Preview</a>: the history and compare tab of any Foundry dataset provides an overview of the history of a dataset as well as the ability to compare to previous transactions of your dataset to get an overview of what changed. <br><br>
+<img alt="dataset-app-tabs" height="62" src="/docs/resources/foundry/optimizing-pipelines/dataset-app-tabs.png" style="aspect-ratio:660 / 62" width="660" node="[object Object]"> <br><br></p>
+</li>
+<li>
+<p><a href="/docs/foundry/contour/overview/">Contour</a> provides access to the historical view to compare row number using the <a href="/docs/foundry/contour/change-dataset-version/">summary board</a> or if you have a column that represents the date that data was added/created, you can create charts to compare the number of rows against the date added.</p>
+</li>
+<li>
+<p><a href="/docs/foundry/optimizing-pipelines/understand-spark-details/">Spark details</a>: By clicking on the Spark details button (see below) on any job, you will be able to see information that can help indicate if there is more data in your pipeline such as the <code>count of tasks</code> metric. <br><br>
+<img alt="spark-details-button" height="551" src="/docs/resources/foundry/optimizing-pipelines/view-spark-details.png" style="aspect-ratio:1188 / 551" width="1188" node="[object Object]"> <br><br></p>
+</li>
+</ul>
+<p><strong>Has the code changed in my pipeline?</strong></p>
+<ul>
+<li>Dataset Preview’s <strong>Compare</strong> tab allows you to see code changes on the direct transform file when comparing the historical transactions on a dataset.</li>
+<li>Within Code Repositories, the <strong>File changes</strong> (commit history) helper in the <a href="/docs/foundry/code-repositories/navigation/#code-tab">Code tab</a> allows you to see code changes.</li>
+<li>The <a href="/docs/foundry/data-lineage/overview/">Data Lineage</a> tool allows you to get a quick overview of schemas across your pipeline. The side panel <strong>Properties &amp; Histogram</strong> can be especially useful to track which datasets across your pipeline contain a particular column.</li>
+</ul>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>Code changes may occur in imported libraries in a transform if using a language that supports this such as <a href="/docs/foundry/transforms-python/use-python-libraries/">Python</a> or <a href="/docs/foundry/transforms-java/share-code/">Java</a>. If you don’t see a change on your transform, consider checking if there was a logic change in a library function.</p></div>
+<p><strong>Has my schedule been altered?</strong></p>
+<ul>
+<li>The schedule card in various parts of the platform will allow you to see when the schedule was last changed.</li>
+<li>The <a href="/docs/foundry/building-pipelines/view-modify-schedules/#view-schedule-edit-history">schedule versions tab</a> on the schedule's metrics page will allow you to identify exactly which changes were made to a schedule configuration.</li>
+</ul>
+<h2 id="user-content-identifying-platform-issues" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#identifying-platform-issues"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Identifying platform issues</h2>
+<p>Checking for similar symptoms in other jobs, builds or related platform components can be a useful investigation path if you’re not sure what the problem is based on the symptoms you see.</p>
+<p>In particular, you should look for answers to these questions:</p>
+<ul>
+<li>Is it <strong>reproducible</strong>?
+<ul>
+<li>Does this issue happen consistently?</li>
+<li>Does it follow a pattern? For example, does it fail on Monday at 9am after the weekend each week?</li>
+</ul>
+</li>
+<li>What’s the <strong>scope</strong>?
+<ul>
+<li>If your job is slow or failing, are you seeing this with other transforms jobs? Or perhaps other Python jobs only?</li>
+</ul>
+</li>
+</ul>
+<p>Using <a href="/docs/foundry/data-integration/application-reference/#builds">Builds application</a> to filter down job history across the platform can help you answer the above questions.</p>
+<p>The ability to debug and resolve pipeline problems quickly is a core part of a pipeline maintainer’s work. It ensures production pipelines feeding important organizational workflows remain reliable and meaningful. If you find yourself following the guidelines outlined on this page and are unable to still identify the issue at hand, contact your Palantir representative.</p>
+</article>
+</body>
+</html>

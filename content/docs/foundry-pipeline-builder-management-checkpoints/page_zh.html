@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Checkpoints</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-checkpoints" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#checkpoints"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>检查点</h1>
+<p>在构建管道时，您通常会在多个输出之间使用共享的转换节点。此逻辑通常针对每个输出重新计算一次。借助 Pipeline Builder 中的检查点功能，您可以将转换节点标记为“检查点”，以便在下一次构建期间保存中间结果。该检查点节点上游的逻辑将针对其所有共享输出仅计算一次，从而节省计算资源并缩短构建时间。</p>
+<p>请注意，检查点有时会导致性能下降。例如，将数据写入磁盘然后再次读取的成本，可能低于多次重新计算逻辑的成本。此外，将查询拆分为多个部分可能会减少可对管道执行的优化数量。</p>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>输出必须位于同一个作业组中，检查点节点才能提高管道效率。详细了解<a href="/docs/foundry/pipeline-builder/management-job-groups/">Pipeline Builder 中的作业组</a>。</p></div>
+<h2 id="user-content-add-a-checkpoint-node" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#add-a-checkpoint-node"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>添加检查点节点</h2>
+<p>以下是一个生成两个输出的管道示例：<code>Attachment</code> 和 <code>Request</code>。转换节点 <code>Checkpoint</code> 在这两个输出之间共享。在当前状态下，逻辑节点 <code>Clean</code> 和 <code>Checkpoint</code> 将被计算两次，每个输出各计算一次。</p>
+<p><img alt="A checkpoint node on a graph in Pipeline Builder" height="372" src="/docs/resources/foundry/pipeline-builder/checkpoint.png" style="aspect-ratio:1596 / 372" width="1596" node="[object Object]"></p>
+<p>但是，我们希望针对这两个输出仅计算一次 <code>Clean</code> 和 <code>Checkpoint</code>。为此，请右键点击 <code>Checkpoint</code> 并选择<strong>标记为检查点</strong>。</p>
+<p><img alt="Select Mark as checkpoint near the bottom of the node menu." height="600" src="/docs/resources/foundry/pipeline-builder/mark-as-checkpoint.png" style="aspect-ratio:1704 / 954" width="1071.698113207547" node="[object Object]"></p>
+<h3 id="user-content-checkpoint-strategies" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#checkpoint-strategies"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>检查点策略</h3>
+<p>有三种可用的检查点策略：</p>
+<ul>
+<li><strong>保存至短期磁盘 [默认]：</strong>将每个输出临时存储在磁盘上。这是标记为检查点的节点的默认策略。</li>
+<li><strong>保存至内存 [最快]：</strong>将结果临时存储在内存中以便更快访问；这对于小型数据集特别有用。请注意，由于内存限制，此选项对于大型数据集可能会失败。</li>
+<li><strong>保存为输出数据：</strong>将检查点的最新事务保存在专用数据集中。该数据集在首次部署检查点时创建。</li>
+</ul>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>快速管道不支持<strong>保存至内存</strong>检查点策略。</p></div>
+<p>默认情况下，标记为检查点的节点将对每个输出使用<strong>保存至短期磁盘</strong>策略。要配置此项，请选择<strong>检查点</strong>，然后选择<strong>配置策略</strong>。</p>
+<p>当转换具有多个输出时（例如，如果设置了检查点的节点是拆分转换），可以选择为每个输出选择一种检查点策略。</p>
+<p><img alt="The checkpoint strategy window." height="600" src="/docs/resources/foundry/pipeline-builder/checkpoint-strategy.png" style="aspect-ratio:1166 / 1074" width="651.3966480446927" node="[object Object]"></p>
+<p>对于只有一个输出的节点，您必须选择一种检查点策略或取消该节点的检查点标记。</p>
+<p>现在，<code>Checkpoint</code> 节点的顶部角落将出现一个浅蓝色徽章。</p>
+<p><img alt="The checkpoint node is now marked as a checkpoint on the graph." height="287" src="/docs/resources/foundry/pipeline-builder/checkpoint-badge.png" style="aspect-ratio:1200 / 287" width="1200" node="[object Object]"></p>
+<p>现在，将两个输出添加到同一个作业组以验证检查点行为。右键点击其中一个输出（<code>Request</code>）以<strong>分配作业组</strong>。选择<strong>新建组</strong>以打开<strong>构建设置</strong>面板。</p>
+<p><img alt="Use the node menu to assign an output node to a job group." height="488" src="/docs/resources/foundry/pipeline-builder/assign-checkpoint-group.png" style="aspect-ratio:1200 / 488" width="1200" node="[object Object]"></p>
+<p>由于默认情况下数据集位于不同的作业组中，因此检查点将针对每个输出重新计算，从而抵消任何好处。要解决此问题，请通过选择另一个输出（<code>Attachment</code>），然后选择面板底部的<strong>添加到组...</strong>，将其添加到同一个作业组中。</p>
+<p><img alt="Add another output node to the same job group in the Build Settings panel." height="600" src="/docs/resources/foundry/pipeline-builder/add-output-to-checkpoint-group.png" style="aspect-ratio:400 / 610" width="393.44262295081967" node="[object Object]"></p>
+<p>详细了解如何使用<a href="/docs/foundry/pipeline-builder/management-color-groups/">颜色组</a>和<a href="/docs/foundry/pipeline-builder/management-job-groups/">作业组</a>在 Pipeline Builder 中配置节点。</p>
+<h2 id="user-content-checkpoint-storage-costs" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#checkpoint-storage-costs"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>检查点存储成本</h2>
+<p>
+
+对于 <strong>保存至短期磁盘</strong> 检查点策略，检查点会将转换的全量结果推送到存储系统，例如 Hadoop 分布式文件系统（HDFS）。举例来说，如果你使用该策略对连接操作设置检查点，连接的完整结果将全部输出到存储中。这样一来，即使最终的数据集输出量很小，也可能会导致存储大量数据。</p>
+</article>
+</body>
+</html>

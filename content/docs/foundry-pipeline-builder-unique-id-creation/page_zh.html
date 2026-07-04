@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Create unique IDs in Pipeline Builder</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+# 在 Pipeline Builder 中创建唯一 ID
+
+在 Pipeline Builder 中，唯一 ID 有助于对数据进行跟踪、处理和分析，确保每条记录都能被单独识别并妥善处理。因此，通常需要为记录创建唯一标识符（ID）。本节将说明为什么使用单调递增的 ID 并非最佳方案，并解释为什么生成唯一 ID 的首选方法是将字符串列拼接后进行 SHA256 哈希处理。
+
+## 使用字符串列拼接与 SHA256 哈希
+
+生成唯一 ID 的最佳方式是，将输入数据中的字符串列拼接起来，然后对该拼接字符串创建 SHA256 哈希。
+
+要在 Pipeline Builder 中使用此方法生成唯一 ID，请在 Pipeline Builder 的转换路径中执行以下步骤：
+
+1. 识别出那些组合后能唯一标识数据集中每条记录的字符串列。
+2. 将选定的字符串列拼接，为每条记录生成一个单独的字符串。
+3. 使用“Hash sha256”计算拼接后字符串的 SHA256 哈希值。生成的 256 位哈希值可表示为 64 个字符的十六进制字符串，这将作为每条记录的唯一 ID。
+
+<img alt="Screenshot of stable id" height="600" src="/docs/resources/foundry/pipeline-builder/concat-sha-id.png" style="aspect-ratio:2124 / 856" width="1488.7850467289718" node="[object Object]">
+
+该方法具有以下优势：
+
+- **一致性：** 相同的输入数据将始终产生相同的唯一 ID，从而确保数据管道在不同运行阶段的一致性。这不仅让记录跟踪、重复项识别和数据核对变得更加容易，而且值得注意的是，如果 ID 被用作对象的主键，你肯定不希望这些主键因重建管道而发生变化。此外，还应考虑到下游数据处理人员是否在任何环节都需要依赖稳定的 ID。
+- **分布式生成：** 由于唯一 ID 派生自数据本身，多个进程可以并发生成唯一 ID，而无需进行同步或集中协调。这在分布式数据处理环境中提升了可扩展性和性能。
+
+通过将字符串列拼接并进行 SHA256 哈希处理，你可以生成具备可扩展性、安全性和一致性的唯一 ID，这使其成为数据管道应用的理想选择。
+
+## 单调递增 ID 的劣势
+
+虽然 Pipeline Builder 不支持单调递增的 ID，但熟悉 Spark 的数据工程师经常使用它们。单调递增的 ID 是按顺序生成的，例如 1、2、3 等。尽管这种方法具有内在的简洁性，但也存在几个缺点：
+
+- **构建间的不一致性：** 在 Spark 中使用单调递增的 ID 时，同一应用程序在不同运行期间生成的 ID 可能会发生变化。这是因为 Spark 将任务分配给执行器的方式会有所不同，导致 ID 分配顺序产生差异。因此，这种不一致性会增加复现结果、比较不同运行数据或执行增量更新的难度，使其作为 ID 列的可靠性大打折扣。如果将其用作本体对象的主键，每次构建时都会强制进行全量重建索引。
+- **依赖状态：** 生成单调递增的 ID 需要在各行之间维护状态。
+
+这些缺点表明，使用单调递增的 ID 并不是在数据管道应用中生成唯一标识符的最佳方案。相反，正如上一节所述，我们建议采用字符串列拼接并进行 SHA256 哈希处理的方式。
+
+## 如果没有可用于哈希的唯一列集
+
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>请注意，这在构建或预览之间不具备一致性。只有在无法识别出唯一列集的情况下，才应将此方法作为绝对的最后手段。</p></div>
+
+如果你的数据中没有能够定义唯一行的列集，可以使用随机数的哈希值来创建 ID。要通过这种方式创建 ID，请在 Pipeline Builder 的转换路径中执行以下步骤：
+
+1. 使用“Uniform random number”创建一个随机数。
+2. 将该列转换为字符串类型。
+3. 使用“Hash sha256”对该列进行哈希处理。
+
+<img alt="Screenshot of random id" height="600" src="/docs/resources/foundry/pipeline-builder/random-id.png" style="aspect-ratio:2130 / 826" width="1547.2154963680389" node="[object Object]">
+</article>
+</body>
+</html>

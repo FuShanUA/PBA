@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Unit testing in Pipeline Builder</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-unit-testing-in-pipeline-builder" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#unit-testing-in-pipeline-builder"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Pipeline Builder 中的单元测试</h1>
+<p>通过单元测试来提升 Pipeline Builder 中数据管道的可靠性。这些测试在调试、检测破坏性变更方面是极具价值的工具，最终能够确保构建出更高质量的数据管道。</p>
+<h2 id="user-content-what-is-a-unit-test" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#what-is-a-unit-test"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>什么是单元测试？</h2>
+<p><img alt="Unit test explanation diagram." height="600" src="/docs/resources/foundry/pipeline-builder/unit-test-architecture.png" style="aspect-ratio:1572 / 748" width="1260.9625668449198" node="[object Object]"></p>
+<p>与代码中的单元测试类似，Pipeline Builder 中的单元测试用于验证数据管道逻辑在给定预定义输入时能否产生预期输出。单元测试包含以下部分：</p>
+<ul>
+<li>测试输入</li>
+<li>转换节点</li>
+<li>预期输出</li>
+</ul>
+<p>测试输入和预期输出通过手动录入的表来创建，但您也可以通过复制粘贴来加快创建速度。您可以在主 Pipeline Builder 工作区中选择需要进行测试的转换节点。有关创建单元测试的更多信息，请参见下文。</p>
+<h2 id="user-content-create-a-unit-test" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#create-a-unit-test"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>创建单元测试</h2>
+<ol>
+<li>
+<p>在主工作区的右侧面板中，选择 <strong>Unit tests</strong> 图标。 <br><br>
+<img alt="The unit test side bar." height="600" src="/docs/resources/foundry/pipeline-builder/unit-test-side-bar.png" style="aspect-ratio:1570 / 1088" width="865.8088235294118" node="[object Object]"> <br><br></p>
+</li>
+<li>
+<p>在屏幕中央选择 <strong>Create new test</strong>，或在右上角选择 <strong>New test</strong>。这将在工作区顶部打开一个对话框，提示您选择相关节点。 <br><br>
+<img alt="The unit test initial selection screen." height="600" src="/docs/resources/foundry/pipeline-builder/unit-test-initial-selection.png" style="aspect-ratio:1576 / 628" width="1505.7324840764331" node="[object Object]"> <br><br></p>
+</li>
+<li>
+<p>选择所有相关节点后，点击 <strong>Start</strong>。 <br><br>
+<img alt="The selected nodes to include in the unit test." height="600" src="/docs/resources/foundry/pipeline-builder/unit-test-selected-boards.png" style="aspect-ratio:1578 / 654" width="1447.7064220183488" node="[object Object]"> <br><br></p>
+<p>随后将进入单元测试配置窗口。</p>
+<ul>
+<li>黄色节点对应先前选定的转换节点。</li>
+<li>绿色节点对应测试输入。</li>
+<li>蓝色节点对应测试输出。</li>
+</ul>
+<p>对于每个单元测试，您都必须填写输入和输出数据。 <br><br>
+<img alt="The initial edit screen in a unit test." height="578" src="/docs/resources/foundry/pipeline-builder/unit-test-initial-edit-screen.png" style="aspect-ratio:1580 / 578" width="1580" node="[object Object]"> <br><br></p>
+</li>
+<li>
+<p>双击节点即可填写输入数据或预期输出数据。这将跳转至以下页面： <br><br>
+<img alt="The add input or output data page in a unit test." height="574" src="/docs/resources/foundry/pipeline-builder/unit-test-data.png" style="aspect-ratio:1580 / 574" width="1580" node="[object Object]"> <br><br></p>
+<p>在左侧选择：</p>
+<ul>
+<li><strong>Reuse schema:</strong> 将输出模式设置为与所连接表的模式相匹配。</li>
+<li><strong>From dataset:</strong> 使用现有数据集的模式。</li>
+<li><strong>Add column:</strong> 手动录入数据模式。</li>
+</ul>
+<p>设置好模式后，在中间的表格中填写数据行，然后依次点击 <strong>Apply</strong> 和 <strong>Back to graph</strong>。 <br><br>
+<img alt="The add input or output data page in a unit test." height="550" src="/docs/resources/foundry/pipeline-builder/unit-test-manual-data-fill.png" style="aspect-ratio:1572 / 550" width="1572" node="[object Object]"> <br><br></p>
+</li>
+<li>
+<p>对所有输入和输出数据集重复此步骤。</p>
+</li>
+</ol>
+<p>完成后，您可以在右侧面板中看到手动录入的数据，其中详细展示了每个表的行数和列数。</p>
+<p><img alt="A unit test with inputs and outputs filled." height="600" src="/docs/resources/foundry/pipeline-builder/unit-test-with-data-filled.png" style="aspect-ratio:2866 / 902" width="1906.4301552106429" node="[object Object]"></p>
+<h2 id="user-content-run-a-unit-test" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#run-a-unit-test"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>运行单元测试</h2>
+<p>对于每个单元测试，您都可以在右上角选择 <strong>Run test</strong>。</p>
+<p><img alt="The Run test button for a unit test." height="584" src="/docs/resources/foundry/pipeline-builder/unit-test-run-test.png" style="aspect-ratio:1556 / 584" width="1556" node="[object Object]"></p>
+<p>测试运行完成后，您可以在下方查看测试结果。如需查看具体的表结果，请选择 <strong>View test result</strong>。</p>
+<p><img alt="A failed and passed test result, respectively." height="250" src="/docs/resources/foundry/pipeline-builder/unit-test-pass-fail.png" style="aspect-ratio:1568 / 250" width="1568" node="[object Object]"></p>
+<p>这会在屏幕底部展开一个视图，展示预期输出和实际输出。</p>
+<p><img alt="The expected and received outputs shown at the bottom of the screen." height="600" src="/docs/resources/foundry/pipeline-builder/unit-test-full-screen.png" style="aspect-ratio:2968 / 1422" width="1252.3206751054852" node="[object Object]"></p>
+<p>完成单元测试的编辑和查看后，您可以点击右上角的 <strong>Close unit test</strong>。</p>
+<h2 id="user-content-delete-a-unit-test" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#delete-a-unit-test"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>删除单元测试</h2>
+<p></p>
+
+要删除单元测试，请将其选中，并点击右上角的三个点以打开选项菜单。选择<strong>删除测试用例</strong>。</p>
+<p><img alt="如何删除单元测试。" height="451" src="/docs/resources/foundry/pipeline-builder/unit-test-delete-test.png" style="aspect-ratio:808 / 451" width="808" node="[object Object]"></p>
+<h2 id="user-content-edit-existing-unit-tests" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#edit-existing-unit-tests"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>编辑现有单元测试</h2>
+<p>点击<strong>单元测试</strong>图标，查看管道中的单元测试列表。点击铅笔图标即可编辑选中的单元测试。</p>
+<p><img alt="管道中的单元测试列表。" height="333" src="/docs/resources/foundry/pipeline-builder/unit-test-edit-unit-test.png" style="aspect-ratio:536 / 333" width="536" node="[object Object]"></p>
+<p>要更改单元测试中选中的测试转换，请使用<strong>重新选择</strong>按钮。系统将跳转回选择页面。</p>
+<p><img alt="单元测试的重新选择流程。" height="600" src="/docs/resources/foundry/pipeline-builder/unit-test-selection.png" style="aspect-ratio:1786 / 766" width="1398.9556135770235" node="[object Object]"></p>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>如果作为测试转换已包含在单元测试中的节点之间插入新节点，这些新增节点会自动出现在现有的单元测试中。</p></div>
+<p>要修改任何测试输入或预期输出，可以直接双击图视图中的节点，或点击右侧面板上的铅笔图标。</p>
+<p><img alt="单元测试中的输入与输出编辑页面。" height="539" src="/docs/resources/foundry/pipeline-builder/unit-test-edit-input-output.png" style="aspect-ratio:422 / 539" width="422" node="[object Object]"></p>
+<p>完成单元测试编辑后，点击右上角的<strong>关闭单元测试</strong>即可返回主图。</p>
+<h2 id="user-content-unit-testing-in-proposals" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#unit-testing-in-proposals"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>提案中的单元测试</h2>
+<p>对单元测试的任何更改也会显示在提案页面的左侧面板中，位于<strong>单元测试</strong>标签页下。</p>
+<p><img alt="提案页面上的单元测试。" height="600" src="/docs/resources/foundry/pipeline-builder/unit-test-changes.png" style="aspect-ratio:1767 / 648" width="1636.111111111111" node="[object Object]"></p>
+<p>在提案页面上，您会看到<strong>单元测试成功</strong>部分。Pipeline Builder 会在合并提案前检查单元测试是否通过。</p>
+<p><img alt="提案页面上的单元测试。" height="600" src="/docs/resources/foundry/pipeline-builder/unit-test-proposal-page.png" style="aspect-ratio:855 / 1085" width="472.81105990783414" node="[object Object]"></p>
+<h2 id="user-content-unit-testing-in-streaming" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#unit-testing-in-streaming"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>流处理中的单元测试</h2>
+<p>对于流式单元测试，测试输入数据的每一行都需要一个额外的 <code>ordering</code> 长整型字段。</p>
+<p><img alt="提案页面上的单元测试。" height="600" src="/docs/resources/foundry/pipeline-builder/unit-test-ordering-column.png" style="aspect-ratio:2204 / 1064" width="1242.857142857143" node="[object Object]"></p>
+<p>ordering 列是流式单元测试必需的元数据列，用于控制数据行发出的全局顺序，但不会影响测试数据的实际内容或模式。在单次测试的所有测试数据源中，每一行的 ordering 值必须是唯一的长整型数值，数据源将按照 ordering 值从低到高的顺序依次发出数据行。</p>
+<p>为了从流式转换中获得确定且符合预期的输出，排序至关重要，特别是对于连接和联合操作。</p>
+</article>
+</body>
+</html>

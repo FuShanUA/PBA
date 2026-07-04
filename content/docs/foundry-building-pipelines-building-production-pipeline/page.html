@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Building a production pipeline</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-building-a-production-pipeline" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#building-a-production-pipeline"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Building a production pipeline</h1>
+<p>Production workflows need reliable pipelines to back them. Following the principles laid out in this document when building a pipeline will result in easier maintenance, allowing you to catch problems before they cause SLA breaches. Some guidance here will also make it easier to share knowledge about what is important in your pipeline. This is important in all stages of the pipeline’s lifecycle, from development all the way through to long-term maintenance.</p>
+<p>This document is useful for both pipeline developers and pipeline maintainers. For developers, it is useful before you start building a pipeline if it will be going straight into production. Equally, this document can be used when a proof-of-concept pipeline is being converted into a production pipeline. For pipeline maintainers, the following elements should be prerequisites to entering maintenance mode.</p>
+<h2 id="user-content-pipeline-definition-and-expectations" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#pipeline-definition-and-expectations"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Pipeline definition and expectations</h2>
+<p>While it may not always be possible to have definitive answers around expectations before you start building a production pipeline, it is valuable to be mindful about them early as possible. It’s highly recommended to document the pipeline definition and expectations as you establish them.</p>
+<p>The expectations influence several aspects of design and set-up of a production pipeline, including:</p>
+<ul>
+<li>The pipeline design and architecture decisions.</li>
+<li>How schedules should be set up (as this is the primary way to control how frequently the pipeline is built).</li>
+<li>What validations and monitoring are required.</li>
+<li>How to prioritize issues when the pipeline is in maintenance mode.</li>
+</ul>
+<p>The important questions that should be addressed by your team, include:</p>
+<ul>
+<li><strong>What exactly is the scope of the pipeline?</strong> Where does it start, where does it end? Where should it feed into other pipelines?
+<ul>
+<li>If parts of your pipeline overlap with another pipeline or use case, consider treating the overlapping section as its own pipeline.</li>
+</ul>
+</li>
+<li><strong>What is the requirement on pipeline refresh rate?</strong>
+<ul>
+<li>Or perhaps there is a specific time of day when data needs to be refreshed by?</li>
+<li>Should the pipeline run over weekends?</li>
+<li>When is data considered critically out of date?</li>
+<li>What will the expectation in terms of refresh rate and support?</li>
+<li><em>Be careful</em> — while this sounds easy, this area is where pipeline maintenance teams often face the most difficulty. Without clear definitions here, it is difficult to prioritize work as a pipeline maintainer or make the right fix.</li>
+</ul>
+</li>
+<li><strong>What is the expectation for end-to-end propagation delay?</strong> In other words, how long should it take for data to flow through the pipeline from the moment it lands in Foundry, to the point where the outputs of the pipeline are updated?</li>
+<li><strong>Who’s your contact point on each and every external source that you pull from?</strong> External sources can be Data Connection syncs or a separate upstream Foundry pipeline that feeds into your pipeline.</li>
+<li><strong>What are the functional guarantees for correctness in your data?</strong> Are there critical columns or key validations that must be true for your pipeline?
+<ul>
+<li><em>Note:</em> it’s important to determine what the outcome should be if a guarantee is broken. Should a failing validation prevent data from reaching your end user or should it fire an alert without preventing your pipeline from updating? You may want to do the latter to allow other up-to-date data to flow through your pipeline? The implementation for these two different situations would differ. Documentation is a good place to start tracking guarantees early on.</li>
+</ul>
+</li>
+<li><strong>Are the expectations determined compatible?</strong> As complex systems grow, they become more prone to failures. You generally want to allow sufficient time after an alert is fired to address the underlying issue - whether that is an unexpected pipeline failure or missing data from an upstream source.
+<ul>
+<li><em>Example 1:</em> It’s important to think about the propagation delay in relation to the expected pipeline refresh rate. If the expected refresh rate is every 2 hours, and the pipeline takes 1.5 hours to build, it may become difficult to adhere to SLAs.</li>
+<li><em>Example 2:</em> if a workflow requires an hourly refresh rate, but the upstream data source only provides data twice a day. This means that you will not be able to achieve hourly refreshes.</li>
+</ul>
+</li>
+</ul>
+<h2 id="user-content-principles-for-production-pipelines" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#principles-for-production-pipelines"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Principles for production pipelines</h2>
+<p>The key principle for setting up a successful production pipeline can be summarized as: <strong>“build with the idea that you won’t be around to maintain it”</strong>.</p>
+<p>Some concrete tips that can help you achieve this:</p>
+<ul>
+<li><strong>Version your code, and write meaningful commit messages:</strong> this makes it easier to keep track of what changes were made, when they were committed and by whom.
+<ul>
+<li>In production pipelines, <a href="/docs/foundry/transforms-java/overview/">Java</a> and <a href="/docs/foundry/transforms-python/overview/">Python</a> are recommended if possible. There are a lot of available resources and a strong developer community for both these languages. Whilst SQL is very accessible, it can get convoluted very quickly and hence can be more difficult to debug.</li>
+</ul>
+</li>
+<li><strong>Optimize for legibility above all else:</strong> Simple pipelines are simpler to maintain. Opting for standard or existing solutions in transform code will reduce the maintenance burden and development complexity down the line. If you <em>must</em> do something unconventional, be sure to document it thoroughly.</li>
+<li><strong>Linear pipelines where possible:</strong> In terms of general architecture, the pipelines that are easier to maintain are those that are fairly straightforward and linear, but it’s difficult to give recommendations on how to get there. Be mindful of the general structure of the pipeline, and optimize for readability and simplicity as much as possible given your constraints. Once you are thinking about moving the pipeline to production, taking some time to untangle the pipeline is usually time well spent.</li>
+<li><strong>Production pipelines are often long-lived.</strong> As a result there’s a good chance that those who write the pipelines are not those who maintain or manage the pipelines in the long-term.  Keep in mind that the next person who takes over the pipeline development or maintenance needs to be able to read the code and make sense of the pipeline setup.</li>
+<li><strong>Keep concise documentation:</strong>
+<ul>
+<li><em>Logic documentation:</em> It is generally advised that documentation about the logic itself is kept in code comments.</li>
+<li><em>Overall pipeline documentation (including documenting recurring issues in a pipeline)</em>: should also be kept close to the pipeline, in an intuitive location. A good example place for this would be in the Project that the pipeline belongs to. It should be easy to find for pipeline developers and maintainers.</li>
+<li>Bear in mind: over-documenting can also make it hard to read and less useful. Be concise and document key information. If you need to capture very long and detailed pipeline information that will not be referred to as often, consider keeping it in a separate document.</li>
+</ul>
+</li>
+</ul>
+<h2 id="user-content-development-process-and-infrastructure-setup" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#development-process-and-infrastructure-setup"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Development process and infrastructure setup</h2>
+<p><strong>Development</strong></p>
+<p>Once a pipeline goes into production, it’s important to ensure that the development processes around making further contributions to the pipeline are established and effectively communicated to pipeline developers. This ensures that no unexpected outages on the pipeline occur.</p>
+<p>As a result, we recommend reading:</p>
+<ul>
+<li><strong><a href="/docs/foundry/building-pipelines/development-best-practices/">Development Best Practices</a>:</strong> At the very least, production pipelines should be easy-to-read, easy-to-maintain, and with locked master branches. However to ensure your development setup is more robust, we recommend reading through the more detailed advice in this documentation.</li>
+<li><strong><a href="/docs/foundry/building-pipelines/branching-release-process/">Branching and Pipeline release process</a>:</strong> if you haven’t already been working with a branching and pipeline release process during the development phase of your pipeline, we recommend this when moving your pipeline into production. The documentation will provide an example process that you can use.</li>
+</ul>
+<p><strong>Infrastructure (schedules)</strong></p>
+<p>On a related note, setting up schedules early will allow you to develop without having to think about manually triggering builds of different parts of your pipeline. If your scheduling is messy, you may find that this hinders your development and slows you down as changes are not propagating automatically through your pipeline.</p>
+<p>When moving a pipeline into production, it is also recommended to review and re-structure your schedules as the schedules used during development may no longer make sense or may contain antipatterns. This step should be done before moving into maintenance mode.</p>
+<p>Setting up or reviewing schedules according to best practices can be achieved by following the <strong><a href="/docs/foundry/building-pipelines/scheduling-best-practices/">scheduling best practices documentation</a></strong>.</p>
+<h2 id="user-content-start-monitoring-early" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#start-monitoring-early"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Start monitoring early</h2>
+<p>As soon as the pipelines are running regularly, you want to start monitoring its behavior. This prevents tech debt from accumulating and allows you to track if the expectations for the pipeline are realistic or not. It may not always be feasible to start monitoring right away, given deadlines and the capacities of your team, however it is encouraged where possible.</p>
+<p>See the documentation on <a href="/docs/foundry/maintaining-pipelines/overview/">Pipeline Monitoring Best Practices</a> for more information on how to set up monitoring.</p>
+</article>
+</body>
+</html>

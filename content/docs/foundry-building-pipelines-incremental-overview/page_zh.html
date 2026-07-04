@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Incremental pipelines</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-incremental-pipelines" level="1" node="[object Object]" data-pagefind-weight="7"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#incremental-pipelines"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>增量管道</h1>
+<p><a href="/docs/foundry/building-pipelines/pipeline-types/#incremental">增量管道</a>通常用于处理随时间发生显著变化的输入数据集。增量管道避免了对未发生变化的所有数据行或文件进行不必要的计算，从而在最小化计算成本的同时，实现了更低的端到端延迟。</p>
+<p>不过，增量管道也带来了额外的开发和维护复杂性，在着手之前你需要对此有所了解。</p>
+<h2 id="user-content-background" level="2" node="[object Object]" data-pagefind-weight="6.3"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#background"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>背景</h2>
+<p>以下是一些与增量管道相关的因素，你可能需要加以考虑：</p>
+<ul>
+<li>开发增量管道需要透彻理解 Foundry 中数据集如何借助<a href="/docs/foundry/data-integration/datasets/#transactions">事务</a>随时间发生变化。你需要掌握数据连接同步和转换逻辑中的数据集事务概念，才能随着时间的推移有效创建和管理增量管道。</li>
+<li>一旦理解了 Foundry 中事务的运作机制，你还需要设计管道，使其能够应对输入数据集中意外出现的事务。虽然增量管道通常只处理以 <code>APPEND</code> 事务形式到达的变更数据，但你的逻辑必须能够应对输入数据集偶尔被重新计算的情况，这会导致产生 <code>SNAPSHOT</code> 事务。理想情况下，你应该编写完善的<a href="/docs/foundry/transforms-python/unit-tests/">单元测试</a>来验证转换逻辑的行为，以防在实际运行中遇到此类情况。</li>
+<li>为了确保增量管道长期保持高性能，你需要了解在应用大量 <code>APPEND</code> 事务后数据集如何随时间变化，以及这如何导致数据集包含大量小文件。这包括理解 <a href="/docs/foundry/optimizing-pipelines/spark-concepts/">Spark</a> 如何处理海量文件，以及这对 Spark 分区的影响。<a href="/docs/foundry/building-pipelines/maintaining-incremental-performance/">阅读更多关于保持增量管道高性能的内容</a>。</li>
+</ul>
+<h2 id="user-content-getting-started" level="2" node="[object Object]" data-pagefind-weight="6.3"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#getting-started"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>入门指南</h2>
+<p>通过查阅以下推荐资源，开始了解增量管道：</p>
+<ul>
+<li>了解如何<a href="/docs/foundry/building-pipelines/create-incremental-syncs/">创建增量同步</a>，将数据增量引入 Foundry。</li>
+<li>查看如何使用管道构建器<a href="/docs/foundry/building-pipelines/create-incremental-pipeline-pb/">创建增量管道</a>的示例。</li>
+<li>参阅<a href="/docs/foundry/transforms-python/incremental-overview/">Python 增量概览</a>，了解如何开发增量转换逻辑。</li>
+</ul>
+</article>
+</body>
+</html>

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Computation modes for batch input datasets</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-computation-modes-for-batch-input-datasets" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#computation-modes-for-batch-input-datasets"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>批处理输入数据集的计算模式</h1>
+<p>根据具体的使用场景，你可以选择以快照或增量的方式读取输入数据集。</p>
+<h2 id="user-content-snapshot-computation" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#snapshot-computation"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>快照计算</h2>
+<p>快照计算会对整个输入数据集执行转换操作，而不仅仅是处理新增数据。每次构建时，输出数据集都会被最新的管道输出完全覆盖。</p>
+<p><img alt="Example of snapshot computation" height="542" src="/docs/resources/foundry/pipeline-builder/datasets-snapshot-computation.png" style="aspect-ratio:1194 / 542" width="1194" node="[object Object]"></p>
+<p>最适用于以下场景：</p>
+<ul>
+<li>输入数据集未通过 <code>APPEND</code> 事务进行更新。
+<ul>
+<li>当输入数据使用 <code>SNAPSHOT</code> 事务写入时，无法以增量方式读取该输入。</li>
+</ul>
+</li>
+<li>输出数据集无法通过 <code>APPEND</code> 事务进行更新。
+<ul>
+<li>示例：每次运行时整个输出数据集都会发生改变，因此需要采用快照输出。</li>
+</ul>
+</li>
+<li>输入数据集较小。
+<ul>
+<li>在这种情况下，快照计算与增量计算的效率相当。</li>
+</ul>
+</li>
+</ul>
+<h2 id="user-content-incremental-computation" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#incremental-computation"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>增量计算</h2>
+<p>增量计算仅对自上次构建以来追加到所选输入中的新数据执行转换操作。这种方式能够减少计算资源消耗，但存在一些重要的<a href="#incremental-computation-restrictions">限制</a>。</p>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>只有当选定的输入数据集通过不修改现有文件的 <code>APPEND</code> 或 <code>UPDATE</code> 事务发生更改时，管道才会以增量计算方式运行。将快照输入标记为增量输入不会产生任何效果。</p></div>
+<p><img alt="Example of incremental computation" height="344" src="/docs/resources/foundry/pipeline-builder/datasets-incremental-computation.png" style="aspect-ratio:1194 / 344" width="1194" node="[object Object]"></p>
+<p>最适用于以下场景：</p>
+<ul>
+<li>输入数据集通过 <code>APPEND</code> 事务或附加性 <code>UPDATE</code> 事务进行更改。
+<ul>
+<li>这意味着在添加新数据时，先前的输出保持不变。增量计算能够减少每次构建时处理的数据量。</li>
+</ul>
+</li>
+<li>不需要引用先前的输出。
+<ul>
+<li>Pipeline Builder 目前不允许使用<a href="/docs/foundry/transforms-python/incremental-usage/#incrementaltransforminput">读取模式：previous</a>。不过，某些输出写入模式支持该读取模式的常见用例。<a href="/docs/foundry/pipeline-builder/outputs-add-dataset-output/#configure-write-mode">详细了解 Pipeline Builder 中的输出写入模式。</a></li>
+</ul>
+</li>
+<li>输入数据集较大且经常添加新数据。
+<ul>
+<li>增量构建可以节省计算资源和时间，并带来性能上的提升。</li>
+</ul>
+</li>
+</ul>
+<h3 id="user-content-incremental-computation-restrictions" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#incremental-computation-restrictions"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>增量计算的限制</h3>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>本部分概述了可能适用于你工作流程的限制条件。在进行增量计算设置前请仔细阅读，以确保正确实现。</p></div>
+<ul>
+<li><strong>连接（Joins）：</strong>在涉及增量数据集的连接操作中，增量数据集必须位于连接的左侧，而快照数据集位于右侧。系统也支持两个增量数据集之间的连接。
+<ul>
+<li><strong>连接中的快照输入：</strong>如果快照输入接收到新事务，那么任何涉及增量数据集的下游连接仍将以增量方式运行。Pipeline Builder 不支持利用连接右侧快照输入的变更来强制重新运行管道。</li>
+</ul>
+</li>
+<li><strong>合并（Unions）：</strong>所有参与合并的输入必须使用相同的计算模式（全部为快照或全部为增量）。</li>
+<li><strong>转换（Transforms）：</strong>可能会改变先前输出的转换操作仅限于当前事务。窗口函数、聚合和透视操作仅应用于当前事务的数据，而不应用于先前的输出。</li>
+<li><strong>重放（Replays）：</strong>如果管道逻辑发生变更，且你希望将新逻辑应用于已处理过的输入事务，可以选择在部署时进行重放。系统仅支持对整个输入进行重放。</li>
+</ul>
+<p>有关更多信息，请参阅<a href="/docs/foundry/building-pipelines/create-incremental-pipeline-pb/">Pipeline Builder 中的增量计算示例</a>。</p>
+</article>
+</body>
+</html>

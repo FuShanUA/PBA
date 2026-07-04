@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Create a dataset batch pipeline with Pipeline Builder</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+# 使用 Pipeline Builder 创建数据集批处理管道
+
+在本教程中，您将使用 Pipeline Builder 创建一个简单的管道，输出包含航班警报信息的单个数据集。随后，您可以使用 Contour 或 Code Workbook 等工具分析此输出数据集，以解答诸如哪些航线面临最大中断风险等问题。
+
+以下使用的数据集可在数据集导入步骤中按名称搜索；您可以在 Foundry 文件系统中找到它们。
+
+本教程结束时，您将得到一个如下所示的管道：
+
+<img alt="A complete Pipeline Builder pipeline." height="600" src="/docs/resources/foundry/building-pipelines/complete-pipeline.png" style="aspect-ratio:3024 / 1662" width="1091.6967509025271" node="[object Object]">
+
+该管道将生成一个新的 `Flight Alerts Data` 数据集输出，您可以在平台中对其进行进一步探索。
+
+<div class="ptcom-design__callout__19o1cwu ptcom-design__success__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><div class="ptcom-design__title__19o1cwu">Palantir 学习门户</div><p>您可以在 <a href="https://learn.palantir.com/deep-dive-building-your-first-pipeline">learn.palantir.com ↗</a> 上找到关于构建首个管道的深入课程。</p></div>
+
+## 第 1 部分：初始设置
+
+首先，创建一个新管道。
+
+1. 登录 Foundry 后，从左侧导航栏中选择 **Applications**（应用程序），搜索并打开 **Pipeline Builder** <br><br>
+<img alt="The Pipeline Builder application, found in the application search." height="387" src="/docs/resources/foundry/building-pipelines/application-pipeline-builder.png" style="aspect-ratio:1165 / 387" width="1165" node="[object Object]"> <br><br>
+
+2. 接着，在 Pipeline Builder 着陆页上，选择 **New pipeline**（新建管道）创建新管道，然后选择 **Batch pipeline**（批处理管道）。在 **Select batch compute**（选择批处理计算资源）下，选择 **Standard**（标准）。 <br><br>
+<img alt="Choose to create a batch pipeline." height="422" src="/docs/resources/foundry/building-pipelines/new-pipeline-choice-standard-faster.png" style="aspect-ratio:827 / 422" width="827" node="[object Object]"> <br><br>
+
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>并非所有 Foundry 环境都支持创建流式管道。如果您的用例有此需求，请联系 Palantir Support 获取更多信息。</p></div>
+
+3. 选择保存管道的位置。请注意，管道不能保存在个人文件夹中。 <br><br>
+<img alt="The choose pipeline location popover." height="600" src="/docs/resources/foundry/building-pipelines/choose-pipeline-location.png" style="aspect-ratio:2010 / 1210" width="996.6942148760331" node="[object Object]"> <br><br>
+
+4. 选择 **Create pipeline**（创建管道）。
+
+## 第 2 部分：添加数据集
+
+现在，您可以向管道工作流中添加数据集了。请使用包含虚拟或开源数据的示例数据集。
+
+在 Pipeline Builder 页面中，从 Foundry 选择 **Add datasets**（添加数据集）。
+
+<img alt="Add datasets to your pipeline." height="600" src="/docs/resources/foundry/building-pipelines/add-dataset-location.png" style="aspect-ratio:2244 / 1202" width="1120.1331114808652" node="[object Object]">
+
+或者，您也可以从计算机中拖放文件作为数据集。
+
+在此示例演示中，您可以添加 `passengers_preprocessed`、`flight_alerts_raw` 和 `status_mapping_raw` 数据集。要选择数据集，请选中该数据集。然后，选择行内的 **+** 图标，或选择 **Add to Selection**（添加到所选）。
+
+<img alt="Add a dataset using the + icon." height="600" src="/docs/resources/foundry/building-pipelines/add-dataset-location2.png" style="aspect-ratio:2236 / 1204" width="1114.2857142857142" node="[object Object]">
+
+选择所有需要的数据集后，选择 **Add datasets**（添加数据集）。
+
+<img alt="Three dataset nodes on a Pipeline Builder graph." height="600" src="/docs/resources/foundry/building-pipelines/datasets-selected.png" style="aspect-ratio:1034 / 800" width="775.5" node="[object Object]">
+
+## 第 3 部分：清洗数据
+
+添加原始数据集后，您可以执行一些基本的清洗转换操作，继续定义管道。您将对三个原始数据集进行转换。
+
+### 数据集 1
+
+第一步是清洗 `passengers_preprocessed` 数据集。首先设置类型转换，将 `dob` 列名更改为 `dob_date`，同时将值转换为 `MM/dd/yy` 格式。
+
+#### 类型转换 (Cast transform)
+
+1. 在图表中选择 `passengers_preprocessed` 节点。
+
+2. 选择 **Transform**（转换）。 <br><br>
+<img alt="Choose to transform the dataset from your graph." height="200" src="/docs/resources/foundry/building-pipelines/pax-preprocessed.png" style="aspect-ratio:756 / 200" width="756" node="[object Object]"> <br><br>
+
+3. 从下拉菜单中搜索并选择 **cast**（类型转换）转换，以打开类型转换配置面板。 <br><br>
+<img alt="Apply a cast transform to your selected dataset." height="600" src="/docs/resources/foundry/building-pipelines/pax-preprocessed-cast.png" style="aspect-ratio:3184 / 1934" width="987.7973112719752" node="[object Object]"> <br><br>
+
+4. 在 **Expression**（表达式）字段中，选择 `dob`；在 **Type**（类型）中，选择 `Date`（日期）。
+
+5.
+
+在 <strong>格式</strong> 类型中输入 <code>MM/dd/yy</code>。请务必使用大写的 <code>MM</code>，以确保类型转换成功执行。将输出列名更改为 <code>dob_date</code>。</p>
+<p>你的转换配置面板应如下所示：<br><br>
+<img alt="A completed cast transform board." height="600" src="/docs/resources/foundry/building-pipelines/cast-board.png" style="aspect-ratio:1928 / 646" width="1790.7120743034054" node="[object Object]"> <br><br></p>
+</li>
+<li>
+<p>选择 <strong>应用</strong>，将该转换添加至流水线中。</p>
+</li>
+</ol>
+<h4 id="user-content-title-case-transform"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#title-case-transform"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>首字母大写转换</h4>
+<p>现在，你可以将 <code>flyer_status</code> 列的值格式化为首字母大写。</p>
+<ol>
+<li>
+<p>在转换搜索栏中，搜索并选择 <strong>首字母大写</strong> 转换，打开配置面板。</p>
+</li>
+<li>
+<p>在 <strong>表达式</strong> 字段中，从下拉菜单选择 <code>flyer_status</code> 列。</p>
+<p>你的首字母大写配置面板应如下所示：<br><br>
+<img alt="A completed title case transform board." height="514" src="/docs/resources/foundry/building-pipelines/titlecase-board.png" style="aspect-ratio:1932 / 514" width="1932" node="[object Object]"> <br><br></p>
+</li>
+<li>
+<p>选择 <strong>应用</strong>，将该转换添加至流水线中。</p>
+</li>
+<li>
+<p>在转换配置窗口的左上角，将转换重命名为 <code>Passengers_Clean</code>。<br><br>
+<img alt="Rename the transform to customize it to your dataset." height="328" src="/docs/resources/foundry/building-pipelines/passengers-clean.png" style="aspect-ratio:970 / 328" width="970" node="[object Object]"> <br><br></p>
+</li>
+<li>
+<p>选择屏幕右上角的 <strong>返回图表</strong>，回到流水线图表。<br><br>
+<img alt="The pipeline graph with a new transform node." height="534" src="/docs/resources/foundry/building-pipelines/dataset-1-transformed.png" style="aspect-ratio:1232 / 534" width="1232" node="[object Object]"> <br><br></p>
+</li>
+</ol>
+<h3 id="user-content-dataset-2" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#dataset-2"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>数据集 2</h3>
+<p>接下来，清洗 <code>flight_alerts_raw</code> 数据集。第一步是设置另一个类型转换，将 <code>flight-date</code> 列的值转换为 <code>MM/dd/yy</code> 格式。</p>
+<h4 id="user-content-cast-transform-1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#cast-transform-1"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>类型转换</h4>
+<ol>
+<li>
+<p>在图表中选择 <code>flight_alerts_raw</code> 数据集节点。</p>
+</li>
+<li>
+<p>选择 <strong>转换</strong>。<br><br>
+<img alt="Choose to transform a new dataset from your graph." height="200" src="/docs/resources/foundry/building-pipelines/flight-alerts-transform.png" style="aspect-ratio:750 / 200" width="750" node="[object Object]"> <br><br></p>
+</li>
+<li>
+<p>从下拉菜单中搜索并选择 <strong>类型转换</strong>，打开配置面板。你可以阅读选择框右侧列出的函数定义，了解该函数的更多信息。<br><br>
+<img alt="Search for the cast transform board." height="600" src="/docs/resources/foundry/building-pipelines/castdefinition.png" style="aspect-ratio:1456 / 646" width="1352.3219814241486" node="[object Object]"> <br><br></p>
+</li>
+<li>
+<p>在 <strong>表达式</strong> 字段中，从下拉菜单选择 <code>flight_date</code> 列。</p>
+</li>
+<li>
+<p>从 <strong>类型</strong> 字段的下拉菜单中选择 <code>Date</code>。</p>
+</li>
+<li>
+<p>在 <strong>格式</strong> 类型中输入 <code>MM/dd/yy</code>。请务必使用大写的 <code>MM</code>，以确保类型转换成功执行。</p>
+<p>你的转换配置面板应如下所示：<br><br>
+<img alt="A completed cast transform board." height="570" src="/docs/resources/foundry/building-pipelines/dataset-2-cast.png" style="aspect-ratio:1940 / 570" width="1940" node="[object Object]"> <br><br></p>
+</li>
+<li>
+<p>选择 <strong>应用</strong>，将该转换添加至流水线中。</p>
+</li>
+</ol>
+<h4 id="user-content-clean-string-transform"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#clean-string-transform"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>字符串清洗转换</h4>
+<p>现在，添加一个 <strong>字符串清洗</strong> 转换，用于移除 <code>category</code> 列值中的空白字符。例如，该转换会将 <code>delay···</code> 字符串值转换为 <code>delay</code>。</p>
+<ol>
+<li>
+<p>从下拉菜单中搜索并选择字符串清洗转换，打开配置面板。</p>
+</li>
+<li>
+<p>在 <strong>表达式</strong> 字段中，从下拉菜单选择 <code>category</code> 列。</p>
+</li>
+<li>
+<p>勾选 <strong>清洗操作</strong> 下的所有三个复选框：</p>
+<ul>
+<li>将空字符串转换为 null</li>
+<li>将多个连续的空白字符缩减为单个空白字符</li>
+<li>去除字符串首尾的空白字符</li>
+</ul>
+<p>你的字符串清洗配置面板应如下所示：<br><br>
+<img alt="A completed clean string transform board." height="572" src="/docs/resources/foundry/building-pipelines/clean-string.png" style="aspect-ratio:1922 / 572" width="1922" node="[object Object]"> <br><br></p>
+</li>
+<li>
+<p>选择 <strong>应用</strong>，将该转换添加至流水线中。</p>
+</li>
+<li>
+<p>在转换配置窗口的左上角，将转换重命名为 <code>Flight Alerts - Clean</code>。</p>
+</li>
+<li>
+<p>选择右上角的 <strong>返回图表</strong>，回到流水线图表。<br><br>
+<img alt="The pipeline builder graph with two transform nodes." height="550" src="/docs/resources/foundry/building-pipelines/flight-alerts-clean-graph.png" style="aspect-ratio:1134 / 550" width="1134" node="[object Object]"> <br><br></p>
+</li>
+</ol>
+<h3 id="user-content-dataset-3" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#dataset-3"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>数据集 3</h3>
+<p>最后，清洗 <code>status_mapping_raw</code> 数据集。</p>
+<h4 id="user-content-clean-string-transform-1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#clean-string-transform-1"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>字符串清洗转换</h4>
+<p>你只需对该数据集应用 <strong>字符串清洗</strong> 转换。</p>
+<ol>
+<li>
+<p>
+
+在图谱中选择 <code>status_mapping_raw</code> 数据集节点。
+选择 <strong>Transform</strong>。 <br><br>
+<img alt="Choose to transform a dataset from the graph." height="226" src="/docs/resources/foundry/building-pipelines/status-mapping-raw-transform.png" style="aspect-ratio:732 / 226" width="732" node="[object Object]"> <br><br>
+在 <strong>Search transforms and columns...</strong> 字段中，从下拉菜单选择 <code>mapped_value</code> 列。 <br><br>
+<img alt="Choose the mapped_value column in the transform board." height="322" src="/docs/resources/foundry/building-pipelines/mapped-value-transform.png" style="aspect-ratio:1738 / 322" width="1738" node="[object Object]"> <br><br>
+在同一字段中，搜索并从下拉菜单中选择清理字符串转换。
+勾选所有三个 <strong>Clean actions</strong> 选项的复选框：
+将空字符串转换为 null
+将多个连续空白字符缩减为单个空白
+去除字符串首尾的空白字符
+清理字符串面板应如下所示： <br><br>
+<img alt="A completed clean string transform board." height="600" src="/docs/resources/foundry/building-pipelines/clean-string-mapped-value.png" style="aspect-ratio:1744 / 690" width="1516.5217391304348" node="[object Object]"> <br><br>
+选择 <strong>Apply</strong>，将转换添加到流水线中。
+在转换配置窗口的左上角，将该转换重命名为 <code>Status Mapping - Clean</code>。
+选择右上角的 <strong>Back to graph</strong> 返回流水线图谱。
+你可以看到刚才添加的转换与其应用的数据集之间的连接。 <br><br>
+<img alt="A pipeline builder graph with three dataset and three transform nodes." height="600" src="/docs/resources/foundry/building-pipelines/transforms-done.png" style="aspect-ratio:1330 / 634" width="1258.6750788643533" node="[object Object]"> <br><br>
+<h2 id="user-content-part-4-join-datasets" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#part-4-join-datasets"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>第四部分：关联数据集</h2>
+现在，你可以通过 <strong>joins</strong> 将部分清理后的数据集合并起来。关联操作允许你通过至少一个匹配列来合并数据集。你将在流水线工作流中添加两个关联。
+<h3 id="user-content-join-1" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#join-1"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>关联 1</h3>
+你的第一个关联将合并两个已清理的数据集。
+选择 <code>Flight Alerts - Clean</code> 转换节点。这将作为关联的左侧。
+选择 <strong>Join</strong>。 <br><br>
+<img alt="Choose to join a dataset from the graph." height="600" src="/docs/resources/foundry/building-pipelines/join-time.png" style="aspect-ratio:836 / 674" width="744.213649851632" node="[object Object]"> <br><br>
+选择 <code>Status Mapping - Clean</code> 节点，将其添加为关联的右侧。
+选择 <strong>Start</strong> 打开关联配置面板。 <br><br>
+<img alt="Select Start to join the selected datasets." height="126" src="/docs/resources/foundry/building-pipelines/start-join.png" style="aspect-ratio:1298 / 126" width="1298" node="[object Object]"> <br><br>
+确认 <strong>Join type</strong> 设置为 <code>Left join</code>。
+将 <strong>Match condition</strong> 列设置为 <code>status</code> 等于 <code>value</code>。
+选择 <strong>Show advanced</strong> 查看其他配置选项。
+将右侧 <code>Status Mapping - Clean</code> 数据集的 <strong>Prefix</strong> 设置为 <code>status</code>。
+关联配置面板应如下所示： <br><br>
+<img alt="A completed join board." height="600" src="/docs/resources/foundry/building-pipelines/input-tables.png" style="aspect-ratio:2010 / 1216" width="991.7763157894736" node="[object Object]"> <br><br>
+选择 <strong>Apply</strong>，将关联添加到流水线中。
+在配置窗口底部的 <strong>Preview</strong> 窗格中查看关联输出表的预览。 <br><br>
+<img alt="A preview of the join output." height="564" src="/docs/resources/foundry/building-pipelines/pipeline-preview-pane.png" style="aspect-ratio:1576 / 564" width="1576" node="[object Object]"> <br><br>
+在关联配置窗口的左上角，将该关联重命名为 <code>Join Status</code>。
+选择右上角的 <strong>Back to graph</strong> 返回流水线图谱。 <br><br>
+<img alt="A pipeline graph with the new join node." height="600" src="/docs/resources/foundry/building-pipelines/back-to-graph-join-status.png" style="aspect-ratio:2028 / 628" width="1937.5796178343949" node="[object Object]"> <br><br>
+为使图谱更易于阅读，选择 <strong>Layout</strong> 图标自动排列数据集，或手动拖动两个相连的数据集使其相互靠近。 <br><br>
+<img alt="Use the layout tool to neatly organize the pipeline graph." height="600" src="/docs/resources/foundry/building-pipelines/reorganized-graph.png" style="aspect-ratio:1318 / 1094" width="722.8519195612431" node="[object Object]"> <br><br>
+<h3 id="user-content-join-2" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#join-2"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>关联 2</h3>
+对于第二个关联，需将第一个关联的输出表与另一个原始数据集合并。
+选择 <strong>Add datasets</strong>，将 <code>priority_mapping_raw</code> 数据集添加到图谱中。
+选择刚才添加到图谱中的 <code>Join Status</code> 节点。这将作为关联的左侧。
+选择 <strong>Join</strong>。
+选择 <code>priority_mapping_raw</code> 数据集节点，将其添加为关联的右侧。
+
+选择<strong>开始</strong>打开配置面板。 <br><br>
+<img alt="Select Start to join the selected nodes." height="134" src="/docs/resources/foundry/building-pipelines/select-another-table-to-join.png" style="aspect-ratio:1442 / 134" width="1442" node="[object Object]"> <br><br></p>
+</li>
+<li>
+<p>确认<strong>连接类型</strong>已设为<code>左连接</code>。</p>
+</li>
+<li>
+<p>将<strong>匹配条件</strong>列设置为<code>priority</code>等于<code>value</code>。</p>
+</li>
+<li>
+<p>选择<strong>显示高级选项</strong>以查看更多配置选项。</p>
+</li>
+<li>
+<p>将右侧<code>priority_mapping_raw</code>数据集的<strong>前缀</strong>设置为<code>priority</code>。</p>
+<p>配置好的连接面板应如下所示： <br><br>
+<img alt="A completed join configuration." height="600" src="/docs/resources/foundry/building-pipelines/input-tables2.png" style="aspect-ratio:2252 / 1082" width="1248.7985212569317" node="[object Object]"> <br><br></p>
+</li>
+<li>
+<p>选择<strong>应用</strong>将连接添加到流水线中。</p>
+</li>
+<li>
+<p>在配置窗口底部的<strong>预览</strong>面板中查看连接输出表的预览结果。 <br><br>
+<img alt="A preview of the configured join." height="600" src="/docs/resources/foundry/building-pipelines/preview-pane2.png" style="aspect-ratio:1580 / 604" width="1569.5364238410596" node="[object Object]"> <br><br></p>
+</li>
+<li>
+<p>在连接配置窗口的左上角，将连接<code>Join (2)</code>重命名。</p>
+</li>
+<li>
+<p>选择右上角的<strong>返回图表</strong>以返回流水线图表。</p>
+</li>
+</ol>
+<p>现在，你可以看到刚才添加的连接与其所应用的数据集之间的关联关系。</p>
+<p><img alt="The pipeline graph with another join node." height="458" src="/docs/resources/foundry/building-pipelines/join-stage-in-workspace.png" style="aspect-ratio:1604 / 458" width="1604" node="[object Object]"></p>
+<h2 id="user-content-part-5-add-an-output" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#part-5-add-an-output"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>第 5 部分：添加输出</h2>
+<p>完成数据的转换和结构化后，即可添加输出。在本教程中，你将添加一个数据集输出。</p>
+<ol>
+<li>在 Pipeline Builder 图表右侧的<strong>流水线输出</strong>侧边栏中，将输出命名为<code>Flight Alerts data</code>。然后选择<strong>添加数据集输出</strong>。</li>
+<li>选择连接节点右侧的白色圆圈并将其连接到<code>Flight Alerts data</code>数据集，从而将<code>Join (2)</code>链接至该输出。</li>
+<li>选择<strong>使用输入架构</strong>以套用现有架构。</li>
+<li>在此处选择需保留的数据列。在此示例中，保留全部数据。 <br><br>
+<img alt="Select the columns to include in the output dataset." height="600" src="/docs/resources/foundry/building-pipelines/add-an-output.png" style="aspect-ratio:300 / 642" width="280.3738317757009" node="[object Object]"> <br><br></li>
+</ol>
+<h2 id="user-content-part-6-build-the-pipeline" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#part-6-build-the-pipeline"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>第 6 部分：构建流水线</h2>
+<p>要构建流水线，请选择图表右上角的<strong>部署</strong>。然后，选择<strong>保存并部署</strong>。</p>
+<p><img alt="Choose to save and deploy to build you pipeline" height="456" src="/docs/resources/foundry/building-pipelines/save-and-deploy.png" style="aspect-ratio:304 / 456" width="304" node="[object Object]"></p>
+<p>此时应会出现一条提示，指明部署已成功。在提示框中选择<strong>查看</strong>以打开<strong>构建进度</strong>页面。</p>
+<p><img alt="Screenshot of build progress page" height="600" src="/docs/resources/foundry/building-pipelines/build-progress.png" style="aspect-ratio:2592 / 820" width="1896.5853658536585" node="[object Object]"></p>
+<p>在该页面上，你可以监控构建进度，直到数据集输出准备就绪。</p>
+<p><img alt="Screenshot of build progress with succeed status page" height="330" src="/docs/resources/foundry/building-pipelines/build-succeed.png" style="aspect-ratio:250 / 330" width="250" node="[object Object]"></p>
+<p>现在，你可以选择<strong>操作 &gt; 打开</strong>来访问数据集。</p>
+<p><img alt="Screenshot of dataset output" height="600" src="/docs/resources/foundry/building-pipelines/flight-alerts-data.png" style="aspect-ratio:2606 / 1666" width="938.5354141656663" node="[object Object]"></p>
+<p>完成最后这一步后，流水线输出即生成完毕。此输出为一个数据集，可在 Foundry 的其他应用中进一步探索，例如《Contour》或《代码工作簿》。</p>
+</article>
+</body>
+</html>

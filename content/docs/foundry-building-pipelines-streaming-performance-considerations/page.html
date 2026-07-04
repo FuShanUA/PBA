@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Performance considerations</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-performance-considerations" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#performance-considerations"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Performance considerations</h1>
+<p>As you prepare to create a stream in Foundry, it is important to consider the latency and throughput expectations that define your stream. This page will present some questions to consider regarding both latency and throughput performance for your stream use case.</p>
+<h2 id="user-content-latency" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#latency"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Latency</h2>
+<p>Latency is the speed at which stream records are processed. Latency is a core performance component that defines realtime streams, and the speed expectations from when your records process through a stream and arrive at their destination can have real-world impact. For example, stream latency determines how quickly alerts are triggered for airline flight delays or supply chain issues that require immediate action. The factors that impact latency are multi-faceted, but some of the most significant considerations are listed below.</p>
+<h3 id="user-content-latency-factors" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#latency-factors"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Latency factors</h3>
+<ul>
+<li>How fast is the source producing data?
+<ul>
+<li>Foundry can only consume data as fast as it is produced, so you should ensure the data source is able to produce data quickly.</li>
+</ul>
+</li>
+<li>How long does it take for the data to cross network boundaries?
+<ul>
+<li>When ingesting data into Foundry, the data often must pass across network boundaries which can introduce latency depending on network configuration, firewalls, and other factors.</li>
+</ul>
+</li>
+<li>How many stages are in your end-to-end pipeline?
+<ul>
+<li>Foundry streaming will co-locate pipeline transformations defined in the same Code Repository or Pipeline Builder graph onto the same physical hardware to automatically optimize latencies. When more stages are added to the pipeline (for example, multiple repositories or Builder pipelines are chained together) we are unable to perform the same optimizations, incurring additional latency.</li>
+</ul>
+</li>
+<li>Is data being sent to external systems?
+<ul>
+<li>For a record to be accessible in a low latency manner, the destination system must be able to process data in a low latency manner. Foundry offers optimized destinations, such as time series and the Ontology, but if data is traveling to external systems that system must support the latency requirements.</li>
+</ul>
+</li>
+<li>What is the consistency model of your data?
+<ul>
+<li>Data consistency plays a significant role in end-to-end latency. Data that requires exactly-once guarantees (e.g. your record is guaranteed that it will be processed exactly one time) adds overhead and latency to ensure atomicity of your pipeline. If, however, your pipeline can run with at-least-once guarantees (e.g. each record is guaranteed to be processed at least one time, but may also be processed more than once), the system will automatically optimize your pipelines to make them run faster.</li>
+</ul>
+</li>
+</ul>
+<h3 id="user-content-end-to-end-latency-of-a-streaming-pipeline" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#end-to-end-latency-of-a-streaming-pipeline"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>End-to-end latency of a streaming pipeline</h3>
+<p>A standard streaming pipeline can run through the following stages in under 15 seconds:</p>
+<ul>
+<li><strong>Ingestion:</strong> ~1-2 seconds</li>
+<li><strong>Transformation:</strong> ~5 seconds if exactly-once is enabled (default), or 1 second if at-least-once is enabled</li>
+<li><strong>Syncing into a backing datastore (object storage sync or time series sync):</strong> ~5 seconds if exactly once is enabled (default), or 1 second if at-least-once is enabled</li>
+</ul>
+<p>As indicated above, there are three major factors that influence the end-to-end latency of a streaming pipeline:</p>
+<ol>
+<li>The complexity of the pipeline based on the number of transforms.</li>
+<li>The consistency model based on whether the pipeline is running at-least-once or exactly-once mode.</li>
+<li>Time-based windows and aggregations in transforms. For example, if you specify that you want to aggregate over a 30-second window, then the data will implicitly have 30 extra seconds of latency for the aggregation.</li>
+</ol>
+<h2 id="user-content-throughput" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#throughput"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Throughput</h2>
+<p>Throughput is the amount of records that can be processed over a period of time. Throughput is often equally as important as latency for measuring the performance of a low latency pipeline, and some of the most significant considerations are listed below:</p>
+<ul>
+<li>How many records is your source producing per time interval?
+<ul>
+<li>Foundry’s streaming capabilities come with high throughput levels out of the box. However, if your source stream is producing at an exceptionally high rate, you can:
+<ul>
+<li>Increase the number of <a href="/docs/foundry/data-connection/set-up-streaming-sync/#part-3-configure-the-streaming-sync">partitions</a> your stream uses to support those higher volumes.</li>
+<li>Set an existing stream's stream type to "HIGH THROUGHPUT". This configuration increases the number of records your source sends in one batch and is recommended if you notice that your stream's "Total Lag" metric is greater than 0. Note that this setting directly trades off latency for throughput. Before proceeding, check your stream's "Total Throughput" metric to confirm that applying "HIGH THROUGHPUT" is the right choice for your stream.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>How CPU intensive is the processing portion of your pipeline?
+<ul>
+<li>Throughput can often be limited by delays in processing. There are many ways to increase throughput in processing, most of which can be solved by scaling the size of your processing cluster.</li>
+</ul>
+</li>
+<li>How fast can your destination system receive records?
+<ul>
+<li>The stream destination system can also cause a delay if it cannot receive records as fast as they are produced. This can lead to <a href="https://en.wikipedia.org/wiki/Back_pressure#:~:text=Back%20pressure%20(or%20backpressure)%20is,a%20magnitude%20but%20no%20direction.">backpressure ↗</a>, which decreases throughput and increases latency. Foundry’s streaming products are optimized and designed to keep up with extremely high throughputs. However, if you set a streaming pipeline to write to your own destination, you should ensure the destination can keep up with the volume of records produced.</li>
+</ul>
+</li>
+</ul>
+<h2 id="user-content-advanced" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#advanced"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Advanced</h2>
+<ul>
+<li>For users with an in-depth understanding of their data pipeline, another potential bottleneck for stream performance is network bandwidth. Symptoms of suboptimal network bandwidth include non-zero lag, lower than expected throughput, and records being dropped. To alleviate these symptoms, you can apply data compression to your stream. However, before doing so, keep in mind that:
+<ul>
+<li>Data compression works best on high volume streams with repetitive strings.</li>
+<li>For lower volume streams whose primary concern is reducing latency, enabling data compression will further increase latency due to time spent compressing data in a suboptimal manner (for example, if there is a low volume of unique strings).</li>
+</ul>
+</li>
+</ul>
+</article>
+</body>
+</html>

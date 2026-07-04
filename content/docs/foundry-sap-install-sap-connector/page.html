@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Install the Palantir Foundry Connector 2.0 for SAP Applications</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-install-the-palantir-foundry-connector-20-for-sap-applications" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#install-the-palantir-foundry-connector-20-for-sap-applications"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Install the Palantir Foundry Connector 2.0 for SAP Applications</h1>
+<p>The Palantir Foundry Connector 2.0 for SAP Applications ("Connector") is shipped as an SAP add-on to be installed via <code>SAINT</code> (SAP Add-On Installation Tool). The add-on is delivered in SAR format with the following filename pattern: <code>FOUNDRY-SAPCONN-INST-SP00SPXX.SAR</code></p>
+<p><code>SP00SPXX</code> represents the installation files from <code>SP00</code> to <code>SPXX</code> where <code>XX</code> is the support package level.</p>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>If the Connector is being installed on <strong>BW/4HANA</strong> or <strong>S/4HANA</strong>, include Attribute Change Packages in the installation. As of SP22, these packages are included in the installation file.</p></div>
+<p>These are the high-level steps required to setup the Connector:</p>
+<ol>
+<li><a href="/docs/foundry/sap/download-sap-addon/">Download the installation packages</a>.</li>
+<li><a href="#install-the-connector-add-on">Install the Connector add-on</a> via <code>SAINT</code>.</li>
+<li>Create a System-type (Type <code>B</code>) technical user for Foundry in <code>SU01</code>. This user is consumed by the Foundry agent for system-to-system calls and is not used to log into SAP GUI. If you plan to enable <a href="/docs/foundry/sap/oauth2-writeback/">user-attributed writeback via OAuth 2.0</a> later, the User Type <strong>must</strong> be <code>System</code>.</li>
+<li><a href="#run-the-post-installation-wizard">Run the Post Installation Wizard</a>.</li>
+</ol>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>Two distinct SAP users are involved in the installation. They are referred to throughout this page as follows:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>Term</th><th>Definition</th></tr></thead><tbody><tr><td><strong>Performing user</strong> (Basis administrator)</td><td>A human SAP administrator (Dialog user) who logs in interactively to run <code>SAINT</code>, the Post Installation Wizard, and <code>PFCG</code>. Requires <code>SAINT</code> / <code>PFCG</code> / <code>SU01</code> authorizations.</td></tr><tr><td><strong>Foundry technical user</strong></td><td>A System-type (Type <code>B</code>) user, no interactive logon, used by the Foundry agent for RFC/HTTPS calls. Receives the <code>/PALANTIR/*</code> roles assigned by the Post Installation Wizard.</td></tr></tbody></table></div></div>
+<h2 id="user-content-prerequisites" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#prerequisites"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Prerequisites</h2>
+<ul>
+<li>SAP_BASIS (the technical component version, applicable to both SAP NetWeaver and SAP S/4HANA systems) 7.4 SP5 or above</li>
+</ul>
+<p>or</p>
+<ul>
+<li>SAP_BASIS 7.5 (no minimum SP level)</li>
+</ul>
+<p>These are minimum versions. The Connector supports all higher SAP_BASIS versions, including SAP S/4HANA releases based on SAP_BASIS 8.x (for example, SAP_BASIS 816).</p>
+<p>Ensure that the following SAP note has been read and the relevant steps followed where applicable:</p>
+<ul>
+<li>SAP OSS Note <code>2645739</code> - <em>ABAP Add-On OCS package is not digitally signed</em></li>
+</ul>
+<h2 id="user-content-install-the-connector-add-on" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#install-the-connector-add-on"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Install the Connector add-on</h2>
+<ol>
+<li>Log into the SAP system client <code>000</code> with a user authorized to use <code>SAINT</code>.</li>
+<li>Run <code>SAINT</code> transaction.</li>
+<li>Import <code>FOUNDRY-SAPCONN-INST-SP00SPXX.SAR</code> to the SAP Server; select <strong>Installation package</strong> &gt; <strong>Load Packages</strong> &gt; <strong>From Front End</strong>.</li>
+</ol>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>For some SAINT/SPAM versions, SPAM or SAINT settings can impact the installation process. Disable the <strong>Signature check not possible, SAP note 2520826 is not implemented</strong> item under the <strong>Checks during import</strong> section. Note that for some SPAM versions, this item has no description at all, but should still be disabled.</p></div>
+<ol start="4">
+<li>Select <strong>Start</strong> for installation.</li>
+<li>The available packages are listed. If not, deactivate the filter by clicking the filter icon.</li>
+<li>Select <strong>Continue</strong> to go to next step.</li>
+<li>For Connector installation, select <code>PALANTIR</code> and <code>PALCONN</code>.</li>
+<li>Select <strong>Continue</strong> to move onto support package selection.</li>
+<li>Select the highest available support package from the list and make sure both components have the same SP level selected.</li>
+<li>Confirm the installation queue and click <strong>Continue</strong>.</li>
+<li>Select <strong>Continue in Dialog mode</strong> for Preparation phase, <strong>Continue in Background Immediately</strong> for other phases, and start installation.</li>
+</ol>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>If warnings are flagged during the installation, follow the steps described in the warning message to resolve. In most cases, warning messages can be ignored for Connector and Remote Agent installations. In particular, the warning message with the heading "Open Data Extraction Requests" can be ignored because the installation does not make changes to DDIC structures and therefore will not cause open data extraction requests to terminate.</p></div>
+<ol start="12">
+<li>Select <strong>Finish</strong> to complete the installation.</li>
+</ol>
+<h2 id="user-content-run-the-post-installation-wizard" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#run-the-post-installation-wizard"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Run the Post Installation Wizard</h2>
+<p>The Connector Post Installation Wizard simplifies the setup activities after Connector add-on installation. To perform post-installation and configuration, a Basis administrator (the performing user, <strong>not</strong> the Foundry technical user) logs into the main client (not <code>000</code>) via SAP GUI. The Post Installation Wizard runs under that administrator's session and <em>configures</em> the Foundry technical user; the Foundry technical user itself never logs in interactively. The Post Installation Wizard can be accessed either using transaction code <code>/n/PALANTIR/POST_INST</code> or from the Connector menu (transaction code: <code>/n/PALANTIR/</code>).</p>
+<h3 id="user-content-wizard-steps" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#wizard-steps"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Wizard steps</h3>
+<p>There are 10 steps which can be run together or individually. To finish the installation, all steps need to be enabled. If this is not an SLT installation, disable <strong>Create SLT configuration</strong>. SLT configuration is detailed in step 7.</p>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>The performing user (the Basis administrator running the wizard) needs sufficient authorization to assign required authorization roles to the Foundry technical user. This process is similar to maintaining a user via the <code>SU01</code> transaction code. If the user assignment is done separately, disable <code>Assign Roles to Foundry User</code> and <code>Perform Healthcheck</code>.</p></div>
+<h4 id="user-content-1-run-uninstall-corrections"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#1-run-uninstall-corrections"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>1. Run uninstall corrections</h4>
+<p>This step runs a background program which fixes SAP packages in the Connector Object Directory. This correction program can be run at any time with no adverse side effects.</p>
+<h4 id="user-content-2-activate-sicf-services"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#2-activate-sicf-services"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>2. Activate SICF services</h4>
+<p>This step activates two Connector services that are required for data transfer. Note that this can be done manually with the <code>SICF</code> transaction code if desired. The two services are:</p>
+<ul>
+<li><code>/default_host/sap/palantir</code></li>
+<li><code>/default_host/sap/opu/odata/palantir</code></li>
+</ul>
+<h4 id="user-content-3-generate-roles"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#3-generate-roles"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>3. Generate roles</h4>
+<p>The Connector has its own set of roles which are imported during installation. These roles stay in an ungenerated status after installation. If desired, mass generation of these roles can be done manually with the <code>PFCG</code> transaction code using <code>Utilities &gt; Mass Generation</code>.</p>
+<ul>
+<li><code>/PALANTIR/CONTENT_BEX_ALL</code></li>
+<li><code>/PALANTIR/CONTENT_CDS_ALL</code></li>
+<li><code>/PALANTIR/CONTENT_HANA_ALL</code></li>
+<li><code>/PALANTIR/CONTENT_DM_ALL</code></li>
+<li><code>/PALANTIR/CONTENT_EXT_ALL</code></li>
+<li><code>/PALANTIR/CONTENT_FUNCTION_ALL</code></li>
+<li><code>/PALANTIR/CONTENT_INFOPROV_ALL</code></li>
+<li><code>/PALANTIR/CONTENT_SLT_ALL</code></li>
+<li><code>/PALANTIR/CONTENT_TABLE_ALL</code></li>
+<li><code>/PALANTIR/CONTENT_TCODE_ALL</code></li>
+<li><code>/PALANTIR/DEBUG_USER</code></li>
+<li><code>/PALANTIR/MONITORING</code></li>
+<li><code>/PALANTIR/OAUTH_CLIENT</code></li>
+<li><code>/PALANTIR/SERVICE_SLT</code></li>
+<li><code>/PALANTIR/SERVICE_SLT_740</code></li>
+<li><code>/PALANTIR/SERVICE_USER</code></li>
+</ul>
+<h4 id="user-content-4-assign-roles-to-the-foundry-technical-user"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#4-assign-roles-to-the-foundry-technical-user"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>4. Assign roles to the Foundry technical user</h4>
+<p>All Palantir roles in step 3 will be assigned to the SAP user that is defined in the selection screen. This should be the System-type Foundry technical user created in step 3 of the high-level steps above, not the performing user.</p>
+<p>If this step generates error messages about role assignment, inability to retrieve user details or lack of authorization, this suggests that the performing user does not have sufficient permission. In this case, follow the suggestions in the error messages to correct the performing user's authorization and run the program again.</p>
+<p>If this step generates error messages that suggest the Foundry technical user is locked, contact the owner of the lock to have it removed before running the program again.</p>
+<h4 id="user-content-5-maintain-default-parameters"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#5-maintain-default-parameters"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>5. Maintain default parameters</h4>
+<p>Resource check and continuous resource check parameters can be set via these selections. Default values are in the selection screen and can be changed according to your requirements. When the program is run with this selection, the Connector parameters will be modified according to the selected parameters. These parameters can also be maintained using transaction code <code>/n/PALANTIR/PARAM</code>.</p>
+<p>Learn about <a href="#performance-parameters">performance parameters</a>.</p>
+<h4 id="user-content-6-check-icm-settings"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#6-check-icm-settings"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>6. Check ICM Settings</h4>
+<p>This step verifies ICM settings, hostname and ports (for HTTP and HTTPS), and creates URLs that can be used to test the connection.</p>
+<h4 id="user-content-7-create-slt-configuration"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#7-create-slt-configuration"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>7. Create SLT configuration</h4>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>This step is only relevant if the connection is <a href="/docs/foundry/sap/architecture/#connecting-to-an-sap-erp-system-via-an-sap-slt-replication-server">via an SAP SLT Replication Server</a>.</p></div>
+<p>If the Connector is installed on top of an SAP SLT instance, a new SLT configuration (ODP) can be created by the Post-Installation Wizard. You can also create an SLT configuration using the <code>LTRC</code> transaction code.</p>
+<p>The parameters of an SLT configuration are as follows:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>Parameter</th><th>Description</th></tr></thead><tbody><tr><td><code>Context Name</code></td><td>Unique configuration name.</td></tr><tr><td><code>Context Description</code></td><td>Context Description that will be shown to the user in SAP transaction <code>LTRC</code> and in Foundry.</td></tr><tr><td><code>Data Transfer Jobs</code></td><td>Number of data transfer jobs.</td></tr><tr><td><code>Initial Load Jobs</code></td><td>Number of jobs for initial loads.</td></tr><tr><td><code>Calculation Jobs</code></td><td>Number of calculation jobs for initial load range calculations.</td></tr><tr><td><code>Authorization Group</code></td><td>No Authorization Group by default.</td></tr><tr><td><code>Replication Mode</code></td><td>1 - Real Time (Default); 2 - Time Interval; 3 - Time Schedule; 4 - On Demand.</td></tr><tr><td><code>Source RFC Destination</code></td><td>Logical Destination - RFC Destination name of Source System.</td></tr><tr><td><code>Read from Single Client</code></td><td>Enable if data will be read from a single client.</td></tr><tr><td><code>Allow Multiple Usage</code></td><td>Enable if multiple usage is allowed.</td></tr></tbody></table></div>
+<h4 id="user-content-8-perform-health-checks"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#8-perform-health-checks"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>8. Perform health checks</h4>
+<p>The Connector has various metrics to measure health in the installed SAP system. The connector performs health checks in the following categories:</p>
+<ul>
+<li><code>AGENT</code>: Checks RFC connection and source system authorizations. <strong>Only relevant for <a href="/docs/foundry/sap/architecture/#connecting-to-a-remote-sap-erp-system-via-a-gateway">remote connections via a gateway</a>.</strong></li>
+<li><code>AUTHORIZATION</code>: Checks whether the Foundry user has any missing authorization in <code>SM53</code>.</li>
+<li><code>CONNECTOR</code>: Checks whether the Connector housekeeping job is scheduled in the system.</li>
+<li><code>ROLE</code>: Checks the Foundry user's roles and authorization profiles.</li>
+<li><code>SLT</code>: Checks whether SLT configuration is correct and healthy; for example, whether BADI_Implementation is active, Context is active, SLT housekeeping job is scheduled, or source system connection is working.</li>
+</ul>
+<h4 id="user-content-9-browser-test-urls"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#9-browser-test-urls"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>9. Browser test URLs</h4>
+<p>After installation, it is important to check if the Connector is running properly by conducting connectivity tests with a web browser. The required URLs are generated by the Post-Installation Wizard.</p>
+<p>There are several different tests available. The first and second test are synchronous calls to the Connector service; the third and fourth are for batch extraction.</p>
+<ul>
+<li><strong>About:</strong> About page of the Connector.</li>
+<li><strong>T000 Table:</strong> Direct extraction of T000 table with <code>table</code> object type.</li>
+<li><strong>T000 with Paging-Init:</strong> Initialization of background extraction for T000 table with <code>table</code> object type.</li>
+<li><strong>T000 with Paging-Read Page 1:</strong> First page will be retrieved for the process initialized by the previous URL.</li>
+</ul>
+<h4 id="user-content-10-source-definition-template-for-foundry"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#10-source-definition-template-for-foundry"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>10. Source definition template for Foundry</h4>
+<p>After running the program with Source Definition in Foundry checked, a new tab, “Source Definition”, will be shown with details for the source configuration in Foundry.</p>
+<h3 id="user-content-security-and-authorization-roles" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#security-and-authorization-roles"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Security and authorization roles</h3>
+<p>More details can be found in <a href="/docs/foundry/sap/authorization-roles/">Authorization roles</a>.</p>
+<h3 id="user-content-performance-parameters" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#performance-parameters"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Performance parameters</h3>
+<p>The Connector has the following performance parameters to avoid unwanted system load when the system resources are insufficient to serve Foundry. These settings are compared with ST06 values.</p>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>The default parameter values listed below are for a fresh install of the latest connector version.</p></div>
+<ul>
+<li><strong><code>MEMORY_FREE</code>:</strong> Free memory percentage. If this percentage is lower than the system default or user-defined value, extraction stops. Connector default is <code>5%</code>.</li>
+<li><strong><code>CPU_IDLE</code>:</strong>  CPU idle percentage. Connector default is <code>5%</code>.</li>
+<li><strong><code>CPU_USER</code>:</strong> CPU utilization by user transactions. Connector default is <code>80%</code>.</li>
+<li><strong><code>CPU_LOAD</code>:</strong> Total CPU utilization. Connector default is <code>80%</code>.</li>
+</ul>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>ST06 key figures are served by SAP to the Connector. If <strong>Enhanced Monitoring for virtualization</strong> is activated, the operating system-specific information is enriched by virtualization-specific information. This may affect ST06 figures and misguide the Connector. Refer to SAP OSS Article 2266266 for further details.</p></div>
+<p>Initial system defaults are deliberately conservative. If you wish to override them to be more permissive, maintain via the <strong><code>/n/PALANTIR/PARAM</code></strong> transaction.</p>
+<p>The following parameters are used to enable or disable resource checks:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>Param Id</th><th>Param Name</th><th>Param Values</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>SYSTEM</code></td><td><code>CPU_CHECK</code></td><td><code>TRUE</code> / <code>FALSE</code></td><td><code>TRUE</code></td><td>Enables or disables CPU checks.</td></tr><tr><td><code>SYSTEM</code></td><td><code>MEMORY_CHECK</code></td><td><code>TRUE</code> / <code>FALSE</code></td><td><code>TRUE</code></td><td>Enables or disables MEMORY checks.</td></tr><tr><td><code>SYSTEM</code></td><td><code>RESOURCE_CHECK</code></td><td><code>TRUE</code> / <code>FALSE</code></td><td><code>TRUE</code></td><td>Enables or disables RESOURCE checks. If FALSE, <em>all</em> checks are disabled; if TRUE, other parameters (CPU_CHECK and MEMORY_CHECK) are checked.</td></tr><tr><td><code>SYSTEM</code></td><td><code>CONTINUOUS_RESOURCE_CHECK</code></td><td><code>TRUE</code> / <code>FALSE</code></td><td><code>TRUE</code></td><td>Enables resource checks for all requests (init and all paging requests). If FALSE, resource checks are only carried out for the init request.</td></tr><tr><td><code>SYSTEM</code></td><td><code>PROCESS_CHECK</code></td><td><code>TRUE</code> / <code>FALSE</code></td><td><code>TRUE</code></td><td>Enables checks on the minimum number of permitted work processes; works in conjunction with PROCESS_MIN_BG and PROCESS_MIN_DIA.</td></tr><tr><td><code>SYSTEM_THRESHOLD</code></td><td><code>PROCESS_MIN_BG</code></td><td>numeric</td><td><code>1</code></td><td>Minimum required number of background process available on the SAP Application Server.</td></tr><tr><td><code>SYSTEM_THRESHOLD</code></td><td><code>PROCESS_MIN_DIA</code></td><td>numeric</td><td><code>1</code></td><td>Minimum required number of dialog process available on the SAP Application Server.</td></tr></tbody></table></div>
+<p>To check the actual values and parameter values, you can use the system object and resource function from a browser:</p>
+<pre><code>https://&lt;sap-server&gt;:&lt;port&gt;/sap/palantir/system?obj=resource
+</code></pre>
+<p>Note that this URL is an SAP system URL; you should ensure that this resource is accessible.</p>
+<p>Output will be of this format:</p>
+<pre><code>MSGTYP	MSGTXT
+S	Current CPU_LOAD value : 0,01 | system threshold value : 95,00
+S	Current CPU_USER value : 1,00 | system threshold value : 0,01
+S	Current CPU_IDLE value : 99,00 | system threshold value : 5,00
+S	Current free memory percentage : 24,22 | system threshold value : 11,00
+S	Current PROCESS_MIN_BG value : 5 | system threshold value : 2
+S	Current PROCESS_MIN_DIA value : 9 | system threshold value : 2
+S	Resource check is Active
+S	CPU Load check is Active
+S	Memory consumption check is Active
+S	Process availability check is Active
+</code></pre>
+</article>
+</body>
+</html>

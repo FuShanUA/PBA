@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Streaming profiles</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-streaming-profiles" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#streaming-profiles"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>流式处理配置</h1>
+<p>使用 Palantir 平台进行流式处理时，系统会自动为您管理 Flink 运行时环境的各项配置，包括为 Flink 作业配置提供合理且高性价比的默认值。在大多数情况下，您无需手动配置任何参数，即可在 Flink 计算引擎上高效运行作业。</p>
+<p>然而，有时您的作业所需的资源会超出 Foundry 流式处理默认提供的额度。这类资源可能包括额外的并行度（例如，当数据流吞吐量极高时），或者在状态数据或单条记录非常大的情况下，JobManagers 或 TaskManagers 所需的额外资源。</p>
+<p>针对作业需要额外资源的情况，Palantir 提供了一系列作业配置文件，可用于调整特定的配置项。需要注意的是，Palantir 流式处理平台已为您代管了大部分配置，因此我们仅开放了部分 Flink 配置供您使用。</p>
+<p>与《代码仓库中的 Spark 配置》类似，每个流式处理作业配置文件都专门用于管理流式作业资源需求的特定部分，并且可以将多个流式处理作业配置文件组合使用，以满足您的实际业务需求。</p>
+<h2 id="user-content-when-to-use-streaming-profiles" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#when-to-use-streaming-profiles"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>何时使用流式处理配置</h2>
+<p>通常情况下，您完全无需在平台中使用流式处理配置，因为我们的默认流式配置已经针对绝大多数应用场景进行了性能和成本优化。但是，如果您的流式作业遇到以下特定问题，我们建议您使用流式处理配置：</p>
+<ul>
+<li>极高的吞吐量</li>
+<li>极大的记录数据</li>
+<li>极大的状态需求</li>
+</ul>
+<p>您可以结合作业需求、JobTracker 界面中提供的日志与错误信息，以及对 Flink 的基本了解，来判断需要添加哪些额外的配置文件。</p>
+<h2 id="user-content-set-up-a-streaming-profile" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#set-up-a-streaming-profile"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>设置流式处理配置</h2>
+<p>流式处理配置的设置界面会因您使用 Foundry 流式处理平台的位置不同而有所差异。</p>
+<p>在大多数情况下，设置流式处理应用时，您会看到一个选择框，其中列出了所有可用的流式处理配置。例如，在《管道构建器》中，您可以通过点击<strong>部署</strong>按钮旁边的构建设置，查看可配置的流式处理配置列表：</p>
+<p><img alt="Screenshot of Pipeline Builder Built-in Flink Profiles" height="600" src="/docs/resources/foundry/data-integration/pipeline-builder-built-in-flink-profiles.png" style="aspect-ratio:998 / 820" width="730.2439024390244" node="[object Object]"></p>
+<p>此外，管道构建器还允许您通过<strong>高级</strong>配置选项，将这些配置文件的不同特性组合在一起使用：</p>
+<p><img alt="Screenshot of Pipeline Builder Advanced Flink profile." height="600" src="/docs/resources/foundry/data-integration/pipeline-builder-advanced-flink-profile.png" style="aspect-ratio:1312 / 832" width="946.1538461538462" node="[object Object]"></p>
+<p>请注意，您可选择的流式处理配置可能会因所使用的应用程序以及工作环境中应用的其他安全或可见性要求而有所不同。</p>
+<h1 id="user-content-manage-streaming-profiles" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#manage-streaming-profiles"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>管理流式处理配置</h1>
+<p>由于流式处理配置可用于决定分配给长期运行的流式作业的资源总量，因此平台对这些配置实施了一些管理控制措施，以便管理流式处理成本。</p>
+<h2 id="user-content-project-references" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#project-references"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>项目引用</h2>
+<p>在 Palantir 平台中，项目（Projects）界定了相关工作的概念边界，同时也是应用和管理访问权限的安全边界。安全与管理控制的默认应用层级位于项目级别。通常，使用数据或资源的前提是它们必须存在于您当前的项目中，或已被导入到当前项目，从而获得相应的《项目引用》。您可以在项目工作区侧边栏的<strong>引用</strong>部分查看项目中的所有引用。</p>
+<p>对流式处理配置实施的主要管理控制措施是：必须将其作为项目引用，添加到与相关流式处理管道或应用程序相同的项目中。如果您尝试使用未导入到项目中的流式处理配置，作业将会失败，并提示缺少该必要项的错误信息。</p>
+
+通过将 Project 引用作为管理控制手段，可以授权高级用户代表其他用户将配置文件导入 Project。这样，管理员能够细粒度地控制流式配置文件的使用位置，同时允许偏向操作层面的用户使用已获授权的配置文件。</p>
+<h2 id="user-content-import-profiles-as-project-references" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#import-profiles-as-project-references"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>将配置文件导入为 Project 引用</h2>
+<p>通常，系统会利用配置文件选择器组件，将配置文件自动导入相关应用内的 Project 中。例如，Pipeline Builder 中的配置文件选择器就会自动导入选中的配置文件。</p>
+<p>只要用户拥有足够的资源导入权限，所有用户都能将大多数配置文件作为 Project 引用导入各自的 Project。这通常意味着用户已被分配了某项角色，且该角色在对应 Project 上授予了 <code>compass:import-resource-to</code> 权限。你可以进入用户<strong>设置</strong>中的<strong>角色</strong>选项卡查看角色配置。在页面上使用 <code>Filter operations...</code> 搜索工具即可查找该权限。</p>
+<p>要查看所有可用的流式配置文件列表，请访问控制面板中“注册设置”部分的“流式配置文件”选项卡。在这里，你可以选取任意具体的配置文件，查看已将该配置文件添加为 Project 引用的所有 Project（前提是你具备访问权限），并将其导入新的 Project。你也可以从已导入配置文件的某个 Project 中移除对该配置文件的引用；但请注意，<strong>这会导致该 Project 中所有依赖该配置文件的流式作业中断</strong>，因为系统要求配置文件必须与流式作业位于同一个 Project 内才能正常使用。</p>
+<h2 id="user-content-use-large-streaming-profiles" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#use-large-streaming-profiles"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>使用大型流式配置文件</h2>
+<p>对于授予大量资源的配置文件，必须通过控制面板中“注册设置”部分的<strong>流式配置文件</strong>选项卡来创建 Project 引用。此设置仅对被指定为 <code>Enrollment Resource Administrators</code> 的用户开放。可以在“注册权限”选项卡中指派这些管理员，他们能将受限配置文件导入其有权访问的任何 Project。</p>
+<p>管理员将配置文件导入某个 Project 后，任何有权访问该 Project 的用户都可以使用该配置文件。</p>
+</article>
+</body>
+</html>

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Builds</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-builds" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#builds"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>构建</h1>
+<p><strong>构建</strong>是用于在 Foundry 中计算数据集新版本的机制。构建提供了计算的编排与协调功能，确保读取正确的输入数据，并将输出数据写入到合适的位置。</p>
+<p>构建由<strong>作业</strong>组成，每个作业是一个工作单元，由共享逻辑定义，用于计算一个或多个输出数据集。需要注意的是，如果一个作业定义了多个输出数据集，它们将始终一起更新；如果不运行完整的作业，则无法仅构建部分数据集。作业规范，即 <strong>JobSpec</strong>，定义了作业的构建方式。当在 Foundry 中对数据转换逻辑进行更改时，例如数据工程师在代码库中提交新的转换代码时，就会发布 JobSpec。</p>
+<p>运行构建会对一组输出数据集进行一次性计算。为了保持数据在系统中的持续流转，可以通过调度来定期运行构建。</p>
+<p>你可以使用构建应用程序在 Foundry 中探索构建。</p>
+<h2 id="user-content-jobs-and-jobspecs" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#jobs-and-jobspecs"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>作业与 JobSpec</h2>
+<p><em>作业</em>封装了从一组输入数据集的数据中计算一个或多个<em>输出数据集</em>新版本的过程。<em>JobSpec</em> 通过详细说明输入数据集依赖关系以及作为作业一部分执行的逻辑，来定义如何构建作业。</p>
+<p>输入数据集依赖关系声明为一组 <em>InputSpecs</em>，每个 InputSpec 指定一个特定的输入数据集。InputSpecs 根据数据集的视图指定要读取的数据子集。</p>
+<p>在 Foundry 中，有多种类型的逻辑可以表示为作业，包括但不限于：</p>
+<ul>
+<li>数据连接同步定义了如何从外部数据源读取数据。</li>
+<li>在代码库中编写的转换允许你编写代码来转换数据集。</li>
+<li>健康检查定义为在数据集上生成的作业，用于验证数据集的特征。</li>
+<li>分析应用程序支持定义转换数据集的逻辑。</li>
+<li>导出定义了如何将输入数据发送到 Foundry 外部。</li>
+</ul>
+<h3 id="user-content-job-states" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#job-states"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>作业状态</h3>
+<p>在任何时候，作业始终处于以下状态之一：</p>
+<ul>
+<li><code>WAITING</code>：作业的初始状态；作业正在等待其依赖的作业完成，尚未被调用。</li>
+<li><code>RUN_PENDING</code>：作业等待运行，但其执行环境尚未确认状态。</li>
+<li><code>RUNNING</code>：作业已被调用，正在计算中。</li>
+<li><code>ABORT_PENDING</code>：作业已中止，但其执行环境尚未确认中止状态。</li>
+<li><code>ABORTED</code>：作业因用户请求或依赖作业失败而中止。</li>
+<li><code>FAILED</code>：作业已被调用，但计算失败。</li>
+<li><code>COMPLETED</code>：作业已被调用，且计算成功完成。</li>
+</ul>
+<h2 id="user-content-build-lifecycle" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#build-lifecycle"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>构建生命周期</h2>
+<p>运行构建时，会执行几个步骤来验证提交的构建、确保数据一致性，并且仅运行生成新输出所需的必要作业。</p>
+<h3 id="user-content-build-resolution" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#build-resolution"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>构建解析</h3>
+<p>作为第一步，构建会：</p>
+<ul>
+<li>检测指定输入数据集中的循环依赖，如果存在循环，则构建失败。</li>
+<li>验证所有输入数据集是否存在，并识别每个输入数据集的相应模式。</li>
+<li>在每个输出数据集上打开新事务，以确保只有活动的构建才能写入输出数据集。这被称为构建锁定。</li>
+<li>检测是否有其他正在进行的构建会更改此构建的输入。如果是，该构建可能会排队，等待其他构建完成。</li>
+</ul>
+<h3 id="user-content-job-execution" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#job-execution"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>作业执行</h3>
+<p></p>
+
+完成上述步骤后，构建中的作业将开始执行。互不依赖的作业会并行运行。随着作业经历各种<a href="#job-states">作业状态</a>，整体构建的状态也会相应更新：</p>
+<ul>
+<li>如果构建中的某个作业失败，该构建内所有直接依赖该作业的作业以及输出数据集上的事务都将终止。您也可以选择将构建配置为同时中止所有非依赖性作业。</li>
+<li>如果构建中的所有作业均已完成，则该构建即被视为已完成。</li>
+</ul>
+<p>请注意，如果构建中的某个作业失败，先前已完成的作业可能已将数据写入其输出数据集。</p>
+<h3 id="user-content-staleness" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#staleness"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>陈旧度</h3>
+<p>如果<a href="#build-resolution">构建解析</a>步骤确定输入数据集和 JobSpec 中指定的逻辑自上次构建输出数据集以来未发生更改，则该输出数据集被视为<em>最新</em>。如果输出数据集处于最新状态，则在后续构建中不会重新计算。</p>
+<p>若要覆盖构建系统默认的陈旧度行为，您可以执行<strong>强制构建</strong>，这会将所有数据集作为构建的一部分重新计算，无论它们是否已经是最新的。</p>
+<h2 id="user-content-branching" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#branching"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>分支</h2>
+<p>Foundry 中的构建通过实施<strong>分支</strong>来支持数据管道上的协作工作流。如需了解有关分支的更多信息：</p>
+<ul>
+<li>请参阅<a href="/docs/foundry/data-integration/branching/">《分支概览》</a>以获取高层次说明。</li>
+<li>请参阅<a href="/docs/foundry/data-integration/branching/#branches-in-builds">《构建中的分支》</a>部分，了解分支在构建中的运作方式详情。</li>
+</ul>
+<h2 id="user-content-live-logs" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#live-logs"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>实时日志</h2>
+<p>实时日志提供了对正在运行作业的实时可见性，允许您监控作业的进度，并检查流或计算模块等长时间运行的任务。</p>
+<p><img alt="构建应用程序中的实时日志视图。" height="600" src="/docs/resources/foundry/data-integration/live-logs-overview.png" style="aspect-ratio:2578 / 1698" width="910.9540636042403" node="[object Object]"></p>
+<p>您可以通过构建应用程序访问实时日志。在查看作业时，选择日志查看器右上角的<strong>查看实时</strong>按钮即可开始生成。</p>
+<p><img alt="构建应用程序中作业日志查看器页面的“查看实时”选项。" height="600" src="/docs/resources/foundry/data-integration/live-logs-build-page.png" style="aspect-ratio:2578 / 1702" width="908.813160987074" node="[object Object]"></p>
+<p>实时日志的一项关键功能是内置的按日志级别进行颜色编码，这让识别警告和错误并确定其优先级变得更加容易：</p>
+<p><img alt="实时日志流中各种颜色编码指示器的示例。" height="447" src="/docs/resources/foundry/data-integration/live-logs-color-coding.png" style="aspect-ratio:250 / 447" width="250" node="[object Object]"></p>
+<ul>
+<li><strong>信息：</strong>蓝色</li>
+<li><strong>致命/错误：</strong>红色</li>
+<li><strong>警告：</strong>橙色</li>
+<li><strong>调试/跟踪：</strong>灰色</li>
+</ul>
+<p>此外，安全参数和参数以 JSON 块形式显示，为您的数据提供了结构化且易读的格式。</p>
+<p><img alt="实时日志流中的“格式化为 JSON”选项。" height="190" src="/docs/resources/foundry/data-integration/live-logs-json.png" style="aspect-ratio:300 / 190" width="300" node="[object Object]"></p>
+<p>您可以随时通过从界面右上角选择<strong>暂停</strong>来停止实时日志流，并从同一位置恢复。</p>
+<p><img alt="实时日志流中的“暂停”选项。" height="183" src="/docs/resources/foundry/data-integration/live-logs-pause.png" style="aspect-ratio:300 / 183" width="300" node="[object Object]"></p>
+<p>请注意，时间范围选择不适用于实时日志，因为它们是从作业实时流式传输的。</p>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>启用后，可能会有十秒的延迟，实时日志才会显示在界面中。</p></div>
+</article>
+</body>
+</html>

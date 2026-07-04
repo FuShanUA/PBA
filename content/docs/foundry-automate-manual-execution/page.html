@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Manual execution</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-manual-execution" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#manual-execution"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Manual execution</h1>
+<p>You can manually run automations on existing object sets. This is useful for backfilling data or testing automations before a wider release.</p>
+<p>Manual executions are considered run by the user who selects <strong>Execute</strong> in the Automate interface. Users must have Compass edit permissions on the Automate resource to manually execute an automation.</p>
+<p>To manually execute an automation, first <a href="/docs/foundry/automate/getting-started/">create a new automation</a> with the desired effects. Then, open the automation and navigate to the <strong>Execute</strong> tab.</p>
+<p><img alt="The Execute page in Automation where you can configure and run a manual execution." height="600" src="/docs/resources/foundry/automate/manual-execution.png" style="aspect-ratio:2760 / 928" width="1784.4827586206898" node="[object Object]"></p>
+<p>When an automation is manually executed, configured effects for that automation will be triggered immediately (optionally for a user-defined object set, depending on the condition).</p>
+<h2 id="user-content-example-remediate-with-manual-execution" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#example-remediate-with-manual-execution"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Example: Remediate with manual execution</h2>
+<p>Large backlogs may cause snapshot expiration errors during manual execution. To work around this, use a function-backed object set to process the backlog in manageable batches:</p>
+<ol>
+<li>Create a function that returns the oldest N objects needing processing (for example, <code>oldestNObjectsWithBlankField(int count)</code> that returns objects ordered by last edited timestamp with a limit).</li>
+<li>Configure your automation to use a function-generated object set that calls this function.</li>
+<li>Manually execute the automation repeatedly with a reasonable batch size, waiting for each execution to complete.</li>
+<li>Continue manual executions until the backlog is reduced below the limit (typically &lt;100K objects).</li>
+<li>Once the backlog is manageable, your regular condition-based automation can process new objects as they arrive.</li>
+</ol>
+<h2 id="user-content-execution-settings" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#execution-settings"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Execution settings</h2>
+<p>Execution settings expose a number of configurable parameters:</p>
+<p><img alt="Manual execution configuration" height="600" src="/docs/resources/foundry/automate/manual-execution-settings.png" style="aspect-ratio:1560 / 960" width="975" node="[object Object]"></p>
+<ul>
+<li>
+<p><strong>Specify object set:</strong> For <a href="/docs/foundry/automate/condition-objects/">object set conditions</a>, you can specify an input object set. See documentation on <a href="/docs/foundry/automate/limits/">limits</a> for object set size restrictions. This object set must contain objects of the same type as configured in the automation condition. All objects in this set will trigger the automation and be passed into any effect using <code>New object</code> parameters. Three object set types are currently supported:</p>
+<ul>
+<li><strong>Defined object set:</strong>  Static (manually selected objects), or dynamic (defined by filters on a chosen object set).</li>
+<li><strong>Saved object set:</strong> An object set saved as a Palantir resource.</li>
+<li><strong>Function-generated object set:</strong> Choose a function and define its parameters with static values. This function must return an object set of the same object type as the condition object set.</li>
+</ul>
+</li>
+<li>
+<p><strong>Batch size:</strong> Batch size determines the number of objects in each execution. For example, if the batch size is 100 objects, and there are 1,000 objects in the defined object set, then the automation will have 10 individual executions (each with 100 objects), scheduled 1 minute apart. Objects are partitioned in a nondeterministic, random ordering.</p>
+<ul>
+<li>Batch size is not visible to configure if the automation's condition does not involve an object set.</li>
+</ul>
+</li>
+<li>
+<p><strong>Parallelism:</strong> Parallelism specifies how many batches should run in parallel. A higher number leads to faster execution.</p>
+</li>
+<li>
+<p><strong>Recipients:</strong> Manual execution supports sending notifications to all users. <br><br> <img alt="Manual execution recipients" src="/docs/resources/foundry/automate/manual-execution-recipients.png?width=600" style="aspect-ratio:1030 / 598" width="600" node="[object Object]"></p>
+<p>When a manual execution is triggered, the object set is evaluated using the token of the user who initiated the execution. This ensures that the evaluation respects permissions and access rights of the executing user.</p>
+</li>
+</ul>
+</article>
+</body>
+</html>

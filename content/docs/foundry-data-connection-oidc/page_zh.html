@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OpenID Connect (OIDC) authentication</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-openid-connect-oidc-authentication" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#openid-connect-oidc-authentication"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>OpenID Connect (OIDC) 身份验证</h1>
+<p><a href="https://openid.net/developers/how-connect-works/">OpenID Connect (OIDC) ↗</a>（简称 OIDC）是一种开放身份验证协议，支持在不使用静态凭证的情况下对外部源资源进行身份验证。</p>
+<p>采用 OIDC 时，无需在 Foundry 中为源系统配置凭证。如此一来，可避免将源系统凭证作为长期密钥复制到 Foundry 中。取而代之的是，将在 Foundry 与源系统之间配置信任关系。Foundry 充当 OIDC 身份提供商；每当 Foundry 中的工作流需要与源系统进行身份验证时（例如数据连接同步），Foundry 都会颁发一个 OIDC 令牌，该令牌包含用于标识正在使用的数据连接源的声明。源系统能够验证这些声明，并提供一个短期访问令牌，用于后续与源系统的交互。该访问令牌的范围（例如允许访问的资源）完全在源系统中利用原生的身份验证与授权工具进行管理。在配置信任关系时，可以添加条件来过滤传入请求。不受信任的 Foundry 源无法请求获取其不应访问的源系统资源的访问令牌。</p>
+<h2 id="user-content-supported-sources" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#supported-sources"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>支持的来源</h2>
+<p>以下来源支持 OIDC 身份验证。有关如何设置 OIDC 与 Palantir 之间信任关系的更多详细信息，请参阅各个来源的文档。</p>
+<ul>
+<li><a href="/docs/foundry/available-connectors/onelake-and-azure-blob-filesystem/">OneLake 和 Azure Data Lake Storage Gen2（Azure Blob 存储）</a></li>
+<li><a href="/docs/foundry/available-connectors/bigquery/">BigQuery</a></li>
+<li><a href="/docs/foundry/available-connectors/databricks/">Databricks 平台</a></li>
+<li><a href="/docs/foundry/available-connectors/google-cloud-storage/">Google Cloud Storage</a></li>
+<li><a href="/docs/foundry/available-connectors/amazon-s3/">S3</a></li>
+<li><a href="/docs/foundry/available-connectors/snowflake/">Snowflake 平台</a></li>
+</ul>
+<h2 id="user-content-oidc-identity-token" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#oidc-identity-token"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>OIDC 身份令牌</h2>
+<p>以下是由 Foundry 生成的 OIDC 令牌示例：</p>
+<pre><code>{
+  "iss": "https://pltroidcpublicexample.blob.store.com/foundry",
+  "sub": "ri.magritte..source.7f3b8e21-4d9a-6c2e-1b7d-8a5f3c9e0b4f",
+  "aud": "your-source-system-audience",
+  "iat": &lt;issued-at&gt;,
+  "nbf": &lt;not-before&gt;,
+  "exp": &lt;expiry&gt;,
+  "jti": "&lt;token-unique-identifier&gt;",
+  "scp": "&lt;additonal-scope&gt;",
+}
+</code></pre>
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>声明</th><th>声明类型</th><th>描述</th></tr></thead><tbody><tr><td>iss</td><td>颁发者 URL</td><td>将 Foundry 标识为 OIDC 身份提供商的 URL。</td></tr><tr><td>sub</td><td>主体</td><td>正在连接到您的源系统的 Foundry 源的源 RID。</td></tr><tr><td>aud</td><td>受众</td><td>用于标识您的源系统的已配置受众。</td></tr></tbody></table></div>
+<p>应使用 <code>source-rid</code> 过滤传入请求，以确保不受信任的 Foundry 源无法访问您的资源。</p>
+<p>由 Foundry 生成的 OIDC 令牌将在一小时后过期。</p>
+</article>
+</body>
+</html>

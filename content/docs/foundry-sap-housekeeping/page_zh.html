@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Set up and configure housekeeping jobs</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-set-up-and-configure-housekeeping-jobs" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#set-up-and-configure-housekeeping-jobs"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></a>设置与配置清理作业</h1>
+<p>清理作业用于删除在指定时间点之前生成的日志表数据，关闭未确认的请求，并丢弃在一定时间内未使用的订阅。</p>
+<p>要打开清理设置，请使用事务代码 <code>/n/PALANTIR/COCKPIT_03</code>。</p>
+<h2 id="user-content-deleting-log-tables" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#deleting-log-tables"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>删除日志表</h2>
+<p>默认情况下应勾选<strong>删除日志表</strong>复选框，以防止日志表无限增长并可能占满所有可用磁盘空间。</p>
+<p>启用后，程序将删除表 <code>/PALANTIR/LOG_02</code> 和 <code>/PALANTIR/PAG_02</code> 中的记录。程序也会删除 <code>/PALANTIR/LOG_01</code> 表中的记录，但不会删除该表中的初始化请求。更多信息，请参阅下文的<a href="#deleting-log_01-table-with-init-requests">包含初始化请求的 LOG_01 表删除</a>。</p>
+<ul>
+<li><strong>日志创建早于（天）</strong>和<strong>数据间隔（天）</strong>：应结合使用这些设置来定义删除日志记录的滚动时间窗口。默认设置分别为 30 天和 10 天，这意味着作业运行时，将删除生成时间在 30 天至 40（= 30 + 10）天之间的所有记录。</li>
+<li><strong>仅当数据在 Foundry 中时</strong>：表示仅删除已确认传输至 Foundry 的页面文件。</li>
+</ul>
+<h2 id="user-content-closing-slt-request-for-cancelled-slt-syncs" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#closing-slt-request-for-cancelled-slt-syncs"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>关闭已取消 SLT 同步的 SLT 请求</h2>
+<p>默认情况下应取消勾选<strong>关闭 SLT 请求</strong>复选框。Palantir 支持团队可能会要求勾选此项，以处理已知的 SLT 问题，该问题可能因 ODQDATA 表中存在过多请求而导致系统挂起。</p>
+<p>启用后，程序会查找在给定日期范围内创建的 SLT 订阅请求，并利用 SLT 关闭功能将该请求的 <code>ODQMON</code> 状态更改为 <code>已完成</code>。当请求在 <code>ODQMON</code> 中被设置为 <code>已完成</code> 时，便可以通过 <code>ODQMON</code> 的增量队列清理作业将其删除。</p>
+<ul>
+<li><strong>SLT 请求的日期范围</strong>：在此日期区间内创建的 SLT 增量请求将在 <code>ODQMON</code> 中被设置为 <code>已完成</code>。</li>
+</ul>
+<h2 id="user-content-resetting-slt-pointer-for-unused-subscription" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#resetting-slt-pointer-for-unused-subscription"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>重置未使用订阅的 SLT 指针</h2>
+<p>默认情况下应取消勾选<strong>丢弃 SLT 订阅</strong>复选框。Palantir 支持团队可能会要求勾选此项，以处理已知的 SLT 问题，该问题可能因 ODQDATA 表中存在过多请求而导致系统挂起。</p>
+<p>启用后，程序将丢弃历史的 <code>ODQMON</code> 订阅。</p>
+<ul>
+<li><strong>上一个请求早于（天）</strong>：表示将丢弃存在时间超过此天数的订阅。</li>
+</ul>
+<h2 id="user-content-deleting-log_01-table-with-init-requests" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#deleting-log_01-table-with-init-requests"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>包含初始化请求的 LOG_01 表删除</h2>
+<p>默认情况下应取消勾选<strong>删除 LOG_01 初始化请求</strong>复选框。在极少数情况下，当 <code>/PALANTIR/LOG_01</code> 表增长过大时，Palantir 支持团队可能会要求勾选此项进行处理。</p>
+<p>启用后，此程序将删除 <code>/PALANTIR/LOG_01</code> 表数据，包括初始化请求。</p>
+<ul>
+<li><strong>日志创建早于（天）</strong>：表示将删除存在时间超过此天数的记录。默认值为 30 天，意味着所有创建时间超过 30 天的数据都将从 <code>/PALANTIR/LOG_01</code> 中删除。</li>
+</ul>
+</article>
+</body>
+</html>

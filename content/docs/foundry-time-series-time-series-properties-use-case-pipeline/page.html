@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Create time series data with Pipeline Builder</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-create-time-series-data-with-pipeline-builder" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#create-time-series-data-with-pipeline-builder"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Create time series data with Pipeline Builder</h1>
+<p>The pipeline you will create with this guide will generate <a href="/docs/foundry/time-series/time-series-concepts-glossary/#time-series-object-type-backing-dataset">time series data</a> that backs a <a href="/docs/foundry/time-series/time-series-concepts-glossary/#time-series-sync">time series sync</a> to associate with <a href="/docs/foundry/time-series/time-series-concepts-glossary/#time-series-property-tsp">time series properties</a> on the <code>Carrier</code>, <code>Route</code>, and <code>Airport</code> object types to create new <a href="/docs/foundry/time-series/time-series-concepts-glossary/#time-series-object-type">time series objects</a>. This pipeline involves a more complex set up than standard mappings from time series datasets to time series properties, as we will make calculations on non-time series data to generate time series data. Review our <a href="/docs/foundry/pipeline-builder/overview/">Pipeline Builder documentation</a> for information on general pipeline guidance.</p>
+<p>The flight dataset we are working with includes the following columns that we will use to create time series properties:</p>
+<ul>
+<li><strong>flight_id:</strong> <code>string</code> | A unique string to identify the flight and every row in the dataset.</li>
+<li><strong>date:</strong> <code>date</code> | The date the flight took place.</li>
+<li><strong>destination_airport_id:</strong> <code>string</code> | The string to identify the destination airport.</li>
+<li><strong>airline_id:</strong> <code>string</code> | The ID of the airline carrier.</li>
+<li><strong>origin_airport_id:</strong> <code>string</code> | The ID of the origin airport.</li>
+<li><strong>dep_delay:</strong> <code>integer</code> | The number of minutes the departure was delayed.</li>
+<li><strong>arr_delay:</strong> <code>integer</code> | The number of minutes the arrival was delayed.</li>
+<li><strong>route_id:</strong> <code>string</code>| A unique string to identify the route.</li>
+</ul>
+<p>The pipeline at the end of this guide will look like this:</p>
+<p><img alt="Overview of final time series pipeline" height="600" src="/docs/resources/foundry/time-series/time-series-properties-pipeline-final-output.png" style="aspect-ratio:3002 / 1110" width="1622.7027027027027" node="[object Object]"></p>
+<h2 id="user-content-part-i-generate-time-series-data" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#part-i-generate-time-series-data"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Part I: Generate time series data</h2>
+<p>Using the same flights dataset that is used to back the <code>Flights</code>object type, we can perform some aggregation transformations and generate time series data based on flight metrics. Note that this step is not necessary if you have time series data coming into Foundry from a historian or edge sensor. You can move on to <a href="#part-ii-create-the-time-series-sync">generate a time series sync</a>.</p>
+<h3 id="user-content-1-apply-transforms-to-carrier-and-route-object-types" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#1-apply-transforms-to-carrier-and-route-object-types"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>1. Apply transforms to <code>Carrier</code> and <code>Route</code> object types</h3>
+<p>From the flights dataset, apply transforms using the steps below. You will do this for both the <code>Carrier</code> and <code>Route</code> object types.</p>
+<h4 id="user-content-aggregate-the-data"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#aggregate-the-data"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Aggregate the data</h4>
+<p>Use the aggregate transform to group by date and ID of the object, (in this case, using the <code>route_id</code> for the <code>Route</code> object type; you will separately need to do the same using <code>airline_id</code> for the <code>Carrier</code> object type), and calculate average arrival delays, average departure delays, and daily flight counts.</p>
+<p><img alt="The aggregate transform board in Pipeline Builder." height="600" src="/docs/resources/foundry/time-series/time-series-properties-pipeline-aggregate.png" style="aspect-ratio:980 / 668" width="880.2395209580839" node="[object Object]"></p>
+<p>After aggregating, the dataset should preview with the following schema:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>route_id</th><th>date</th><th>daily_avg_dep_delay</th><th>daily_avg_arr_delay</th><th>daily_count_of_flights</th></tr></thead><tbody><tr><td>ATL -&gt; SFO</td><td>2023-06-12</td><td>33.4545454545450000</td><td>40.0000000000000000</td><td>11</td></tr><tr><td>ATL -&gt; FLL</td><td>2023-08-24</td><td>29.7272727272720000</td><td>19.4090909090909100</td><td>22</td></tr><tr><td>ATL -&gt; TVC</td><td>2023-07-05</td><td>-8.0000000000000000</td><td>-8.0000000000000000</td><td>1</td></tr></tbody></table></div>
+<h4 id="user-content-cast-to-a-new-data-type"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#cast-to-a-new-data-type"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Cast to a new data type</h4>
+<p>To use this new data as a time series, we must create a timestamp type column. To do this, use the cast transform to cast the <code>date</code> column to a timestamp type column. We will also soon apply an unpivot transform to merge <code>daily_avg_dep_delay</code>, <code>daily_avg_arr_delay</code>, and <code>daily_count_of_flights</code> values into one column. Since this function requires that all values be of the same data type, we must also cast our daily count of flights metric to a double type (the same data type as the average delay metrics).</p>
+<p><img alt="The cast board in Pipeline Builder, showing a cast to timestamp and a cast to double" height="79" src="/docs/resources/foundry/time-series/time-series-properties-cast-to-new-datatype.png" style="aspect-ratio:979 / 79" width="979" node="[object Object]"></p>
+<h4 id="user-content-unpivot-to-merge-time-series-values"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#unpivot-to-merge-time-series-values"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Unpivot to merge time series values</h4>
+<p>Since this dataset contains time series data in different columns, we must use an unpivot transform to merge it into one value column so the data can match the required schema for a time series sync, as shown below:</p>
+<ul>
+<li><strong>series ID:</strong> <code>string</code> | The series ID for the set of timestamp and value pairs referred to by a TSP, which must match the TSP's series ID.</li>
+<li><strong>timestamp:</strong> <code>timestamp</code> or <code>long</code> | The time at which the quantity is measured.</li>
+<li><strong>value:</strong> <code>integer</code>, <code>float</code>, <code>double</code>, <code>string</code> | The value of the quantity at the point that it is measured. A string type indicates a categorical time series; each categorical time series can have, at most, 10,000 unique variants.</li>
+</ul>
+<p>The unpivot transform shown below places values for <code>daily_avg_dep_delay</code>, <code>daily_avg_arr_delay</code>, and <code>daily_count_of_flights</code> into the same <code>series_value</code> column. Those original column names are outputs to the new <code>series_name</code> column that will be used in the <code>series_id</code>.</p>
+<p><img alt="The unpivot transform board in Pipeline Builder" height="450" src="/docs/resources/foundry/time-series/time-series-properties-pipeline-unpivot.png" style="aspect-ratio:976 / 450" width="976" node="[object Object]"></p>
+<p>The dataset schema should now appear as follows:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>series_name</th><th>series_value</th><th>route_id</th><th>date</th></tr></thead><tbody><tr><td>daily_avg_dep_delay</td><td>33.4545454545450000</td><td>ATL -&gt; SFO</td><td>2023-06-12T00:00:00.000Z</td></tr><tr><td>daily_avg_arr_delay</td><td>40.0000000000000000</td><td>ATL -&gt; SFO</td><td>2023-06-12T00:00:00.000Z</td></tr><tr><td>daily_count_of_flights</td><td>11.0000000000000000</td><td>ATL -&gt; SFO</td><td>2023-06-12T00:00:00.000Z</td></tr></tbody></table></div>
+<h4 id="user-content-concatenate-string-values-to-create-the-series-id"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#concatenate-string-values-to-create-the-series-id"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Concatenate string values to create the series ID</h4>
+<p>Now, we can use the concatenate strings transform to create the series ID (the identifier for the associated time series values). Use the transform to combine the <code>series_name</code> (what each sensor represents) with the primary key of each object.</p>
+<p><img alt="The concatenate strings transform board in Pipeline Builder." height="342" src="/docs/resources/foundry/time-series/time-series-properties-pipeline-series-id.png" style="aspect-ratio:974 / 342" width="974" node="[object Object]"></p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>series_id</th><th>series_name</th><th>series_value</th><th>route_id</th><th>date</th></tr></thead><tbody><tr><td>CMH -&gt; IAH_daily_avg_dep_delay</td><td>daily_avg_dep_delay</td><td>33.4545454545450000</td><td>ATL -&gt; SFO</td><td>2023-06-12T00:00:00.000Z</td></tr><tr><td>CMH -&gt; IAH_daily_avg_arr_delay</td><td>daily_avg_arr_delay</td><td>40.0000000000000000</td><td>ATL -&gt; SFO</td><td>2023-06-12T00:00:00.000Z</td></tr><tr><td>CMH -&gt; IAH_daily_count_of_flights</td><td>daily_count_of_flights</td><td>11.0000000000000000</td><td>ATL -&gt; SFO</td><td>2023-06-12T00:00:00.000Z</td></tr></tbody></table></div>
+<h4 id="user-content-select-necessary-columns"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#select-necessary-columns"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Select necessary columns</h4>
+<p>Using the select columns transform, we will only keep the columns that are required for the time series sync: <code>series_id</code>, <code>series_value</code>, and <code>date</code>. The flights backing dataset will hold time series values for all series, regardless of what they are measuring. Repeat this for the <code>airline_carrier_id</code> column (from the flights dataset).</p>
+<p><img alt="The select columns transform board in Pipeline Builder" height="78" src="/docs/resources/foundry/time-series/time-series-properties-pipeline-select-columns.png" style="aspect-ratio:971 / 78" width="971" node="[object Object]"></p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>series_id</th><th>series_value</th><th>date</th></tr></thead><tbody><tr><td>CMH -&gt; IAH_daily_avg_dep_delay</td><td>33.4545454545450000</td><td>2023-06-12T00:00:00.000Z</td></tr><tr><td>CMH -&gt; IAH_daily_avg_arr_delay</td><td>40.0000000000000000</td><td>2023-06-12T00:00:00.000Z</td></tr><tr><td>CMH -&gt; IAH_daily_count_of_flights</td><td>11.0000000000000000</td><td>2023-06-12T00:00:00.000Z</td></tr></tbody></table></div>
+<h3 id="user-content-2-add-a-transform-to-aggregate-and-generate-data-for-origin-and-destination-airports" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#2-add-a-transform-to-aggregate-and-generate-data-for-origin-and-destination-airports"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>2. Add a transform to aggregate and generate data for origin and destination airports</h3>
+<p>Now, you must repeat the aggregate and cast transform steps for both origin airports and destination airports.</p>
+<h4 id="user-content-aggregate-for-the-number-of-flights-per-day-per-route"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#aggregate-for-the-number-of-flights-per-day-per-route"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Aggregate for the number of flights per day per route</h4>
+<p>Use the aggregate transform to group by <code>date</code> and <code>origin_airport_id</code>, then calculate the average arrival and departure times. The total number of rows in each group is equivalent to the number of flights per day per route.</p>
+<p><img alt="The aggregate transform board in Pipeline Builder, used to aggregate the number of flights per day" height="556" src="/docs/resources/foundry/time-series/time-series-properties-pipeline-aggregate-origin-airport.png" style="aspect-ratio:743 / 556" width="743" node="[object Object]"></p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>date</th><th>origin_airport_id</th><th>daily_avg_dep_delay</th><th>daily_count_of_departing_flights</th></tr></thead><tbody><tr><td>2023-07-02</td><td>10299</td><td>9.34375000000000000</td><td>33</td></tr><tr><td>2023-09-06</td><td>10431</td><td>-2.3333333333333333</td><td>6</td></tr><tr><td>2023-01-12</td><td>10620</td><td>-7.0000000000000000</td><td>2</td></tr></tbody></table></div>
+<h4 id="user-content-cast-to-timestamp"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#cast-to-timestamp"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Cast to timestamp</h4>
+<p>To use this new data as a time series, we must create a timestamp column. To do this, use the cast transform to cast the <code>date</code> column to a timestamp type column.</p>
+<p><img alt="The cast transform board in Pipeline Builder, used to cast the data to a timestamp type" height="220" src="/docs/resources/foundry/time-series/time-series-properties-cast-to-timestamp.png" style="aspect-ratio:746 / 220" width="746" node="[object Object]"></p>
+<h3 id="user-content-3-create-a-join-to-combine-destination-and-origin-airports" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#3-create-a-join-to-combine-destination-and-origin-airports"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>3. Create a join to combine destination and origin airports</h3>
+<p>Using the join board, create a left join that combines data from the destination airport and origin airport, resulting in complete time series properties for airport data. Be sure the following configuration are set for your join:</p>
+<ul>
+<li>Match the date and <code>origin_airport_id</code> to the <code>dest_airport_id</code>.</li>
+<li>Auto-select columns from the left dataset.</li>
+<li>As the right columns, select the two that represent daily average delay and the daily count of flights.</li>
+</ul>
+<p><img alt="The join board in Pipeline Builder, configured to create a left join for airport data." height="600" src="/docs/resources/foundry/time-series/time-series-properties-pipeline-join.png" style="aspect-ratio:1087 / 796" width="819.3467336683418" node="[object Object]"></p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>date</th><th>origin_airport_id</th><th>daily_avg_dep_delay</th><th>daily_count_of_departing_flights</th><th>daily_avg_arr_delay</th><th>daily_count_of_arriving_flights</th></tr></thead><tbody><tr><td>2023-07-02</td><td>10299</td><td>9.34375000000000000</td><td>33</td><td>18.5294117647058840</td><td>34</td></tr><tr><td>2023-09-06</td><td>10431</td><td>-2.3333333333333333</td><td>6</td><td>-8.0000000000000000</td><td>6</td></tr><tr><td>2023-01-12</td><td>10620</td><td>-7.0000000000000000</td><td>2</td><td>56.5000000000000000</td><td>2</td></tr></tbody></table></div>
+<h3 id="user-content-4-apply-transforms-to-format-data-for-a-time-series-sync" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#4-apply-transforms-to-format-data-for-a-time-series-sync"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>4. Apply transforms to format data for a time series sync</h3>
+<h4 id="user-content-rename-column"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#rename-column"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Rename column</h4>
+<p>Now that we joined the origin airport data with the destination airport data, we have both arrival and departure metrics for all airports. We no longer need to differentiate origin from destination, so we can use the rename columns transform to change <code>origin_airport_id</code> to simply <code>airport_id</code>.</p>
+<p><img alt="The rename column transform board in Pipeline Builder" height="374" src="/docs/resources/foundry/time-series/time-series-properties-pipeline-rename-column.png" style="aspect-ratio:1950 / 374" width="1950" node="[object Object]"></p>
+<p>The data should preview as follows with the renamed column:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>date</th><th>airport_id</th><th>daily_avg_dep_delay</th><th>daily_count_of_departing_flights</th><th>daily_avg_arr_delay</th><th>daily_count_of_arriving_flights</th></tr></thead><tbody><tr><td>2023-07-02</td><td>10299</td><td>9.34375000000000000</td><td>33</td><td>18.5294117647058840</td><td>34</td></tr><tr><td>2023-09-06</td><td>10431</td><td>-2.3333333333333333</td><td>6</td><td>-8.0000000000000000</td><td>6</td></tr><tr><td>2023-01-12</td><td>10620</td><td>-7.0000000000000000</td><td>2</td><td>56.5000000000000000</td><td>2</td></tr></tbody></table></div>
+<h4 id="user-content-cast-to-double"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#cast-to-double"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Cast to double</h4>
+<p>We will soon apply an unpivot transform. This function requires that all values be of the same data type, so we must use the cast transform board again to cast our daily count of flights metrics to a double data type so they are the same type as the average delay metrics.</p>
+<h4 id="user-content-add-flight-numbers"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#add-flight-numbers"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Add flight numbers</h4>
+<p>To calculate the full daily flight count, we will use the add numbers transform to add together the daily count of arriving flights and the daily count of departing flights, as shown below.</p>
+<p><img alt="The cast and add numbers transform boards in Pipeline Builder" height="600" src="/docs/resources/foundry/time-series/time-series-properties-pipeline-cast-tsps.png" style="aspect-ratio:1938 / 1396" width="832.9512893982808" node="[object Object]"></p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>daily_count_of_flights</th><th>date</th><th>airport_id</th><th>daily_avg_dep_delay</th><th>daily_count_of_departing_flights</th><th>daily_avg_arr_delay</th><th>daily_count_of_arriving_flights</th></tr></thead><tbody><tr><td>77</td><td>2023-07-02</td><td>10299</td><td>9.34375000000000000</td><td>33</td><td>18.5294117647058840</td><td>34</td></tr><tr><td>12</td><td>2023-09-06</td><td>10431</td><td>-2.3333333333333333</td><td>6</td><td>-8.0000000000000000</td><td>6</td></tr><tr><td>4</td><td>2023-01-12</td><td>10620</td><td>-7.0000000000000000</td><td>2</td><td>56.5000000000000000</td><td>2</td></tr></tbody></table></div>
+<h4 id="user-content-unpivot-to-merge-series-values"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#unpivot-to-merge-series-values"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Unpivot to merge series values</h4>
+<p>Since this dataset contains time series data in different columns, we must use an unpivot transform to merge it into one value column so the data can match the required schema for a time series sync, as shown below:</p>
+<ul>
+<li><strong>series ID:</strong> <code>string</code> | The series ID for the set of timestamp and value pairs referred to by a TSP, which must match the TSP's series ID.</li>
+<li><strong>timestamp:</strong> <code>timestamp</code> or <code>long</code> | The time at which the quantity is measured.</li>
+<li><strong>value:</strong> <code>integer</code>, <code>float</code>, <code>double</code>, <code>string</code> | The value of the quantity at the point that it is measured. A string type indicates a categorical time series; each categorical time series can have, at most, 10,000 unique variants.</li>
+</ul>
+<p>The unpivot transform shown below places values for <code>daily_avg_dep_delay</code>, <code>daily_avg_arr_delay</code>, and <code>daily_count_of_flights</code> into the same <code>series_value</code> column. Those original column names are outputs to the new <code>series_name</code> column that will be used in the series ID.</p>
+<p><img alt="The unpivot transform board in Pipeline Builder, configured to create a series_name column output" height="600" src="/docs/resources/foundry/time-series/time-series-properties-pipeline-unpivot-merge-series.png" style="aspect-ratio:1952 / 1062" width="1102.8248587570622" node="[object Object]"></p>
+<p>The data should preview with the following schema:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>series_name</th><th>series_value</th><th>date</th><th>airport_id</th></tr></thead><tbody><tr><td>daily_count_of_flights</td><td>77</td><td>2023-07-02T00:00:00.000Z</td><td>10299</td></tr><tr><td>daily_avg_dep_delay</td><td>9.34375000000000000</td><td>2023-07-02T00:00:00.000Z</td><td>10299</td></tr><tr><td>daily_avg_arr_delay</td><td>18.5294117647058840</td><td>2023-07-02T00:00:00.000Z</td><td>10299</td></tr></tbody></table></div>
+<h4 id="user-content-concatenate-string-values-to-create-the-series-id-1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#concatenate-string-values-to-create-the-series-id-1"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Concatenate string values to create the series ID</h4>
+<p>Now, we can use the concatenate strings transform to create the series ID (the identifier for the associated time series values). Use the transform to combine the <code>series_name</code> (what each sensor represents) with the primary key of the <code>Airport</code> object (<code>airport_id</code>).</p>
+<p><img alt="The concatenate strings board in Pipeline Builder, configured to combine the series_name with the airport_id" height="600" src="/docs/resources/foundry/time-series/time-series-properties-pipeline-create-series-id.png" style="aspect-ratio:1954 / 676" width="1734.319526627219" node="[object Object]"></p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>series_id</th><th>series_name</th><th>series_value</th><th>date</th><th>airport_id</th></tr></thead><tbody><tr><td>12099_daily_count_of_flights</td><td>daily_count_of_flights</td><td>77</td><td>2023-07-02T00:00:00.000Z</td><td>10299</td></tr><tr><td>12099_daily_avg_dep_delay</td><td>daily_avg_dep_delay</td><td>9.34375000000000000</td><td>2023-07-02T00:00:00.000Z</td><td>10299</td></tr><tr><td>12099_daily_avg_arr_delay</td><td>daily_avg_arr_delay</td><td>18.5294117647058840</td><td>2023-07-02T00:00:00.000Z</td><td>10299</td></tr></tbody></table></div>
+<h4 id="user-content-select-necessary-columns-1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#select-necessary-columns-1"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Select necessary columns</h4>
+<p>Using the select columns transform, we will only keep the columns that are required for the time series sync: <code>series_id</code>, <code>series_value</code>, and <code>date</code>. The flights backing dataset will hold time series values for all series, regardless of what they are measuring.</p>
+<p><img alt="The select columns board in Pipeline Builder" height="600" src="/docs/resources/foundry/time-series/time-series-properties-pipeline-select-sync-column.png" style="aspect-ratio:1942 / 610" width="1910.1639344262294" node="[object Object]"></p>
+<p>The resulting dataset should look as follows:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>series_id</th><th>series_value</th><th>date</th></tr></thead><tbody><tr><td>12099_daily_count_of_flights</td><td>77</td><td>2023-07-02T00:00:00.000Z</td></tr><tr><td>12099_daily_avg_dep_delay</td><td>9.34375000000000000</td><td>2023-07-02T00:00:00.000Z</td></tr><tr><td>12099_daily_avg_arr_delay</td><td>18.5294117647058840</td><td>2023-07-02T00:00:00.000Z</td></tr></tbody></table></div>
+<h3 id="user-content-5-union-the-time-series-properties-into-a-backing-dataset" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#5-union-the-time-series-properties-into-a-backing-dataset"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>5. Union the time series properties into a backing dataset</h3>
+<p>Create a union with the type <code>Union by name</code>, using the transforms representing the <code>Carrier</code>, <code>Route</code>, and <code>Airport</code> time series properties.</p>
+<p><img alt="Three time series properties nodes are selected for unioning from the Pipeline Builder graph" height="418" src="/docs/resources/foundry/time-series/time-series-properties-pipeline-union-graph.png" style="aspect-ratio:764 / 418" width="764" node="[object Object]"></p>
+<p><img alt="The union board in Pipeline Builder, configured to union the three TSP property sets by name" height="331" src="/docs/resources/foundry/time-series/time-series-properties-pipeline-union-by-name.png" style="aspect-ratio:579 / 331" width="579" node="[object Object]"></p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>series_id</th><th>series_value</th><th>date</th></tr></thead><tbody><tr><td>12099_daily_count_of_flights</td><td>77</td><td>2023-07-02T00:00:00.000Z</td></tr><tr><td>12099_daily_avg_dep_delay</td><td>9.34375000000000000</td><td>2023-07-02T00:00:00.000Z</td></tr><tr><td>12099_daily_avg_arr_delay</td><td>18.5294117647058840</td><td>2023-07-02T00:00:00.000Z</td></tr><tr><td>CMH -&gt; IAH_daily_avg_dep_delay</td><td>-8.0000000000000000</td><td>2023-03-21T00:00:00.000Z</td></tr><tr><td>20304_daily_avg_arr_delay</td><td>9.12500000000000000</td><td>2023-08-13T00:00:00.000Z</td></tr></tbody></table></div>
+<h2 id="user-content-part-ii-create-the-time-series-sync" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#part-ii-create-the-time-series-sync"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Part II: Create the time series sync</h2>
+<h3 id="user-content-1-remove-null-values" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#1-remove-null-values"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>1. Remove null values</h3>
+<p>Apply a filter transform on the resulting dataset to remove any <code>null</code> values.</p>
+<p><img alt="The filter transform board in Pipeline Builder, configured to remove null values." height="276" src="/docs/resources/foundry/time-series/time-series-properties-pipeline-remove-null-values.png" style="aspect-ratio:976 / 276" width="976" node="[object Object]"></p>
+<h3 id="user-content-2-configure-the-time-series-sync" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#2-configure-the-time-series-sync"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>2. Configure the time series sync</h3>
+<p>Now, create a <a href="/docs/foundry/time-series/time-series-concepts-glossary/#time-series-sync">time series sync</a> by selecting <strong>Add</strong> from the pipeline output section to the right of the screen. Then, select <strong>Time series sync</strong>. Fill out the necessary data for the new time series sync, with the following considerations:</p>
+<ul>
+<li>The title “[Example] Time series sync | Events” will correspond to the resulting resource in your Palantir filesystem folder.</li>
+<li>Select the <code>series_id</code> column for the <a href="/docs/foundry/time-series/time-series-concepts-glossary/#series-id"><strong>Series ID</strong></a> field.</li>
+<li>Add the created <code>date</code> timestamp column in the <strong>Time</strong> field.</li>
+<li>Add <code>series_value</code> to the <strong>Value</strong> field.</li>
+</ul>
+<p>Now, <a href="/docs/foundry/pipeline-builder/outputs-deliver-pipeline/#save">save and build</a> the pipeline. The output will be created in the same folder as the pipeline.</p>
+<h3 id="user-content-3-use-a-time-series-sync-to-add-properties-to-object-types" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#3-use-a-time-series-sync-to-add-properties-to-object-types"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>3. Use a time series sync to add properties to object types</h3>
+<p>Now that you created a pipeline with a time series sync, you are ready to use the sync to add time series properties to the <code>Route</code>, <code>Carrier</code> and <code>Airport</code> object types. Move on to our documentation for <a href="/docs/foundry/time-series/time-series-properties-use-case-ontology/">adding time series properties to object types</a> for more guidance.</p>
+</article>
+</body>
+</html>

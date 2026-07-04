@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Joins in streaming Pipeline Builder pipelines</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-joins-in-streaming-pipeline-builder-pipelines" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#joins-in-streaming-pipeline-builder-pipelines"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>流式 Pipeline Builder 管道中的连接操作</h1>
+<p>借助流式 Pipeline Builder，你可以将流数据与批处理数据集或其他流数据连接起来。考虑到流处理的低延迟特性，其连接操作的实现方式与标准批处理管道有所不同。本页将说明连接操作的工作原理，以及如何在管道中更好地加以运用。</p>
+<h2 id="user-content-join-streams-with-batch-datasets" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#join-streams-with-batch-datasets"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>将流数据与批处理数据集连接</h2>
+<p>Foundry 允许你将低延迟流数据与批处理数据集结合起来，其操作方式类似于在批处理 Pipeline Builder 管道中连接两个批处理数据集。</p>
+<p>在 Pipeline Builder 中完成以下步骤，即可将流数据与批处理数据集连接：</p>
+<ol>
+<li>
+<p>将流数据和批处理数据集添加到你的 Pipeline Builder 图表中。</p>
+</li>
+<li>
+<p>在批处理数据集下方，选择下拉菜单并将类型更改为<strong>快照</strong>。</p>
+ <img alt="Image of stream type selection." src="/docs/resources/foundry/pipeline-builder/stream-type@2x.png?width=300" srcset="/docs/resources/foundry/pipeline-builder/stream-type@2x.png?width=300 1x, /docs/resources/foundry/pipeline-builder/stream-type@2x.png 2x" style="aspect-ratio:644 / 616" width="300" node="[object Object]">
+</li>
+<li>
+<p>选择你要连接的流数据。</p>
+</li>
+<li>
+<p>选择<strong>连接</strong>，并为连接的右侧选择批处理数据集。</p>
+</li>
+<li>
+<p>在<strong>连接类型</strong>下，选择<strong>左查找连接</strong>。</p>
+</li>
+<li>
+<p>输入匹配条件。</p>
+</li>
+</ol>
+<h3 id="user-content-architecture" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#architecture"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>架构</h3>
+<p>流数据与批处理数据集的连接机制是：首先下载批处理数据集，并在流处理集群中建立索引，从而实现低延迟查找。为确保连接的低延迟特性，在同一个 Pipeline Builder 管道中，不允许在与流数据连接之前对该批处理数据集进行转换操作。</p>
+<p>当有新的事务写入数据集时，批处理数据集便会更新。向批处理数据集添加新事务后，后台进程会下载新的数据视图并将其转换为可查询的格式。该进程完成后，流数据便会开始与该批次数据集的新视图进行连接。</p>
+<h3 id="user-content-limitations" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#limitations"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>限制</h3>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>在与流数据连接之前，无法对批处理数据集进行转换。如需转换批处理数据集，可在上游的 Pipeline Builder 管道中完成。</p></div>
+<p>流式连接需注意以下限制：</p>
+<ul>
+<li>与批处理数据集连接时，连接的左侧必须是流数据，或者是读取模式为“流”的批处理数据集。</li>
+<li>如果连接的批处理数据集数据量超过 8-10GB，性能可能会下降。</li>
+<li>若检测到新的追加事务，批处理数据集最多每五分钟更新一次。</li>
+<li>与大型静态数据集进行连接可能会拖慢集群启动速度。</li>
+</ul>
+<h2 id="user-content-join-streams-with-other-streams" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#join-streams-with-other-streams"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>将流数据与其他流数据连接</h2>
+<p>Foundry 允许你将多个低延迟流数据结合起来，其操作方式类似于在批处理 Pipeline Builder 管道中连接多个批处理数据集。</p>
+<p>在 Pipeline Builder 中完成以下步骤，即可连接两个流数据：</p>
+<ol>
+<li>将这两个流数据添加到你的 Pipeline Builder 图表中。</li>
+<li>选择<strong>连接</strong>，并选择这两个流数据。</li>
+<li>在<strong>连接类型</strong>下，选择<strong>外部缓存连接</strong>。</li>
+<li>输入匹配条件。</li>
+<li>指定缓存时间值和单位。缓存时间值和单位决定了数据在用于连接这两个流数据的缓存中的保留时长。</li>
+</ol>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>若你想用左连接或右连接替代外连接，可在连接操作下游过滤掉包含空值的记录。对于右连接，过滤掉右侧值为空的记录；对于左连接，同样过滤掉右侧值为空的记录。</p></div>
+<h3 id="user-content-architecture-1" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#architecture-1"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>架构</h3>
+<p>由于流数据会持续不断地运行，且连接两侧不断有新记录涌入，因此两个流数据之间的连接操作是对各自的数据缓存进行的，而非针对整个流数据直接进行连接。</p>
+<p>
+
+多个流之间的关联操作仅限于在数据缓存上进行，以防止状态无界增长，否则会导致流处理集群最终耗尽内存并崩溃。通过为关联操作左右两侧的缓存设置过期时间，存储关联记录所需的状态将受到限制；这能避免流处理集群因内存耗尽而崩溃。</p>
+<p>数据按键存储并分布到各个任务管理器上，从而支持更大规模的关联操作。这意味着，若要与更大的流进行关联，可以增加单个任务管理器的内存，或者增加集群中运行的任务管理器数量。</p>
+<p>基于关联中指定的键列，流左侧的记录始终会与右侧的最新记录进行关联。仅特定键对应的最新记录会参与关联操作。</p>
+<h3 id="user-content-limitations-1" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#limitations-1"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>局限性</h3>
+<p>在将流与其他流进行关联时，请考虑以下局限性：</p>
+<ul>
+<li>关联操作的左右两侧均需设置缓存过期时间，以防止状态无界增长。</li>
+<li>关联操作的每一侧仅存储每个关联键对应的最新值。这意味着该关联操作的行为类似于“外连接”。</li>
+<li>如果左侧或右侧流中的记录在另一侧尚未出现匹配记录时就到达，系统将输出一条记录，且该记录中未匹配一侧的字段值为空。</li>
+</ul>
+</article>
+</body>
+</html>

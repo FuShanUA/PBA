@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Create sensor object type data in Pipeline Builder</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-create-sensor-object-type-data-in-pipeline-builder" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#create-sensor-object-type-data-in-pipeline-builder"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Create sensor object type data in Pipeline Builder</h1>
+<p>The pipeline you create with this guide will transform an imported flight sensor reading dataset to create a sensor object type backing dataset, then transform the sensor readings to a time series format to create a time series sync output. This data will then be used to create a sensor object type to use in the platform. The final pipeline at the end of this guide should look like the image below:</p>
+<p><img alt="Pipeline builder final output" height="600" src="/docs/resources/foundry/time-series/sensor-object-pipeline-overview.png" style="aspect-ratio:2280 / 752" width="1819.1489361702127" node="[object Object]"></p>
+<p>The example provided in this use case shows one way to transform sensor data from a source dataset. Though sensor readings come in different shapes with a large variety of possible schemas, our example uses a common schema; each row represents singular sensor readings for multiple sensors (for example, speed or altitude) that are tied to a flight (and, therefore, a <code>flight_ID</code> to serve as a foreign key to the <code>Flight</code> object).</p>
+<p><img alt="Sample starting data from a sensor reading dataset" height="600" src="/docs/resources/foundry/time-series/sensor-object-pipeline-starting-data.png" style="aspect-ratio:2140 / 710" width="1808.4507042253522" node="[object Object]"></p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>timestamp</th><th>flight_id</th><th>heading</th><th>altitude</th><th>speed</th><th>latitude</th><th>longitude</th><th>vertical_speed</th><th>flight_ title</th></tr></thead><tbody><tr><td>2023-01-11T23...</td><td>021fcdbsd ...</td><td>211</td><td>134</td><td>50</td><td>40.78354</td><td>-73.87231</td><td>-320</td><td>YX4472...</td></tr></tbody></table></div>
+<p>This guide assumes a basic understanding of Pipeline Builder. Review our <a href="/docs/foundry/pipeline-builder/overview/">Pipeline Builder documentation</a> for information on general pipeline guidance. This use case example also assumes that the flight sensor reading data has already been <a href="/docs/foundry/pipeline-builder/datasets-add/">imported into a pipeline</a>.</p>
+<h2 id="user-content-part-i-enrich-sensor-reading-data" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#part-i-enrich-sensor-reading-data"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Part I: Enrich sensor reading data</h2>
+<p>Once the sensor reading dataset is added to a new pipeline, you will need to add some metadata.</p>
+<h3 id="user-content-1-apply-transforms-to-reformat-sensor-readings" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#1-apply-transforms-to-reformat-sensor-readings"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>1. Apply transforms to reformat sensor readings</h3>
+<p>From the sensor reading dataset, apply transforms using the steps below.</p>
+<h4 id="user-content-unpivot-data-to-merge-series-values"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#unpivot-data-to-merge-series-values"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Unpivot data to merge series values</h4>
+<p>Since this dataset contains time series data in different columns, you must use an unpivot transform to merge it into one value column so the data can match the required schema for a time series sync, as shown below:</p>
+<ul>
+<li><strong>series ID:</strong> <code>string</code> | The series ID for the set of timestamp and value pairs referred to by a TSP, which must match the TSP's series ID.</li>
+<li><strong>timestamp:</strong> <code>timestamp</code> or <code>long</code> | The time at which the quantity is measured.</li>
+<li><strong>value:</strong> <code>integer</code>, <code>float</code>, <code>double</code>, <code>string</code> | The value of the quantity at the point that it is measured. A string type indicates a categorical time series; each categorical time series can have, at most, 10,000 unique variants.</li>
+</ul>
+<p>The unpivot transform shown below places values for both <code>altitude</code> and <code>speed</code> into the same <code>series_value</code> column. Those original column names are outputs to the new <code>series_name</code> column so that parent root objects can identify what each sensor represents (<code>altitude</code>, for example).</p>
+<p><img alt="The unpivot transform board in Pipeline Builder, merging sensor data into one column" height="545" src="/docs/resources/foundry/time-series/sensor-object-pipeline-unpivot.png" style="aspect-ratio:982 / 545" width="982" node="[object Object]"></p>
+<p>The transformed dataset should preview with the new <code>series_value</code> and <code>series_id</code> columns:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>series_name</th><th>series_value</th><th>timestamp</th><th>flight_id</th><th>flight_ title</th></tr></thead><tbody><tr><td>altitude</td><td>134</td><td>2023-01-11T23...</td><td>021fcdbsd...</td><td>YX4472...</td></tr><tr><td>speed</td><td>114.00</td><td>2023-01-11T23...</td><td>021fcdbsd...</td><td>YX4472...</td></tr></tbody></table></div>
+<h4 id="user-content-concatenate-primary-keys-to-create-the-series-id"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#concatenate-primary-keys-to-create-the-series-id"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Concatenate primary keys to create the series ID</h4>
+<p>Now, you can use the concatenate strings transform to create the series ID (the identifier for the associated time series values). Use the transform to combine the <code>series_name</code> (what each sensor represents) with the primary key of each object.</p>
+<p><img alt="The concatenate strings transform board in Pipeline Builder" height="600" src="/docs/resources/foundry/time-series/sensor-object-pipeline-create-series-id.png" style="aspect-ratio:1948 / 674" width="1734.1246290801187" node="[object Object]"></p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>flight_sensor_series_id</th><th>series_name</th><th>series_value</th><th>timestamp</th><th>flight_id</th><th>flight_ title</th></tr></thead><tbody><tr><td>altitude_021fcdbsd...</td><td>altitude</td><td>134</td><td>2023-01-11T23...</td><td>021fcdbsd...</td><td>YX4472...</td></tr><tr><td>speed_021fcdbsd...</td><td>speed</td><td>114.00</td><td>2023-01-11T23...</td><td>021fcdbsd...</td><td>YX4472...</td></tr></tbody></table></div>
+<h4 id="user-content-remove-null-values"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#remove-null-values"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Remove null values</h4>
+<p>Apply a filter transform to remove any rows containing <code>null</code> values that will not be used in our time series calculations.</p>
+<p><img alt="A filter transform board in Pipeline Builder, configured to filter out rows containing null values." height="460" src="/docs/resources/foundry/time-series/sensor-object-pipeline-drop-null-series-values.png" style="aspect-ratio:1960 / 460" width="1960" node="[object Object]"></p>
+<h3 id="user-content-2-add-units-to-the-dataset" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#2-add-units-to-the-dataset"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>2. Add units to the dataset</h3>
+<h4 id="user-content-manually-upload-a-units-dataset"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#manually-upload-a-units-dataset"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Manually upload a units dataset</h4>
+<p>Since the original example sensor reading dataset does not include units, you must add a generated dataset to map units to the series name. From the upper left corner of the Pipeline Builder graph, select <strong>Add data</strong>, then <strong>Enter data manually</strong>. Create a column called <code>series_name</code> and another called <code>units</code>. If necessary, you can repeat this step for internal interpolation (though it is not required for our example).</p>
+<p><strong>Internal interpolation</strong> is used to enable <a href="/docs/foundry/quiver/overview/">Quiver</a> to infer series values between adjacent data points. An internal interpolation column would provide a property for the ontology to save the interpolation settings per sensor object. Quiver will rely on that property when visualizing the time series data. Review <a href="/docs/foundry/quiver/timeseries-visualize/">our documentation on interpolation</a> for more information.</p>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>Some sensor reading datasets do include units; in these cases, you can skip this step and proceed with <a href="#3-concatenate-strings-to-create-title-properties-for-objects">creating a sensor object type backing dataset</a>.</p></div>
+<p><img alt="Manually create a units dataset in Pipeline Builder" height="172" src="/docs/resources/foundry/time-series/sensor-object-pipeline-units-dataset.png" style="aspect-ratio:655 / 172" width="655" node="[object Object]"></p>
+<h4 id="user-content-create-a-join-to-combine-the-units-and-sensor-datasets"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#create-a-join-to-combine-the-units-and-sensor-datasets"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Create a join to combine the units and sensor datasets</h4>
+<p>Using the join board, create a join that combines data from the units and sensor datasets. Be sure the following configuration are set:</p>
+<ul>
+<li>Add a <strong>Left join</strong> and match by <code>series_name</code>.</li>
+<li>Auto-select columns from the left dataset.</li>
+<li>Select only the <code>units</code> column as the right column.</li>
+</ul>
+<p><img alt="Use the join board to combine units and sensor datasets" height="600" src="/docs/resources/foundry/time-series/sensor-object-pipeline-join.png" style="aspect-ratio:1083 / 687" width="945.8515283842795" node="[object Object]"></p>
+<p>The data should preview with the new <code>units</code> column, as shown below:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>flight_sensor_series_id</th><th>series_name</th><th>series_value</th><th>timestamp</th><th>flight_id</th><th>flight_ title</th><th>units</th></tr></thead><tbody><tr><td>altitude_021fcdbsd...</td><td>altitude</td><td>134</td><td>2023-01-11T23...</td><td>021fcdbsd...</td><td>YX4472...</td><td>ft</td></tr><tr><td>altitude_021fcdbsd...</td><td>altitude</td><td>155</td><td>2023-01-11T23...</td><td>021fcdbsd...</td><td>YX4472...</td><td>ft</td></tr><tr><td>speed_021fcdbsd...</td><td>speed</td><td>114.00</td><td>2023-01-11T23...</td><td>021fcdbsd...</td><td>YX4472...</td><td>mph</td></tr><tr><td>speed_021fcdbsd...</td><td>speed</td><td>135.00</td><td>2023-01-11T23...</td><td>021fcdbsd...</td><td>YX4472...</td><td>mph</td></tr></tbody></table></div>
+<h2 id="user-content-part-ii-create-a-sensor-object-type-backing-dataset" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#part-ii-create-a-sensor-object-type-backing-dataset"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Part II: Create a sensor object type backing dataset</h2>
+<p>Now, you are ready to create the sensor object type. Follow the steps below to apply transforms to the join output to create a dataset that will ultimately back the sensor object type.</p>
+<h3 id="user-content-1-drop-duplicates-to-create-one-row-per-sensor" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#1-drop-duplicates-to-create-one-row-per-sensor"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>1. Drop duplicates to create one row per sensor</h3>
+<p>A sensor object represents one, and only one, collection of related time series data (the <code>altitude</code> for a particular flight, for example). Since each related time series collection is uniquely identified by a <code>flight_sensor_series_id</code>, you can assume that keeping only one row per unique flight sensor series ID corresponds to exactly one sensor object. Using a drop duplicates transform on the generated <code>flight_sensor_series_id</code>, you can create one row per sensor object. You will remove the rest of the series data (timestamp and value) in a later step.</p>
+<p><img alt="The drop duplicates transform board in Pipeline Builder" height="167" src="/docs/resources/foundry/time-series/sensor-object-pipeline-drop-duplications.png" style="aspect-ratio:977 / 167" width="977" node="[object Object]"></p>
+<p>The dataset should look as follows:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>flight_sensor_series_id</th><th>series_name</th><th>series_value</th><th>timestamp</th><th>flight_id</th><th>flight_ title</th><th>units</th></tr></thead><tbody><tr><td>altitude_021fcdbsd...</td><td>altitude</td><td>134</td><td>2023-01-11T23...</td><td>021fcdbsd...</td><td>YX4472...</td><td>ft</td></tr><tr><td>speed_021fcdbsd...</td><td>speed</td><td>114.00</td><td>2023-01-11T23...</td><td>021fcdbsd...</td><td>YX4472...</td><td>mph</td></tr></tbody></table></div>
+<h3 id="user-content-2-hash-the-series-id-to-create-a-primary-key" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#2-hash-the-series-id-to-create-a-primary-key"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>2. Hash the series ID to create a primary key</h3>
+<p>Since each sensor object must be uniquely identifiable, you must create a primary key for each one using the hash sha256 transform. You could reuse the <code>series_id</code> since it should be unique across all of these sensor objects, but hashing is a more direct indicator that the <code>series_id</code> should only be used as a unique identifier.</p>
+<p><img alt="The hash sha256 transform board in Pipeline Builder, used to create a primary key from a series ID." height="178" src="/docs/resources/foundry/time-series/sensor-object-pipeline-create-primary-key.png" style="aspect-ratio:977 / 178" width="977" node="[object Object]"></p>
+<p>The dataset should preview as follows:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>unique_sensor_flight_id</th><th>flight_sensor_series_id</th><th>series_name</th><th>series_value</th><th>timestamp</th><th>flight_id</th><th>flight_ title</th><th>units</th></tr></thead><tbody><tr><td>2492af5a2fe62c78ad8d...</td><td>altitude_021fcdbsd...</td><td>altitude</td><td>134.00</td><td>2023-01-11T23...</td><td>021fcdbsd...</td><td>YX4472...</td><td>ft</td></tr><tr><td>ec4808668f4b48cc5104...</td><td>altitude_011794756...</td><td>altitude</td><td>0.0000</td><td>2023-01-22T17...</td><td>011794756...</td><td>UA1878...</td><td>ft</td></tr></tbody></table></div>
+<h3 id="user-content-3-concatenate-strings-to-create-title-properties-for-objects" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#3-concatenate-strings-to-create-title-properties-for-objects"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>3. Concatenate strings to create title properties for objects</h3>
+<p>Now, you should create human-readable title properties for our sensor objects using the concatenate strings transform. Even though the sensor objects will embed into the object view of another <code>Flight</code> object, creating a dedicated name for a sensor object will make it more intuitive for users to build and analyze sensors for use in the platform.</p>
+<p><img alt="The concatenate strings transform board, used to create a new title for sensor objects." height="424" src="/docs/resources/foundry/time-series/sensor-object-pipeline-create-title.png" style="aspect-ratio:979 / 424" width="979" node="[object Object]"></p>
+<p>The dataset should preview as follows:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>title</th><th>unique_sensor_flight_id</th><th>flight_sensor_series_id</th><th>series_name</th><th>series_value</th><th>timestamp</th><th>flight_id</th><th>flight_ title</th><th>units</th></tr></thead><tbody><tr><td>Altitude sensor for YX4472...</td><td>2492af5a2fe62c78ad8d...</td><td>altitude_021fcdbsd...</td><td>altitude</td><td>134.00</td><td>2023-01-11T23...</td><td>021fcdbsd...</td><td>YX4472...</td><td>ft</td></tr><tr><td>Altitude sensor for UA1878...</td><td>ec4808668f4b48cc5104...</td><td>altitude_011794756...</td><td>altitude</td><td>0.0000</td><td>2023-01-22T17...</td><td>011794756...</td><td>UA1878...</td><td>ft</td></tr></tbody></table></div>
+<h3 id="user-content-4-drop-unnecessary-columns" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#4-drop-unnecessary-columns"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>4. Drop unnecessary columns</h3>
+<p>Since our sensor objects only represent the sensors themselves, you can remove the remaining <code>series_value</code> and <code>timestamp</code> columns with a drop columns transform. Those columns are represented on the time series property and will be linked to the sensor in the Ontology based on the <code>flight_sensor_series</code> value. Additionally, you will drop the <code>flight_title</code> column since it is not needed for our sensor object types.</p>
+<p>You will keep the <code>flight_id</code> so that sensor objects (<code>Flight Sensors</code>) can be linked to their root object (<code>Flights</code>).</p>
+<p><img alt="Drop timestamp and series value columns" height="161" src="/docs/resources/foundry/time-series/sensor-object-pipeline-drop-timestamp-values.png" style="aspect-ratio:975 / 161" width="975" node="[object Object]"></p>
+<p>The dataset should preview as follows:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>title</th><th>unique_sensor_flight_id</th><th>flight_sensor_series_id</th><th>series_name</th><th>flight_id</th><th>units</th></tr></thead><tbody><tr><td>Altitude sensor for YX4472...</td><td>2492af5a2fe62c78ad8d...</td><td>altitude_021fcdbsd...</td><td>altitude</td><td>021fcdbsd...</td><td>ft</td></tr><tr><td>Altitude sensor for UA1878...</td><td>ec4808668f4b48cc5104...</td><td>altitude_011794756...</td><td>altitude</td><td>011794756...</td><td>ft</td></tr></tbody></table></div>
+<h3 id="user-content-5-add-a-dataset-output-to-back-sensor-object-type" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#5-add-a-dataset-output-to-back-sensor-object-type"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>5. Add a dataset output to back sensor object type</h3>
+<p>Select <code>Add output</code> and then select <code>Add dataset</code>. The resulting dataset should mirror the schema created in the transform. Any newer changes may require updating the schema in the resulting dataset.</p>
+<h2 id="user-content-part-iii-create-the-sensor-object-type-time-series-sync" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#part-iii-create-the-sensor-object-type-time-series-sync"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Part III: Create the sensor object type time series sync</h2>
+<h3 id="user-content-1-transform-the-sensor-readings-to-a-time-series-sync-format" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#1-transform-the-sensor-readings-to-a-time-series-sync-format"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>1. Transform the sensor readings to a time series sync format</h3>
+<p>Using the select columns transform, you will only keep the columns that are required for the time series sync: <code>series_id</code>, <code>timestamp</code>, and <code>value</code>. The backing dataset will hold values for all sensors, regardless of what they are measuring (both <code>altitude</code> and <code>speed</code>, for example). You can use the generated <code>flight_sensor_series_id</code> for the <code>series_id</code> as a unique identifier for a particular set of sensor data. For example, Flight A445B from LGA to LAX will have a linked sensor object for <code>speed</code> that will hold the sensor data for speed on that flight. Similarly, it will also have a linked sensor object for <code>altitude</code>.</p>
+<p><img alt="Pipeline select columns for sensor data" height="306" src="/docs/resources/foundry/time-series/sensor-object-pipeline-transform-select-columns.png" style="aspect-ratio:977 / 306" width="977" node="[object Object]"></p>
+<p>The dataset output should preview as follows:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>flight_sensor_series_id</th><th>series_value</th><th>timestamp</th></tr></thead><tbody><tr><td>altitude_021fcdbsd...</td><td>134.00</td><td>2023-01-11T23...</td></tr><tr><td>altitude_011794756...</td><td>0.0000</td><td>2023-01-22T17...</td></tr></tbody></table></div>
+<h2 id="user-content-part-iii-create-the-time-series-sync" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#part-iii-create-the-time-series-sync"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Part III: Create the time series sync</h2>
+<h3 id="user-content-1-configure-the-time-series-sync" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#1-configure-the-time-series-sync"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>1. Configure the time series sync</h3>
+<p>Now, create a <a href="/docs/foundry/time-series/time-series-concepts-glossary/#time-series-sync">time series sync</a> by selecting <strong>Add</strong> from the pipeline output section to the right of the screen. Then, select <strong>Time series sync</strong>. Fill out the necessary data for the new time series sync, with the following considerations:</p>
+<ul>
+<li>Select the <code>flight_sensor_series_id</code> column for the <a href="/docs/foundry/time-series/time-series-concepts-glossary/#series-id"><strong>Series ID</strong></a> field.</li>
+<li>Add the created <code>timestamp</code> column in the <strong>Time</strong> field.</li>
+<li>Add <code>series_value</code> to the <strong>Value</strong> field.</li>
+</ul>
+<p><img alt="Configure a time series sync output in Pipeline Builder." height="381" src="/docs/resources/foundry/time-series/sensor-object-pipeline-time-series-sync-output.png" style="aspect-ratio:339 / 381" width="339" node="[object Object]"></p>
+<p>Now, <a href="/docs/foundry/pipeline-builder/outputs-deliver-pipeline/#save">save and build</a> the pipeline. The outputs will be created in the same folder as the pipeline.</p>
+<h3 id="user-content-2-use-a-time-series-sync-to-add-properties-to-sensor-object-types" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#2-use-a-time-series-sync-to-add-properties-to-sensor-object-types"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>2. Use a time series sync to add properties to sensor object types</h3>
+<p>Now that you created a pipeline with a time series sync, you are ready to use the sync to add time series properties to sensor object types. Move on to our documentation for <a href="/docs/foundry/time-series/sensor-object-end-to-end-ontology/">adding time series properties to sensor object types</a> for more guidance.</p>
+</article>
+</body>
+</html>

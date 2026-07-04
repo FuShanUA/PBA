@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Branching and release process</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-branching-and-release-process" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#branching-and-release-process"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Branching and release process</h1>
+<p>The purpose of this document is to outline both the recommended best practices for branch management and the release process of data pipelines managed through Projects within Code Repositories.</p>
+<p>The high level goal is to design a process to strike a balance between quick iteration on new data features / data quality fixes and having a stable and process-compliant change management process.</p>
+<h2 id="user-content-scope-of-release" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#scope-of-release"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Scope of release</h2>
+<p>Before we jump into the internals of the release management process, we need to better define exactly "what is the product" that we are releasing? For our purposes we'll define the <code>product</code> to be <em>the set of assets released as a conceptual unit</em>.</p>
+<p>Taking <a href="/docs/foundry/building-pipelines/recommended-project-structure/">Recommended Project structure</a> as a reference for how we build pipelines in Foundry, we see that the pipeline is defined by
+multiple projects of different types - datasource, transforms, Ontology and workflow. In most cases, however, we will not manage each project on its own as a product, but instead, each project will define a subset of its resources as one of the following product types:</p>
+<ul>
+<li>The Ontology product: this product is the collection of output datasets created out of the datasource, pipeline and Ontology projects.</li>
+<li>A Use-case product: every use case project represents a given use case that stands on its own. Each of the use cases is defined as a product.</li>
+</ul>
+<p><img alt="pipeline-overview" height="600" src="/docs/resources/foundry/building-pipelines/pipeline_overview.png" style="aspect-ratio:4380 / 985" width="2668.020304568528" node="[object Object]"></p>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>The definition we give to a product here can cover code which is managed in multiple repositories and other Foundry resources.</p></div>
+<h2 id="user-content-product-branch-management" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#product-branch-management"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Product branch management</h2>
+<p>The following section refers to the branching strategy we want to deploy to manage the release of every product. <a href="/docs/foundry/data-integration/branching/">Learn more about branching in general and how branches work between Code Repositories and datasets.</a></p>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><div class="ptcom-design__title__19o1cwu">Branch naming</div><p>It is highly recommended to have the same branch name across all repositories within the product. This will ensure downstream branches read from the correct upstream branch.</p></div>
+<p>The general branching strategy we recommend following is based on a common practice named <a href="https://www.atlassian.com/git/tutorials/comparing-workflows/gitflow-workflow">GitFlow ↗</a> with some modification. The main change is a recommendation to skip the <code>release</code> branch. Due to the way artifacts are deployed in Foundry, we can merge changes from <code>dev</code> into <code>master</code> directly after testing.</p>
+<h3 id="user-content-common-branches" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#common-branches"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Common branches</h3>
+<p><code>master</code>&nbsp;- this is the production branch. As such, it is a protected branch
+and only the release manager role can approve merging a PR to this
+branch. It is assumed that the <code>master</code> branch is sourced with production
+data.</p>
+<p><code>dev</code> - the <code>dev</code> (aka development) branch is a staging branch, derived
+from&nbsp;the <code>master</code>&nbsp;branch. It is mostly relevant when you want to test a
+complete feature using testing data. The <code>dev</code> branch can be sourced from
+<code>master</code> (this happens automatically through <a href="/docs/foundry/code-repositories/branch-settings/#fallback-branches">fallback branches</a>) or from a UAT data
+source.</p>
+<p><code>feature-[X]</code>&nbsp;- feature branch is where a given feature is being developed
+and tested. This branch is derived from <code>dev</code>&nbsp;branch. This is a
+short-lived branch, meaning it can be deleted once the branch is being
+merged into&nbsp;master. Since the branch is derived from <code>dev</code>&nbsp;it will be
+sourced with the same data <code>dev</code> branch has.&nbsp;Note that this remains true as long as the fallback branches don't get reconfigured, and as long as the input datasets don't exist on the feature branch.</p>
+<p><img alt="basic-branching" height="393" src="/docs/resources/foundry/building-pipelines/branches-1.png" style="aspect-ratio:877 / 393" width="877" node="[object Object]"></p>
+<h3 id="user-content-other-special-branches" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#other-special-branches"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Other special branches</h3>
+<p><code>major-release-[X]</code>&nbsp;- special branch which
+integrates all required changes due to changes in the source system's schema (occurring at a specific cadence).</p>
+<p><code>hot-fix-[X]</code>&nbsp;- special branch used to fix an issue discovered in production
+while the code base has moved to a new version. Since we assume
+dev&nbsp;and master&nbsp;are in sync (unless there is a feature which is
+being actively tested) it is unlikely we need such a branch.</p>
+<h3 id="user-content-branch-management-workflow" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#branch-management-workflow"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Branch management workflow</h3>
+<p>As described above, some branches are permanent while
+others are short-lived. The following section describes the
+recommended workflow between branches.</p>
+<p><img alt="advanced-branching" height="445" src="/docs/resources/foundry/building-pipelines/branches-2.png" style="aspect-ratio:877 / 445" width="877" node="[object Object]"></p>
+<ul>
+<li>
+<p>At <em>t0</em>,&nbsp;<code>master</code>&nbsp;and&nbsp;<code>dev</code>&nbsp;branches are created.</p>
+</li>
+<li>
+<p>At <em>t1</em>, <code>feature x</code>&nbsp;branch is created from <code>dev</code></p>
+</li>
+<li>
+<p>At <em>t2</em>, <code>feature y</code>&nbsp;branch is created from <code>dev</code></p>
+</li>
+<li>
+<p>At <em>t3</em>, <code>feature x</code>&nbsp;is merged into <code>dev</code></p>
+</li>
+<li>
+<p>At <em>t4</em>, <code>dev</code>&nbsp;is merged into <code>master</code>,&nbsp;and <code>feature x</code>&nbsp;branch is deleted</p>
+</li>
+<li>
+<p>At <em>t5</em>, <code>dev</code>&nbsp;is merged into&nbsp;<code>feature y</code>&nbsp;to pick up the latest state of
+<code>dev</code></p>
+</li>
+<li>
+<p>At <em>t6</em>, feature y&nbsp;is merged into <code>dev</code>&nbsp;and later from <code>dev</code>&nbsp;to <code>master</code>&nbsp;as
+before</p>
+</li>
+</ul>
+<p>In addition to features developed and released to <code>dev</code>&nbsp;and <code>master</code>&nbsp;, a long lived branch for a major release like <code>major-release-[X]</code>&nbsp;is being developed.</p>
+<p>It is recommended to keep merging&nbsp;<code>dev</code>&nbsp;onto <code>major-release-[X]</code>&nbsp;, so the latest features are in sync. We recommend keeping the Ontology schema as stable as possible and to hide the backend schema changes through the transformation in the datasource and transform projects.</p>
+<h3 id="user-content-repository-upgrades" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#repository-upgrades"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Repository upgrades</h3>
+<p><em>Repository upgrades</em> are periodic prompts to update the configuration files in a Code Repository. These updates apply fixes or bump versions of language-bundle dependencies and best practice is to stay on top of applying these recommended upgrades.</p>
+<p><img alt="upgrade button" height="66" src="/docs/resources/foundry/building-pipelines/upgrade.png" style="aspect-ratio:529 / 66" width="529" node="[object Object]"></p>
+<p>Note that if you miss clicking the "Upgrade" button on the prompt, the button is also available for any branch under the "..." options menu in the upper right corner:</p>
+<p><img alt="upgrade button" height="184" src="/docs/resources/foundry/building-pipelines/upgrade-2.png" style="aspect-ratio:251 / 184" width="251" node="[object Object]"></p>
+<p>The upgrade process should be treated the same way as a feature&nbsp;development cycle. This means:</p>
+<ol>
+<li>
+<p><code>master</code>&nbsp;should be upgraded through <code>dev</code>.</p>
+</li>
+<li>
+<p>When prompted to upgrade <code>dev</code>, an&nbsp;automated feature branch&nbsp;will be
+created. You can test the configuration changes by running a build on this branch once CI checks are complete. After confirming the transforms still execute after the upgrade, merge the configuration changes into <code>dev</code>. Once <code>dev</code>is upgraded, a PR should be used to push these changes to master.</p>
+</li>
+<li>
+<p>To upgrade all open feature&nbsp;branches, merge <code>dev</code>&nbsp;back into each branch to include these configuration upgrades.</p>
+</li>
+</ol>
+<h3 id="user-content-maintenance-windows" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#maintenance-windows"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Maintenance windows</h3>
+<p>A fast iteration loop from idea to production is common in development practices and critical to the success of projects that depend on end-user feedback to determine the next iteration loop. In order to support such a process, we recommend establishing a pre-defined maintenance window.</p>
+<p>For example, once all feature PRs are merged, all datasets get built on the <code>dev</code> branch so that the results can be verified on Wednesday and Friday. During these days, only fixes to problems discovered during verification get merged into <code>dev</code>, until <code>dev</code> finally gets merged into <code>master</code> on Thursday and Monday, the "release days"</p>
+<p><img alt="upgrade-windows" height="424" src="/docs/resources/foundry/building-pipelines/branches-3.png" style="aspect-ratio:974 / 424" width="974" node="[object Object]"></p>
+<p>It is recommended to agree on such cadence with all parties involved to
+make sure they devote enough time during these days to push new features
+forward.</p>
+<h2 id="user-content-feature-testing-and-end-user-verification" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#feature-testing-and-end-user-verification"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Feature testing and end user verification</h2>
+<p>Once feature development is complete it is critical to test and validate
+both the correctness of the feature outcome and the impact on any
+dependent resource. In Code Repositories we consider the output datasets as
+the feature outcome which should be tested.</p>
+<p>Based on the branch structure we defined above, when we build the output
+dataset it will use either data from the input datasets on the same
+branch of the feature, or through the fallback logic will read from the
+source branch, master&nbsp;in the simplified version and dev&nbsp;in the other.</p>
+<p>The developer-level testing can be done using dataset <a href="/docs/foundry/health-checks/overview/">Health Checks</a>, dependent test datasets, or manually using tools such as <a href="/docs/foundry/contour/overview/">Contour</a>.</p>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><div class="ptcom-design__title__19o1cwu">Testing methodology</div><p>It is highly discouraged to do this testing via the preview or SQL helper.&nbsp;The preview helper uses only a sample of the data when executing code, which might not reveal all cases - especially in code that involves one or more join operations. The SQL helper tests the correctness of the code but not the output of the build which in some cases could be different.</p></div>
+<p>Upon completion of feature development, the new feature code needs to be reviewed before being merged into the <code>dev</code> branch and the feature outcomes need to be verified by the end user for correctness and completeness.</p>
+<p>We recommend using a combination of Pull Request&nbsp;reviews for the first and Foundry Issues&nbsp;for the second as explained in the diagram below.</p>
+<p><img alt="pull-request" height="420" src="/docs/resources/foundry/building-pipelines/branches-4.png" style="aspect-ratio:877 / 420" width="877" node="[object Object]"></p>
+<ol>
+<li>
+<p>The developer creates a pull request from his feature&nbsp;branch to the <code>dev</code>&nbsp;branch and adds implementation comments.</p>
+</li>
+<li>
+<p>The dev-lead reviews the PR, collaborates with the developer on required changes and finally merges the PR into <code>dev</code>.</p>
+</li>
+</ol>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>During the pull request review, make sure that you check the changes to the schemas of any affected datasets. Schemas should be treated as your data API, so any changes to column names or columns types is considered a "breaking" change for any consumers. Limit breaks where possible by creating new columns rather than deleting or modifying old ones while announcing a deprecation of the old column and instructions for data consumers (identified through Data Connection) to update to the new column. At the next major release, columns deprecated in the previous major release can be removed.</p><p>To review schema changes in a pull request, use schema diff view in the <a href="/docs/foundry/code-repositories/analyze-impact/">Affected Datasets</a> tab.</p></div>
+<ol start="3">
+<li>The dev-lead runs the build on the <code>dev</code>&nbsp;branch to create the feature output datasets.</li>
+<li>The dev creates a Foundry Issue&nbsp;on the output dataset, documents any testing and verification requests and assigns the issue to the relevant end user for verification.</li>
+<li>The end user receives the issue, with full context and view of the relevant dataset and branch to be tested. They collaborate with the developer on the required changes until the issue is resolved and marked as ready to merge. The issue is then assigned to the release manager.</li>
+<li>The release manager closes the issue and merges <code>dev</code>&nbsp;into <code>master</code>.</li>
+<li>The release manager deletes the feature branch.</li>
+</ol>
+<p>The above workflow allows for a relatively fast collaboration cycle between the parties, without losing context. Closed issues are kept on the platform and can act as audit trail for the change-management process.</p>
+<h3 id="user-content-foundry-issues-feature-review-workflow" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#foundry-issues-feature-review-workflow"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Foundry Issues feature review workflow</h3>
+<p>Below is an example of how a team can use Foundry Issues to track requests for review from other stakeholders, carry out conversations around new features, and control and document the process or merging code to <code>master</code>, so all interested parties remain informed and up-to-date. Consider this directional, rather than proscriptive, and adapt it to existing operational and technical processes as needed.</p>
+<p><strong>Example workflow</strong></p>
+<p>The first time a developer creates a feature review request issue, the issue is assigned with status <code>Feature Review: Request Review</code>. The issue can be attached to the dataset or to a specific column if the feature is specific.</p>
+<p>Collaboration with the end user is done through the comment section and by changing the status between <code>Request Change</code>&nbsp;or <code>Ready to Merge</code>&nbsp;and changing the assignee of the issue.</p>
+<p>Issues is a great place to store the feature review workflow as end users can also document their verification process (for audit purposes) and attach links to other assets.</p>
+<p>The diagram below shows how an issue is created on the build output dataset.</p>
+<p><img alt="issue-review" height="391" src="/docs/resources/foundry/building-pipelines/branches-5.png" style="aspect-ratio:877 / 391" width="877" node="[object Object]"></p>
+<ol>
+<li>
+<p>In Foundry Explorer, select Output dataset.</p>
+</li>
+<li>
+<p>Report the issue on the whole dataset by clicking <strong>Report Issue</strong>.</p>
+</li>
+<li>
+<p>If the feature has to do with a specific column, you can using the column level report issue to provide the reviewer better context of the change you made.</p>
+</li>
+<li>
+<p>Complete the issue fields as prompted by the form.</p>
+</li>
+<li>
+<p>Once the issue is created, make sure to change the label to <code>Feature Review: Request Review</code>. (If you do not have these labels available, contact your Palantir representative for assistance.)</p>
+</li>
+</ol>
+<p><img alt="issue-review3" height="543" src="/docs/resources/foundry/building-pipelines/branches-7.png" style="aspect-ratio:877 / 543" width="877" node="[object Object]"></p>
+<p>As the review process continues, the collaboration thread including all status changes and verification evidence are stored in the issue.</p>
+<p><img alt="issue-review4" height="527" src="/docs/resources/foundry/building-pipelines/branches-8.png" style="aspect-ratio:877 / 527" width="877" node="[object Object]"></p>
+</article>
+</body>
+</html>

@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Authorization roles</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="authorization-roles" level="1">授权角色</h1>
+<h2 id="summary" level="2">摘要</h2>
+<p>Palantir Foundry Connector 2.0 for SAP（以下简称“连接器”）使用四种类型的角色。</p>
+<ul>
+<li><strong>服务角色：</strong>连接器运行所必需的角色。请勿修改这些角色。
+<ul>
+<li><strong>/PALANTIR/SERVICE_SLT：</strong>SLT 的 Palantir 服务角色</li>
+<li><strong>/PALANTIR/SERVICE_SLT_740：</strong>SAP_BASIS 7.4 的 Palantir 服务角色（技术组件版本，适用于 SAP NetWeaver 和 SAP S/4HANA 系统）</li>
+<li><strong>/PALANTIR/SERVICE_USER：</strong>Palantir 服务角色</li>
+</ul>
+</li>
+<li><strong>内容角色：</strong>从 SAP 系统提取数据所必需的角色。可根据业务需求复制和修改这些角色。
+<ul>
+<li><strong>/PALANTIR/CONTENT_BEX_ALL：</strong>BEx 访问角色</li>
+<li><strong>/PALANTIR/CONTENT_DM_ALL：</strong>数据模型访问角色</li>
+<li><strong>/PALANTIR/CONTENT_EXT_ALL：</strong>提取器内容访问</li>
+<li><strong>/PALANTIR/CONTENT_FUNCTION_ALL：</strong>函数访问角色</li>
+<li><strong>/PALANTIR/CONTENT_INFOPROV_ALL：</strong>InfoProvider 内容访问</li>
+<li><strong>/PALANTIR/CONTENT_SLT_ALL：</strong>SLT 访问角色</li>
+<li><strong>/PALANTIR/CONTENT_TABLE_ALL：</strong>表内容访问</li>
+<li><strong>/PALANTIR/CONTENT_TCODE_ALL：</strong>事务代码内容访问</li>
+<li><strong>/PALANTIR/CONTENT_HANAVIEW_ALL：</strong>HANA 信息视图内容访问</li>
+<li><strong>/PALANTIR/CONTENT_CDS_ALL：</strong>ABAP CDS 视图内容访问</li>
+</ul>
+</li>
+<li><strong>回写角色：</strong>如果启用从 Foundry 向 SAP 系统回写数据，则需要这些角色。
+<ul>
+<li><strong>/PALANTIR/OAUTH_CLIENT：</strong>Palantir Foundry OAuth 2.0 客户端角色</li>
+</ul>
+</li>
+<li><strong>监控与调试角色：</strong>需要这些角色将 SAP 系统信息暴露给 Foundry，以实现远程监控。
+<ul>
+<li><strong>/PALANTIR/MONITORING：</strong>监控</li>
+<li><strong>/PALANTIR/DEBUG_USER：</strong>调试用户访问</li>
+</ul>
+</li>
+</ul>
+<h2 id="service-roles" level="2">服务角色</h2>
+<ul>
+<li><strong>/PALANTIR/SERVICE_USER：</strong>用户运行连接器服务的基础角色。对连接器的每次请求都会检查此角色。此角色中的权限对象如下：
+<ul>
+<li><strong>/PALAU/SRV：</strong>Palantir 服务权限对象，包含 03（显示）和 16（执行）活动。</li>
+<li><strong>S_BTCH_JOB：</strong>（后台处理：后台作业操作）连接器运行后台作业（例如分页或清理操作），因此需要此权限对象。</li>
+<li><strong>S_TCODE：</strong>（事务启动时的事务代码检查）仅用于 SU53 和 ST22 事务（SAP 中的权限检查工具和运行时错误），这是调试和正常日志记录机制所必需的。</li>
+<li><strong>S_RFC_ADM：</strong>（RFC 目标管理）此对象用于 36（检查）和 39（扩展检查）活动，以确定 RFC 连接是否处于活动状态并检查权限测试。</li>
+<li><strong>S_RFC：</strong>（RFC 访问权限检查）此对象用于在 SLT 和远程代理场景中执行远程函数调用，包含 16（执行）活动。</li>
+<li><strong>/SDF/E2E：</strong>（端到端诊断权限）此对象用于从 Foundry 对提取过程运行跟踪，包含 03（显示）活动。</li>
+<li><strong>S_ADMI_FCD：</strong>（系统权限）此对象用于运行检查和跟踪，包含 PADM（使用事务 SM04、SM50 进行进程管理）、ST0R（分析跟踪）、ST22（跨客户端转储分析）。</li>
+<li><strong>S_BTCH_JOB：</strong>（后台处理：后台作业操作）此对象用于将连接器提取作为后台作业运行，包含除 MODI（修改其他用户的作业）之外的所有活动。</li>
+<li><strong>S_DATASET：</strong>（文件访问权限）此对象用于在 SAP 中使用 SAT 生成和访问跟踪文件，包含 33（读取）、A6（带过滤读取）、A7（带过滤写入）活动。</li>
+<li><strong>S_TABU_NAM：</strong>（通过通用标准工具访问表）此对象用于访问 /PAL*、DMC*、IUUC* 表，包含 03（显示）活动。</li>
+<li><strong>S_TABU_DIS：</strong>（表维护（通过 SM30 等标准工具））此对象用于访问表，包含 03（显示）活动。</li>
+</ul>
+</li>
+</ul>
+<p>仅当连接到 SAP Landscape Transformation Replication Server 时，才需要以下角色：</p>
+<ul>
+<li><strong>/PALANTIR/SERVICE_SLT：</strong>运行 SLT API 需要此角色。此角色中的权限对象如下：
+<ul>
+<li><strong>S_DMIS：</strong>（SAP SLO 数据迁移服务器的权限对象）此对象限于 03（显示）活动，用于检查 API 端点并调用它们。</li>
+</ul>
+</li>
+<li><strong>/PALANTIR/SERVICE_SLT_740：</strong>如果 SAP SLT 运行在 SAP_BASIS 7.4+ 上，则需要额外的权限对象。这些对象如下：
+<ul>
+<li><strong>S_DMC_S_R：</strong>（MWB：发送方/接收方中的读/写权限）访问 Foundry 的 SLT 队列需要此对象。</li>
+<li><strong>S_BTCH_ADM：</strong>（后台处理：后台管理员）此对象代表 SAP SLT 管理连接器的后台作业，例如复制对象定义、复制过程对象，以及启动向 SLT 队列的复制。</li>
+<li><strong>S_DMIS：</strong>（SAP SLO 数据迁移服务器的权限对象）此对象限于 03（显示）活动，用于检查 API 端点并调用它们。</li>
+<li><strong>S_DMIS_MOM：</strong>（MWB / 迁移对象建模器的权限）</li>
+</ul>
+</li>
+</ul>
+<h2 id="content-roles" level="2">内容角色</h2>
+<p></p>
+
+这些角色作为示例提供。请通过复制这些角色并限制对系统中所需对象的访问权限，来调整授权配置文件的内容。</p>
+<h3 id="user-content-roles-for-connector" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#roles-for-connector"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>连接器角色</h3>
+<ul>
+<li><strong>/PALANTIR/CONTENT_TABLE_ALL:</strong> 此角色用于从数据库表和视图中提取数据。
+<ul>
+<li><strong>/PALAU/TAB:</strong> Palantir 表授权对象：默认通过 <code>*</code> 通配符允许访问所有表。</li>
+</ul>
+</li>
+<li><strong>/PALANTIR/CONTENT_DM_ALL</strong>:	此角色用于从数据库表中提取数据模型。
+<ul>
+<li><strong>/PALAU/DMO:</strong> Palantir 数据模型授权对象：默认通过 <code>*</code> 通配符允许访问所有表。</li>
+</ul>
+</li>
+<li><strong>/PALANTIR/CONTENT_FUNCTION_ALL:</strong> 此角色用于运行 SAP 系统的 RFC 函数。根据所使用的业务功能，可能需要额外的授权。
+<ul>
+<li><strong>/PALAU/FUN:</strong> Palantir 函数授权对象：默认通过 <code>*</code> 通配符允许访问所有函数。</li>
+</ul>
+</li>
+<li><strong>/PALANTIR/CONTENT_TCODE_ALL:</strong> 此角色用于运行 SAP 系统的事务代码（ALV SE38 报表）。根据所使用的业务功能，可能需要额外的授权。
+<ul>
+<li><strong>/PALAU/TCO:</strong> Palantir 事务代码授权对象：默认通过 <code>*</code> 通配符允许访问所有事务代码。</li>
+</ul>
+</li>
+<li><strong>/PALANTIR/CONTENT_HANANVIEW_ALL:</strong> 此角色用于从 HANA 信息视图中提取数据。
+<ul>
+<li><strong>/PALAU/HAN:</strong> Palantir HANA 授权对象：默认通过 <code>*</code> 通配符允许访问所有 HANA 信息视图。</li>
+</ul>
+</li>
+<li><strong>/PALANTIR/CONTENT_CDS_ALL:</strong> 此角色用于从 ABAP CDS 视图中提取数据。
+<ul>
+<li><strong>/PALAU/CDS:</strong> Palantir CDS 授权对象：默认通过 <code>*</code> 通配符允许访问所有 CDS 视图。</li>
+</ul>
+</li>
+</ul>
+<p>以下角色仅在连接到 SAP Business Warehouse (BW) 服务器时需要：</p>
+<ul>
+<li><strong>/PALANTIR/CONTENT_BEX_ALL:</strong> 此角色用于从 SAP BW (Business Warehouse) BEx 查询中提取数据。
+<ul>
+<li><strong>/PALAU/BEX:</strong> (Palantir BEx 授权对象)：默认通过 <code>*</code> 通配符允许访问所有 BEx 查询。</li>
+</ul>
+</li>
+<li><strong>/PALANTIR/CONTENT_EXT_ALL</strong>	: 此角色用于从 SAP BW (Business Warehouse) 提取器（启用 ODP）中提取数据。
+<ul>
+<li><strong>/PALAU/EXT:</strong> Palantir 提取器授权对象：默认通过 <code>*</code> 通配符允许访问所有启用 ODP 的提取器。</li>
+</ul>
+</li>
+<li><strong>/PALANTIR/CONTENT_INFOPROV_ALL:</strong> 此角色用于从 SAP BW (Business Warehouse) InfoProvider 中提取数据。
+<ul>
+<li><strong>/PALAU/INF:</strong> Palantir InfoProvider 授权对象：默认通过 <code>*</code> 通配符允许访问所有 InfoProvider。</li>
+<li><strong>S_RS_AUTH:</strong> 角色中的 BI 分析授权：这是 BW 系统中的所有分析授权。请根据需要进行调整。</li>
+<li><strong>S_RS_COMP:</strong> Business Explorer - 组件：这是 BW 系统中的所有 BEx 对象授权。请根据需要进行调整。</li>
+<li><strong>S_RS_COMP1:</strong> Business Explorer - 组件：数据主人增强功能：这是 BW 系统中的所有 BEx 对象授权。请根据需要进行调整。</li>
+</ul>
+</li>
+</ul>
+<p>以下角色仅在连接到 SAP Landscape Transformation (SLT) 复制服务器时需要：</p>
+<ul>
+<li><strong>/PALANTIR/CONTENT_SLT_ALL</strong>	此角色用于从 SLT 队列中提取数据，这些队列将表从连接的系统复制到 SAP SLT。
+<ul>
+<li><strong>/PALAU/SLT:</strong> (Palantir SLT 授权对象)：默认通过 <code>*</code> 通配符允许访问所有表。</li>
+</ul>
+</li>
+</ul>
+<h2 id="user-content-writeback-roles" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#writeback-roles"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>回写角色</h2>
+<ul>
+<li><strong>/PALANTIR/OAUTH_CLIENT:</strong> 从 Foundry 向 SAP 系统启用回写功能时需要此角色。它提供了 OAuth 2.0 配置所需的授权对象。
+<ul>
+<li><strong>S_SERVICE:</strong> 在外部服务启动时进行检查。这些服务受 <code>/PALANTIR/*</code> 服务限制。</li>
+<li><strong>S_OA2C_ADM:</strong> OAuth 2.0 客户端配置</li>
+<li><strong>S_OA2C_USE:</strong> OAuth 2.0 客户端使用</li>
+<li><strong>S_SCOPE:</strong> OAuth 2.0 作用域。此角色仅限于 <code>/PALANTIR/SRV_0001</code> 作用域，用于使用 SAP 函数进行 Palantir Foundry 回写。</li>
+</ul>
+</li>
+</ul>
+<h2 id="user-content-roles-for-monitoring-and-debugging" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#roles-for-monitoring-and-debugging"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>监控与调试角色</h2>
+<ul>
+<li><strong>/PALANTIR/MONITORING:</strong> 需要此角色才能通过连接器对 SAP 系统进行远程监控。它提供了丰富的系统信息，如运行时错误分析（<code>ST22</code>）、SAP 系统日志（<code>SM21</code>）、SAP 后台作业监控（<code>SM37</code>）、授权分析（<code>SU53</code>）、Internet 通信管理器（<code>ICM</code>）、系统资源监控（<code>ST02</code>、<code>ST06</code>）、SAP SLT 控制台（<code>LTRC</code>）、SAP SLT 操作增量队列监控（<code>ODQMON</code>）。</li>
+<li><strong>/PALANTIR/DEBUG_USER:</strong> 发生故障时 Palantir 支持团队需要此角色；开发人员可能需要在 SAP 系统中对问题进行调试。此角色汇集了连接器开发团队所需的全部授权对象。</li>
+</ul>
+<h2 id="user-content-remote-agent-roles" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#remote-agent-roles"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>远程智能体角色</h2>
+<p>
+
+远程智能体角色与主连接器的相应角色一致。这些角色可以在安装了连接器远程智能体的远程系统中维护。</p>
+<h3 id="user-content-roles-for-sap_basis-70-and-above" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#roles-for-sap_basis-70-and-above"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>SAP_BASIS 7.0 及以上版本的角色</h3>
+<ul>
+<li><strong>/PALANTIR/CONTENT_RBEX_ALL:</strong> 远程 BEx 内容访问</li>
+<li><strong>/PALANTIR/CONTENT_RFUNCT_ALL:</strong> 远程函数内容访问</li>
+<li><strong>/PALANTIR/CONTENT_RTCODE_ALL:</strong> 远程事务码内容访问</li>
+<li><strong>/PALANTIR/CONTENT_RINFOPRV_ALL:</strong> 远程 InfoProvider 内容访问</li>
+<li><strong>/PALANTIR/CONTENT_RTABLE_ALL:</strong> 远程表内容访问</li>
+<li><strong>/PALANTIR/SERVICE_USER:</strong> Palantir 服务角色</li>
+</ul>
+<h3 id="user-content-roles-for-basis-releases-46c-620-or-640" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#roles-for-basis-releases-46c-620-or-640"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Basis 版本 46C、620 或 640 的角色</h3>
+<ul>
+<li><strong>/PALAGT47/CONTENT_RTABLE_ALL:</strong> 远程表内容访问</li>
+<li><strong>/PALAGT47/SERVICE_USER:</strong> Palantir 服务角色</li>
+</ul>
+</article>
+</body>
+</html>

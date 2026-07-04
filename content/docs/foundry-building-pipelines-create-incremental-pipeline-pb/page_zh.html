@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Create an incremental pipeline with Pipeline Builder</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-create-an-incremental-pipeline-with-pipeline-builder" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#create-an-incremental-pipeline-with-pipeline-builder"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>使用 Pipeline Builder 创建增量管道</h1>
+<p>在本教程中，我们将使用 Pipeline Builder 创建一个简单的增量管道，并输出单个数据集。</p>
+<p>下文使用的数据集均为假设示例，旨在说明增量计算的适用场景。</p>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>对于增量管道，您可以选择<a href="/docs/foundry/building-pipelines/../pipeline-builder/breaking-changes/#force-incremental-behavior-for-outputs">强制输出进行增量计算</a>，并在无法以增量方式运行时使构建失败。</p></div>
+<h2 id="user-content-part-1-problem-statement" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#part-1-problem-statement"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>第一部分：问题陈述</h2>
+<p>假设我们有一个 <code>flights</code> 输入数据集，每周会追加新数据。我们希望筛选出从 <code>JFK</code> 机场起飞的航班，然后仅将这些航班追加到输出数据集 <code>filtered_flights</code> 中。</p>
+<p>假设 <code>flights</code> 数据集共有 2000 万行，但每周只新增 100 万行。通过增量计算，管道只需处理 <code>flights</code> 中最新未处理的事务，而无需像快照计算那样处理所有行。</p>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__success__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>如果管道定期运行，增量处理可以大幅缩减每次运行的数据规模，从而节省时间和资源。</p></div>
+<p>接下来，我们来看看如何设置增量管道。</p>
+<h2 id="user-content-part-2-validate-incremental-requirements" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#part-2-validate-incremental-requirements"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>第二部分：验证增量需求</h2>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>只有满足本节所述的全部条件，管道才会以增量计算方式运行。例如，输入数据必须通过不修改现有文件的 <code>APPEND</code> 或 <code>UPDATE</code> 事务进行更新。否则，将输入标记为增量模式将不起作用。</p></div>
+<p>首先，请检查是否满足所有增量约束条件：</p>
+<ul>
+<li>输入数据集 <code>flights</code> 正在通过 <code>APPEND</code> 事务或不修改现有文件的 <code>UPDATE</code> 事务进行更新。</li>
+<li>从 <code>flights</code> 计算 <code>filtered_flights</code> 的逻辑，不需要在后续构建中修改 <code>filtered_flights</code> 中已写入的任何数据。
+<ul>
+<li>如果您希望更改管道逻辑（例如，同时纳入从 <code>LGA</code> 机场起飞的航班），可以更新管道。如果要将该逻辑应用于已处理的航班数据，您可能需要对管道进行<a href="#replay-on-deploy">重算</a>。</li>
+</ul>
+</li>
+<li>如果管道包含窗口函数、聚合或透视操作，请确保这些操作仅针对当前事务执行。</li>
+</ul>
+<p>如需查看完整的注意事项列表，请参阅 Pipeline Builder 中关于增量计算的重要<a href="/docs/foundry/pipeline-builder/datasets-computation-modes-for-batch/#incremental-computation-restrictions">限制</a>说明。</p>
+<h2 id="user-content-part-3-create-your-pipeline" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#part-3-create-your-pipeline"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>第三部分：创建管道</h2>
+<p>现在，我们可以初始化一个新管道（有关分步操作指南，请参阅《<a href="/docs/foundry/building-pipelines/create-batch-pipeline-pb/">在 Pipeline Builder 中创建批处理管道</a>》）。假设我们已经将 <code>flights</code> 导入为输入数据集。</p>
+<p>首先，使用数据集下方的按钮将输入数据集标记为<strong>增量</strong>。您会看到右上角出现一个蓝色徽章，表示已完成更改。</p>
+<p><img alt="Example of incremental input" height="600" src="/docs/resources/foundry/building-pipelines/incremental-input.png" style="aspect-ratio:2252 / 1366" width="989.1654465592973" node="[object Object]"></p>
+<p>接下来，添加一个转换操作，将 <code>flights</code> 筛选为仅包含从 <code>JFK</code> 机场起飞的航班。请注意，数据集输入右侧带有提示为<strong>增量输入</strong>的图标。下游转换将显示此图标，表明它们正在进行增量处理。</p>
+<p><img alt="Example of incremental transform" height="600" src="/docs/resources/foundry/building-pipelines/incremental-transform-path.png" style="aspect-ratio:2258 / 932" width="1453.648068669528" node="[object Object]"></p>
+<p>在图表中，下游节点将带有与输入相同的蓝色徽章。</p>
+<p><img alt="Example of incremental transform on graph" height="600" src="/docs/resources/foundry/building-pipelines/incremental-transform-graph.png" style="aspect-ratio:2256 / 826" width="1638.7409200968523" node="[object Object]"></p>
+<p>最后，添加输出数据集 <code>filtered_flights</code>。</p>
+<p><img alt="Example of incremental output" height="600" src="/docs/resources/foundry/building-pipelines/incremental-output.png" style="aspect-ratio:2926 / 822" width="2135.7664233576643" node="[object Object]"></p>
+<h2 id="user-content-part-4-deploy-output-dataset" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#part-4-deploy-output-dataset"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>第四部分：部署输出数据集</h2>
+<p>现在您可以<a href="/docs/foundry/pipeline-builder/outputs-deliver-pipeline/">部署管道</a>了。</p>
+<p><img alt="Example of incremental deploy" height="600" src="/docs/resources/foundry/building-pipelines/incremental-deploy.png" style="aspect-ratio:1464 / 784" width="1120.408163265306" node="[object Object]"></p>
+<h3 id="user-content-replay-on-deploy" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#replay-on-deploy"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>部署时重算</h3>
+<p>
+
+有时可能需要对之前的输入事务进行重新处理（例如，逻辑发生变更，导致先前版本的输出数据已过时）。在这种情况下，你可以选择 <strong>部署时重放</strong>，将全部输入数据重新流经管道逻辑。重放完成后，随着新的追加事务添加至输入端，管道应继续执行增量计算。</p>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>部署时重放将在输出数据集上生成一个 <code>SNAPSHOT</code> 事务。</p></div>
+<p><img alt="部署时增量重放示例" height="600" src="/docs/resources/foundry/building-pipelines/incremental-replay-on-deploy.png" style="aspect-ratio:1448 / 850" width="1022.1176470588236" node="[object Object]"></p>
+</article>
+</body>
+</html>

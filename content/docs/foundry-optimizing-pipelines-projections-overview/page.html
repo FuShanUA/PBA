@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dataset projections</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-dataset-projections" level="1" node="[object Object]" data-pagefind-weight="7"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#dataset-projections"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Dataset projections</h1>
+<p><strong>Dataset projections</strong> can improve performance for a large class of queries. If you have a dataset you want to optimize for multiple query patterns (for example, filtering on two separate columns), you should consider adding projections to the dataset. Specific examples of <a href="#use-cases">use cases</a> for projections are listed below.</p>
+<p>Each projection typically supports a single query pattern, focused on either improving filters on a set of columns or joins on a set of columns. Multiple projections can be added to a dataset, and all column types are supported in projections. Additionally, projections can be added both to snapshot or incrementally built datasets. The <em>Noho</em> service is used to manage projections and is referenced in the dataset schema when <a href="/docs/foundry/optimizing-pipelines/projections-setup/">setting up a projection</a>.</p>
+<p>Projections have some limitations:</p>
+<ul>
+<li>Projections can only be added to datasets that are append-only. In an append-only dataset, rows can only be added (that is, appended) to the dataset; files or transactions cannot be manually deleted from an append-only dataset. Specifically, the only <a href="/docs/foundry/data-integration/datasets/#transaction-types">transactions</a> that can be performed on an append-only dataset are <code>APPEND</code>, <code>SNAPSHOT</code>, and <code>UPDATE</code> transactions that add rows to the dataset. The projection system will automatically identify datasets that violate this requirement and disable projections on them, but as a user, you should still avoid this scenario.</li>
+<li>Projections do not support schema evolution, even for incrementally consistent operations like adding columns.</li>
+</ul>
+<p>Review the example use cases below to learn about whether projections are a good fit for your use case. Get started by learning how to <a href="/docs/foundry/optimizing-pipelines/projections-setup/">set up a projection</a>.</p>
+<h2 id="user-content-use-cases" level="2" node="[object Object]" data-pagefind-weight="6.3"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#use-cases"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Use cases</h2>
+<p>Many types of queries will benefit from a projection. The examples below will demonstrate the following:</p>
+<ul>
+<li><a href="#filter-on-a-list-of-columns">Filtering large datasets on multiple pre-specified dimensions</a></li>
+<li><a href="#join-on-a-set-of-columns">Joining large datasets on a pre-specified set of columns</a></li>
+<li><a href="#aggregate-on-a-pre-specified-set-of-columns">Aggregating large datasets on a pre-specified set of columns</a></li>
+<li><a href="#read-from-incremental-pipelines">Reading from frequently-written incremental datasets or streaming datasets</a></li>
+<li><a href="#query-uploaded-data">Querying directly uploaded data</a></li>
+</ul>
+<h3 id="user-content-filter-on-a-list-of-columns" level="3" node="[object Object]" data-pagefind-weight="5.6"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#filter-on-a-list-of-columns"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Filter on a list of columns</h3>
+<p>Given an ordered list of columns, optimize filters on any <strong>prefix</strong> of the list. Projections will only speed up filters that compare a column to a constant value. And any filters on a string column must be <strong>case-sensitive</strong>.</p>
+<p>For example, say that there is a projection optimized for filters on the ordered list of columns <code>["x", "y", "z"]</code>.
+It will speed up the following types of queries:</p>
+<ul>
+<li><code>SELECT * FROM dataset WHERE x = 5 AND y = 10 AND z = '15'</code></li>
+<li><code>SELECT * FROM dataset WHERE x = 5 AND y = 10</code></li>
+<li><code>SELECT * FROM dataset WHERE x = 5 AND q = 3</code>
+<ul>
+<li>If there are additional filters on other columns that are not in the configured list, as in this case with <code>q = 3</code>, Spark will automatically attempt to unpack the filter conditions it can "push" into the data source (in this case, <code>x = 5</code>) and apply the other conditions afterwards.</li>
+</ul>
+</li>
+</ul>
+<p>But the following types of queries will not be optimized:</p>
+<ul>
+<li><code>SELECT * FROM dataset WHERE abs(x) == 10</code>
+<ul>
+<li><code>abs(x) == 10</code> does not compare a column with a constant value.</li>
+</ul>
+</li>
+<li><code>SELECT * FROM dataset WHERE x % 100 == 10</code>
+<ul>
+<li><code>x % 100 == 10</code> does not compare a column with a constant value.</li>
+</ul>
+</li>
+<li><code>SELECT * FROM dataset WHERE y = 10</code>
+<ul>
+<li><code>["y"]</code> is not a prefix of <code>["x", "y", "z"]</code>.</li>
+</ul>
+</li>
+<li><code>SELECT * FROM dataset WHERE z = '15'</code>
+<ul>
+<li><code>["z"]</code> is not a prefix of <code>["x", "y", "z"]</code>.</li>
+</ul>
+</li>
+<li><code>SELECT * FROM dataset WHERE x = 5 OR q = 3</code>
+<ul>
+<li>Spark won't be able to "push" the <code>x = 5</code> filter into the datasource because that would miss rows where <code>x = 5</code> is false but <code>q = 3</code> is true.</li>
+</ul>
+</li>
+</ul>
+<h4 id="user-content-range-queries"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#range-queries"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Range queries</h4>
+<p>Projections can optionally speed up range queries on the filter columns, for example:</p>
+<ul>
+<li><code>SELECT * FROM dataset WHERE x &gt; 5 AND x &lt; 10</code></li>
+<li><code>SELECT * FROM dataset WHERE s LIKE 'SOME_PREFIX%'</code></li>
+</ul>
+<h4 id="user-content-limitations"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#limitations"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Limitations</h4>
+<ul>
+<li>It is not possible to create a projection that includes a non-primitive (eg. array) column and that also supports
+range queries on the filter columns.</li>
+</ul>
+<h3 id="user-content-join-on-a-set-of-columns" level="3" node="[object Object]" data-pagefind-weight="5.6"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#join-on-a-set-of-columns"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Join on a set of columns</h3>
+<p>Given an unordered set of columns and a bucket count, optimize joins (only) on that exact set and bucket count.</p>
+<p>For example, a projection optimized for joins on <code>{"x", "y"}</code> will optimize the following types of queries:</p>
+<ul>
+<li><code>SELECT * FROM dataset1 INNER JOIN dataset2 ON dataset1.x = dataset2.x AND dataset1.y = dataset2.y</code></li>
+</ul>
+<p>But the following queries will not be optimized:</p>
+<ul>
+<li><code>SELECT * FROM dataset1 INNER JOIN dataset2 ON dataset1.x = dataset2.x</code></li>
+</ul>
+<h3 id="user-content-join-projected-and-non-projected-datasets" level="3" node="[object Object]" data-pagefind-weight="5.6"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#join-projected-and-non-projected-datasets"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Join projected and non-projected datasets</h3>
+<p>In Foundry, joins of large datasets typically perform a sort-merge join. This involves partitioning each of the datasets
+according to the join key, sorting each partition on that key, and then merging the (sorted) partitions with the same
+key.</p>
+<ul>
+<li>In the general case, this involves shuffling and sorting both of the datasets.</li>
+<li>If one of the datasets has a projection that is optimized for joining on the join columns, it will not be shuffled or sorted, though the other dataset will be.</li>
+<li>If both of the datasets have projections that are optimized for joining on the join columns, <strong>and use the same number of buckets</strong>, then neither dataset will be shuffled or sorted. This can lead to dramatic performance improvements. The same goes for joining a dataset that has a join-optimized projection with an explicitly bucketed dataset (with no projections), though again the number of buckets and join columns must match <strong>exactly</strong>.</li>
+</ul>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>Most projection consumers in Foundry do not by default take advantage of the fact that the projection is already sorted when doing sort-merge joins, so you may still see a sort in your Spark query plan. In transforms, you can use the <a href="/docs/foundry/optimizing-pipelines/spark-profiles-reference/#profile-table">Spark profile</a> <code>BUCKET_SORTED_SCAN_ENABLED</code> to modify Spark's behavior based on the fact that the projection is sorted, but this does not always improve performance and can actually make performance worse.</p></div>
+<h3 id="user-content-aggregate-on-a-pre-specified-set-of-columns" level="3" node="[object Object]" data-pagefind-weight="5.6"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#aggregate-on-a-pre-specified-set-of-columns"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Aggregate on a pre-specified set of columns</h3>
+<p>In Foundry, aggregations usually involve performing a shuffle exchange on the dataset (i.e., partitioning the dataset) according to the aggregation key. When reading from a projection that is hash-bucketed (which is the case for all join-optimized projections, but may not be the case for a filter-optimized projection), consumers can avoid this shuffle, which can lead to dramatic performance improvements during aggregations. A <a href="/docs/foundry/transforms-python/data-expectations-reference/#primary-key">primary key expectation check</a> on a dataset that is updated incrementally in an append-only fashion is a case where a projection (on the primary key columns) is especially beneficial, both because of the compaction performed by the projection and because of the fact that the hash-bucketing of the projection can be leveraged in the aggregation used to compute the expectation.</p>
+<h3 id="user-content-read-from-incremental-pipelines" level="3" node="[object Object]" data-pagefind-weight="5.6"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#read-from-incremental-pipelines"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Read from incremental pipelines</h3>
+<p>Incremental pipelines can result in very high file counts, and correspondingly degraded read performance. For example, a pipeline that writes ten partitions every five minutes will write over a million files per year. These are difficult to read for many reasons, including such things as simply producing the list of input partitions.</p>
+<p>Projections provide a way to compact incremental pipelines such as these transparently. Just set up a projection, optimized for either filters or joins, and reads will use the projection. <a href="/docs/foundry/building-pipelines/maintaining-incremental-performance/#dataset-projections">Learn more about using projections for incremental pipelines.</a></p>
+<p>Note that consumers can still take advantage of the filter or join optimizations of the projection, even if the projection is not fully up-to-date with the canonical dataset, as long as there were no SNAPSHOT or DELETE transactions (or UPDATE transactions that modified existing files) on the canonical dataset between the latest transaction at the time that the projection was last built and the current latest transaction on the canonical dataset.</p>
+<h3 id="user-content-query-uploaded-data" level="3" node="[object Object]" data-pagefind-weight="5.6"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#query-uploaded-data"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Query uploaded data</h3>
+<p>CSV is an inefficient file format for querying data, but it is common for data that is uploaded to Foundry (via Data Connection from a file system source, manual uploads, etc.) to initially be in CSV format. Creating a transform job is one way to convert these CSVs to a more efficient format such as Parquet. Alternatively, you can add a projection; read operations will use the optimized projection for better performance, while the dataset still contains the original CSV files.</p>
+</article>
+</body>
+</html>

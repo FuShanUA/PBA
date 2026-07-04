@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>File-based syncs</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-file-based-syncs" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#file-based-syncs"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>基于文件的同步</h1>
+<p>使用<a href="/docs/foundry/data-connection/source-exploration/">数据探查</a>创建基于文件的同步任务后，可以在同步页面的<strong>配置</strong>选项卡中更新配置。</p>
+<h2 id="user-content-conceptual-file-based-ingestion-modes" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#conceptual-file-based-ingestion-modes"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>基于文件的数据接入模式概念</h2>
+<p>尽管 Foundry 基于文件的同步提供了底层设置以实现更高的灵活性和可配置性，但大多数用例都会遵循已知的模式。下表记录了已知模式及其实现预期行为所需的底层设置，以及可能与这些模式产生冲突的设置。</p>
+<h3 id="user-content-batch-mirror-with-snapshot-default" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#batch-mirror-with-snapshot-default"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>使用 <code>SNAPSHOT</code> 的批量镜像（默认）</h3>
+<ul>
+<li><strong>事务类型：</strong> <code>SNAPSHOT</code></li>
+<li><strong>过滤器：</strong> <code>无</code></li>
+</ul>
+<p>每次运行都会<a href="/docs/foundry/building-pipelines/pipeline-types/#batch">接入外部系统子目录中嵌套的所有文件</a>，包括之前运行中已接入的文件，并向输出数据集提交包含确切这些文件的 <a href="/docs/foundry/data-integration/datasets/#snapshot"><code>SNAPSHOT</code></a> 事务。输出的 Foundry <a href="/docs/foundry/data-integration/datasets/#dataset-views">数据集视图</a>将包含一个包含所有文件的单个 <code>SNAPSHOT</code> 事务。</p>
+<h4 id="user-content-contradictory-settings"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#contradictory-settings"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>冲突设置</h4>
+<ul>
+<li><strong>过滤器：</strong> <code>排除已同步的文件</code>
+<ul>
+<li>会导致<a href="#trailing-window-with-snapshot">尾部窗口数据接入模式</a>。</li>
+</ul>
+</li>
+<li><strong>过滤器：</strong> <code>限制文件数量</code>
+<ul>
+<li>如果限制值小于可用文件总数，会导致输出的 Foundry 数据集视图仅包含所需文件的一个不确定性子集。</li>
+</ul>
+</li>
+<li><strong>过滤器：</strong> <code>至少 N 个文件</code>
+<ul>
+<li>如果外部系统指定子文件夹中的嵌套文件数量不足 <code>N</code> 个，此设置将产生一个空事务，导致接入 0 个文件。否则，此设置无效。</li>
+</ul>
+</li>
+</ul>
+<h3 id="user-content-incremental-mirror-with-append" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#incremental-mirror-with-append"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>使用 <code>APPEND</code> 的增量镜像</h3>
+<ul>
+<li><strong>事务类型：</strong> <code>APPEND</code></li>
+<li><strong>过滤器：</strong> <code>排除已同步的文件</code></li>
+</ul>
+<p>输出的<a href="/docs/foundry/data-integration/datasets/#dataset-views">数据集视图</a>将包含一系列 <a href="/docs/foundry/data-integration/datasets/#append"><code>APPEND</code></a> 事务，这些事务聚合了指定子文件夹中任意任务运行期间曾存在的所有嵌套文件。每次运行都会以文件路径名为键，接入<a href="/docs/foundry/building-pipelines/pipeline-types/#incremental">所有尚未接入的文件</a>，并向输出数据集提交一个 <code>APPEND</code> 事务。</p>
+<h4 id="user-content-contradictory-settings-1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#contradictory-settings-1"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>冲突设置</h4>
+<ul>
+<li><strong>过滤器：</strong> 启用 <code>最后修改日期</code> 或 <code>文件大小</code> 选项的 <code>排除已同步的文件</code>
+<ul>
+<li>当已有文件的 <code>最后修改日期</code> 或 <code>文件大小</code> 发生变化时，这些选项会尝试在 <code>APPEND</code> 事务中以文件路径名为键，错误地重新接入这些已存在的文件。如需支持对现有文件的更新，请查阅使用 <code>UPDATE</code> 的增量镜像（<a href="#incremental-mirror-with-update">incremental with <code>UPDATE</code></a>）数据接入模式。</li>
+</ul>
+</li>
+</ul>
+<h3 id="user-content-incremental-mirror-with-update" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#incremental-mirror-with-update"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>使用 <code>UPDATE</code> 的增量镜像</h3>
+<ul>
+<li><strong>事务类型：</strong> <code>UPDATE</code></li>
+<li><strong>过滤器：</strong> <code>排除已同步的文件</code></li>
+<li>以下一项或两项：
+<ul>
+<li><strong>过滤器：</strong> 启用 <code>最后修改日期</code> 选项的 <code>排除已同步的文件</code></li>
+<li><strong>过滤器：</strong> 启用 <code>文件大小</code> 选项的 <code>排除已同步的文件</code></li>
+</ul>
+</li>
+</ul>
+<p>输出的<a href="/docs/foundry/data-integration/datasets/#dataset-views">数据集视图</a>将包含一系列 <a href="/docs/foundry/data-integration/datasets/#update"><code>UPDATE</code></a> 事务，这些事务聚合了指定子文件夹中任意任务运行期间曾存在的所有嵌套文件的最新版本。每次运行都会以文件路径名为键，接入所有尚未接入<em>或</em>此后发生更改的文件，并向输出数据集提交一个 <code>UPDATE</code> 事务。</p>
+<h4 id="user-content-caveat"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#caveat"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>注意事项</h4>
+<p>仅当对现有文件的修改是外部系统不可协商的固有行为时，才使用此模式。虽然从某种意义上说数据接入是增量的，即每次运行只接入新增或已更改的文件，但下游管道无法以增量方式运行，因为输出数据集（下游管道的输入）并非<a href="/docs/foundry/transforms-python/incremental-usage/#append-only-input-changes">仅追加</a>。</p>
+<h3 id="user-content-trailing-window-with-snapshot" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#trailing-window-with-snapshot"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>使用 <code>SNAPSHOT</code> 的尾部窗口</h3>
+<ul>
+<li><strong>事务类型：</strong> <code>SNAPSHOT</code></li>
+<li><strong>过滤器：</strong> <code>排除已同步的文件</code></li>
+</ul>
+
+<p>输出的<a href="/docs/foundry/data-integration/datasets/#dataset-views">数据集视图</a>将包含单个<a href="/docs/foundry/data-integration/datasets/#snapshot"><code>SNAPSHOT</code></a>事务，其中仅包含<strong>从未在任何先前作业运行中出现过的文件</strong>。每次运行都会以文件路径名为键，摄入所有尚未摄入的文件，并向输出数据集提交一个 <code>SNAPSHOT</code> 事务，其中仅包含这些文件。</p>
+<p>当只有“近期”文件（即在外部系统中于倒数第二次和最后一次运行之间创建的文件）与下游流水线和操作相关时，此模式非常有用。在先前运行中已摄入的文件将不会在输出数据集视图中显示。</p>
+<h4 id="user-content-contradictory-settings-2"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#contradictory-settings-2"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>矛盾设置</h4>
+<ul>
+<li><strong>过滤器：</strong> <code>限制文件数量</code>
+<ul>
+<li>当在给定时间窗口内外部系统中创建的文件数量超过指定限制时，系统将摄入这些文件的一个非确定性子集，其余文件将推迟到后续窗口处理。随着时间推移，该数量可能迅速增长，从而破坏输出数据集中预期的“时效性”。</li>
+</ul>
+</li>
+</ul>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>除了限制输出中所需文件类型的过滤器外，指定子文件夹和可选正则表达式始终是安全的。此类过滤器包括使用 <code>在此时间之后修改</code> 排除过时文件，或使用 <code>路径不匹配</code> 排除特定文件扩展名的文件（例如 <code>.sh</code> 可执行文件）。 <br><br>
+只有 <code>排除已同步的文件</code>、<code>至少 N 个文件</code> 和 <code>限制文件数量</code> 这三个过滤器与所选同步模式紧密耦合，可能会对其产生干扰。</p></div>
+<h2 id="user-content-sync-failure-behavior" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#sync-failure-behavior"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>同步失败行为</h2>
+<p>与所有<a href="/docs/foundry/data-connection/core-concepts/#batch-syncs">批量同步</a>一样，基于文件的同步是事务性的。如果同步在任意环节失败，事务将中止，且该次运行中的所有文件都不会提交到数据集。</p>
+<p>例如，如果同步配置为上传一百万个文件，而在上传完最后一个文件之前发生网络错误，整个事务将回滚。已上传的文件都不会被提交，数据集视图也不会发生改变。</p>
+<p>由于这种行为，在单次运行中处理大量文件的同步更容易受到瞬时故障的影响。为降低同步失败的影响，建议使用带有文件限制过滤器的<a href="#optimize-file-based-syncs">增量 <code>APPEND</code> 同步</a>，以便每次运行处理较小批次的文件。这样，发生故障时只需重新同步当前批次，而无需同步所有文件。</p>
+<h2 id="user-content-configure-file-based-syncs" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#configure-file-based-syncs"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>配置基于文件的同步</h2>
+<p>基于文件的同步配置选项包括：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>参数</th><th>是否必填？</th><th>默认值</th><th>说明</th></tr></thead><tbody><tr><td><code>子文件夹</code></td><td>是</td><td></td><td>指定连接器中将同步至 Foundry 的文件位置。</td></tr><tr><td><code>过滤器</code></td><td>否</td><td></td><td><a href="#filters">应用过滤器</a>以限制同步至 Foundry 的文件。</td></tr><tr><td><code>转换器</code></td><td>否</td><td></td><td>在数据同步至 Foundry 之前对其<a href="#transformers">应用转换器</a>。</td></tr><tr><td>🟡 <code>完成策略 [遗留]</code></td><td>否</td><td></td><td><a href="#completion-strategies">启用以删除文件</a>和/或在同步成功后清空父目录。需要对源文件系统具有写入权限。完成策略为只读，无法在新的同步中进行配置。</td></tr></tbody></table></div>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>同步将包含指定子文件夹下的所有嵌套文件和文件夹。</p></div>
+<h3 id="user-content-filters" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#filters"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>过滤器</h3>
+<p>过滤器允许你在源文件导入 Foundry 之前对其进行筛选。支持的过滤器类型包括：</p>
+<ul>
+<li><strong>排除已同步的文件：</strong> 仅同步自上次同步以来添加或大小/日期发生修改的文件。</li>
+</ul>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p><code>排除已同步的文件</code> 存在已知的规模限制，因为每次同步运行都需要扫描所有文件。对于需要摄入大量文件的同步，我们建议将其拆分为针对历史数据的 <code>SNAPSHOT</code> 同步，以及带有 <code>排除已同步的文件</code> 的 <code>INCREMENTAL</code> 同步，从而确保该过滤器仅应用于较小批次的近期文件。</p></div>
+<ul>
+<li><strong>路径匹配：</strong> 仅同步路径（相对于连接器根目录）与正则表达式匹配的文件。</li>
+<li><strong>路径不匹配：</strong> 仅同步路径（相对于连接器根目录）与正则表达式不匹配的文件。</li>
+<li><strong>在此时间之后修改：</strong> 仅同步在指定日期和时间之后修改过的文件。</li>
+<li><strong>文件大小介于：</strong> 仅同步大小在指定的最小和最大字节值之间的文件。</li>
+<li>
+
+<strong>任一文件路径匹配：</strong>如果任一文件的相对路径匹配该正则表达式，则同步该子文件夹中未被其他规则过滤的所有文件。</li>
+<li><strong>至少 N 个文件：</strong>仅当剩余的过滤文件至少达到 N 个时，才同步所有过滤后的文件。</li>
+<li><strong>限制文件数量：</strong>限制每次事务保留的文件数量。此选项可提高增量同步的可靠性。</li>
+</ul>
+<h3 id="user-content-transformers" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#transformers"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>转换器</h3>
+<p>转换器允许在上传至 Foundry 之前执行基本的文件转换（例如压缩或解密）。同步过程中，选定的待接入文件将根据所选转换器进行相应修改。</p>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>与其使用数据连接转换器，我们建议在 Foundry 中使用《管道构建器》和《代码仓库》执行数据转换，以便利用数据溯源和分支功能的优势。</p></div>
+<p>数据连接支持以下转换器：</p>
+<ul>
+<li>使用 Gzip 压缩</li>
+<li>合并多个文件
+<ul>
+<li>将多个文件合并为单个文件。</li>
+</ul>
+</li>
+<li>重命名文件
+<ul>
+<li>将文件名中所有出现的指定子字符串替换为新子字符串。</li>
+<li>将 <code>^(.*/)</code> 替换为 <code>/</code>，从而去除文件名中的目录路径。</li>
+</ul>
+</li>
+<li>使用 PGP 解密
+<ul>
+<li>对使用 PGP 加密的文件进行解密。</li>
+<li>要求智能体系统已配置 PGP 密钥。</li>
+<li>不适用于在 Foundry worker 上运行的同步任务。</li>
+</ul>
+</li>
+<li>在文件名中追加时间戳
+<ul>
+<li>为每个接入文件的文件名添加自定义格式的时间戳。</li>
+</ul>
+</li>
+</ul>
+<h3 id="user-content-completion-strategies" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#completion-strategies"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>完成策略</h3>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>完成策略目前处于《开发生命周期》的遗留阶段，预计不会有进一步的开发。现有同步任务中的完成策略为只读状态，且无法在新的同步任务中进行配置。我们建议使用下游的《外部转换》作为替代方案。</p></div>
+<p>完成策略是一种机制，用于在文件成功批量同步到 Foundry 数据集后，尝试删除这些文件及其空的父目录。完成策略为只读状态，无法在新的同步任务中进行配置。现有的带有完成策略的同步任务将继续运行，但其配置无法再进行修改。</p>
+<p>当数据从中间暂存区（如文件存储系统）同步，而非直接从外部记录系统同步时，此工作流可能会有用。但不推荐使用此工作流。Foundry 应直接连接到外部记录系统。如果 Foundry 本身是记录系统，数据应直接推送到 Foundry，而不是推送到中间暂存区。</p>
+<h4 id="user-content-limitations-of-completion-strategies-and-alternatives"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#limitations-of-completion-strategies-and-alternatives"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>完成策略的局限性与替代方案</h4>
+<p>完成策略存在若干重要的局限性与注意事项。下文描述了这些局限性及其潜在的缓解措施或替代方案。</p>
+<h5 id="user-content-completion-strategy-support"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#completion-strategy-support"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>完成策略支持</h5>
+<p>完成策略目前处于《开发生命周期》的遗留阶段，预计不会有进一步的开发。现有同步任务中的完成策略为只读状态，且无法在新的同步任务中进行配置。完成策略仅适用于使用智能体工作节点的数据源。我们建议将完成策略提供的功能作为下游转换来实现。</p>
+<p>举个例子，假设您与某个 S3 存储桶建立了《直接连接》，其中包含文件 <code>foo.txt</code> 和 <code>bar.txt</code>。您希望通过文件批量同步将它们复制到数据集中，然后从 S3 删除这些文件。请勿使用完成策略，而应采取以下操作：</p>
+<ul>
+<li>配置一个不带任何完成策略的批量同步任务，并安排其运行。</li>
+<li>编写一个下游《外部转换》作业，安排其在同步输出数据集更新时运行，并将同步的数据作为输入。</li>
+<li>在该外部转换中，编写 Python 转换代码，遍历同步数据集中出现的文件，并调用 S3 接口从存储桶中删除这些文件。</li>
+</ul>
+<p>请注意，如果有任何删除调用失败，此方法支持重试，并且能够保证在尝试执行任何删除操作之前，数据已成功提交至 Foundry。此方法同样兼容增量文件批量同步。</p>
+<h5 id="user-content-completion-strategies-are-best-effort"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#completion-strategies-are-best-effort"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>完成策略采用尽力而为机制</h5>
+<p>
+
+对于使用完成策略的现有同步任务，请注意完成策略仅提供尽力而为的保证。这意味着它们无法保证数据一定会被有效删除。以下是一些可能导致完成策略失败的情况：</p>
+<ol>
+<li>如果智能体工作进程在批量同步将数据提交至 Foundry 之后、但在执行完成策略之前发生崩溃或重启，完成策略将不会重试。</li>
+<li>如果用于连接的凭据没有写入权限，批量同步可能会成功读取数据并提交至 Foundry，但无法执行完成策略指定的删除操作。</li>
+</ol>
+<p>通常情况下，我们建议尽可能使用完成策略的替代方案。目前已不再支持自定义完成策略。</p>
+<p>特别是对于目录数据源，如果您需要在数据摄入后确保文件被删除，请考虑改用<a href="/docs/foundry/available-connectors/directory/#example-delete-files-from-an-agent-host-via-ssh">通过 SSH 删除文件的外部转换</a>。</p>
+<h2 id="user-content-optimize-file-based-syncs" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#optimize-file-based-syncs"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>优化基于文件的同步</h2>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><div class="ptcom-design__title__19o1cwu">警告</div><p>本指南专为设置新同步任务或排查缓慢、不稳定同步问题的用户提供建议。如果您的同步任务已经稳定运行，则无需进行任何操作。</p></div>
+<p>将大量文件同步到单个数据集中可能会非常缓慢，且容易受到瞬时故障的影响。如<a href="#sync-failure-behavior">同步失败行为</a>中所述，任何环节出现故障都会中止整个事务，这意味着同步规模越大，丢失工作进度的风险就越高。</p>
+<p>如果数据集随着时间推移不断增长，使用 <code>SNAPSHOT</code> 同步数据的时间也会增加，因为 <code>SNAPSHOT</code> 事务会将所有数据同步到 Foundry 中。相反，请使用配置为 <code>APPEND</code> 事务类型的同步来增量导入数据。由于您同步的是较小且独立的数据块，因此可以建立有效的检查点；发生同步故障时，只需极少的重复工作，而无需完全重新运行。此外，您的数据集同步速度也会更快，因为无需每次同步都上传所有数据。</p>
+<h3 id="user-content-configure-incremental-append-syncs" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#configure-incremental-append-syncs"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>配置增量 <code>APPEND</code> 同步</h3>
+<p><code>APPEND</code> 事务需要额外配置才能成功运行。</p>
+<p>默认情况下，同步到 Foundry 的文件不会进行过滤。但是，<code>APPEND</code> 同步需要使用过滤器来防止重复导入相同文件。我们建议使用 <code>排除已同步的文件</code> 和 <code>限制文件数量</code> 过滤器，来控制单次同步导入到 Foundry 的文件数量。最后，请<a href="/docs/foundry/building-pipelines/create-schedule/">对同步任务进行调度</a>，以保持与源系统的数据同步。</p>
+</article>
+</body>
+</html>

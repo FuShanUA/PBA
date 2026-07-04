@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Create a streaming pipeline with Pipeline Builder</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-create-a-streaming-pipeline-with-pipeline-builder" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#create-a-streaming-pipeline-with-pipeline-builder"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>使用管道构建器创建流式管道</h1>
+<p>在本教程中，我们将使用 Foundry Streaming 和管道构建器创建一个简单的管道，输出一个包含传感器温度信息的数据集。您将学习如何在 Foundry 中创建流、向该流推送记录，并在管道构建器中对其进行转换。</p>
+<h2 id="user-content-part-1-initial-setup" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#part-1-initial-setup"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>第一部分：初始设置</h2>
+<p>首先，我们需要创建一个新流。</p>
+<ol>
+<li>登录 Foundry 后，导航至 Foundry 中的一个<a href="/docs/foundry/compass/move-and-share-resources/">项目</a>，选择右上角的 <strong>+ 新建</strong>，然后选择 <strong>流</strong>。</li>
+</ol>
+<p><img alt="Screenshot of stream create dropdown" height="355" src="/docs/resources/foundry/building-pipelines/stream-create-dropdown.png" style="aspect-ratio:229 / 355" width="229" node="[object Object]"></p>
+<ol start="2">
+<li>接下来，您需要定义流。在本指南中，我们将创建一个简单的单分区流，并手动向其推送记录。</li>
+</ol>
+<p>在 <strong>定义</strong> 页面上，将吞吐量选择为 <strong>普通</strong>，并定义一个基本架构：<strong>sensor_id:</strong> <code>String</code>，<strong>temperature:</strong> <code>Double</code>。</p>
+<p><img alt="Screenshot of stream definition page" height="600" src="/docs/resources/foundry/building-pipelines/stream-define.png" style="aspect-ratio:3094 / 2032" width="913.5826771653542" node="[object Object]"></p>
+<ol start="3">
+<li>选择 <strong>创建流</strong>。这将带您进入 <strong>连接</strong> 页面，您可以在其中指定如何连接到流式数据。</li>
+</ol>
+<h2 id="user-content-part-2-push-records-into-the-stream" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#part-2-push-records-into-the-stream"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>第二部分：向流推送记录</h2>
+<p>现在我们已经准备好连接流。此时，我们可以使用<a href="/docs/foundry/data-integration/source-type-overview/">数据源</a>设置流式数据接入任务。但在本教程中，我们将改用 <strong>Curl</strong> 手动向流推送记录。</p>
+<ol>
+<li>首先，在 <strong>通过 API 连接</strong> 部分下选择 <strong>Curl (Bash)</strong>，为您的流设置身份验证。我们将使用个人令牌来提交记录。</li>
+</ol>
+<p><img alt="Screenshot of stream connection page" height="600" src="/docs/resources/foundry/building-pipelines/stream-connect.png" style="aspect-ratio:3076 / 2022" width="912.7596439169139" node="[object Object]"></p>
+<ol start="2">
+<li>
+<p>选择 <strong>使用个人令牌测试</strong>，并按照屏幕上的提示生成一个短期个人令牌。</p>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>个人令牌不应用于生产管道。生产管道应使用 <a href="/docs/foundry/platform-security-third-party/writing-oauth2-clients/#oauth2-api-reference">OAuth 令牌工作流</a>。</p></div>
+</li>
+</ol>
+<p><img alt="Screenshot of stream connection auth page" height="600" src="/docs/resources/foundry/building-pipelines/stream-push-auth.png" style="aspect-ratio:2932 / 1886" width="932.7677624602334" node="[object Object]"></p>
+<ol start="3">
+<li>将生成的令牌粘贴到文本框中，然后点击 <strong>下一步</strong>。</li>
+<li>复制 <strong>Curl</strong> 命令。在能够执行 Bash 命令的计算机上打开终端，粘贴该命令并在终端中运行。</li>
+</ol>
+<p><img alt="Screenshot of stream push with curl page" height="600" src="/docs/resources/foundry/building-pipelines/stream-push-curl.png" style="aspect-ratio:3072 / 914" width="2016.6301969365427" node="[object Object]"></p>
+<p>几秒钟内，您就会在页面的流查看器中看到一条记录出现：</p>
+<p><img alt="Screenshot of stream view records tab" height="482" src="/docs/resources/foundry/building-pipelines/stream-view-records.png" style="aspect-ratio:1242 / 482" width="1242" node="[object Object]"></p>
+<p>我们已经实时接入了流式数据。现在让我们对这些数据进行转换。</p>
+<h2 id="user-content-part-3-transform-a-stream" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#part-3-transform-a-stream"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>第三部分：转换流</h2>
+<ol>
+<li>选择 <strong>开始构建管道</strong> 按钮，开始在管道构建器中编写基本的流式转换。</li>
+</ol>
+<p><img alt="Screenshot of stream view records tab" height="208" src="/docs/resources/foundry/building-pipelines/stream-start-pipelining.png" style="aspect-ratio:1164 / 208" width="1164" node="[object Object]"></p>
+<ol start="2">
+<li>在 <strong>创建新管道</strong> 模态框中，选择 <strong>流式管道</strong> 类型，然后点击 <strong>创建管道</strong>。</li>
+</ol>
+<p><img alt="Screenshot of create builder stream pipeline" height="600" src="/docs/resources/foundry/building-pipelines/create-new-stream-pipeline.png" style="aspect-ratio:1390 / 886" width="941.3092550790068" node="[object Object]"></p>
+<p>这将为输入流创建一个管道，并以图表形式展示。</p>
+<p>选择输入流节点将显示数据预览。请注意，预览运行的是流的冷存储视图；来自流的记录在出现之前会有所延迟。</p>
+<p><img alt="Screenshot of builder graph with input stream" height="600" src="/docs/resources/foundry/building-pipelines/stream-input-pb.png" style="aspect-ratio:3100 / 2030" width="916.2561576354681" node="[object Object]"></p>
+<ol start="3">
+<li>
+<p>点击图表上的输入流节点，并选择 <strong>转换</strong> 操作（输入节点旁边蓝色的 <strong>T</strong> 图标）。</p>
+<p>这将打开一个列表，其中包含目前支持的所有基于流中列输入类型的流转换。在本教程中，我们将把所有 <code>sensor_id</code> 转换为大写，去除其中的空格，并筛选出温度超过三度的记录。</p>
+</li>
+</ol>
+<p><img alt="Screenshot of builder stream transform dropdown" height="600" src="/docs/resources/foundry/building-pipelines/stream-transform-dropdown.png" style="aspect-ratio:3096 / 1956" width="949.6932515337423" node="[object Object]"></p>
+<ol start="4">
+<li>选择 <strong>大写</strong> 转换，选择 <code>sensor_id</code> 列，然后点击 <strong>应用</strong>。</li>
+</ol>
+
+<p><img alt="Screenshot of builder stream uppercase transform" height="600" src="/docs/resources/foundry/building-pipelines/stream-uppercase-transform-pb.png" style="aspect-ratio:2492 / 838" width="1784.2482100238662" node="[object Object]"></p>
+<ol start="5">
+<li>接着，搜索 <strong>Trim whitespace</strong> 转换并选中。再次选择 <code>sensor_id</code> 列，然后点击 <strong>Apply</strong>。</li>
+</ol>
+<p><img alt="Screenshot of builder trim whitespace transform" height="332" src="/docs/resources/foundry/building-pipelines/stream-trim-whitespace-transform-pb.png" style="aspect-ratio:1838 / 332" width="1838" node="[object Object]"></p>
+<ol start="6">
+<li>对于最后一个转换，首先搜索 <strong>Filter</strong> 转换并选择 <strong>Keep rows</strong>。然后，选择 <code>temperature</code> 列，将过滤条件设置为 <strong>greater than</strong> <code>3</code>，并选择 <strong>Apply</strong>。</li>
+</ol>
+<p><img alt="Screenshot of builder filter transform" height="600" src="/docs/resources/foundry/building-pipelines/stream-filter-transform-pb.png" style="aspect-ratio:2490 / 1268" width="1178.2334384858045" node="[object Object]"></p>
+<ol start="7">
+<li>点击屏幕右上角的 <strong>Apply all changes</strong>。然后，选择 <strong>Back to graph</strong> 返回您的管道。</li>
+</ol>
+<p><img alt="Screenshot of builder graph with transform" height="600" src="/docs/resources/foundry/building-pipelines/stream-transform-graph.png" style="aspect-ratio:2484 / 1802" width="827.0810210876804" node="[object Object]"></p>
+<ol start="8">
+<li>选中我们刚刚创建的 <strong>Transform path</strong> 节点，然后点击 <strong>New dataset</strong>。</li>
+</ol>
+<p><img alt="Screenshot of builder graph creating new output" height="600" src="/docs/resources/foundry/building-pipelines/stream-transform-new-dataset-pb.png" style="aspect-ratio:2490 / 1490" width="1002.6845637583892" node="[object Object]"></p>
+<ol start="9">
+<li>在应用程序右上角，首先点击 <strong>Save</strong> 将所有新更改应用到您的管道中。接着，点击 <strong>Deploy</strong> 和 <strong>Deploy pipeline</strong>。</li>
+</ol>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>如果您保存了更改但未进行部署，您的管道逻辑将<strong>不会</strong>更新为最新更改。您必须部署管道才能捕获转换逻辑的更改。</p></div>
+<p><img alt="Screenshot of builder graph deploy dropdown" height="600" src="/docs/resources/foundry/building-pipelines/stream-builder-graph.png" style="aspect-ratio:3110 / 2034" width="917.4041297935103" node="[object Object]"></p>
+<ol start="10">
+<li>选中您刚刚创建的输出流节点，然后点击图形底部 <strong>Data preview</strong> 区域上方的流名称。</li>
+</ol>
+<p><img alt="Screenshot of builder graph with deployed output" height="600" src="/docs/resources/foundry/building-pipelines/stream-deployed-builder-graph.png" style="aspect-ratio:2496 / 1472" width="1017.391304347826" node="[object Object]"></p>
+<p>这将跳转至流预览页面，并显示您转换后的输出流。</p>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>流式集群启动大约需要一分钟时间，因此您可能无法立即看到记录。不过，一旦开始运行，集群将实时处理所有新记录。</p></div>
+<p><img alt="Screenshot of output stream" height="600" src="/docs/resources/foundry/building-pipelines/stream-view-output.png" style="aspect-ratio:3100 / 1630" width="1141.1042944785277" node="[object Object]"></p>
+<h2 id="user-content-next-steps" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#next-steps"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>后续步骤</h2>
+<p>既然您已经了解了如何创建简单的流式管道，可以通过探索如何<a href="/docs/foundry/optimizing-pipelines/debug-stream/">调试失败的流</a>来进一步学习有关管理流的知识。如需了解更多高级转换功能，请进一步了解<a href="/docs/foundry/pipeline-builder/overview/"><strong>管道构建器</strong>概述</a>。</p>
+</article>
+</body>
+</html>

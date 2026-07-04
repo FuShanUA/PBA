@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Types of pipelines</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-types-of-pipelines" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#types-of-pipelines"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Types of pipelines</h1>
+<p>There are three main types of pipelines you can create in Foundry, and each provides different tradeoffs according to a few criteria:</p>
+<ul>
+<li><strong>Latency</strong>. How long does the pipeline take to run end-to-end?</li>
+<li><strong>Complexity</strong>. How difficult is it to author the pipeline and maintain it over time?</li>
+<li><strong>Compute cost</strong>. How much does the pipeline actually cost in terms of compute hours?</li>
+<li><strong>Resilience to change in data scale</strong>. How much additional data will flow into your pipeline over time?</li>
+</ul>
+<p>The three types of pipelines are:</p>
+<ul>
+<li><strong>Batch</strong> pipelines fully recompute every dataset that has changed on each run.</li>
+<li><strong>Incremental</strong> pipelines only process new data that has changed since the last run.</li>
+<li><strong>Streaming</strong> pipelines run continuously and process new data as it arrives in the platform.</li>
+</ul>
+<p>Below, we discuss each type of pipeline, its tradeoffs, and how to get started authoring this type of pipeline. For convenience, here is a summary table of the types of pipelines according to the tradeoffs mentioned above.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>Criterion</th><th><a href="#batch">Batch</a></th><th><a href="#incremental">Incremental</a></th><th><a href="#streaming">Streaming</a></th></tr></thead><tbody><tr><td>Latency</td><td>High</td><td>Low</td><td>Very low</td></tr><tr><td>Complexity</td><td>Low</td><td>Medium</td><td>High</td></tr><tr><td>Compute cost</td><td>Medium</td><td>Low</td><td>High</td></tr><tr><td>Resilience to change in data scale</td><td>Low</td><td>High</td><td>High</td></tr></tbody></table></div>
+<p>Foundry also offers <a href="#faster">faster</a> versions of batch and incremental pipelines, which can improve performance at the cost of not supporting all expressions and transforms available in standard pipelines.</p>
+<h2 id="user-content-batch" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#batch"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Batch</h2>
+<p>In a <strong>batch pipeline</strong>, all datasets in the pipeline are fully recomputed whenever upstream data changes. Because everything is recomputed, the end-to-end performance of the pipeline is very consistent over time, and the code and maintenance complexity of the pipeline is minimal. To enable more users to contribute to batch pipelines, a broad set of languages and tools are available for batch pipeline authoring, including SQL.</p>
+<p>Examining batch pipelines according to the criteria above:</p>
+<ul>
+<li><em>Latency</em> of batch pipelines can be very high, as all data must be processed whenever it lands into the platform, even if it has not changed since the last sync. However, latency may be low if the overall data scale is small.</li>
+<li><em>Complexity</em> of batch pipelines is very low. Although it is usually still necessary to understand table manipulation concepts such as filters, joins, and aggregations, minimal further knowledge is necessary.</li>
+<li><em>Compute costs</em> for batch pipelines can be high, as a large amount of repeated computation occurs on every build of the pipeline. Again, this factor can be ignored if overall data scale is small.</li>
+<li><em>Resilience to change in data scale</em> is low. If large amounts of new data flow into the pipeline, such as when input datasets represents high-volume events, batch pipelines will become unmanageably expensive and take too long to run.</li>
+</ul>
+<p>In most cases, you should begin pipeline development in Foundry by creating a batch pipeline and extending it to support incremental computation as the use case for the pipeline is validated. In many cases, you can keep using a batch pipeline indefinitely, especially if your data scale is low (e.g., less than tens of millions of rows).</p>
+<p>If you expect that you will need to make your pipeline incremental in the future, we recommend using either Python or Java for batch pipeline development, as these languages support incremental computation.</p>
+<p>Get started by <a href="/docs/foundry/building-pipelines/create-batch-pipeline-pb/">learning how to create a batch pipeline in Pipeline Builder</a>, or by following the tutorials for other languages:</p>
+<ul>
+<li><a href="/docs/foundry/transforms-python/getting-started/">Create a batch pipeline in Python</a></li>
+<li><a href="/docs/foundry/transforms-java/getting-started/">Create a batch pipeline in Java</a></li>
+<li><a href="/docs/foundry/building-pipelines/create-batch-pipeline-cr/">Create a batch pipeline in SQL</a></li>
+</ul>
+<h2 id="user-content-faster" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#faster"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Faster</h2>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>Faster pipelines were previously known as <em>lightweight pipelines</em>, as the term "lightweight" referred to the reduced time and compute resources required to execute these pipelines as opposed to the size of the data they handle. The name change reflects that faster pipelines reduce both execution time and compute resource usage, even for large-scale datasets.</p></div>
+<p>Pipeline Builder now supports faster pipelines, which can provide faster execution in certain conditions. It uses a backend powered by <a href="https://datafusion.apache.org/">DataFusion ↗</a>, an open-source query engine written in <a href="https://www.rust-lang.org/">Rust ↗</a>. Compared to traditional Spark-based pipelines, faster pipelines can substantially accelerate compute processes for small to medium-sized datasets.</p>
+<p>You can create a faster pipeline from scratch or convert an existing batch or incremental pipeline to a faster pipeline. Learn more about <a href="/docs/foundry/building-pipelines/create-faster-pipeline-pb/">faster pipelines in Pipeline Builder</a></p>
+<h2 id="user-content-incremental" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#incremental"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Incremental</h2>
+<p>In an <strong>incremental pipeline</strong>, only the rows or files of data that have changed since the last build are computed. This is suitable for processing event data and other datasets with large amounts of data changing over time. In addition to reducing the overall amount of computation, the end-to-end latency of the pipeline can be reduced significantly as compared to batch pipelines. Only Python and Java APIs are available for incremental computation.</p>
+<p>Examining incremental pipelines according to the criteria above:</p>
+<ul>
+<li><em>Latency</em> of incremental pipelines can be made very low—on the order of minutes. In our experience, this is sufficiently low latency to meet the vast majority of organizational requirements.</li>
+<li><em>Complexity</em> of incremental pipelines is medium-to-high. Rather than just operating on the high-level concept of a tabular dataframe, writing and maintaining an incremental pipeline requires understanding how data flows into Foundry <a href="/docs/foundry/data-integration/datasets/#transactions">dataset transactions</a>, how to handle cases when input datasets are updated non-incrementally, and how to maintain high performance over time.</li>
+<li><em>Compute costs</em> for incremental pipelines can be lower than for batch pipelines on high-scale datasets, as the amount of actual computation occurring can be minimized.</li>
+<li><em>Resilience to change in data scale</em> is high. Because only new data is processed, incremental pipelines avoid needing to redo computation on large datasets where most of the data is not changing.</li>
+</ul>
+<p>To learn more about incremental pipelines, refer to these resources:</p>
+<ul>
+<li><a href="/docs/foundry/building-pipelines/incremental-overview/">Incremental pipelines overview</a></li>
+<li><a href="/docs/foundry/building-pipelines/create-incremental-pipeline-pb/">Create an incremental pipeline in Pipeline Builder</a></li>
+<li><a href="/docs/foundry/transforms-python/incremental-overview/">Incremental pipelines in Python</a></li>
+<li><a href="/docs/foundry/building-pipelines/maintaining-incremental-performance/">Maintaining high incremental performance</a></li>
+</ul>
+<h2 id="user-content-streaming" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#streaming"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Streaming</h2>
+<p>In a <strong>streaming pipeline</strong>, your code runs continuously to process any new data that streams into Foundry, enabling the lowest levels of latency but incurring the highest amounts of complexity and compute costs. In general, it is helpful to think about streaming pipelines as closer to managing a microservice than managing a compute job—you need to be very thoughtful about uptime, resiliency, and stateful operations in order to run a streaming pipeline successfully.</p>
+<p>Examining streaming pipelines according to the criteria above:</p>
+<ul>
+<li><em>Latency</em> of streaming pipelines can be made very low. If you have a strong requirement for data to be available for a use case in less than one minute, then streaming pipelines may be a good fit.</li>
+<li><em>Complexity</em> of streaming pipelines is very high. Writing these pipelines requires avoiding a broad set of patterns, such as stateful operations, which can unexpectedly cause instability in the future. In addition, streaming pipelines tend to have lower tolerance to failure than batch or incremental pipelines, as downtime can result in use cases that depend on consistently fresh data to consider any interruption as an outage.</li>
+<li><em>Compute costs</em> for streaming pipelines can be very high, as the nature of streaming pipelines requires compute resources to always be available to process new input data.</li>
+<li><em>Resilience to change in data scale</em> is high. Streaming pipelines are designed to support high throughput and can typically process higher changes in data scale than batch or even incremental pipelines.</li>
+</ul>
+<p>In most cases, it is best to avoid creating a streaming pipeline unless your use case has very low latency requirements. Incremental pipelines can often be made performant down to minute-level end-to-end latencies to meet most needs without incurring the added complexity and compute costs of streaming pipelines.</p>
+<p>To learn more about streaming pipelines, refer to the following resources:</p>
+<ul>
+<li><a href="/docs/foundry/building-pipelines/create-stream-pipeline-pb/">Create a streaming pipeline in Pipeline Builder</a></li>
+</ul>
+<p>Additional documentation for streaming pipelines will be available soon. If you are interested in building a streaming pipeline, contact your Palantir representative.</p>
+</article>
+</body>
+</html>

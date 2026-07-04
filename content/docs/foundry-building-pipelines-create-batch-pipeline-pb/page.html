@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Create a dataset batch pipeline with Pipeline Builder</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-create-a-dataset-batch-pipeline-with-pipeline-builder" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#create-a-dataset-batch-pipeline-with-pipeline-builder"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Create a dataset batch pipeline with Pipeline Builder</h1>
+<p>In this tutorial, you will use Pipeline Builder to create a simple pipeline with an output of a single dataset with information on flight alerts. You can then analyze this output dataset with tools like Contour or Code Workbook to answer questions such as which flight paths have the greatest risk of disruption.</p>
+<p>The datasets used below are searchable by name in the dataset import step; you can find them in your Foundry filesystem.</p>
+<p>At the end of this tutorial, you will have a pipeline that looks like the following:</p>
+<p><img alt="A complete Pipeline Builder pipeline." height="600" src="/docs/resources/foundry/building-pipelines/complete-pipeline.png" style="aspect-ratio:3024 / 1662" width="1091.6967509025271" node="[object Object]"></p>
+<p>The pipeline will produce a new dataset output of <code>Flight Alerts Data</code> that you can use for further exploration in the platform.</p>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__success__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><div class="ptcom-design__title__19o1cwu">Palantir Learning portal</div><p>You can find a deep dive course on building your first pipeline at <a href="https://learn.palantir.com/deep-dive-building-your-first-pipeline">learn.palantir.com ↗</a>.</p></div>
+<h2 id="user-content-part-1-initial-setup" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#part-1-initial-setup"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Part 1: Initial setup</h2>
+<p>First, create a new pipeline.</p>
+<ol>
+<li>
+<p>When logged into Foundry, select <strong>Applications</strong> from the left navigation sidebar to search for and open <strong>Pipeline Builder</strong> <br><br>
+<img alt="The Pipeline Builder application, found in the application search." height="387" src="/docs/resources/foundry/building-pipelines/application-pipeline-builder.png" style="aspect-ratio:1165 / 387" width="1165" node="[object Object]"> <br><br></p>
+</li>
+<li>
+<p>Next, on the Pipeline Builder landing page, create a new pipeline by selecting <strong>New pipeline</strong>, then choose <strong>Batch pipeline</strong>. Under <strong>Select batch compute</strong>, choose <strong>Standard</strong>. <br><br>
+<img alt="Choose to create a batch pipeline." height="422" src="/docs/resources/foundry/building-pipelines/new-pipeline-choice-standard-faster.png" style="aspect-ratio:827 / 422" width="827" node="[object Object]"> <br><br></p>
+</li>
+</ol>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>The ability to create a streaming pipeline is not available on all Foundry environments. Contact Palantir Support for more information if your use case requires it.</p></div>
+<ol start="3">
+<li>
+<p>Select a location to save your pipeline. Note that pipelines cannot be saved in personal folders. <br><br>
+<img alt="The choose pipeline location popover." height="600" src="/docs/resources/foundry/building-pipelines/choose-pipeline-location.png" style="aspect-ratio:2010 / 1210" width="996.6942148760331" node="[object Object]"> <br><br></p>
+</li>
+<li>
+<p>Select <strong>Create pipeline</strong>.</p>
+</li>
+</ol>
+<h2 id="user-content-part-2-add-datasets" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#part-2-add-datasets"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Part 2: Add datasets</h2>
+<p>Now, you can add datasets to your pipeline workflow. Use sample datasets of notional or open-source data.</p>
+<p>From the Pipeline Builder page, select <strong>Add datasets</strong> from Foundry.</p>
+<p><img alt="Add datasets to your pipeline." height="600" src="/docs/resources/foundry/building-pipelines/add-dataset-location.png" style="aspect-ratio:2244 / 1202" width="1120.1331114808652" node="[object Object]"></p>
+<p>Alternatively, you can drag and drop a file from your computer to use as your dataset.</p>
+<p>In this walkthrough example, you can add the <code>passengers_preprocessed</code>, <code>flight_alerts_raw</code>, and <code>status_mapping_raw</code> datasets. To add a selection of datasets, select the dataset. Then, choose the inline <strong>+</strong> icon, or select <strong>Add to Selection</strong>.</p>
+<p><img alt="Add a dataset using the + icon." height="600" src="/docs/resources/foundry/building-pipelines/add-dataset-location2.png" style="aspect-ratio:2236 / 1204" width="1114.2857142857142" node="[object Object]"></p>
+<p>After selecting all required datasets, choose <strong>Add datasets</strong>.</p>
+<p><img alt="Three dataset nodes on a Pipeline Builder graph." height="600" src="/docs/resources/foundry/building-pipelines/datasets-selected.png" style="aspect-ratio:1034 / 800" width="775.5" node="[object Object]"></p>
+<h2 id="user-content-part-3-clean-data" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#part-3-clean-data"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Part 3: Clean data</h2>
+<p>After adding raw datasets, you can perform some basic cleaning transforms to continue defining your pipeline. You will transform three of your raw datasets.</p>
+<h3 id="user-content-dataset-1" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#dataset-1"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Dataset 1</h3>
+<p>The first step is to clean the <code>passengers_preprocessed</code> dataset. Start by setting up a cast transform to change the <code>dob</code> column name into <code>dob_date</code> while converting the values to the <code>MM/dd/yy</code> format.</p>
+<h4 id="user-content-cast-transform"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#cast-transform"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Cast transform</h4>
+<ol>
+<li>
+<p>Select the <code>passengers_preprocessed</code> node in your graph.</p>
+</li>
+<li>
+<p>Select <strong>Transform</strong>. <br><br>
+<img alt="Choose to transform the dataset from your graph." height="200" src="/docs/resources/foundry/building-pipelines/pax-preprocessed.png" style="aspect-ratio:756 / 200" width="756" node="[object Object]"> <br><br></p>
+</li>
+<li>
+<p>Search for and select the <strong>cast</strong> transform from the dropdown menu to open the cast configuration board. <br><br>
+<img alt="Apply a cast transform to your selected dataset." height="600" src="/docs/resources/foundry/building-pipelines/pax-preprocessed-cast.png" style="aspect-ratio:3184 / 1934" width="987.7973112719752" node="[object Object]"> <br><br></p>
+</li>
+<li>
+<p>From the <strong>Expression</strong> field, select <code>dob</code>; for <strong>Type</strong>, select <code>Date</code>.</p>
+</li>
+<li>
+<p>Enter <code>MM/dd/yy</code> for the <strong>Format</strong> type. Be sure to use uppercase <code>MM</code> to ensure a successful cast transform. Change the output column name to <code>dob_date</code>.</p>
+<p>Your cast board should look like this: <br><br>
+<img alt="A completed cast transform board." height="600" src="/docs/resources/foundry/building-pipelines/cast-board.png" style="aspect-ratio:1928 / 646" width="1790.7120743034054" node="[object Object]"> <br><br></p>
+</li>
+<li>
+<p>Select <strong>Apply</strong> to add the transform to your pipeline.</p>
+</li>
+</ol>
+<h4 id="user-content-title-case-transform"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#title-case-transform"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Title case transform</h4>
+<p>Now, you can format the <code>flyer_status</code> column values to start with an uppercase letter.</p>
+<ol>
+<li>
+<p>In the transform search field, search for and select the <strong>Title case</strong> transform to open the title case configuration board.</p>
+</li>
+<li>
+<p>In the <strong>Expression</strong> field, select the <code>flyer_status</code> column from the dropdown.</p>
+<p>Your title case board should look like this: <br><br>
+<img alt="A completed title case transform board." height="514" src="/docs/resources/foundry/building-pipelines/titlecase-board.png" style="aspect-ratio:1932 / 514" width="1932" node="[object Object]"> <br><br></p>
+</li>
+<li>
+<p>Select <strong>Apply</strong> to add the transform to your pipeline.</p>
+</li>
+<li>
+<p>In the top left corner of the transform configuration window, rename the transform <code>Passengers_Clean</code>. <br><br>
+<img alt="Rename the transform to customize it to your dataset." height="328" src="/docs/resources/foundry/building-pipelines/passengers-clean.png" style="aspect-ratio:970 / 328" width="970" node="[object Object]"> <br><br></p>
+</li>
+<li>
+<p>Select <strong>Back to graph</strong> at the top right of the screen to return to your pipeline graph. <br><br>
+<img alt="The pipeline graph with a new transform node." height="534" src="/docs/resources/foundry/building-pipelines/dataset-1-transformed.png" style="aspect-ratio:1232 / 534" width="1232" node="[object Object]"> <br><br></p>
+</li>
+</ol>
+<h3 id="user-content-dataset-2" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#dataset-2"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Dataset 2</h3>
+<p>Now, clean the <code>flight_alerts_raw</code> dataset. The first step is to set up another cast transform to convert the <code>flight-date</code> column values into a <code>MM/dd/yy</code> format.</p>
+<h4 id="user-content-cast-transform-1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#cast-transform-1"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Cast transform</h4>
+<ol>
+<li>
+<p>Select the <code>flight_alerts_raw</code> dataset node in your graph.</p>
+</li>
+<li>
+<p>Select <strong>Transform</strong>. <br><br>
+<img alt="Choose to transform a new dataset from your graph." height="200" src="/docs/resources/foundry/building-pipelines/flight-alerts-transform.png" style="aspect-ratio:750 / 200" width="750" node="[object Object]"> <br><br></p>
+</li>
+<li>
+<p>Search for and select the <strong>cast</strong> transform from the dropdown menu to open the cast configuration board. You can read the function definition listed on the right side of the selection box to learn more about the function. <br><br>
+<img alt="Search for the cast transform board." height="600" src="/docs/resources/foundry/building-pipelines/castdefinition.png" style="aspect-ratio:1456 / 646" width="1352.3219814241486" node="[object Object]"> <br><br></p>
+</li>
+<li>
+<p>In the <strong>Expression</strong> field, select the <code>flight_date</code> column from the dropdown.</p>
+</li>
+<li>
+<p>Choose <code>Date</code> from the <strong>Type</strong> field dropdown menu.</p>
+</li>
+<li>
+<p>Enter <code>MM/dd/yy</code> for the <strong>Format</strong> type. Be sure to use uppercase <code>MM</code> to ensure a successful cast transform.</p>
+<p>Your cast board should look like this: <br><br>
+<img alt="A completed cast transform board." height="570" src="/docs/resources/foundry/building-pipelines/dataset-2-cast.png" style="aspect-ratio:1940 / 570" width="1940" node="[object Object]"> <br><br></p>
+</li>
+<li>
+<p>Select <strong>Apply</strong> to add the transform to your pipeline.</p>
+</li>
+</ol>
+<h4 id="user-content-clean-string-transform"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#clean-string-transform"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Clean string transform</h4>
+<p>Now, add a <strong>Clean string</strong> transform that will remove whitespace from <code>category</code> column values. For example, the transform will convert <code>delay···</code> string values to <code>delay</code>.</p>
+<ol>
+<li>
+<p>Search for and select the clean string transform from the dropdown to open the clean string configuration board.</p>
+</li>
+<li>
+<p>In the <strong>Expression</strong> field, select the <code>category</code> column from the dropdown menu.</p>
+</li>
+<li>
+<p>Check the boxes for all three of the <strong>Clean actions</strong> options:</p>
+<ul>
+<li>Converts empty strings to null</li>
+<li>Reduce sequences of multiple whitespace characters to a single whitespace</li>
+<li>Trims whitespace at beginning and end of string</li>
+</ul>
+<p>Your clean string board should look like this: <br><br>
+<img alt="A completed clean string transform board." height="572" src="/docs/resources/foundry/building-pipelines/clean-string.png" style="aspect-ratio:1922 / 572" width="1922" node="[object Object]"> <br><br></p>
+</li>
+<li>
+<p>Select <strong>Apply</strong> to add the transform to your pipeline.</p>
+</li>
+<li>
+<p>In the top left corner of the transform configuration window, rename the transform <code>Flight Alerts - Clean</code>.</p>
+</li>
+<li>
+<p>Select <strong>Back to graph</strong> at the top right to return to your pipeline graph. <br><br>
+<img alt="The pipeline builder graph with two transform nodes." height="550" src="/docs/resources/foundry/building-pipelines/flight-alerts-clean-graph.png" style="aspect-ratio:1134 / 550" width="1134" node="[object Object]"> <br><br></p>
+</li>
+</ol>
+<h3 id="user-content-dataset-3" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#dataset-3"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Dataset 3</h3>
+<p>Finally, clean the <code>status_mapping_raw</code> dataset.</p>
+<h4 id="user-content-clean-string-transform-1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#clean-string-transform-1"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Clean string transform</h4>
+<p>You will only apply a <strong>Clean string</strong> transform to this dataset.</p>
+<ol>
+<li>
+<p>Select the <code>status_mapping_raw</code> dataset node in your graph.</p>
+</li>
+<li>
+<p>Select <strong>Transform</strong>. <br><br>
+<img alt="Choose to transform a dataset from the graph." height="226" src="/docs/resources/foundry/building-pipelines/status-mapping-raw-transform.png" style="aspect-ratio:732 / 226" width="732" node="[object Object]"> <br><br></p>
+</li>
+<li>
+<p>In the <strong>Search transforms and columns...</strong> field, select the <code>mapped_value</code> column from the dropdown menu. <br><br>
+<img alt="Choose the mapped_value column in the transform board." height="322" src="/docs/resources/foundry/building-pipelines/mapped-value-transform.png" style="aspect-ratio:1738 / 322" width="1738" node="[object Object]"> <br><br></p>
+</li>
+<li>
+<p>In the same field, search and select the clean string transform from the dropdown.</p>
+</li>
+<li>
+<p>Check the boxes for all three of the <strong>Clean actions</strong> options:</p>
+</li>
+</ol>
+<ul>
+<li>
+<p>Converts empty strings to null</p>
+</li>
+<li>
+<p>Reduce sequences of multiple whitespace characters to a single whitespace</p>
+</li>
+<li>
+<p>Trims whitespace at beginning and end of string</p>
+<p>Your clean string board should look like this: <br><br>
+<img alt="A completed clean string transform board." height="600" src="/docs/resources/foundry/building-pipelines/clean-string-mapped-value.png" style="aspect-ratio:1744 / 690" width="1516.5217391304348" node="[object Object]"> <br><br></p>
+</li>
+</ul>
+<ol start="6">
+<li>
+<p>Select <strong>Apply</strong> to add the transform to your pipeline.</p>
+</li>
+<li>
+<p>In the top left corner of the transform configuration window, rename the transform <code>Status Mapping - Clean</code>.</p>
+</li>
+<li>
+<p>Select <strong>Back to graph</strong> at the top right to return to your pipeline graph.</p>
+<p>You can see the connection between the transforms you just added and the datasets to which you applied them. <br><br>
+<img alt="A pipeline builder graph with three dataset and three transform nodes." height="600" src="/docs/resources/foundry/building-pipelines/transforms-done.png" style="aspect-ratio:1330 / 634" width="1258.6750788643533" node="[object Object]"> <br><br></p>
+</li>
+</ol>
+<h2 id="user-content-part-4-join-datasets" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#part-4-join-datasets"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Part 4: Join datasets</h2>
+<p>Now, you can combine some of the cleaned datasets with <strong>joins</strong>. A join allows you to combine datasets with at least one matching column. You will add two joins to your pipeline workflow.</p>
+<h3 id="user-content-join-1" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#join-1"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Join 1</h3>
+<p>Your first join will combine two of the cleaned datasets.</p>
+<ol>
+<li>
+<p>Select the <code>Flight Alerts - Clean</code> transform node. This will be the left side of the join.</p>
+</li>
+<li>
+<p>Select <strong>Join</strong>. <br><br>
+<img alt="Choose to join a dataset from the graph." height="600" src="/docs/resources/foundry/building-pipelines/join-time.png" style="aspect-ratio:836 / 674" width="744.213649851632" node="[object Object]"> <br><br></p>
+</li>
+<li>
+<p>Choose the <code>Status Mapping - Clean</code> node to add it as the right side of the join.</p>
+</li>
+<li>
+<p>Select <strong>Start</strong> to open the join configuration board. <br><br>
+<img alt="Select Start to join the selected datasets." height="126" src="/docs/resources/foundry/building-pipelines/start-join.png" style="aspect-ratio:1298 / 126" width="1298" node="[object Object]"> <br><br></p>
+</li>
+<li>
+<p>Verify that the <strong>Join type</strong> is set to <code>Left join</code>.</p>
+</li>
+<li>
+<p>Set the <strong>Match condition</strong> columns to <code>status</code> is equal to <code>value</code>.</p>
+</li>
+<li>
+<p>Select <strong>Show advanced</strong> to view additional configuration options.</p>
+</li>
+<li>
+<p>Set the <strong>Prefix</strong> of the right <code>Status Mapping - Clean</code> dataset to <code>status</code>.</p>
+<p>Your join configuration board should look like this: <br><br>
+<img alt="A completed join board." height="600" src="/docs/resources/foundry/building-pipelines/input-tables.png" style="aspect-ratio:2010 / 1216" width="991.7763157894736" node="[object Object]"> <br><br></p>
+</li>
+<li>
+<p>Select <strong>Apply</strong> to add the join to your pipeline.</p>
+</li>
+<li>
+<p>View a preview of the join output table in the <strong>Preview</strong> pane at the bottom of the configuration window. <br><br>
+<img alt="A preview of the join output." height="564" src="/docs/resources/foundry/building-pipelines/pipeline-preview-pane.png" style="aspect-ratio:1576 / 564" width="1576" node="[object Object]"> <br><br></p>
+</li>
+<li>
+<p>In the top left corner of the join configuration window, rename the join <code>Join Status</code>.</p>
+</li>
+<li>
+<p>Select <strong>Back to graph</strong> at the top right to return to your pipeline graph. <br><br>
+<img alt="A pipeline graph with the new join node." height="600" src="/docs/resources/foundry/building-pipelines/back-to-graph-join-status.png" style="aspect-ratio:2028 / 628" width="1937.5796178343949" node="[object Object]"> <br><br></p>
+</li>
+<li>
+<p>To make the graph easier to read, select the <strong>Layout</strong> icon to automatically arrange the datasets, or manually drag the two connected datasets next to each other. <br><br>
+<img alt="Use the layout tool to neatly organize the pipeline graph." height="600" src="/docs/resources/foundry/building-pipelines/reorganized-graph.png" style="aspect-ratio:1318 / 1094" width="722.8519195612431" node="[object Object]"> <br><br></p>
+</li>
+</ol>
+<h3 id="user-content-join-2" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#join-2"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Join 2</h3>
+<p>For your second join, combine your first join output table with another raw dataset.</p>
+<ol>
+<li>
+<p>Add the <code>priority_mapping_raw</code> dataset to the graph by selecting <strong>Add datasets</strong>.</p>
+</li>
+<li>
+<p>Select the <code>Join Status</code> node you just added to the graph. This will be the left side of the join.</p>
+</li>
+<li>
+<p>Select <strong>Join</strong>.</p>
+</li>
+<li>
+<p>Select the <code>priority_mapping_raw</code> dataset node to add it as the right side of your join.</p>
+</li>
+<li>
+<p>Select <strong>Start</strong> to open the configuration board. <br><br>
+<img alt="Select Start to join the selected nodes." height="134" src="/docs/resources/foundry/building-pipelines/select-another-table-to-join.png" style="aspect-ratio:1442 / 134" width="1442" node="[object Object]"> <br><br></p>
+</li>
+<li>
+<p>Verify that the <strong>Join type</strong> is set to <code>Left join</code>.</p>
+</li>
+<li>
+<p>Set the <strong>Match condition</strong> columns to <code>priority</code> is equal to <code>value</code>.</p>
+</li>
+<li>
+<p>Select <strong>Show advanced</strong> to view additional configuration options.</p>
+</li>
+<li>
+<p>Set the <strong>Prefix</strong> of the right <code>priority_mapping_raw</code> dataset to <code>priority</code>.</p>
+<p>Your join configuration board should look like this: <br><br>
+<img alt="A completed join configuration." height="600" src="/docs/resources/foundry/building-pipelines/input-tables2.png" style="aspect-ratio:2252 / 1082" width="1248.7985212569317" node="[object Object]"> <br><br></p>
+</li>
+<li>
+<p>Select <strong>Apply</strong> to add the join to your pipeline.</p>
+</li>
+<li>
+<p>View a preview of the join output table in the <strong>Preview</strong> pane at the bottom of the configuration window. <br><br>
+<img alt="A preview of the configured join." height="600" src="/docs/resources/foundry/building-pipelines/preview-pane2.png" style="aspect-ratio:1580 / 604" width="1569.5364238410596" node="[object Object]"> <br><br></p>
+</li>
+<li>
+<p>In the upper left corner of the join configuration window, rename the join <code>Join (2)</code>.</p>
+</li>
+<li>
+<p>Select <strong>Back to graph</strong> at the top right to return to your pipeline graph.</p>
+</li>
+</ol>
+<p>You can now see the connection between the joins you just added and the datasets to which you applied them.</p>
+<p><img alt="The pipeline graph with another join node." height="458" src="/docs/resources/foundry/building-pipelines/join-stage-in-workspace.png" style="aspect-ratio:1604 / 458" width="1604" node="[object Object]"></p>
+<h2 id="user-content-part-5-add-an-output" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#part-5-add-an-output"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Part 5: Add an output</h2>
+<p>Now that you have finished transforming and structuring your data, you can add an output. For this tutorial, you will add a dataset output.</p>
+<ol>
+<li>In the <strong>Pipeline outputs</strong> sidebar to the right of the Pipeline Builder graph, name the output <code>Flight Alerts data</code>. Then select <strong>Add dataset output</strong>.</li>
+<li>Link <code>Join (2)</code> to the output by selecting the white circle to the right of the join node and connecting it to the <code>Flight Alerts data</code>dataset.</li>
+<li>Select <strong>Use input schema</strong> to use existing schema.</li>
+<li>From here, select the columns of data to keep. In this case, keep all the data together. <br><br>
+<img alt="Select the columns to include in the output dataset." height="600" src="/docs/resources/foundry/building-pipelines/add-an-output.png" style="aspect-ratio:300 / 642" width="280.3738317757009" node="[object Object]"> <br><br></li>
+</ol>
+<h2 id="user-content-part-6-build-the-pipeline" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#part-6-build-the-pipeline"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Part 6: Build the pipeline</h2>
+<p>To build your pipeline, select <strong>Deploy</strong> in the top right of your graph. Then, choose <strong>Save and deploy</strong>.</p>
+<p><img alt="Choose to save and deploy to build you pipeline" height="456" src="/docs/resources/foundry/building-pipelines/save-and-deploy.png" style="aspect-ratio:304 / 456" width="304" node="[object Object]"></p>
+<p>You should see a small alert indicating the deploy was successful. Select <strong>View</strong> in the alert box to open the <strong>Build progress</strong> page.</p>
+<p><img alt="Screenshot of build progress page" height="600" src="/docs/resources/foundry/building-pipelines/build-progress.png" style="aspect-ratio:2592 / 820" width="1896.5853658536585" node="[object Object]"></p>
+<p>From this page, you can monitor the progress of your build until the dataset output is ready.</p>
+<p><img alt="Screenshot of build progress with succeed status page" height="330" src="/docs/resources/foundry/building-pipelines/build-succeed.png" style="aspect-ratio:250 / 330" width="250" node="[object Object]"></p>
+<p>You can now access your dataset by selecting <strong>Actions &gt; Open</strong>.</p>
+<p><img alt="Screenshot of dataset output" height="600" src="/docs/resources/foundry/building-pipelines/flight-alerts-data.png" style="aspect-ratio:2606 / 1666" width="938.5354141656663" node="[object Object]"></p>
+<p>With this last step, you generated your pipeline output. This output is a dataset that can be further explored in other applications in Foundry, such as <a href="/docs/foundry/contour/analysis-create-path/#starting-an-analysis-from-datasets-in-foundry">Contour</a> or <a href="/docs/foundry/code-workbook/workbooks-overview/">Code Workbook</a>.</p>
+</article>
+</body>
+</html>

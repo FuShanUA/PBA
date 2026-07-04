@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Configure SLT (SAP Landscape Transformation Replication Server)</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-configure-slt-sap-landscape-transformation-replication-server" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#configure-slt-sap-landscape-transformation-replication-server"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Configure SLT (SAP Landscape Transformation Replication Server)</h1>
+<p>The SAP Landscape Transformation Replication Server (SLT) is a data replication tool that uses database triggers to perform change data capture (CDC), thus enabling efficient data replication from source SAP systems to a target system.</p>
+<p>The SLT and the Palantir Foundry Connector 2.0 for SAP Applications ("Connector") can be configured to work together to enable CDC replication from SAP to Foundry.</p>
+<p>In this setup, an SLT configuration will be created with a dedicated context (queue alias).</p>
+<p>To replicate an SAP table to Foundry, a Foundry dataset sync will be configured per object. Once a dataset sync is configured, SLT will configure triggers on the relevant SAP object and changes to the object in SAP will then be captured and stored in the queue in the SLT server for an ODP (Operational Data Provisioning) scenario. Foundry will poll this queue on a preconfigured schedule to synchronize these changes to the Foundry dataset.</p>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>Starting with version 2.34 (SP34) and above, the Connector uses <a href="https://help.sap.com/docs/SAP_NETWEAVER_750/ccc9cdbdc6cd4eceaf1e5485b1bf8f4b/11853413cf124dde91925284133c007d.html">ODP-based data extraction via OData ↗</a> to interact with ODP.</p></div>
+<p>When a Foundry dataset sync is first configured for an SAP object, SLT will perform a full load. Consecutive triggers will fetch only the changes for the object. The purging of SLT queues is managed by SLT.</p>
+<p>You can also configure a Foundry dataset sync to have SLT perform a full load (snapshot) of specific SAP objects rather than operate in CDC mode (incremental).</p>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>This guide assumes the Connector has already been installed on the instance. You can review <a href="/docs/foundry/sap/install-sap/">installation instructions for the Connector</a>.</p></div>
+<h2 id="user-content-prerequisites" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#prerequisites"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Prerequisites</h2>
+<h3 id="user-content-use-odp-directly-connector-version-233-sp33-and-below" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#use-odp-directly-connector-version-233-sp33-and-below"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Use ODP directly (Connector version 2.33 (SP33) and below)</h3>
+<ul>
+<li>SAP_BASIS (the technical component version, applicable to both SAP NetWeaver and SAP S/4HANA systems) 7.4 SP14+ for Connector installation</li>
+<li>DMIS 2011_1_730 Component SP15+ for SAP SLT and source system</li>
+<li>SAP SLT configuration that allows 1:N replication for all Mass Transfer IDs (MTIDs)</li>
+</ul>
+<p>Ensure that the following SAP notes are implemented on the SLT system:</p>
+<ul>
+<li>SAP OSS Note <code>1660374</code> – <em>Fetch does not wait long enough; timeout</em></li>
+<li>SAP OSS Note <code>2215583</code> – <em>Error due to moved data content during extraction from ODQ</em></li>
+</ul>
+<p>Ensure that the following SAP notes have been read and the relevant steps followed where applicable:</p>
+<ul>
+<li>SAP OSS Note <code>2697016</code> – <em>Unable to replicate table in CNV_IUUC_DB_CONN131 - Other configuration have different trigger settings - SAP Landscape Transformation Replication Server.</em></li>
+<li>SAP OSS Note <code>2787584</code> - <em>Authorization issues in LTRC despite user having SAP_ALL - SLT</em></li>
+<li>SAP OSS Note <code>3032108</code> - <em>Is 1:N replication supported? - SLT</em></li>
+</ul>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>In SAP SLT scenarios, there can be 1:4 registrations (max 4 consumers) for a table in older DMIS versions. Starting with DMIS 2018 SP4, SAP's new CDC functionality was enabled and there is no longer a limit on the number of consumers allowed.</p></div>
+<h3 id="user-content-use-odp-via-odata-connector-version-234-sp34-and-above" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#use-odp-via-odata-connector-version-234-sp34-and-above"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Use ODP via OData (Connector version 2.34 (SP34) and above)</h3>
+<p>Connector version 2.34 introduces a <code>PALODATA</code> component, allowing you to configure syncs using the OData API <a href="https://help.sap.com/docs/SAP_NETWEAVER_750/ccc9cdbdc6cd4eceaf1e5485b1bf8f4b/11853413cf124dde91925284133c007d.html">as recommended by SAP ↗</a>.</p>
+<p>This component has elevated prerequisites for SAP_BASIS version <strong>7.50 SP09+</strong> given the recent nature of OData.
+Also ensure that the following SAP notes have been read and where applicable implemented:</p>
+<ul>
+<li>SAP OSS Note <code>2854759</code> - <em>Handling of date fields during extraction via OData V2</em></li>
+<li>SAP OSS Note <code>2878969</code> - <em>ODP extraction ODATA Function import names are getting truncated</em></li>
+<li>SAP OSS Note <code>3062232</code> - <em>ODP ODATA V2 - Last skiptoken for a pointer provides no deltatoken</em></li>
+<li>SAP OSS Note <code>3023446</code> - <em>ODP with oData version2: odata.maxpagesize is ignored for delta request</em></li>
+<li>SAP OSS Note <code>2888122</code> - <em>ODATA ODP Delta not possible if latest delta request in source system deleted</em></li>
+</ul>
+<h3 id="user-content-resource-sizing" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#resource-sizing"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Resource sizing</h3>
+<p>Using the Connector with SLT can be resource-intensive for the SAP system. Therefore, official SAP sizing documents should be reviewed for SLT before starting replication. Prior to beginning data extraction from the SAP environment, ensure there are free background and dialog processes on the SLT server (and also the SAP Application Server where the Connector is installed if SLT and the Connector are in different servers).</p>
+<ul>
+<li>Go to transaction <code>SM50</code> to see if there are free background and dialog processes. If there are no free processes, transferring data to Foundry will fail.</li>
+<li>Refer to the official SAP <a href="https://help.sap.com/http.svc/rc/24061ced53984fb0b93e7c98dacef5e4/1702%20YMKT/en-US/SAP_SLT_Guide_21122015.pdf">SLT Sizing Guide ↗</a> for more guidance on sizing the system.</li>
+</ul>
+<h2 id="user-content-slt-configuration" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#slt-configuration"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>SLT configuration</h2>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>Only one of steps 2a and 2b is required. We recommend following step 2a and using the Post-Installation Wizard. Steps 3 and 4 are only required for a remote SLT scenario.</p></div>
+<ul>
+<li><a href="#1-create-an-rfc-destination-connection-to-the-source-system">1. Create an RFC destination connection to the source system</a></li>
+<li><a href="#2a-create-an-slt-configuration-for-the-source-system-using-the-post-installation-wizard">2a. Recommended: Create an SLT configuration for the source system using the Post-Installation Wizard</a></li>
+<li><a href="#2b-create-an-slt-configuration-for-the-source-system-using-the-slt-tools">2b. Create an SLT configuration for the source system using the SLT tools</a></li>
+<li><a href="#3-create-an-rfc-destination-connection-to-the-connector-remote-slt-scenario">3. Create an RFC destination connection to the Connector (remote SLT scenario)</a></li>
+<li><a href="#4-configure-the-connector-to-use-sap-slt-remote-slt-scenario">4. Configure the Connector to use SAP SLT (remote SLT scenario)</a></li>
+</ul>
+<h3 id="user-content-1-create-an-rfc-destination-connection-to-the-source-system" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#1-create-an-rfc-destination-connection-to-the-source-system"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>1. Create an RFC destination connection to the source system</h3>
+<p>To create a Remote Function Call (RFC) connection that SLT will use to replicate data from the SAP source system, refer to <a href="/docs/foundry/sap/create-sap-rfc-connection/">Create an RFC connection</a>.</p>
+<h3 id="user-content-2a-create-an-slt-configuration-for-the-source-system-using-the-post-installation-wizard" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#2a-create-an-slt-configuration-for-the-source-system-using-the-post-installation-wizard"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>2a. Create an SLT configuration for the source system using the Post-Installation Wizard</h3>
+<p>To create an SLT configuration using the Connector Post-Installation Wizard, use the <code>/n/PALANTIR/POST_INST</code> transaction code and only enable step 7 <strong>Create SLT configuration</strong>. The parameters of an SLT configuration are as follows:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>Parameter</th><th>Description</th></tr></thead><tbody><tr><td><code>Context Name</code></td><td>Unique configuration name</td></tr><tr><td><code>Context Description</code></td><td>Context description that will be shown to the user in SAP transaction <code>LTRC</code> and in Foundry</td></tr><tr><td><code>Data Transfer Jobs</code></td><td>Number of data transfer jobs</td></tr><tr><td><code>Initial Load Jobs</code></td><td>Number of jobs for initial loads</td></tr><tr><td><code>Calculation Jobs</code></td><td>Number of calculation jobs for initial load range calculations</td></tr><tr><td><code>Authorization Group</code></td><td>No Authorization Group by default</td></tr><tr><td><code>Source RFC Destination</code></td><td>Logical Destination - RFC Destination name of source system</td></tr><tr><td><code>Read from Single Client</code></td><td>Check this option if data will be read from a single client</td></tr><tr><td><code>Allow Multiple Usage</code></td><td>Check this option if multiple usage is allowed</td></tr></tbody></table></div>
+<h3 id="user-content-2b-create-an-slt-configuration-for-the-source-system-using-the-slt-tools" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#2b-create-an-slt-configuration-for-the-source-system-using-the-slt-tools"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>2b. Create an SLT configuration for the source system using the SLT tools</h3>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>Only one of steps 2a and 2b is required. We recommend using the Post-Installation Wizard detailed in step 2a.</p></div>
+<ol>
+<li>
+<p>To create an SLT configuration, use the <code>LTRC</code> transaction code.</p>
+</li>
+<li>
+<p>Create a new configuration.</p>
+</li>
+<li>
+<p>In the <strong>General Data</strong> section, fill in the <strong>Configuration Name</strong> and <strong>Description</strong>.</p>
+</li>
+<li>
+<p>In the Source System section:</p>
+<ul>
+<li>Select <strong>RFC Connection</strong>.</li>
+<li>Select the <strong>RFC Destination</strong> connection we created previously (eg, SAP_SOURCE in our example).</li>
+</ul>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>Do not be confused by the name “RFC Destination” when you are configuring a source – you should select the connection for the source system in this setting.</p></div>
+<ul>
+<li>Enable <strong>Allow Multiple Usage</strong>.</li>
+</ul>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>This setting enables multiple subscribers to retrieve replicated data from the source system and cannot be changed after configuration creation. As <strong>Allow Multiple Usage</strong> does not have an impact if a single subscriber is used, we recommend enabling it during the first configuration. To enable multiple usage at a later time requires you to delete the configuration and create a new one.</p></div>
+<ul>
+<li>In the production environment, enable <strong>Read from Single Client</strong>. The client number used will be the one defined in the RFC Connection. This setting will ensure only production data is replicated to Foundry. In existing SLT environments, all configurations should have the same settings. Therefore, check SAP OSS Note <code>2372636 - Cannot replicate data when different trigger options exist - SLT</code>.</li>
+</ul>
+</li>
+<li>
+<p>In the Target System section:</p>
+<ul>
+<li>Select <strong>RFC Connection</strong>.</li>
+<li>Select <strong>Operational Data Provisioning (ODP)</strong> for <strong>Scenario</strong>. For higher support package levels of SAP_BASIS, this scenario is listed under <strong>Other</strong> instead of <strong>RFC Connection</strong>.</li>
+<li>Set <strong>RFC Destination</strong> as <code>NONE</code>.</li>
+<li>Set any alias name as the Queue Alias. It is good practice to name the queue that shows the source system SAP System ID (SID). This queue alias name is used as the context later on, when defining Foundry dataset syncs.</li>
+</ul>
+</li>
+<li>
+<p>In the <strong>Data Transfer Settings</strong> section, set the number of data transfer jobs, initial load jobs and data calculation jobs to be run on the SAP SLT server. Refer to the <a href="https://help.sap.com/http.svc/rc/24061ced53984fb0b93e7c98dacef5e4/1702%20YMKT/en-US/SAP_SLT_Guide_21122015.pdf">SLT Sizing Guide ↗</a> for the number of jobs needed for complex scenarios.</p>
+</li>
+<li>
+<p>Review and create the connection.</p>
+</li>
+<li>
+<p>Back on the main SLT screen, for transaction code <code>LTRC</code>, ensure that BAdI implementation is active on the SLT system for ODP scenarios. To check the setting, open the configuration by selecting the configuration name, and then click the <strong>Expert Functions</strong> tab. Ensure BAdI implementation is active or ODP will not function correctly.</p>
+</li>
+<li>
+<p>Go to <code>SA38</code> transaction from the main menu. As described on the SAP OSS note <code>1660374 - Fetch does not wait long enough; timeout</code>, run the program <code>SAP_RSADMIN_MAINTAIN</code> to set the parameter <code>RODPS_FETCH_TIMEOUT</code>. Specify the value in seconds.</p>
+</li>
+</ol>
+<h3 id="user-content-3-create-an-rfc-destination-connection-to-the-connector-remote-slt-scenario" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#3-create-an-rfc-destination-connection-to-the-connector-remote-slt-scenario"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>3. Create an RFC destination connection to the Connector (remote SLT scenario)</h3>
+<p>The Connector can be deployed on a separate SAP instance which fulfills the requirements. In this case, the Connector communicates with the SLT server via an RFC connection. Therefore, an RFC connection is required to enable the communication channel.</p>
+<p>Refer to <a href="/docs/foundry/sap/create-sap-rfc-connection/">RFC connection guide</a> for setup instruction.</p>
+<h3 id="user-content-4-configure-the-connector-to-use-sap-slt-remote-slt-scenario" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#4-configure-the-connector-to-use-sap-slt-remote-slt-scenario"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>4. Configure the Connector to use SAP SLT (remote SLT scenario)</h3>
+<p>If SLT and the Connector are on separate instances, follow these additional configuration steps:</p>
+<ul>
+<li>Open transaction <code>/n/PALANTIR/PARAM</code></li>
+<li>Enter the following parameter values:
+<ul>
+<li>Param ID: <code>SLT</code></li>
+<li>Param Name: <code>RFC_CONFIGURATION</code></li>
+<li>Param Value: <code>RFC configuration name created in the beginning of this section (eg, SLT_SERVER_RFC)</code></li>
+</ul>
+</li>
+</ul>
+<p>If these parameters are not set in the configuration table, they will default to the following values:</p>
+<ul>
+<li>timestamp: OFF</li>
+<li>fetchOption: XML</li>
+<li>pageSize: 50000</li>
+</ul>
+<h2 id="user-content-performance-considerations-for-large-table-syncs" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#performance-considerations-for-large-table-syncs"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Performance considerations for large table syncs</h2>
+<p>The Connector uses SAP's ODP Framework to replicate data to Foundry. ODP replicates the data from the source system to the ODP Queue (table name <code>ODQDATA_F</code>). The data is staged in <code>ODQ</code>, and once the data is transferred to the ODP queue, the Connector starts to page the requested data to the <code>/PALANTIR/PAG_01</code> and <code>/PALANTIR/PAG_02</code> tables. After a successful transfer of all pages to Foundry, Foundry sends a close request to housekeep the tables, and this close request deletes entries in <code>/PALANTIR/PAG*</code> tables.</p>
+<p>When running initial (for instance, historical or bulk) syncs, review database sizing and consider space requirements carefully. Insufficient space may lead to failed SLT replication jobs and transfers to Foundry so first carry out database sizing preparations based on the tables to be replicated.</p>
+<h2 id="user-content-parameters-used-to-address-known-sap-issues" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#parameters-used-to-address-known-sap-issues"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Parameters used to address known SAP issues</h2>
+<p>There are two other parameters which are used as a solution to known issues in SAP.</p>
+<h3 id="user-content-issue-the-sap-slt-server-does-not-provide-the-exact-field-length-of-datetime-fields" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#issue-the-sap-slt-server-does-not-provide-the-exact-field-length-of-datetime-fields"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Issue: The SAP SLT server does not provide the exact field length of date/time fields</h3>
+<p>Problem: The SAP SLT server does not provide the exact field length of date/time fields. This has been fixed with an SAP note. However, if you do encounter any issues regarding data type lengths, the following parameter can be set until the note is implemented:</p>
+<ul>
+<li>Param ID = <code>SLT</code></li>
+<li>Param Name = <code>SLT_DATA_XXX</code> (<code>XXX</code> refers to technical name of the field)</li>
+<li>Param Value = <code>Length of the data type</code></li>
+</ul>
+<p>In an earlier support package of SAP_BASIS (SP 14), <code>DATS</code> fields were set as 16 characters by SAP. However, <code>DATS</code> fields should have 8 characters (<code>YYYYMMDD</code>). <code>TIMS</code> fields were also set as 16 characters by SAP; <code>TIMS</code> data has 6 characters (<code>HHMMSS</code>).</p>
+<p>To address this problem, set the following parameters:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>Param Id</th><th>Param Name</th><th>Param Value</th></tr></thead><tbody><tr><td>SLT</td><td>SLT_DATA_DATS</td><td>8</td></tr><tr><td>SLT</td><td>SLT_DATA_TIMS</td><td>6</td></tr></tbody></table></div>
+<h3 id="user-content-issue-sap-quan-data-types-that-do-not-have-3-decimal-places" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#issue-sap-quan-data-types-that-do-not-have-3-decimal-places"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Issue: SAP QUAN data types that do not have 3 decimal places</h3>
+<p>Problem: SAP has specific data types to be used for quantity and amount. Quantity data type QUAN contains 3 decimal places by default. When the Connector tries to fetch data which contain QUAN data types, it automatically creates 3 decimal places for these QUAN data types. However, some of the SAP tables which contain QUAN data types have a different number of decimal places but are sent to Foundry as if they have 3 decimal places.</p>
+<p>To address this problem, use the following parameter:</p>
+<ul>
+<li>Param ID = <code>SLT</code></li>
+<li>Param Name = <code>SLT_DTYPE_XXX</code> (<code>XXX</code> refers to data type of the field)</li>
+<li>Param Value = <code>Data Type Name which will be taken Into account</code></li>
+</ul>
+<p>Set the parameter as follows to change QUAN data types to decimal data types:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>Param Id</th><th>Param Name</th><th>Param Value</th></tr></thead><tbody><tr><td>SLT</td><td>SLT_DTYPE_QUAN</td><td>DEC</td></tr></tbody></table></div>
+</article>
+</body>
+</html>

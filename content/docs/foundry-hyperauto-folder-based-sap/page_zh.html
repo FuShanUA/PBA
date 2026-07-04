@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Folder-based SAP pipelines</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-folder-based-sap-pipelines" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#folder-based-sap-pipelines"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>基于文件夹的 SAP 数据管道</h1>
+<p>HyperAuto V2 还支持基于 SAP 数据创建数据管道，无需直接连接 SAP。这赋予了系统极大的灵活性，使其能够支持多种架构，包括源镜像、静态数据抽取以及预过滤数据。</p>
+<h2 id="user-content-set-up-a-hyperauto-v2-pipeline-for-sap-static-data" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#set-up-a-hyperauto-v2-pipeline-for-sap-static-data"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>为 SAP 静态数据设置 HyperAuto V2 数据管道</h2>
+<p>要在 SAP 数据集之上创建 HyperAuto V2 数据管道，请设置一个 Foundry 文件夹，其中包含：</p>
+<ul>
+<li>输入表数据集（每个需要处理的 SAP 表对应一个数据集）</li>
+<li>数据字典表</li>
+</ul>
+<p>请将所有数据集直接放置在同一文件夹下，以确保自动检测功能正常运作，并尽量减少数据管道的创建步骤。使用 SAP 表名（例如 <code>MARA</code>）命名输入表数据集，将有助于自动映射过程并减少所需的手动操作步骤。</p>
+<p>数据必须是原始 SAP 表未经转换的抽取内容，并保留其技术列名。</p>
+<h3 id="user-content-data-dictionary-tables" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#data-dictionary-tables"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>数据字典表</h3>
+<p>数据字典表包含了 HyperAuto 生成数据管道所需的来自 SAP 的元数据，包括表和列的描述，以及表间关系的说明。</p>
+<p>创建基于文件夹的 SAP HyperAuto 数据管道所需的数据字典表包括：</p>
+<ul>
+<li><strong>DD02L</strong>（SAP 系统中表的详细信息）</li>
+<li><strong>DD02T</strong>（不同语言下表的描述性文本和标签）</li>
+<li><strong>DD03L</strong>（字段定义、数据类型和长度）</li>
+<li><strong>DD04T</strong>（多种语言下数据要素的描述和标签）</li>
+<li><strong>DD05S</strong>（外键关系的详细信息，包括父表和子表字段）</li>
+<li><strong>DD08L</strong>（关于 SAP 系统中表间外键关系的元数据）</li>
+</ul>
+<p>数据字典表必须保持原始格式且<strong>未经过滤</strong>，HyperAuto 才能正常运行。</p>
+<h3 id="user-content-example" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#example"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>示例</h3>
+<p>要在 SAP 系统的 <code>MARA</code> 和 <code>MAKT</code> 表之上创建基础的 HyperAuto 数据管道，请创建一个包含以下数据集的文件夹：</p>
+<img alt="Folder based input example" src="/docs/resources/foundry/hyperauto/folder-based-sap-source-example.png?width=750" style="aspect-ratio:1121 / 446" width="750" node="[object Object]">
+<h2 id="user-content-create-a-folder-based-pipeline" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#create-a-folder-based-pipeline"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>创建基于文件夹的数据管道</h2>
+<ol>
+<li>设置好输入文件夹后，前往 HyperAuto 主页创建新数据管道。可以通过 Foundry 左侧边栏的应用程序浏览器找到该入口。</li>
+</ol>
+  <img alt="HyperAuto app homepage" src="/docs/resources/foundry/hyperauto/hyperauto-v2-open-app.png?width=750" style="aspect-ratio:1052 / 291" width="750" node="[object Object]">
+<ol start="2">
+<li>点击 <strong>+ 创建数据管道</strong> 打开创建对话框。</li>
+</ol>
+  <img alt="Create pipeline" src="/docs/resources/foundry/hyperauto/hyperauto-v2-app-create.png?width=750" style="aspect-ratio:833 / 179" width="750" node="[object Object]">
+<ol start="3">
+<li>在此，您可以选择创建典型数据管道（需要实时的 SAP 连接）或基于文件夹的 SAP 数据管道。选择“文件夹（仅限 SAP）”并点击 <strong>浏览</strong> 选择您的输入文件夹。</li>
+</ol>
+<p>点击 <strong>创建数据管道</strong>，进入 HyperAuto 数据管道创建向导。</p>
+  <img alt="Create new folder based pipeline" src="/docs/resources/foundry/hyperauto/hyperauto-v2-create-folder-based.png?width=750" style="aspect-ratio:775 / 364" width="750" node="[object Object]">
+<h3 id="user-content-setup-wizard" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#setup-wizard"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>设置向导</h3>
+<ol>
+<li>接下来，您需要像配置基于源的数据管道一样，定义数据管道的基本配置。</li>
+</ol>
+<p>首先，为数据管道选择有效的名称和位置。</p>
+  <img alt="Create new folder based pipeline" src="/docs/resources/foundry/hyperauto/hyperauto-v2-fb-wizard-name.png?width=750" style="aspect-ratio:1309 / 783" width="750" node="[object Object]">
+<ol start="2">
+<li>在源配置步骤中，需确保 HyperAuto 能够识别数据字典表，以便读取构建数据管道所需的元数据。</li>
+</ol>
+<p>如果输入设置正确，这些表将被自动映射。否则，请在继续操作前手动映射每个元数据表。</p>
+  <img alt="Source configuration" src="/docs/resources/foundry/hyperauto/hyperauto-v2-fb-wizard-source-config.png?width=750" style="aspect-ratio:1309 / 783" width="750" node="[object Object]">
+<ol start="3">
+<li>下一步是选择要处理的输入。默认情况下，输入选择界面仅显示可发现的输入（即在输入文件夹中名称直接匹配的数据集）。</li>
+</ol>
+  <img alt="Discovered input configuration" src="/docs/resources/foundry/hyperauto/hyperauto-v2-fb-wizard-input-config-discovered.png?width=750" style="aspect-ratio:1309 / 783" width="750" node="[object Object]">
+<p>要显示所有可用表（基于数据字典表），请点击 <strong>显示未发现的表</strong>。</p>
+<p>添加未发现的表时，您需要手动将其映射到合适的 Foundry 数据集，才能将其作为输入使用。</p>
+  <img alt="Discovered input configuration" src="/docs/resources/foundry/hyperauto/hyperauto-v2-fb-wizard-input-config-all.png?width=750" style="aspect-ratio:1309 / 783" width="750" node="[object Object]">
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu">
+
+<svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>创建包含未映射输入的管道会导致该输入被忽略。</p></div>
+<ol start="4">
+<li>根据需要选择管道配置，然后点击<strong>创建 HyperAuto 管道</strong>以完成向导并触发管道创建。</li>
+</ol>
+  <img alt="管道配置" src="/docs/resources/foundry/hyperauto/hyperauto-v2-fb-wizard-pipeline-config.png?width=750" style="aspect-ratio:1309 / 783" width="750" node="[object Object]">
+</article>
+</body>
+</html>

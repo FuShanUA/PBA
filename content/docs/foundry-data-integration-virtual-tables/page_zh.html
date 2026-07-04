@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Virtual tables</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-virtual-tables" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#virtual-tables"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>虚拟表</h1>
+<p><strong>虚拟表</strong>允许你查询受支持数据平台中的表，而无需事先将数据存储在 Foundry <a href="/docs/foundry/data-integration/datasets/">数据集</a>中。</p>
+<p>虚拟表充当指向 Foundry 外部源系统中表的指针。虚拟表屏蔽了底层源系统和存储格式，让你能够构建无缝结合来自不同源系统数据的工作流。虚拟表还可以与存储在 Foundry 中的数据集相结合，作为灵活架构的一部分，在这种架构下，数据无需集中存放在同一位置。你还可以创建新的虚拟表作为 Foundry 数据转换的输出，从而实现存储完全外部化、由 Foundry 负责编排、安全及其他功能的工作流。</p>
+<p><img alt="Virtual tables diagram" height="600" src="/docs/resources/foundry/data-integration/tables-diagram.png" style="aspect-ratio:3062 / 1084" width="1694.8339483394836" node="[object Object]"></p>
+<p>虚拟表由以下元素定义：</p>
+<ul>
+<li>与源存储系统的<em>连接</em>（例如，源 URL 或凭证）。此连接通过在 Foundry 的数据连接应用程序中<a href="/docs/foundry/data-connection/set-up-source/">设置源</a>来建立。</li>
+<li>用于在源系统中标识该表的<em>定位器</em>（例如，数据库、模式和表名）。</li>
+</ul>
+<p>与 Foundry 中的任何资源一样，虚拟表受 Foundry 的安全与权限模型管辖，并可在各种 Foundry 应用程序中打开或使用。</p>
+<h2 id="user-content-supported-sources" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#supported-sources"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>受支持的源</h2>
+<p>以下源支持虚拟表。有关如何配置连接以及所支持功能的更多详细信息，请参阅<a href="/docs/foundry/data-integration/source-type-overview/">源文档</a>。</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>源</th><th>状态</th><th>支持的格式</th><th>手动注册</th><th>自动注册</th></tr></thead><tbody><tr><td><a href="/docs/foundry/available-connectors/amazon-s3/">Amazon S3</a></td><td>🟢 正式发布</td><td><a href="https://avro.apache.org/">Avro ↗</a>, <a href="https://docs.delta.io/latest/">Delta ↗</a>, <a href="https://iceberg.apache.org/">Iceberg ↗</a>, <a href="https://parquet.apache.org/">Parquet ↗</a></td><td>✔️</td><td></td></tr><tr><td><a href="/docs/foundry/available-connectors/onelake-and-azure-blob-filesystem/">OneLake 和 Azure Data Lake Storage Gen2 (Azure Blob Storage)</a></td><td>🟢 正式发布</td><td><a href="https://avro.apache.org/">Avro ↗</a>, <a href="https://docs.delta.io/latest/">Delta ↗</a>, <a href="https://iceberg.apache.org/">Iceberg ↗</a>, <a href="https://parquet.apache.org/">Parquet ↗</a></td><td>✔️</td><td></td></tr><tr><td><a href="/docs/foundry/available-connectors/bigquery/">BigQuery</a></td><td>🟢 正式发布</td><td>表, 视图, 物化视图</td><td>✔️</td><td>✔️</td></tr><tr><td><a href="/docs/foundry/available-connectors/databricks/">Databricks 平台</a></td><td>🟢 正式发布</td><td>表, 视图, 物化视图</td><td>✔️</td><td>✔️</td></tr><tr><td><a href="/docs/foundry/available-connectors/foundry/">Foundry</a></td><td>🟡 测试版</td><td>仅<a href="/docs/foundry/data-integration/iceberg-tables/">托管式 Iceberg</a></td><td>✔️</td><td></td></tr><tr><td><a href="/docs/foundry/available-connectors/google-cloud-storage/">Google Cloud Storage</a></td><td>🟢 正式发布</td><td><a href="https://avro.apache.org/">Avro ↗</a>, <a href="https://docs.delta.io/latest/">Delta ↗</a>, <a href="https://iceberg.apache.org/">Iceberg ↗</a>, <a href="https://parquet.apache.org/">Parquet ↗</a></td><td>✔️</td><td></td></tr><tr><td><a href="/docs/foundry/available-connectors/snowflake/">Snowflake 平台</a></td><td>🟢 正式发布</td><td>表, 视图, 物化视图</td><td>✔️</td><td>✔️</td></tr></tbody></table></div>
+<h3 id="user-content-iceberg-catalogs" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#iceberg-catalogs"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Iceberg 目录</h3>
+<p>加载由 Apache Iceberg 表支持的虚拟表需要 Iceberg 目录。要了解有关 Iceberg 目录的更多信息，请参阅 <a href="https://iceberg.apache.org/terms/">Apache Iceberg 文档 ↗</a>。根据所使用的源，虚拟表支持不同的目录。下表重点列出了受支持的目录。有关如何配置每个目录以及如何使用源中 Iceberg 表的更多详细信息，请参阅<a href="/docs/foundry/data-integration/source-type-overview/">源文档</a>。</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>源</th><th>AWS Glue</th><th>Horizon Catalog</th><th>对象存储</th><th>Polaris</th><th>Unity Catalog</th></tr></thead><tbody><tr><td><a href="/docs/foundry/available-connectors/amazon-s3/">Amazon S3</a></td><td>🟢 正式发布</td><td>🔴 不可用</td><td>🟢 正式发布</td><td>🟢 正式发布</td><td>🟡 旧版：建议使用 Databricks 源。</td></tr><tr><td><a href="/docs/foundry/available-connectors/databricks/">Databricks 平台</a></td><td>-</td><td>-</td><td>-</td><td>-</td><td>🟢 正式发布</td></tr><tr><td><a href="/docs/foundry/available-connectors/google-cloud-storage/">Google Cloud Storage</a></td><td>🔴 不可用</td><td>🔴 不可用</td><td>🟢 正式发布</td><td>🔴 不可用</td><td>🔴 不可用</td></tr><tr><td><a href="/docs/foundry/available-connectors/onelake-and-azure-blob-filesystem/">OneLake 和 Azure Data Lake Storage Gen2 (Azure Blob Storage)</a></td><td>🔴 不可用</td><td>🔴 不可用</td><td>🟢 正式发布</td><td>🟢 正式发布</td><td>🟡 旧版：建议使用 Databricks 源。</td></tr><tr><td><a href="/docs/foundry/available-connectors/snowflake/">Snowflake 平台</a></td><td>-</td><td>🟢 正式发布</td><td>-</td><td>-</td><td>-</td></tr></tbody></table></div>
+<h2 id="user-content-supported-foundry-workflows" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#supported-foundry-workflows"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>受支持的 Foundry 工作流</h2>
+<p>虚拟表在以下应用程序和工作流中作为输入受支持，并在 Pipeline Builder 和 Code Repositories 中作为输出受支持。</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>受支持的应用程序</th><th>受支持的工作流</th><th>不支持</th></tr></thead><tbody><tr><td><a href="/docs/foundry/data-connection/overview/">数据连接</a></td><td>配置源<br>注册虚拟表</td><td>基于智能体的连接</td></tr><tr><td><a href="/docs/foundry/contour/overview/">Contour</a></td><td>在 Contour 中分析</td><td>另存为数据集</td></tr><tr><td><a href="/docs/foundry/ontology/overview/">本体</a></td><td>通过 Ontology Manager 创建对象 <br>通过 Pipeline Builder 创建对象</td><td></td></tr><tr><td><a href="/docs/foundry/data-lineage/overview/">数据血缘关系</a></td><td>查看 Foundry 血缘关系</td><td></td></tr><tr><td><a href="/docs/foundry/pipeline-builder/outputs-overview/#virtual-tables-beta">Pipeline Builder</a></td><td>管道输入<br><a href="/docs/foundry/pipeline-builder/overview/">管道输出</a><br>快照构建<br>增量构建（仅追加） <br><a href="/docs/foundry/building-pipelines/create-external-pipeline-pb/">外部管道（计算下推）</a></td><td>流式构建<br><a href="/docs/foundry/building-pipelines/create-faster-pipeline-pb/">更快的管道</a></td></tr><tr><td><a href="/docs/foundry/building-pipelines/create-batch-pipeline-cr/">Code Repositories</a></td><td><a href="/docs/foundry/transforms-python/tables-overview/">Python 转换</a><br>Java 转换<br>SQL 转换<br>快照构建<br>增量构建（仅追加） <br><a href="/docs/foundry/transforms-python/tables-compute-pushdown/">计算下推</a></td><td></td></tr><tr><td><a href="/docs/foundry/observability/overview/">可观测性</a></td><td><a href="/docs/foundry/health-checks/checks-reference/">虚拟表支持的健康检查</a><br><a href="/docs/foundry/pipeline-builder/dataexpectations-overview/">Pipeline Builder 中的数据期望</a><br><a href="/docs/foundry/transforms-python/data-expectations-getting-started/">Code Repositories 中的数据期望</a></td><td>在单节点转换中，不支持将 <code>on_error='FAIL'</code> 设置为<a href="/docs/foundry/transforms-python/data-expectations-getting-started/#create-checks">在期望失败时中止作业</a>用于虚拟表输出。但是，它受支持用于虚拟表输入、Foundry 托管的 Iceberg 表，并且通常在 Spark 转换中受支持。</td></tr><tr><td><a href="/docs/foundry/code-workspaces/data/">Code Workspaces</a></td><td><a href="/docs/foundry/code-workspaces/jupyterlab/">JupyterLab®</a> <br><a href="/docs/foundry/vs-code/overview/">VS Code</a></td><td></td></tr></tbody></table></div>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>请注意，某些源类型可能不支持所有这些功能。有关更多详细信息，请参阅<a href="/docs/foundry/data-integration/source-type-overview/">特定于源的文档</a>。<a href="#virtual-tables-in-code-repositories">详细了解在 Code Repositories 中使用虚拟表时如何配置源。</a></p></div>
+<p>通常，可以通过以下两种方式之一，使用虚拟表来支持大多数常见的 Foundry 工作流：</p>
+<ul>
+<li>如上所述直接与虚拟表交互，或</li>
+<li>
+
+创建由虚拟表支持的数据转换管道，并输出 Foundry 数据集或对象。这些输出可在平台中照常使用。</li>
+</ul>
+<h2 id="user-content-virtual-table-compatibility-matrix-by-source--table-type" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#virtual-table-compatibility-matrix-by-source--table-type"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>按来源与表类型划分的虚拟表兼容性矩阵</h2>
+<p>下方的矩阵概述了虚拟表可用的主要功能，并按数据源和表类型进行了分类。如需了解完整详情（包括特定来源的限制或高级功能），请参阅特定来源的文档。</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>来源</th><th>表类型</th><th>功能</th><th>Foundry 计算</th><th>计算下推<sup>*</sup></th></tr></thead><tbody><tr><td><a href="/docs/foundry/available-connectors/bigquery/#virtual-tables">BigQuery</a></td><td>表、视图、物化视图、其他</td><td>✅ 读取 <br>✅ 写入</td><td>✅ Python：单节点 <br>✅ Python：Spark <br>❌ 管道构建器：单节点 <br>✅ 管道构建器：Spark</td><td>✅ Python (Ibis) <br>❌ 管道构建器</td></tr><tr><td><a href="/docs/foundry/available-connectors/databricks/#virtual-tables">Databricks 平台</a></td><td>外部 Delta、托管 Iceberg</td><td>✅ 读取 <br>✅ 写入</td><td>✅ Python：单节点 <br>✅ Python：Spark <br>❌ 管道构建器：单节点 <br>✅ 管道构建器：Spark</td><td>✅ Python (PySpark) <br>✅ 管道构建器</td></tr><tr><td><a href="/docs/foundry/available-connectors/databricks/#virtual-tables">Databricks 平台</a></td><td>托管 Delta</td><td>✅ 读取 <br>❌ 写入</td><td>✅ Python：单节点 <br>✅ Python：Spark <br>❌ 管道构建器：单节点 <br>✅ 管道构建器：Spark</td><td>✅ Python (PySpark) <br>✅ 管道构建器</td></tr><tr><td><a href="/docs/foundry/available-connectors/databricks/#virtual-tables">Databricks 平台</a></td><td>视图、物化视图、其他</td><td>✅ 读取 <br>❌ 写入</td><td>✅ Python：单节点 <br>✅ Python：Spark <br>❌ 管道构建器：单节点 <br>✅ 管道构建器：Spark</td><td>✅ Python (PySpark) <br>✅ 管道构建器</td></tr><tr><td><a href="/docs/foundry/available-connectors/snowflake/#virtual-tables">Snowflake 平台</a></td><td>表、视图、物化视图、其他</td><td>✅ 读取 <br>✅ 写入</td><td>✅ Python：单节点 <br>✅ Python：Spark <br>❌ 管道构建器：单节点 <br>✅ 管道构建器：Spark</td><td>✅ Python (Snowpark) <br>✅ 管道构建器</td></tr><tr><td><a href="/docs/foundry/available-connectors/snowflake/#virtual-tables">Snowflake 平台</a></td><td>托管 Iceberg</td><td>✅ 读取 <br>❌ 写入</td><td>❌ Python：单节点 <br>✅ Python：Spark <br>❌ 管道构建器：单节点 <br>✅ 管道构建器：Spark</td><td>✅ Python (Snowpark) <br>✅ 管道构建器</td></tr><tr><td><a href="/docs/foundry/available-connectors/amazon-s3/#virtual-tables">AWS S3</a></td><td>Parquet、Avro、CSV、Delta</td><td>✅ 读取 <br>✅ 写入</td><td>❌ Python <br>❌  管道构建器</td><td>不适用</td></tr><tr><td><a href="/docs/foundry/available-connectors/onelake-and-azure-blob-filesystem/#virtual-tables">Azure ADLS</a></td><td>Parquet、Avro、CSV、Delta</td><td>✅ 读取 <br>✅ 写入</td><td>❌ Python <br>❌  管道构建器</td><td>不适用</td></tr><tr><td><a href="/docs/foundry/available-connectors/google-cloud-storage/#virtual-tables">Google Cloud Storage</a></td><td>Parquet、Avro、CSV、Delta</td><td>✅ 读取 <br>✅ 写入</td><td>❌ Python <br>❌  管道构建器</td><td>不适用</td></tr></tbody></table></div>
+<p><sup>*</sup> <a href="/docs/foundry/transforms-python/tables-compute-pushdown/">计算下推</a>是指使用源系统原生的计算引擎。</p>
+<h2 id="user-content-set-up-a-connection-for-a-virtual-table" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#set-up-a-connection-for-a-virtual-table"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>为虚拟表设置连接</h2>
+<p>支持虚拟表的数据源在<a href="/docs/foundry/data-connection/overview/">数据连接</a>应用中进行设置。选择您要使用的数据源，然后在源配置中导航至<strong>虚拟表</strong>标签页。请遵循<a href="/docs/foundry/data-integration/source-type-overview/">源文档</a>以及其中列出的使用虚拟表的任何要求。</p>
+<p><img alt="virtual table registration" height="600" src="/docs/resources/foundry/data-integration/virtual_tables_registration.png" style="aspect-ratio:1595 / 1452" width="659.0909090909091" node="[object Object]"></p>
+<h3 id="user-content-create-virtual-tables" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#create-virtual-tables"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>创建虚拟表</h3>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>所有受支持的数据源都允许您在 Foundry 中从源系统注册单个表。表格型数据源还支持一次性<strong>批量注册</strong>多个虚拟表。部分数据源还支持<strong>自动注册</strong>，系统会定期将配置凭证可访问的源系统中的所有表注册到指定项目中。</p></div>
+<p>要注册虚拟表，请在数据源的<strong>虚拟表</strong>标签页中选择<strong>创建虚拟表</strong>。浏览可用表并选择要注册的表。除非您选择其他位置，否则虚拟表将创建在数据源的默认输出文件夹中。</p>
+<p><img alt="virtual table manual registration" height="600" src="/docs/resources/foundry/data-integration/virtual_tables_manual_reg.png" style="aspect-ratio:1444 / 1342" width="645.6035767511178" node="[object Object]"></p>
+<h4 id="user-content-bulk-registration"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#bulk-registration"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>批量注册</h4>
+<p>在使用 <a href="/docs/foundry/available-connectors/databricks/">Databricks 平台</a>、<a href="/docs/foundry/available-connectors/bigquery/">BigQuery</a> 和 <a href="/docs/foundry/available-connectors/snowflake/">Snowflake 平台</a>等表格型数据源时，您可以一次性<strong>批量注册</strong>多个虚拟表。首先，从左侧面板中选择一个或多个外部表。使用右侧面板可以更改新虚拟表的保存位置或更新其名称。需要注意的是，在 Foundry 中更改虚拟表的名称并不会更改源系统中的表名。</p>
+<p><img alt="virtual table bulk registration" height="600" src="/docs/resources/foundry/data-integration/virtual_tables_bulk_reg.png" style="aspect-ratio:2910 / 1278" width="1366.1971830985915" node="[object Object]"></p>
+<h4 id="user-content-auto-registration"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#auto-registration"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>自动注册</h4>
+<p>启用<strong>自动注册</strong>后，您将创建一个新的 Foundry <a href="/docs/foundry/compass/move-and-share-resources/">项目</a>，虚拟表会自动创建于其中。该项目中的文件夹层级将映射源系统的结构，并随着源系统中新表的创建而定期更新。当源表被删除时，项目中相关的虚拟表不会被自动删除，但访问它们将无法加载任何数据。</p>
+<p>要启用自动注册，您必须在 Foundry 中拥有<a href="/docs/foundry/security/projects-and-roles/#create-projects">项目创建权限</a>。</p>
+<p><img alt="Virtual table auto registration screen" height="600" src="/docs/resources/foundry/data-integration/virtual_tables_auto_reg.png" style="aspect-ratio:1444 / 1478" width="586.1975642760488" node="[object Object]"></p>
+<p>
+
+该项目由 Foundry 管理，用户无法在其中手动创建或更新资源。该项目中注册的虚拟表可导入其他项目，用于工作流开发。</p>
+<p>启用自动注册后，可针对该项目设置权限和访问控制，数据主人随后可通过访问侧边栏进行管理。</p>
+<p><img alt="Resources screenshot showing virtual table project" height="600" src="/docs/resources/foundry/data-integration/virtual_tables_project.png" style="aspect-ratio:2354 / 830" width="1701.686746987952" node="[object Object]"></p>
+<h5 id="user-content-tag-filtering-for-databricks-sources"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#tag-filtering-for-databricks-sources"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Databricks 平台数据源的标签过滤</h5>
+<p>为 Databricks 平台数据源配置自动注册时，可选择指定一组表标签进行过滤。只有在 Databricks 平台 <a href="https://docs.databricks.com/aws/en/sql/language-manual/information-schema/table_tags"><code>TABLE_TAGS</code> ↗</a> 系统表中设置了至少一个此类标签的表才会被注册。</p>
+<p><img alt="Virtual table auto registration tag filtering." height="227" src="/docs/resources/foundry/data-integration/virtual-tables-registration-table-tags.png" style="aspect-ratio:704 / 227" width="704" node="[object Object]"></p>
+<h3 id="user-content-virtual-tables-in-code-repositories" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#virtual-tables-in-code-repositories"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>代码仓库中的虚拟表</h3>
+<p>在代码仓库中使用虚拟表时，使用这些虚拟表的转换操作会根据在数据源上配置的<a href="/docs/foundry/data-connection/set-up-direct-connection/#configure-a-network-policy">出口策略</a>自动获取网络出口权限。为连接到数据源，系统必然会使用该数据源上配置的凭证。此行为与<a href="/docs/foundry/data-connection/external-transforms/">外部转换</a>类似。</p>
+<p>必须在数据源上启用以下设置：</p>
+<ol>
+<li><strong>代码导入：</strong>允许将数据源导入并在代码仓库中使用。有关此设置的更多详细信息及启用方法，请参阅<a href="/docs/foundry/data-connection/external-transforms/#prerequisite-import-a-source-into-code">此处</a>。</li>
+<li><strong>导出控制：</strong>用于控制允许在基于虚拟表的 Python 转换输入中使用哪些<a href="/docs/foundry/security/markings/">安全标记</a>和组织。有关此设置的更多详细信息及启用方法，请参阅<a href="/docs/foundry/data-connection/external-transforms/#configure-export-controls-on-the-source">此处</a>。</li>
+</ol>
+<p>配置数据源并将其导入代码仓库后，即可使用 <code>transforms.api.Input</code> 将虚拟表作为<a href="/docs/foundry/transforms-python/overview/">Python 转换</a>的输入，其使用方式与数据集完全一致。<a href="/docs/foundry/transforms-python/incremental-overview/">增量计算</a>拥有与数据集一致的 API，并受部分数据源支持。更多信息请参阅<a href="/docs/foundry/data-integration/source-type-overview/">特定数据源文档</a>。</p>
+<p>通常，虚拟表支持作为 Python、SQL 和 Java 转换的输入。仅 Python 转换支持将新建虚拟表作为转换输出，而 SQL 和 Java 转换仅支持向已有虚拟表写入数据。</p>
+<p><a href="/docs/foundry/transforms-python/tables-overview/">进一步了解如何通过 Python 转换创建新虚拟表。</a></p>
+<h2 id="user-content-viewing-virtual-table-details" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#viewing-virtual-table-details"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>查看虚拟表详情</h2>
+<p>在<a href="/docs/foundry/dataset-preview/overview/">数据集预览</a>的详情面板中，您可以查看虚拟表的关键信息。</p>
+<p>这包括：</p>
+<ul>
+<li><strong>增量：</strong>若支持此功能，您可以基于该表配置增量管道，使下游构建仅处理新增或变更的数据，无需重新处理所有行。</li>
+<li><strong>版本控制：</strong>若支持此功能，该表将提供版本控制能力，允许 Foundry 检测更新，并在数据未发生变更时跳过不必要的下游构建。</li>
+</ul>
+<p><img alt="Virtual table details." height="600" src="/docs/resources/foundry/data-integration/virtual-table-details.png" style="aspect-ratio:2330 / 1046" width="1336.5200764818355" node="[object Object]"></p>
+<h2 id="user-content-update-detection-for-virtual-table-inputs" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#update-detection-for-virtual-table-inputs"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>虚拟表输入的更新检测</h2>
+<p>更新检测功能可监控虚拟表，并检测源系统中该表的变更情况。借此，您可以将虚拟表作为依赖资源（如管道或对象）的构建触发器。</p>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>仅当您的虚拟表输入已用于创建下游资源（如下游表、数据集或对象）时，更新检测才可用。</p></div>
+<p>更新检测面向由外部管理并在 Foundry 中注册的虚拟表输入。对于<em>虚拟表输出</em>（由 Foundry 管道创建），则无需进行更新检测，因为 Foundry 会利用管道构建信息自动跟踪其更新状态。</p>
+<p>启用更新检测后，Foundry 会定期轮询源系统以检查表更新。若源表格式支持版本控制（例如 Delta 或 Iceberg），Foundry 可检测变更并仅在必要时触发下游构建。若不支持版本控制，每次轮询都会被视为潜在更新，这可能导致不必要的下游构建。</p>
+<p>您可以通过<a href="#viewing-virtual-table-details">查看虚拟表详情</a>来确认虚拟表是否支持版本控制。</p>
+<h3 id="user-content-enable-update-detection" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#enable-update-detection"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>启用更新检测</h3>
+<p>
+
+要为虚拟表输入启用更新检测，请按以下步骤操作：</p>
+<ol>
+<li>在《数据集预览》中打开虚拟表。</li>
+<li>转到左侧面板的更新检测部分。</li>
+<li>启用<strong>更新检测</strong>并设置所需的轮询计划（例如每小时或每天）。</li>
+</ol>
+<p>启用后，即可将虚拟表输入用作下游表和数据集的《计划触发器》。检测到源数据更新时，任何基于该虚拟表的对象都会自动重新索引。</p>
+<img alt="在左侧面板中启用更新检测。" src="/docs/resources/foundry/data-integration/virtual-tables-update-detection.png?width=400" style="aspect-ratio:859 / 1331" width="400" node="[object Object]">
+<h2 id="user-content-configure-objects-backed-by-virtual-tables" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#configure-objects-backed-by-virtual-tables"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>配置基于虚拟表的对象</h2>
+<p>你可以在《本体管理器》中配置直接基于虚拟表的对象。</p>
+<p>如果底层虚拟表在 Foundry 外部更新，应在虚拟表上启用《更新检测》，以确保对象能从源系统定期获取更新。</p>
+<h2 id="user-content-using-virtual-tables-vs-syncing-to-datasets" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#using-virtual-tables-vs-syncing-to-datasets"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>使用虚拟表与同步至数据集的对比</h2>
+<p>选择使用虚拟表还是同步至 Foundry 数据集，取决于你的架构目标和所要支持的目标工作流。我们建议按具体工作流逐个评估合适的集成模式。这两种方式也可以结合使用，互为补充。</p>
+<p>以下是关于使用虚拟表与将数据同步至数据集在潜在优势、缺点和局限性方面的一些考量。</p>
+<h3 id="user-content-benefits-of-using-virtual-tables" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#benefits-of-using-virtual-tables"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>使用虚拟表的优势</h3>
+<p>虚拟表具有诸多优势，包括：</p>
+<ul>
+<li>避免在 Foundry 中存储源数据，减少重复存储。需要注意的是，对于任何下游创建的资源（如 Foundry 管道输出的数据集和对象），Foundry 仍会存储其数据。</li>
+<li>可将查询下推至源系统，以限制总数据传输量。请注意，计算下推的可用性因源系统和查询类型而异。</li>
+<li>对于体量极大的表而言，虚拟表可能尤为有利，因为此时重复存储的成本会变得相当可观。</li>
+<li>使用虚拟表时，数据会在使用时直接进行查询，无需同步数据，也无需考虑数据陈旧的风险。</li>
+<li>虚拟表提供了更多选择性，有助于使 Foundry 的实施与目标架构模式保持一致。</li>
+</ul>
+<h3 id="user-content-drawbacks-of-using-virtual-tables" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#drawbacks-of-using-virtual-tables"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>使用虚拟表的缺点</h3>
+<p>虚拟表并不一定适用于所有场景。需要考量以下几点：</p>
+<ul>
+<li>与操作存储在 Foundry 数据集中的数据相比，交互性能可能会更慢。</li>
+<li>计算用量可能会增加，具体取决于在虚拟表上运行的查询类型。例如，作为计划管道输入的表，其产生的计算量可能少于在 Contour 分析中频繁进行交互式访问的表。</li>
+<li>虚拟表无法受益于 Foundry 数据集的诸多功能，例如数据集版本控制或分支管理。</li>
+</ul>
+<h3 id="user-content-limitations-of-using-virtual-tables" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#limitations-of-using-virtual-tables"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>使用虚拟表的局限性</h3>
+<p>虚拟表的局限性包括：</p>
+<ul>
+<li>并非所有数据源都支持虚拟表。</li>
+<li>虚拟表需要 Foundry worker 源和直接出口策略。</li>
+<li>通常不支持使用自助服务私有链接出口策略的连接。但是，由 Palantir 代表设置的私有链接则受支持。</li>
+<li>不支持使用智能体代理策略的连接。</li>
+<li>不支持使用存储桶端点出口策略的连接。</li>
+<li>不支持使用智能体 worker 的连接。</li>
+<li>并非所有 Foundry 应用程序和功能都支持将虚拟表作为输入。然而，在虚拟表下游创建的任何物化资源（例如管道输出的数据集和对象），在 Foundry 生态系统中依然受到全面支持。</li>
+<li>使用 <code>use_external_systems</code> 装饰器的转换目前与虚拟表不兼容。请改用基于源的 external_transforms，或者将转换拆分为多个转换：一个使用虚拟表作为输入，另一个使用 <code>use_external_systems</code> 装饰器。</li>
+</ul>
+<h2 id="user-content-compute-for-queries-on-virtual-tables" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#compute-for-queries-on-virtual-tables"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>虚拟表查询的计算资源</h2>
+<p>
+
+对于直接在虚拟表上运行的查询，计算任务可能会在 Foundry 与源系统之间进行分配。具体的执行逻辑取决于查询本身以及源系统所支持的算力下推程度。详情请参阅<a href="/docs/foundry/data-integration/source-type-overview/">特定源系统的文档</a>。</p>
+</article>
+</body>
+</html>

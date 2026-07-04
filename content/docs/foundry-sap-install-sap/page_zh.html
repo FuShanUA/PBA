@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Installation of the SAP add-on</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-installation-of-the-sap-add-on" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#installation-of-the-sap-add-on"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>安装 SAP 插件</h1>
+<p>面向 SAP 应用的 Palantir Foundry Connector 2.0（即“连接器”）由 Palantir 与 Diskover Limited ↗ 联合开发，是一款基于 ABAP 的数据抽取接口，用于将 SAP 系统中的数据集成至 Palantir Foundry。该连接器运行于 SAP ABAP 平台（前称 SAP NetWeaver Application Server）之上，通过 REST API 调用并基于 HTTPS 协议提供数据服务。</p>
+<p>该连接器可用于将数据从 SAP 直接同步至 Foundry、探索 SAP 中的数据，以及通过远程函数将数据写入 SAP。</p>
+<p><img alt="components" height="600" src="/docs/resources/foundry/sap/sap-addon-components.png" style="aspect-ratio:1444 / 720" width="1203.3333333333335" node="[object Object]"></p>
+<p>该连接器包含四个应用程序组件：</p>
+<ul>
+<li><strong>PALANTIR（必需）：</strong>Palantir 基础组件包含了 <strong>PALCONN</strong>（连接器）、<strong>PALAGENT</strong>（远程智能体）和 <strong>PALODATA</strong>（通过 OData 接入 SLT）所需的所有共享对象。</li>
+<li><strong>PALCONN：</strong>Palantir Foundry Connector 应用程序组件（PALCONN）包含了所有与连接器相关的对象和服务。该组件不适用于远程智能体，且无法安装于 SAP_BASIS（技术组件版本，适用于 SAP NetWeaver 和 SAP S/4HANA 系统）7.4 SP05 以下的版本。</li>
+<li><strong>PALAGENT（可选，适用于 SAP_BASIS 7.4 SP05 以下版本）：</strong>Palantir Foundry Remote Agent 应用程序组件（PALAGENT）包含了所有与远程智能体相关的对象和服务，用于从运行在 SAP_BASIS 7.4 SP05 以下版本的 SAP 应用程序中摄取数据。对于 SAP_BASIS 7.4 SP5 以下的系统，必须通过已安装 <strong>PALCONN</strong> 组件且运行 SAP_BASIS 7.4 SP5 及以上版本的系统进行远程访问。请查阅远程架构文档以获取更多详细信息。</li>
+<li><strong>PALODATA（可选，仅适用于 SLT 系统）：</strong>Palantir Foundry OData 应用程序组件（PALODATA）包含了通过 OData API 摄取 SLT 数据的相关对象和服务，也称为通过 OData 进行基于 ODP 的数据抽取 ↗。</li>
+</ul>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>在将其安装至生产环境之前，请先将插件安装至开发或沙箱系统，并进行全面测试。</p></div>
+<h2 id="user-content-installation-scenarios" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#installation-scenarios"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>安装场景</h2>
+<p>该连接器提供三种安装场景。</p>
+<p>对于所有场景，在继续操作前，请确保已下载相关的安装包。</p>
+<h4 id="user-content-stand-alone-installation"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#stand-alone-installation"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>独立安装</h4>
+<p>该连接器可直接安装至源 SAP 系统中。此场景支持以下对象类型：</p>
+<ul>
+<li>SAP 表和视图</li>
+<li>InfoProvider</li>
+<li>BEx 查询</li>
+<li>SAP Business Content Extractor</li>
+<li>SAP 函数 / BAPI</li>
+<li>基于 SAP ABAP 的 CDS 视图</li>
+<li>通过 SAP 函数回写（可选择使用 OAuth 2.0 进行用户归属标记）</li>
+</ul>
+<p>针对此场景，请遵循以下指南：</p>
+<ul>
+<li>安装连接器</li>
+</ul>
+<h4 id="user-content-slt-installation"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#slt-installation"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>SLT 安装</h4>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>对于连接器 2.34（SP34）及更高版本，必须安装额外的 <code>PALODATA</code> 组件才能连接至 SLT。</p></div>
+<p>在此场景中，连接器将安装至 SAP SLT Replication Server 上。</p>
+<p>此情况下仅支持 SLT 对象类型。</p>
+<p>针对此场景，请遵循以下指南：</p>
+<ul>
+<li>安装连接器</li>
+<li>配置 SAP SLT</li>
+</ul>
+<h4 id="user-content-remote-agent-installation"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#remote-agent-installation"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>远程智能体安装</h4>
+<p>源 ERP 系统可能无法满足连接器的安装要求。在此场景中，应部署一个 SAP_BASIS 版本为 7.4 SP5 及以上的 SAP ABAP 平台，作为源 SAP 系统的网关。连接器应安装在该网关服务器上，通过 RFC 连接与源 ERP 系统进行通信，并基于 HTTPS 协议向 Foundry 提供数据服务。连接器的远程智能体应安装在源 ERP 系统上，以响应来自连接器的请求。</p>
+<p>针对此场景，请遵循以下指南：</p>
+<ul>
+<li>使用主安装指南将连接器安装至网关服务器</li>
+<li>安装远程智能体</li>
+</ul>
+<p>如果源 ERP 系统的 SAP_BASIS 版本低于 7.0 SP32，请遵循以下指南：</p>
+<ul>
+<li>安装适用于 ERP 4.6C/4.7 (620/640) 的远程智能体</li>
+</ul>
+<h2 id="user-content-support-packages-and-fix-packs" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#support-packages-and-fix-packs"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>支持包与修复包</h2>
+<p>连接器的新功能与产品修复以支持包的形式交付。要应用支持包，请按照以下步骤操作：</p>
+<ul>
+<li>安装支持包</li>
+</ul>
+<p>有时，连接器的产品修复会在支持包生命周期之外交付。在这种情况下，请遵循以下说明：</p>
+<ul>
+<li>安装修复包</li>
+</ul>
+</article>
+</body>
+</html>

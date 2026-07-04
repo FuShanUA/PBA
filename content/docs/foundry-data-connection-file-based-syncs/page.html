@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>File-based syncs</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-file-based-syncs" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#file-based-syncs"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>File-based syncs</h1>
+<p>After creating a file-based sync using <a href="/docs/foundry/data-connection/source-exploration/">exploration</a>, you can update the configuration in the <strong>Configurations</strong> tab of the sync page.</p>
+<h2 id="user-content-conceptual-file-based-ingestion-modes" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#conceptual-file-based-ingestion-modes"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Conceptual file-based ingestion modes</h2>
+<p>While Foundry file-based syncs offer low-level settings for greater flexibility and configuration, most use cases will follow a known mode. The following table documents known modes and the low-level settings required to achieve the desired behavior, as well as settings that could be contradictory with those modes.</p>
+<h3 id="user-content-batch-mirror-with-snapshot-default" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#batch-mirror-with-snapshot-default"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Batch mirror with <code>SNAPSHOT</code> (default)</h3>
+<ul>
+<li><strong>Transaction type:</strong> <code>SNAPSHOT</code></li>
+<li><strong>Filters:</strong> <code>None</code></li>
+</ul>
+<p>Each run will <a href="/docs/foundry/building-pipelines/pipeline-types/#batch">ingest all files</a> nested in the external system's subdirectory, including files ingested in previous runs, and commit a <a href="/docs/foundry/data-integration/datasets/#snapshot"><code>SNAPSHOT</code></a> transaction to the output dataset containing exactly those files. The output Foundry <a href="/docs/foundry/data-integration/datasets/#dataset-views">dataset view</a> will contain a single <code>SNAPSHOT</code> transaction containing all files.</p>
+<h4 id="user-content-contradictory-settings"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#contradictory-settings"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Contradictory settings</h4>
+<ul>
+<li><strong>Filters:</strong> <code>Exclude files already synced</code>
+<ul>
+<li>Results in the <a href="#trailing-window-with-snapshot">trailing window ingestion mode</a>.</li>
+</ul>
+</li>
+<li><strong>Filters:</strong> <code>Limit number of files</code>
+<ul>
+<li>Results in the output Foundry dataset view containing only a non-deterministic subset of the desired files if the limit is lower than the total number of available files.</li>
+</ul>
+</li>
+<li><strong>Filters:</strong> <code>At least N files</code>
+<ul>
+<li>If there are not <code>N</code> nested files in the specified subfolder of the external system, this setting will yield an empty transaction and result in 0 files being ingested. Otherwise, this setting has no effect.</li>
+</ul>
+</li>
+</ul>
+<h3 id="user-content-incremental-mirror-with-append" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#incremental-mirror-with-append"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Incremental mirror with <code>APPEND</code></h3>
+<ul>
+<li><strong>Transaction type:</strong> <code>APPEND</code></li>
+<li><strong>Filters:</strong> <code>Exclude files already synced</code></li>
+</ul>
+<p>The output <a href="/docs/foundry/data-integration/datasets/#dataset-views">dataset view</a> will contain a collection of <a href="/docs/foundry/data-integration/datasets/#append"><code>APPEND</code></a> transactions, which in aggregate contain all nested files ever present during any job run from the specified subfolder. Each run will ingest <a href="/docs/foundry/building-pipelines/pipeline-types/#incremental">all files that have not yet been ingested</a>, keyed by file path name, and commit an <code>APPEND</code> transaction to the output dataset.</p>
+<h4 id="user-content-contradictory-settings-1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#contradictory-settings-1"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Contradictory settings</h4>
+<ul>
+<li><strong>Filters:</strong> <code>Exclude files already synced</code> with the <code>Last modified date</code> or <code>File size</code> option
+<ul>
+<li>These options would attempt to incorrectly re-ingest existing files, keyed by file path name, in an <code>APPEND</code> transaction when their <code>Last modified date</code> or <code>File size</code> change, respectively. To allow updates to existing files, review the <a href="#incremental-mirror-with-update">incremental with <code>UPDATE</code></a> ingestion mode.</li>
+</ul>
+</li>
+</ul>
+<h3 id="user-content-incremental-mirror-with-update" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#incremental-mirror-with-update"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Incremental mirror with <code>UPDATE</code></h3>
+<ul>
+<li><strong>Transaction type:</strong> <code>UPDATE</code></li>
+<li><strong>Filters:</strong> <code>Exclude files already synced</code></li>
+<li>One or both of:
+<ul>
+<li><strong>Filters:</strong> <code>Exclude files already synced</code> with the  <code>Last modified date</code> option</li>
+<li><strong>Filters:</strong> <code>Exclude files already synced</code> with the <code>File size</code> option</li>
+</ul>
+</li>
+</ul>
+<p>The output <a href="/docs/foundry/data-integration/datasets/#dataset-views">dataset view</a> will contain a collection of <a href="/docs/foundry/data-integration/datasets/#update"><code>UPDATE</code></a> transactions, which in aggregate contain the latest version of all nested files ever present during any job run from the specified subfolder. Each run will ingest all files that have not yet been ingested <em>or</em> have since changed, keyed by file path name, and commit an <code>UPDATE</code> transaction to the output dataset.</p>
+<h4 id="user-content-caveat"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#caveat"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Caveat</h4>
+<p>Only use this mode if modifications to existing files are a non-negotiable behavior of the external system. While ingestion is incremental in the sense that only files that are new or changed are ingested in a given run, downstream pipelines cannot run incrementally, as the output dataset (input to the downstream pipelines) is not <a href="/docs/foundry/transforms-python/incremental-usage/#append-only-input-changes">append-only</a>.</p>
+<h3 id="user-content-trailing-window-with-snapshot" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#trailing-window-with-snapshot"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Trailing window with <code>SNAPSHOT</code></h3>
+<ul>
+<li><strong>Transaction type:</strong> <code>SNAPSHOT</code></li>
+<li><strong>Filters:</strong> <code>Exclude files already synced</code></li>
+</ul>
+<p>The output <a href="/docs/foundry/data-integration/datasets/#dataset-views">dataset view</a> will contain a single <a href="/docs/foundry/data-integration/datasets/#snapshot"><code>SNAPSHOT</code></a> transaction containing only files <strong>that were never present in any previous job run</strong>. Each run will ingest all files that have not yet been ingested, keyed by file path name, and commit a <code>SNAPSHOT</code> transaction to the output dataset, containing exactly those files.</p>
+<p>This mode is useful when only "recent" files (files that were created in the external system between the second-to-last and last run) are relevant to downstream pipelines and operations. Files ingested in previous runs will not be visible in the output dataset view.</p>
+<h4 id="user-content-contradictory-settings-2"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#contradictory-settings-2"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Contradictory settings</h4>
+<ul>
+<li><strong>Filters:</strong> <code>Limit number of files</code>
+<ul>
+<li>When the number of files created in the external system during a given window exceeds the specified limit, a non-deterministic subset of those files will be ingested, and the remainder will be deferred to a subsequent window. This number may grow rapidly over time, destroying the "recency" intended in the output dataset.</li>
+</ul>
+</li>
+</ul>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>It is always safe to specify the subfolder and optional regex, in addition to filters that limit the file types desired in the output. Such filters include <code>Last modified after</code> to exclude outdated files or <code>Path does not match</code> to exclude files with a certain file extension, such as <code>.sh</code> executable files. <br><br>
+Only the <code>Exclude files already synced</code>, <code>At least N files</code>, and <code>Limit number of files</code> filters are tightly coupled to the desired sync mode and might interfere with it.</p></div>
+<h2 id="user-content-sync-failure-behavior" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#sync-failure-behavior"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Sync failure behavior</h2>
+<p>As with all <a href="/docs/foundry/data-connection/core-concepts/#batch-syncs">batch syncs</a>, file-based syncs are transactional. If a sync fails at any point, the transaction is aborted and none of the files from that run are committed to the dataset.</p>
+<p>For example, if a sync is configured to upload one million files and a network error occurs after uploading all but one file, the entire transaction is aborted. None of the uploaded files are committed and the dataset view is not modified.</p>
+<p>Because of this behavior, syncs that process a large number of files in a single run are more vulnerable to transient failures. To reduce the impact of sync failures, consider using <a href="#optimize-file-based-syncs">incremental <code>APPEND</code> syncs</a> with a file limit filter so that each run processes a smaller batch of files. This way, a failure only requires re-syncing the current batch rather than all files.</p>
+<h2 id="user-content-configure-file-based-syncs" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#configure-file-based-syncs"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Configure file-based syncs</h2>
+<p>Configuration options for file-based syncs include the following:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>Parameter</th><th>Required?</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>Subfolder</code></td><td>Yes</td><td></td><td>Specify the location of files within the connector that will be synced into Foundry.</td></tr><tr><td><code>Filters</code></td><td>No</td><td></td><td><a href="#filters">Apply filters</a> to limit the files synced into Foundry.</td></tr><tr><td><code>Transformers</code></td><td>No</td><td></td><td><a href="#transformers">Apply transformers</a> to data before it is synced into Foundry.</td></tr><tr><td>🟡 <code>Completion strategies [Legacy]</code></td><td>No</td><td></td><td><a href="#completion-strategies">Enable to delete files</a> and/or empty parent directories after a successful sync. Requires write permission on the source filesystem. Completion strategies are read-only and cannot be configured on new syncs.</td></tr></tbody></table></div>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>Syncs will include all nested files and folders from the specified subfolder.</p></div>
+<h3 id="user-content-filters" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#filters"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Filters</h3>
+<p>Filters allow you to filter source files before they are imported into Foundry. The supported filter types are:</p>
+<ul>
+<li><strong>Exclude files already synced:</strong> Only sync files that were added or modified in size or date since the last sync.</li>
+</ul>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p><code>Exclude files already synced</code> has known scale limitations, as it requires scanning all files on every sync run. For syncs ingesting a large number of files, we recommend splitting the sync into a <code>SNAPSHOT</code> sync for historical data and an <code>INCREMENTAL</code> sync with <code>Exclude files already synced</code>, so that the filter is only applied to a smaller subset of recent files.</p></div>
+<ul>
+<li><strong>Path matches:</strong> Only sync files with a path (relative to the root of the connector) that matches the regular expression.</li>
+<li><strong>Path does not match:</strong> Only sync files with a path (relative to the root of the connector) that does not match the regular expression.</li>
+<li><strong>Last modified after:</strong> Only sync files that have been modified after a specified date and time.</li>
+<li><strong>File size is between:</strong> Only sync files with a size between the specified minimum and maximum byte value.</li>
+<li><strong>Any file has path matching:</strong> If any file has a relative path matching the regular expression, sync all files in the subfolder that are not otherwise filtered.</li>
+<li><strong>At least N files:</strong> Sync all filtered files only if there are at least N files remaining.</li>
+<li><strong>Limit number of files:</strong> Limit the number of files to keep per transaction. This option can increase the reliability of incremental syncs.</li>
+</ul>
+<h3 id="user-content-transformers" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#transformers"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Transformers</h3>
+<p>Transformers allow you to perform basic file transformations (compression or decryption, for example) before uploading to Foundry. During a sync, the files chosen for ingest will be modified per the chosen transformer.</p>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>Rather than using Data Connection transformers, we recommend performing data transformations in Foundry with <a href="/docs/foundry/pipeline-builder/overview/">Pipeline Builder</a> and <a href="/docs/foundry/code-repositories/overview/">Code Repositories</a> to benefit from provenance and branching.</p></div>
+<p>The following transformers are supported in Data Connection:</p>
+<ul>
+<li>Compress with Gzip</li>
+<li>Concatenate multiple files
+<ul>
+<li>Join multiple files into a single file.</li>
+</ul>
+</li>
+<li>Rename files
+<ul>
+<li>Replace all occurrences of a given filename substring with a new substring.</li>
+<li>Drop the directory path from the filename by replacing <code>^(.*/)</code> with <code>/</code>.</li>
+</ul>
+</li>
+<li>Decrypt with PGP
+<ul>
+<li>Decrypt files that have been encrypted with PGP encryption.</li>
+<li>Requires that the agent system has PGP keys configured.</li>
+<li>Unavailable for syncs running on a Foundry worker.</li>
+</ul>
+</li>
+<li>Append timestamp to filenames
+<ul>
+<li>Add a timestamp in a custom format to the filename of each file ingested.</li>
+</ul>
+</li>
+</ul>
+<h3 id="user-content-completion-strategies" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#completion-strategies"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Completion strategies</h3>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>Completion strategies are in the <a href="/docs/foundry/platform-overview/development-life-cycle/">legacy</a> phase of development, and no additional development is expected. Completion strategies are read-only on existing syncs and cannot be configured on new syncs. We recommend using a downstream <a href="/docs/foundry/data-connection/external-transforms/">external transform</a> as an alternative.</p></div>
+<p>Completion strategies are a mechanism to attempt deleting files and empty parent directories after a successful batch sync of those files into a Foundry dataset. Completion strategies are read-only and cannot be configured on new syncs. Existing syncs with completion strategies will continue to function, but the configuration cannot be modified.</p>
+<p>This workflow may be useful when data is synced from an intermediate staging area, such as a file storage system, rather than directly from the external system of record. This workflow is not recommended. Foundry should be connected directly to the external system of record. In cases where Foundry is the system of record, data should be pushed directly to Foundry rather than an intermediate staging area.</p>
+<h4 id="user-content-limitations-of-completion-strategies-and-alternatives"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#limitations-of-completion-strategies-and-alternatives"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Limitations of completion strategies and alternatives</h4>
+<p>Completion strategies are subject to several important limitations and caveats. These limitations and potential mitigations or alternatives are described below.</p>
+<h5 id="user-content-completion-strategy-support"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#completion-strategy-support"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Completion strategy support</h5>
+<p>Completion strategies are in the <a href="/docs/foundry/platform-overview/development-life-cycle/">legacy</a> phase of development, and no additional development is expected. Completion strategies are read-only on existing syncs and cannot be configured on new syncs. Completion strategies were only available for sources using an <a href="/docs/foundry/data-connection/core-concepts/#agent-worker">agent worker</a>. We recommend implementing the functionality provided by completion strategies as a downstream transform instead.</p>
+<p>As an example, assume you have a <a href="/docs/foundry/data-connection/architecture/#foundry-worker-with-direct-connection-policies">direct connection</a> to an S3 bucket containing the files <code>foo.txt</code> and <code>bar.txt</code>. You want to use a file batch sync to copy them to a dataset, and then delete the files from S3. Instead of using completion strategies, you should do the following:</p>
+<ul>
+<li>Configure a batch sync without any completion strategies and schedule it to run.</li>
+<li>Write a downstream <a href="/docs/foundry/data-connection/external-transforms/">external transform</a> job which is scheduled to run when the sync output dataset is updated, taking the synced data as an input.</li>
+<li>In that external transform, write Python transforms code to iterate through the files that have appeared in the synced dataset, and make calls to S3 to delete those files from the bucket.</li>
+</ul>
+<p>Note that this approach is retryable if any deletion calls fail, and guarantees that data is successfully committed to Foundry before attempting to perform any deletions. This approach is also compatible with incremental file batch syncs.</p>
+<h5 id="user-content-completion-strategies-are-best-effort"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#completion-strategies-are-best-effort"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Completion strategies are best effort</h5>
+<p>For existing syncs using completion strategies, note that completion strategies are best effort. This means that they do not guarantee that data will be effectively removed. The following are some situations that may cause completion strategies to fail:</p>
+<ol>
+<li>Completion strategies will not be retried if the agent worker crashes or is restarted after the batch sync commits data to Foundry, but before the completion strategies run.</li>
+<li>If the credentials used to connect do not have write permissions, the batch sync may successfully read data and commit to Foundry, but fail to perform the deletions specified by the completion strategy.</li>
+</ol>
+<p>In general, we recommend using an alternative to completion strategies wherever possible. Custom completion strategies are no longer supported.</p>
+<p>For directory sources specifically, if you require guaranteed file deletion after ingestion, consider using an <a href="/docs/foundry/available-connectors/directory/#example-delete-files-from-an-agent-host-via-ssh">external transform to delete files via SSH</a> instead.</p>
+<h2 id="user-content-optimize-file-based-syncs" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#optimize-file-based-syncs"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Optimize file-based syncs</h2>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><div class="ptcom-design__title__19o1cwu">Warning</div><p>This guide is recommended for users setting up a new sync or troubleshooting a slow or unreliable sync. If your sync is already working reliably, you do not need to take any action.</p></div>
+<p>Syncing a large number of files into a single dataset can be slow and vulnerable to transient failures. As described in <a href="#sync-failure-behavior">sync failure behavior</a>, a failure at any point aborts the entire transaction, which means larger syncs risk more lost work.</p>
+<p>If the dataset grows over time, the time to sync the data as a <code>SNAPSHOT</code> increases because <code>SNAPSHOT</code> transactions sync all data into Foundry. Instead, use syncs configured with transaction type <code>APPEND</code> to import your data incrementally. Since you will be syncing smaller, discrete chunks of data, you will create an effective checkpoint; a sync failure will result in a minimal amount of duplicated work rather than requiring a complete re-run. Additionally, your dataset syncs will run faster as you no longer need to upload all of your data for every sync.</p>
+<h3 id="user-content-configure-incremental-append-syncs" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#configure-incremental-append-syncs"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Configure incremental <code>APPEND</code> syncs</h3>
+<p><code>APPEND</code> transactions require additional configuration to run successfully.</p>
+<p>By default, files synced into Foundry are not filtered. However,<code>APPEND</code> syncs require filters to prevent the same files from being imported. We recommend using the <code>Exclude files already synced</code> and  <code>Limit number of files</code> filters to control how many files get imported into Foundry in a single sync. Finally, <a href="/docs/foundry/building-pipelines/create-schedule/">schedule your sync</a> to remain up to date with your source system.</p>
+</article>
+</body>
+</html>

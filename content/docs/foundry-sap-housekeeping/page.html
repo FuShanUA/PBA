@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Set up and configure housekeeping jobs</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-set-up-and-configure-housekeeping-jobs" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#set-up-and-configure-housekeeping-jobs"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Set up and configure housekeeping jobs</h1>
+<p>Housekeeping jobs are used to delete log table data that was created before a specified point in time and to close unconfirmed requests and drop subscriptions that are not in use for a certain period of time.</p>
+<p>To open the housekeeping settings, use transaction code <code>/n/PALANTIR/COCKPIT_03</code>.</p>
+<h2 id="user-content-deleting-log-tables" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#deleting-log-tables"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Deleting Log Tables</h2>
+<p>The <strong>Deleting Log Tables</strong> checkbox should be left checked by default to prevent log tables from growing indefinitely and potentially filling all available disk space.</p>
+<p>When enabled, the program will delete records from tables <code>/PALANTIR/LOG_02</code> and <code>/PALANTIR/PAG_02</code>. The program also deletes records from the <code>/PALANTIR/LOG_01</code> table but does not delete initialization requests in this table. For more, see <a href="#deleting-log_01-table-with-init-requests">Deleting LOG_01 Table with INIT Requests</a> below.</p>
+<ul>
+<li><strong>Logs created older than (days)</strong> and <strong>Data interval (days):</strong> These settings should be used together to define a rolling time window for deleting log records. The default settings are 30 days and 10 days, respectively, meaning that when the job runs, any records between 30 days and 40 (= 30 + 10) days old will be deleted.</li>
+<li><strong>Only if Data is in Foundry:</strong> This indicates that only page files that are confirmed to have been transferred to Foundry will be deleted.</li>
+</ul>
+<h2 id="user-content-closing-slt-request-for-cancelled-slt-syncs" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#closing-slt-request-for-cancelled-slt-syncs"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Closing SLT Request for Cancelled SLT Syncs</h2>
+<p>The <strong>Close SLT Requests</strong> checkbox should be unchecked by default. Palantir Support may ask for it to be checked to address a known SLT issue that can cause the system to hang due to too many requests in the ODQDATA table.</p>
+<p>When enabled, the program finds the SLT subscription requests that were created in the given date range and uses SLT close functionality to change the <code>ODQMON</code> status of the request to <code>Completed</code>. When a request is set to <code>Completed</code> in <code>ODQMON</code>, it can be deleted by the delta queue cleaning job of <code>ODQMON</code>.</p>
+<ul>
+<li><strong>Date range for SLT requests:</strong> SLT delta requests created in this date interval will be set to <code>Completed</code> in <code>ODQMON</code>.</li>
+</ul>
+<h2 id="user-content-resetting-slt-pointer-for-unused-subscription" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#resetting-slt-pointer-for-unused-subscription"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Resetting SLT Pointer for Unused Subscription</h2>
+<p>The <strong>Drop SLT Subscriptions</strong> checkbox should be unchecked by default. Palantir Support may ask for it to be checked to address a known SLT issue that can cause the system to hang due to too many requests in the ODQDATA table.</p>
+<p>When enabled, the program will drop historical <code>ODQMON</code> subscriptions.</p>
+<ul>
+<li><strong>Last request older than (days):</strong> Indicates that subscriptions older than this number of days will be dropped.</li>
+</ul>
+<h2 id="user-content-deleting-log_01-table-with-init-requests" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#deleting-log_01-table-with-init-requests"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Deleting LOG_01 Table with INIT Requests</h2>
+<p>The <strong>Delete LOG_01 INIT Requests</strong> checkbox should be unchecked by default. Palantir Support may ask for it to be checked to address rare cases when the <code>/PALANTIR/LOG_01</code> table grows too large.</p>
+<p>When enabled, this program deletes the <code>/PALANTIR/LOG_01</code> table data, including initialization requests.</p>
+<ul>
+<li><strong>Logs created older than (days):</strong> Indicates that records older than this number of days will be deleted. The default value is 30 days, which means that all data created more than 30 days ago will be deleted from <code>/PALANTIR/LOG_01</code>.</li>
+</ul>
+</article>
+</body>
+</html>

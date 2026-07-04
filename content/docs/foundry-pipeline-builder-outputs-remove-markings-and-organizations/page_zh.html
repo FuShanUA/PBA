@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Remove markings and organizations from outputs</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-remove-markings-and-organizations-from-outputs" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#remove-markings-and-organizations-from-outputs"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>从输出中移除标记和组织</h1>
+<p>平台资源的访问权限由标记和组织控制。标记采用全有或全无的方式限制访问：用户必须拥有应用于资源的所有标记的成员身份才能进行访问。此外，标记会通过文件层级和直接依赖关系继承。另一方面，对于组织，用户必须是应用于项目的至少一个组织的成员或访客成员，才能满足访问要求。组织通过文件层级和直接依赖关系继承。</p>
+<p>如果你对特定标记拥有 <code>Remove marking</code> 权限，现在可以在 Pipeline Builder 中从输出移除该继承的标记。这等同于代码仓库中的 <a href="/docs/foundry/building-pipelines/remove-inherited-markings/"><code>stop_propagation</code></a> 参数。</p>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>在输出上移除标记等同于停止从输入传播标记。</p></div>
+<h2 id="user-content-prerequisites" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#prerequisites"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>前提条件</h2>
+<p>在使用 Pipeline Builder 移除标记或组织之前，必须完成以下步骤。</p>
+<h3 id="user-content-enable-branch-protection" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#enable-branch-protection"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>启用分支保护</h3>
+<ol>
+<li>在 Pipeline Builder 中，选择 <strong>Settings</strong>，然后选择 <strong>Manage branches</strong>。</li>
+</ol>
+<p><img alt="The Settings and Manage branches options in Pipeline Builder." height="261" src="/docs/resources/foundry/pipeline-builder/markings-settings.png" style="aspect-ratio:562 / 261" width="562" node="[object Object]"></p>
+<ol start="2">
+<li>选择 <strong>Branch protection</strong> 选项卡。</li>
+</ol>
+<p><img alt="The Manage branches branch protection pop-up menu in Pipeline Builder." height="600" src="/docs/resources/foundry/pipeline-builder/markings-manage-branch.png" style="aspect-ratio:958 / 645" width="891.1627906976744" node="[object Object]"></p>
+<h3 id="user-content-require-code-approvals" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#require-code-approvals"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>要求代码审批</h3>
+<ol>
+<li>在 <strong>Branch protection</strong> 选项卡中，勾选 <strong>Require proposals to update protected branches</strong> 和 <strong>Require approval before merging</strong> 复选框。</li>
+<li>指定所需的审批策略。下方展示了一个审批策略示例。</li>
+</ol>
+<p><img alt="An example approval policy in Pipeline Builder." height="525" src="/docs/resources/foundry/pipeline-builder/markings-example-code-approval.png" style="aspect-ratio:778 / 525" width="778" node="[object Object]"></p>
+<h3 id="user-content-enable-changes-to-security-markings-in-pipeline-settings" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#enable-changes-to-security-markings-in-pipeline-settings"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>在管道设置中启用对安全标记的更改</h3>
+<p>导航至 <strong>Security approvals</strong> 选项卡，勾选 <strong>Allow changes to security markings in this pipeline</strong> 旁边的复选框。你必须拥有该管道的 <code>Owner</code> 角色才能完成此步骤。</p>
+<p><img alt="Security approvals tab in Pipeline Builder." height="600" src="/docs/resources/foundry/pipeline-builder/markings-security-approvals.png" style="aspect-ratio:952 / 652" width="876.0736196319018" node="[object Object]"></p>
+<p>一旦你启用了 <strong>Allow changes to security markings in this pipeline</strong>，便无法禁用分支保护或移除代码审批要求。你必须禁用 <strong>Allow changes to security markings in this pipeline</strong> 才能禁用这些功能。</p>
+<p>一旦你在受保护分支中移除了标记，便无法从 <strong>Security approvals</strong> 选项卡禁用 <strong>Allow changes to security markings in this pipeline</strong>。你必须先撤销对该标记的移除操作，才能禁用此设置。</p>
+<h2 id="user-content-remove-markings-or-organizations" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#remove-markings-or-organizations"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>移除标记或组织</h2>
+<ol>
+<li>
+<p>从受保护分支<a href="/docs/foundry/pipeline-builder/branches-create-a-branch/">创建分支</a>。</p>
+</li>
+<li>
+<p>导航至屏幕右侧的 <strong>Pipeline outputs</strong>，将鼠标悬停在要移除标记的输出上。然后，选择 <strong>Edit</strong>。</p>
+</li>
+</ol>
+<p><img alt="The Pipeline outputs tab in Pipeline Builder." height="350" src="/docs/resources/foundry/pipeline-builder/markings-pipeline-output.png" style="aspect-ratio:537 / 350" width="537" node="[object Object]"></p>
+<ol start="3">
+<li>选择输出数据集下的 <strong>Configure markings</strong> 下拉菜单。</li>
+</ol>
+<p><img alt="Configure markings dropdown on Pipeline Builder output." height="533" src="/docs/resources/foundry/pipeline-builder/markings-configure-markings-option.png" style="aspect-ratio:866 / 533" width="866" node="[object Object]"></p>
+<ol start="4">
+<li>移除标记：在弹出菜单的 <strong>Markings</strong> 选项卡下，选择要移除的标记旁边的红色移除图标。</li>
+</ol>
+<p><img alt="A pop-up dialog for removing markings on an output in Pipeline Builder." height="600" src="/docs/resources/foundry/pipeline-builder/markings-inherited-markings.png" style="aspect-ratio:1622 / 1384" width="703.179190751445" node="[object Object]"></p>
+<p>移除的标记现在将显示在对话框的 <strong>Markings removed</strong> 部分下。</p>
+<p><img alt="The removed markings in the &quot;Markings removed&quot; section in the pop-up dialog." height="600" src="/docs/resources/foundry/pipeline-builder/markings-removed.png" style="aspect-ratio:1588 / 922" width="1033.405639913232" node="[object Object]"></p>
+<ol start="5">
+<li>要移除组织，请选择 <strong>Organizations</strong> 选项卡。要彻底移除组织标记，必须移除包含所需目标组织的所有输入。如果要移除所有输入中的所有组织，请选择 <strong>Remove all inputs</strong>。</li>
+</ol>
+
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>输出会继承其所在项目的组织。若需移除当前项目上已有的组织，请将输出移动至单独的项目中。</p></div>
+<p><img alt="取消标记工作流中的组织取消标记选项卡。" height="600" src="/docs/resources/foundry/pipeline-builder/markings-organizations.png" style="aspect-ratio:1900 / 1342" width="849.478390461997" node="[object Object]"></p>
+<ol start="6">
+<li>选择 <strong>Apply</strong>。此时，在输出看板的左上角会出现一个带有负数的盾牌图标，表示你要移除的标记和组织数量。</li>
+</ol>
+<p><img alt="管道构建器中输出上的“移除标记”图标。" height="600" src="/docs/resources/foundry/pipeline-builder/markings-removed-pop-up.png" style="aspect-ratio:1944 / 912" width="1278.9473684210527" node="[object Object]"></p>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>对输出上的标记和组织所作的更改，在分支成功合并并部署至受保护分支前不会生效。如果你尝试在当前分支上构建数据集，它仍会显示原有的标记。</p></div>
+<p>组织移除操作仅影响移除时输入中已存在的组织。如果与该输入关联的组织自上次移除后发生了变化，系统将显示一个警告图标，提示该输入的组织自上次移除操作以来已被修改。</p>
+<p><img alt="提示该输入的组织自上次移除操作以来已被修改的警告图标。" height="600" src="/docs/resources/foundry/pipeline-builder/markings-organization-warnings.png" style="aspect-ratio:1472 / 1096" width="805.8394160583941" node="[object Object]"></p>
+<h3 id="user-content-propose-your-changes" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#propose-your-changes"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>提交更改</h3>
+<ol>
+<li>为使管道输出上的标记和组织更改生效，请<a href="/docs/foundry/pipeline-builder/branches-propose-a-change/">创建一个提案</a>，将更改合并至受保护分支。该提案将包含一个用于批准移除标记的区块，其功能类似于<a href="/docs/foundry/pipeline-builder/branches-approve-a-change/">管道代码审批</a>。</li>
+</ol>
+<p>你必须拥有 <code>Remove marking</code> 权限才能批准更改。移除标记提案的审批者无需是管道数据主人，仅需对该提案具有 <code>View</code> 访问权限。</p>
+<p><img alt="从管道输出中移除标记的提案。" height="600" src="/docs/resources/foundry/pipeline-builder/markings-approval-page-pull-request.png" style="aspect-ratio:860 / 668" width="772.4550898203593" node="[object Object]"></p>
+<p>每个被移除的标记或组织都需要单独审查，这意味着一个提案中可能包含多项审查。当你批准移除某个标记时，你的批准将适用于你有权审查的所有标记。</p>
+<p>一旦获得所有必要的批准，提案即可合并。部署该版本后，标记移除操作即会生效。</p>
+<h3 id="user-content-undo-a-marking-or-organization-removal-from-a-pipeline-output" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#undo-a-marking-or-organization-removal-from-a-pipeline-output"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>撤销从管道输出中移除标记或组织</h3>
+<ol>
+<li>
+<p>要撤销移除标记，请导航至屏幕右侧的 <strong>Pipeline outputs</strong>，将鼠标悬停在已移除标记的输出上。</p>
+</li>
+<li>
+<p>选择 <strong>Edit</strong>。</p>
+</li>
+</ol>
+<p><img alt="管道构建器中的“管道输出”选项卡。" height="350" src="/docs/resources/foundry/pipeline-builder/markings-pipeline-output.png" style="aspect-ratio:537 / 350" width="537" node="[object Object]"></p>
+<ol start="3">
+<li>选择输出数据集下方的 <strong>Configure markings</strong> 下拉菜单。</li>
+</ol>
+<p><img alt="管道构建器输出上的“配置标记”下拉菜单。" height="533" src="/docs/resources/foundry/pipeline-builder/markings-configure-markings-option.png" style="aspect-ratio:866 / 533" width="866" node="[object Object]"></p>
+<ol start="4">
+<li>对于标记：在弹出的对话框中，选择 <strong>Markings not propagated</strong> 旁边的撤销图标。</li>
+</ol>
+<p><img alt="标记移除弹出对话框，其中包含撤销停止传播标记的选项。" height="572" src="/docs/resources/foundry/pipeline-builder/markings-undo-remove-marking.png" style="aspect-ratio:880 / 572" width="880" node="[object Object]"></p>
+<ol start="5">
+<li>对于组织，在与该组织关联的输入旁边选择撤销图标。</li>
+</ol>
+<p><img alt="标记移除弹出对话框，其中包含撤销停止传播组织的选项。" height="438" src="/docs/resources/foundry/pipeline-builder/markings-organization-undo.png" style="aspect-ratio:503 / 438" width="503" node="[object Object]"></p>
+<ol start="6">
+<li>选择 <strong>Apply</strong>，然后从屏幕右上角保存你的管道。</li>
+</ol>
+<p><img alt="屏幕右上角的管道“保存”选项。" height="55" src="/docs/resources/foundry/pipeline-builder/markings-save-pipeline.png" style="aspect-ratio:545 / 55" width="545" node="[object Object]"></p>
+<ol start="7">
+<li>
+<p><a href="/docs/foundry/pipeline-builder/branches-propose-a-change/">提交你的更改</a>以开始<a href="/docs/foundry/pipeline-builder/branches-approve-a-change/">审批检查</a>。</p>
+</li>
+<li>
+<p>一旦获批，即可<a href="/docs/foundry/pipeline-builder/outputs-deliver-pipeline/">部署</a>你的管道。</p>
+</li>
+</ol>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>撤销移除标记无需提升权限，这与移除标记所需的权限不同。</p></div>
+<h3 id="user-content-markings-and-job-groups" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#markings-and-job-groups"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>标记与作业组</h3>
+<p>在作业组中，所有输入的标记将被同一作业组内的所有输出继承。要查看示例并详细了解作业组，请查阅我们的<a href="/docs/foundry/pipeline-builder/management-job-groups/">文档</a>。</p>
+<h3 id="user-content-markings-and-multiple-protected-branches" level="3" node="[object Object]" data-pagefind-weight="0.8">
+
+<a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#markings-and-multiple-protected-branches"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>标记与多个受保护分支</h3>
+<p>若任一分支上存在移除标记的操作，在保护或取消保护分支之前，必须停止移除流水线中所有分支的标记。多个分支受保护时，移除标记的操作将作用于所有受保护分支。</p>
+<p>启用安全审批设置后，将无法更改分支保护设置，包括保护或取消保护分支。</p>
+</article>
+</body>
+</html>

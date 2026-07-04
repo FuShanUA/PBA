@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Spark concepts</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-spark-concepts" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#spark-concepts"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></a>Spark 概念</h1>
+<h2 id="user-content-introduction-to-spark" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#introduction-to-spark"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Spark 简介</h2>
+<p><strong>什么是 Spark？</strong></p>
+<p>Spark 是一个分布式计算系统，在 Foundry 中用于大规模运行数据转换。它最初由加州大学伯克利分校的一组研究人员开发，并于 2000 年代后期捐赠给 Apache 基金会。Foundry 允许你使用 Spark 作为基础计算层，对海量数据运行 SQL、Python、Java 和 Mesa 转换（Mesa 是一种基于 Java 的专有 DSL）。</p>
+<p><strong>Spark 的工作原理是什么？</strong></p>
+<p>Spark 依靠将作业同时分发到多台计算机上来处理数据。这一过程允许通过名为 MapReduce 的方法，在用户和项目之间快速并发运行作业。这些计算机被划分为驱动器和执行器。</p>
+<ul>
+<li><strong>驱动器</strong>就像是 Spark 作业的“指挥”。驱动器负责将作业的工作分配给执行器。</li>
+<li><strong>执行器</strong>就像是 Spark 作业的“工蜂”。执行器负责执行由驱动器分配给它的那部分作业的计算工作。这项工作被拆分为多个“分区”，每个执行器会分到一些分区来运行你的代码。执行器完成当前任务后，会返回向驱动器请求更多工作，直到整个作业完成。</li>
+<li>每个 Spark 作业都关联着多个变量，通过调整这些变量，可以创建最适合运行该转换的 Spark 配置。
+<ul>
+<li>在每个 Spark 作业中，都需要在快速轻松地执行作业与运行该作业所耗费的成本和资源之间取得平衡。</li>
+<li>根据经验法则，增加执行器数量和内存容量应能缩短运行时间，但也会推高成本。</li>
+<li>根据作业的特性，驱动器和执行器的某些组合与配置会比其他方案表现更好。这将在<a href="#tuning-spark-profiles">调优 Spark 配置</a>一节中详细讨论。</li>
+<li>Spark 配置是 Foundry 将用来配置上述分布式计算资源（驱动器和执行器）并为其分配适量 CPU 核心和内存的设定。</li>
+</ul>
+</li>
+<li>每个 Spark 作业都关联着五个可配置变量：
+<ul>
+<li><strong>驱动器核心数：</strong>控制分配给 Spark 驱动器的 CPU 核心数量。</li>
+<li><strong>驱动器内存：</strong>控制分配给 Spark 驱动器的内存容量。
+<ul>
+<li>这里仅控制 JVM 内存。它不包含外部非 Spark 任务（例如调用 Python 库）所需的“堆外”内存。</li>
+</ul>
+</li>
+<li><strong>执行器核心数：</strong>控制分配给每个 Spark 执行器的 CPU 核心数量，进而控制每个执行器中并发运行的任务数量。</li>
+<li><strong>执行器内存：</strong>控制分配给每个 Spark 执行器的内存容量。
+<ul>
+<li>该内存在执行器上运行的所有任务之间共享。</li>
+</ul>
+</li>
+<li><strong>执行器数量：</strong>控制请求运行该作业的执行器数量。</li>
+</ul>
+</li>
+<li>所有内置 Spark 配置的列表可在《<a href="/docs/foundry/optimizing-pipelines/spark-profiles-reference/">Spark 配置参考</a>》中查看。</li>
+</ul>
+<p><img alt="spark-job-breakdown" height="600" src="/docs/resources/foundry/optimizing-pipelines/spark-job-breakdown.png" style="aspect-ratio:1648 / 868" width="1139.1705069124423" node="[object Object]"></p>
+<h2 id="user-content-tuning-spark-profiles" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#tuning-spark-profiles"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>调优 Spark 配置</h2>
+<ul>
+<li>在运行转换时，你可能会遇到一些问题，需要通过调整 Spark 配置来创建一个非默认的自定义配置，以满足特定作业的需求。例如：
+<ul>
+<li>作业可能需要更多内存。</li>
+<li>作业运行速度可能慢于实际用例的需求。</li>
+<li>可能会遇到导致作业彻底失败的错误。</li>
+</ul>
+</li>
+<li>要在代码仓库中使用非默认的 Spark 配置，必须先将该配置导入包含转换脚本的仓库中。此过程在《<a href="/docs/foundry/code-repositories/spark-profiles/">Spark 配置使用</a>》文档中有所说明。
+<ul>
+<li>导入后，可按照《<a href="/docs/foundry/optimizing-pipelines/apply-spark-profiles/">应用转换配置</a>》文档中的指南，将 Spark 配置分配给特定的转换。</li>
+</ul>
+</li>
+<li>管道构建器批处理管道中使用的 Spark 配置是通过管道的<a href="/docs/foundry/pipeline-builder/management-build-settings/#batch-compute-profiles">构建设置</a>来控制的。</li>
+</ul>
+<h3 id="user-content-when-to-modify-your-spark-profile-from-the-default" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#when-to-modify-your-spark-profile-from-the-default"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>何时从默认设置修改 Spark 配置</h3>
+<ul>
+
+<li>编辑 Spark 配置文件时，经验法则是每次只调整一个变量，且每次只上调一个级别。
+<ul>
+<li>例如，起初只调整执行器内存，将其从 <code>EXECUTOR_MEMORY_SMALL</code> 提升至 <code>EXECUTOR_MEMORY_MEDIUM</code>，然后重新运行作业，再考虑调整其他参数。这有助于避免因过度分配资源而导致作业产生不必要的成本。</li>
+</ul>
+</li>
+<li>虽然后端默认配置并不总是直接对应特定的 Spark 配置文件，但通常可以通过标记为 <code>SMALL</code> 的内置配置文件来近似表示。
+<ul>
+<li>（针对非 Python 转换的）合理默认配置为 <code>EXECUTOR_CORES_SMALL</code>、<code>EXECUTOR_MEMORY_SMALL</code>、<code>DRIVER_CORES_SMALL</code>、<code>DRIVER_MEMORY_SMALL</code>、<code>NUM_EXECUTORS_2</code>。</li>
+<li>当 Python 调用在 JVM 外部运行的 Python 库时，可能需要更多非 JVM 开销内存。</li>
+</ul>
+</li>
+<li>如果 Spark 作业出现问题，第一步是优化代码。
+<ul>
+<li>如果已尽可能优化代码但问题依然存在，请继续阅读以获取具体建议。</li>
+</ul>
+</li>
+<li>如果作业执行成功，但运行速度无法满足您的用例需求：
+<ul>
+<li>尝试增加执行器数量；增加执行器数量可以提高并行运行的任务数，从而提升性能（前提是作业本身具备足够的并行度），但同时也会因占用更多资源而增加成本。
+<ul>
+<li>您可以在 Builds 应用页面的特定构建中查看相关图表，以判断增加执行器数量是否有助于提升作业速度。如果任务并发度远低于执行器数量，增加执行器数量很可能无法缩短运行时间。</li>
+<li><img alt="builds-app-task-concurrency-chart.png" height="288" src="/docs/resources/foundry/optimizing-pipelines/builds-task-concurrency-chart.png" style="aspect-ratio:2259 / 288" width="2259" node="[object Object]"></li>
+</ul>
+</li>
+<li>如果将执行器数量翻倍后，运行时间缩短幅度不足三分之一，则说明代码效率可能较低（例如，频繁读取数据目录或大量写入数据目录）。
+<ul>
+<li>例如，对于原本运行时间为 6 分钟的作业，如果将执行器数量翻倍，作业运行时间应缩短至 4 分钟或更少。</li>
+<li>如果将执行器数量减半后，作业运行时间放缓幅度不足 50%（例如从 4 分钟延至 6 分钟），在运行时间不关键的情况下，应退回较少的执行器数量以节省成本。</li>
+</ul>
+</li>
+<li>可以对大型配置文件（例如 128 个或更多执行器）施加限制，以确保只有获批的用例才能使用大量资源。如果达到限制且需要进一步提升，请联系您的 Palantir 代表。</li>
+<li>在启动期间，执行器通常以每分钟约 10 个的速度向驱动器汇聚。这意味着，执行器数量多但运行时间短的作业应减少执行器数量，以降低系统颠簸。例如，任何耗时不足 10 分钟的 64 执行器作业可能都应降至 32 个执行器，因为当作业获取完所有计算资源时，它几乎已经运行结束了。</li>
+</ul>
+</li>
+<li>如果作业失败，并且您收到 OOM（内存不足）错误或“Shuffle stage failed”错误（且该错误与代码逻辑无关）：
+<ul>
+<li>尝试将执行器内存从 <code>SMALL</code> 提升至 <code>MEDIUM</code>。在处理大量数据时，这应该会有所帮助。
+<ul>
+<li>如果您认为需要从 <code>MEDIUM</code> 调整至 <code>LARGE</code>，请咨询专家以获取帮助。如有可能，请考虑按照<a href="/docs/foundry/optimizing-pipelines/troubleshoot-ooms/">故障排查指南</a>中的说明简化您的转换操作。</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>如果需要将大量数据收集回驱动器，或执行大型广播连接：
+<ul>
+<li>尝试增加驱动器内存。</li>
+</ul>
+</li>
+<li>如果出现“Spark module stopped responding”等错误，且输入数据集包含大量文件：
+<ul>
+<li>首先尝试增加驱动器内存。</li>
+<li>如果增加驱动器内存后错误仍然存在，请将驱动器核心数增加至 2。</li>
+</ul>
+</li>
+<li>如果您的转换操作需要读取大量文件并遇到 GC（垃圾回收）问题：
+<ul>
+<li>尝试将驱动器核心数增加至 2。</li>
+</ul>
+</li>
+</ul>
+<h2 id="user-content-recommended-best-practices" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#recommended-best-practices"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>推荐最佳实践</h2>
+<h3 id="user-content-for-administrators" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#for-administrators"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>面向管理员</h3>
+<ul>
+<li>用例结束后，删除为该用例创建的所有自定义配置文件。
+<ul>
+<li>这可以减少杂乱配置，避免因创建过多自定义配置文件而导致混乱。</li>
+</ul>
+</li>
+<li>设置权限，确保资源密集型配置文件仅在管理员明确授权后才可访问。
+<ul>
+<li>例如，<code>NUM_EXECUTORS_32</code> 和 <code>EXECUTOR_MEMORY_LARGE</code>（及以上级别）应仅在提出请求并获得批准后才可用。</li>
+<li>
+
+除 <code>EXECUTOR_CORES_SMALL</code> 外，所有执行器核心值都应受到严格控制（因为这是一种提升算力的“隐蔽”方式，且在几乎所有情况下，最好引导用户使用 <code>NUM_EXECUTORS</code> 配置）。</li>
+</ul>
+</li>
+</ul>
+<h3 id="user-content-for-adjusting-spark-profiles" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#for-adjusting-spark-profiles"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>调整 Spark 配置</h3>
+<ul>
+<li>尽可能尝试使用默认配置（即不指定任何配置）。
+<ul>
+<li>这能降低成本并减少杂乱。</li>
+</ul>
+</li>
+<li>如果无法使用默认配置，请尝试使用内置配置。</li>
+<li>在设置新配置时，请使用您的名字或用例名称来命名保存。
+<ul>
+<li>这能提升条理性，同时确保该配置不会被其他用户或项目在您不知情的情况下使用。</li>
+<li>否则，您可能会面对一长串配置列表，却完全不知道哪个配置是为哪个用例设置的。</li>
+</ul>
+</li>
+<li>在增加内存时，任何超过 8:1 资源比例（由 <code>EXECUTOR_CORES_SMALL</code> 和 <code>EXECUTOR_MEMORY_MEDIUM</code> 组合指示）的配置都应经过管理员批准。屏蔽掉 <code>EXECUTOR_CORES_EXTRA_SMALL</code> 和 <code>EXECUTOR_MEMORY_LARGE</code>。如果用户提出此类需求，通常意味着优化不佳或存在关键工作流。</li>
+<li>配置应具备可分离性。每个配置应仅影响一个 Spark 变量（或一个 Spark 变量的逻辑组合）。
+<ul>
+<li>例如，在创建新配置时，仅更改执行器数量，然后进行试运行，同时不要更改执行器内存或驱动器内存等其他变量。</li>
+</ul>
+</li>
+<li>除非在同一 Spark 模块中并发运行多个 Spark 作业的特殊情况，否则不应覆盖驱动器核心的默认配置。</li>
+<li>极少应覆盖执行器核心的默认配置。</li>
+<li>任何运行时间不足 15 分钟的作业不应使用 64 个执行器。
+<ul>
+<li>如此多数量的执行器会把大部分时间花在资源拉起上。</li>
+</ul>
+</li>
+<li>无论何时创建并运行自定义配置，事后都应在《Spark 详情》中检查性能表现。
+<ul>
+<li>《Spark 详情》会追踪作业的执行速度，并详细记录并发作业的情况。</li>
+</ul>
+</li>
+</ul>
+</article>
+</body>
+</html>

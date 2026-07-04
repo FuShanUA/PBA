@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Troubleshoot out-of-memory (OOM) errors</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-troubleshoot-out-of-memory-oom-errors" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#troubleshoot-out-of-memory-oom-errors"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>排查内存溢出 (OOM) 错误</h1>
+<p>作业中出现内存溢出错误通常表现为以下几种形式：</p>
+<ul>
+<li>出现 <strong>“作业因阶段失败而中止”</strong></li>
+<li>出现 <strong>“ExecutorLostFailure”</strong></li>
+<li>出现 <strong>“作业 <code>[jobID]</code> 正在使用时 Spark 模块死亡。 (ExitReason: MODULE_UNREACHABLE)”</strong></li>
+<li>出现 <strong>与驱动程序的连接丢失</strong></li>
+</ul>
+<p>这些错误信息表明已超出当前构建所允许的最大内存限制。这通常不是平台故障，而是要求平台运行的构建本身存在问题。可以通过以下几个步骤来减少构建运行所需的内存。</p>
+<p>如需排查，请执行以下步骤：</p>
+<ul>
+<li>如果转换逻辑使用 Python 或 Pandas 编写：
+<ul>
+<li>尽量将计算转移到 PySpark 中，以充分利用整个计算集群的算力。原生 Python 和 Pandas 中的逻辑会在驱动程序中依靠单处理器执行，速度可能比你的本地笔记本电脑还要慢。</li>
+</ul>
+</li>
+<li>如果转换逻辑中使用了连接操作：
+<ul>
+<li>排查“空值连接”——即针对大量行值为空的列进行连接。这会显著增加连接操作的内存消耗。要解决此问题，可以在当前转换或前置转换中过滤掉相关列的空值。</li>
+<li>排查导致输出数据集行数剧增的连接操作，并确认这种扩展是否必要。一种实用技巧是运行分析，计算数据集中每个键对应的行数以及连接后的结果行数。</li>
+<li>排查可设置检查点的递归连接。对单个表的重复连接会导致查询计划快速膨胀。应使用检查点来缓存中间结果，以避免此问题。</li>
+</ul>
+</li>
+<li>检查输入数据集中的文件大小 <strong>（数据集 → 详情 → 文件 → 数据集文件）</strong>。每个文件应至少为 128MB。如果文件过小或过大，都需要进行重分区。</li>
+<li>将大型转换拆分为多个较小的转换。这也有助于定位引发故障的具体转换环节。</li>
+<li>从输入数据集中移除不必要的列，或对数据集进行预过滤以剔除不需要的行，从而减少 Spark 需要在内存中保存的数据量。</li>
+<li>在条件允许的情况下，简化转换逻辑。</li>
+<li>若代码优化仍无法确保作业成功构建，可以分配额外资源。请注意，增加资源会导致该构建相关的计算成本上升。有关分配额外资源的更多信息，请参阅：
+<ul>
+<li>《何时修改默认 Spark 配置》：根据具体错误提供应增加哪类 Spark 配置的指导。</li>
+<li>《Spark 配置参考》：列出 Foundry 中可用的 Spark 配置。</li>
+<li>《应用 Spark 配置》：指导如何为作业应用自定义 Spark 属性。</li>
+</ul>
+</li>
+</ul>
+</article>
+</body>
+</html>

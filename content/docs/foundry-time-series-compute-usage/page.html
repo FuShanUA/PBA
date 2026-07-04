@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Time series query compute usage</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-time-series-query-compute-usage" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#time-series-query-compute-usage"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Time series query compute usage</h1>
+<p>Foundry caches time series data on disk in a highly optimized format for time series queries. Querying this data requires using compute-seconds.</p>
+<p>Time series queries use compute in the following ways:</p>
+<ol>
+<li>Queries have a fixed rate of compute-seconds per query.</li>
+<li>Each query has an additional measurement of compute-seconds based on the number of time series points that the query reads.</li>
+</ol>
+<p>Queries on larger time series indexes will read more points. The following sections offer a description of how this is calculated.</p>
+<h2 id="user-content-how-compute-is-measured" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#how-compute-is-measured"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>How compute is measured</h2>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>Note that when you are paying for Foundry usage, a fixed, minimum number of compute-seconds are consumed per query. The default amount is <code>4</code> compute-seconds. This is the base compute usage required in order to serve a query. If you have an enterprise contract with Palantir, contact your Palantir representative before proceeding with compute usage calculations.</p></div>
+<p>Storing time series data is measured under Foundry storage. Storing time series data does not use any compute; only indexing time series and actively querying the data will use compute.</p>
+<p>Time series query compute is used exclusively when querying time series data stored in Foundry. Time series queries use compute in two ways:</p>
+<ol>
+<li>With a minimum number of compute-seconds used per query. When on a usage-based Foundry instance, each query uses 4 compute-seconds.</li>
+<li>Queries scale beyond the fixed minimum cost based on the number of points that they consider in the query itself. The number of points that are scanned during a query is driven by the size of the series being queried and the complexity of the logic being executed, which can drive many comparisons/operations on points.</li>
+</ol>
+<p>The following formula derives compute-seconds from a query:</p>
+<pre><code>compute-seconds = 4 + points_scanned / 25000
+</code></pre>
+<h2 id="user-content-investigate-time-series-query-usage" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#investigate-time-series-query-usage"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Investigate time series query usage</h2>
+<p>The <a href="/docs/foundry/resource-management/overview/">Resource Management</a> application allows you to drill down to dataset usage information and should be a starting point for investigating usage in the Foundry platform.</p>
+<p>Users have access to multiple tools for querying time series data in Foundry. Time series query usage is always attached to the resource that each tool produces or modifies.</p>
+<ul>
+<li>In Quiver, the time series queries will be attributed to the individual Quiver analysis or dashboard that was used to initiate the queries.</li>
+<li>In Workshop, the queries will be attached to the Workshop app that initiated the queries. When a Workshop app embeds a Quiver component that queries time series, the usage is still attributed to the overarching Workshop application.</li>
+<li>For transformations that use the FoundryTS library to query time series, the compute for those queries is attributed to the repository where that transformation was written.</li>
+</ul>
+<h2 id="user-content-understand-drivers-of-usage" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#understand-drivers-of-usage"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Understand drivers of usage</h2>
+<p>When paying for Foundry on a usage contract, there are three main drivers of compute with time series queries:</p>
+<ol>
+<li>
+<p>Number of queries</p>
+<ul>
+<li>Each query has a minimum usage of 4 compute-seconds. This means that more queries executed by users, more Quiver dashboards running queries, and more scheduled builds running FoundryTS queries will use more compute-seconds.</li>
+</ul>
+</li>
+<li>
+<p>Size of the series being queried</p>
+<ul>
+<li>Reducing the number of points read typically reduces compute and latency. For example, running a query that comprises an aggregation across a series of 10,000,000 points will use more compute than running the same query against a 100,000 point series. However, the actual usage will depend on the query. The most common technique to reduce number of points read is adding a time range filter on each series.</li>
+</ul>
+</li>
+<li>
+<p>Complexity of the query</p>
+<ul>
+<li>Queries that perform more complex interactions with underlying series will run more operations on top of that series. In running these operations, query usage will increase as more points are scanned.</li>
+</ul>
+<p>See the section below for more information and examples of <a href="#examples-of-query-complexity">query complexity</a>.</p>
+</li>
+</ol>
+<h2 id="user-content-manage-usage-with-time-series" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#manage-usage-with-time-series"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Manage usage with time series</h2>
+<p>Managing the total number of queries is important for managing total compute usage from time series querying. Consider the following practices when using time series in Foundry:</p>
+<ul>
+<li>When building a time series-based analysis or dashboard, consider the total number of queries that must run on each update. Also consider splitting out update paths so not all queries update when parameters are changed.</li>
+<li>When running FoundryTS builds, ensure that the schedules are set appropriately so that builds do not run more often than necessary.</li>
+<li>When a time range is applied to a time series, Foundry's time series backend will only read the points that fall within that time range. Therefore, time series queries in Foundry can be optimized based on the ranges that they are querying. Limiting the time range of a query <em>does not</em> require compute; choosing time ranges can significantly reduce overall points scanned, reducing the compute used in the query.</li>
+<li>Choose the correct granularity for the job; not all workflows require maximally granular data. In some cases, this means pre-aggregating for specific workflows. In other use cases, this means storing different granularities in different series. While maintaining multiple up-to-date series can increase indexing compute, the act of storing multiple series does not require compute. Therefore, holding multiple series of different granularities may be cheaper than always querying the most granular series.</li>
+</ul>
+<h2 id="user-content-calculate-usage" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#calculate-usage"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Calculate usage</h2>
+<p>To predict the cost of a time series query, be sure to always understand the size of the series being queried.</p>
+<p>Consider the following example, where there are three queries against a series of 100,000 points with each query scanning all points in the series:</p>
+<pre><code>series_size: 100,000 points
+minimum_query_usage: 4-compute seconds
+points_per_compute_second: 25,000 points
+total_queries: 3
+
+ 
+compute-seconds = num_queries * minimum_query_usage + total_points / points_per_compute_second
+compute-seconds = 3 queries * 4 compute-seconds + 100,000 points * 3 queries / 25,000 points-per-second
+compute-seconds = 3 * 4 + 300,000 / 25,000
+compute-seconds = 24 compute-seconds
+</code></pre>
+<h2 id="user-content-examples-of-query-complexity" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#examples-of-query-complexity"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Examples of query complexity</h2>
+<p>The complexity of a time series query increases as more nested operations are applied to the queried time series.</p>
+<p>As an example, consider the following FoundryTS code which adds two time series together and returns all the points of the new series for a 1-year time range as a Pandas dataframe:</p>
+<pre><code>series_1 = N.TimeseriesNode('series_1')
+series_2 = N.TimeseriesNode('series_2')
+result = F.dsl(program='a+b', return_type=float)([series_1, series_2]).time_range(start='2022-01-01', end='2023-01-01')
+result.to_pandas()
+</code></pre>
+<p>This code will make a query to Codex with the shape:</p>
+<pre><code>{
+  id: dsl-fomula
+  children: [
+    { id: timeseries },
+    { id: timeseries }
+  ]
+}
+</code></pre>
+<p>Evaluating the <code>to_pandas</code> call will incur cost for scanning the points in the <code>result</code> time series in the requested 1-year time range, as well as the points in the two component series required to compute the result (in this case, a 1-year range from each).</p>
+<p>Now, consider the following FoundryTS code which applies more nested operations. First, we define a series that
+is the sum of two other series. Then, we compare that series against its 7-day rolling average, and load one year of
+points from the result as a Pandas dataframe:</p>
+<pre><code>series_1 = N.TimeseriesNode('series_1')
+series_2 = N.TimeseriesNode('series_1')
+intermediate_1 = F.dsl(program='a+b', return_type=float)([series_1, series_2])
+intermediate_2 = intermediate_1.rolling_aggregate('mean', '7d')
+result = F.dsl(program='a-b', return_type=float)([intermediate_1, intermediate_2]).time_range(start='2022-01-01', end='2023-01-01')
+result.to_pandas()
+</code></pre>
+<p>This code will make a query to Codex with the shape:</p>
+<pre><code>{
+  id: dsl-fomula
+  children: [
+    {
+      id: dsl-fomula
+      children: [
+        { id: timeseries },
+        { id: timeseries }
+      ]
+    },
+    {
+      id: rolling-aggregate
+      children: [
+        {
+          id: dsl-fomula
+          children: [
+            { id: timeseries },
+            { id: timeseries }
+          ]
+        }
+      ]
+    }
+  ]
+}
+</code></pre>
+<p>Each node in this query tree will incur cost for scanning the 1-year range of points to produce the final result.</p>
+</article>
+</body>
+</html>

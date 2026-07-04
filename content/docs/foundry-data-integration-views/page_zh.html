@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Views</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-views" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#views"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>视图</h1>
+<p><strong>视图</strong>的行为与 Foundry 的<a href="/docs/foundry/data-integration/datasets/#dataset-views">数据集视图</a>类似，但它不保存任何包含数据的文件。相反，它由其他数据集（称为底层数据集）在读取时合并而成。可以将视图视为“指向”其底层数据集。</p>
+<p>通过添加主键，视图还能自动对数据执行去重操作。如果视图的任一底层数据集包含新数据，系统会自动触发构建，以确保去重后能获取到最新数据。视图的构建方式与常规数据集类似，但由于构建过程中不涉及实际的数据读写，其构建过程几乎瞬间完成。</p>
+<p>通常，你可以像使用常规数据集一样使用视图。不过，视图不能作为有效的转换<em>输出</em>；相反，它只能作为有效的转换<em>输入</em>。</p>
+<p>此外，视图只能与具备 Schema 的数据集配合使用，因为视图是按行操作的。</p>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>在增量数据集上构建的视图，不应用作下游转换的增量输入。当以增量方式读取视图时，去重操作仅限于增量读取的事务范围内执行，而不是在整个视图范围内进行。</p></div>
+<p><img alt="A diagram of how Views are built." height="450" src="/docs/resources/foundry/data-integration/views-overview.png" style="aspect-ratio:650 / 450" width="650" node="[object Object]"></p>
+<p>视图的一些主要用例包括：</p>
+<ul>
+<li><strong>自动更新：</strong>创建一个始终保持最新的合并数据集，无需执行转换操作。</li>
+<li><strong>文件夹组织：</strong>在不同位置复制数据集，且不会产生额外的计算和存储成本。</li>
+<li><strong>数据唯一性：</strong>通过主键去重，自动保证数据唯一性，无需进行转换。</li>
+</ul>
+<h2 id="user-content-create-a-view" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#create-a-view"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>创建视图</h2>
+<p>要创建新视图，请从左侧工作区导航面板打开<strong>文件</strong>，然后找到目标项目或文件夹。进入后，在右上角选择<strong>新建 &gt; 视图</strong>，即可在当前项目或文件夹中创建新视图：</p>
+<p><img alt="Create a new View in a Project or folder." height="600" src="/docs/resources/foundry/data-integration/views-create-new.png" style="aspect-ratio:2948 / 1048" width="1687.7862595419847" node="[object Object]"></p>
+<p>为视图选择名称和位置，然后继续配置。视图创建完成后，后台会自动生成构建计划，只要底层数据集发生更新，就会重新构建视图。如果在创建或修改视图后想立即读取数据，必须手动构建视图。</p>
+<h3 id="user-content-select-backing-datasets" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#select-backing-datasets"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>选择底层数据集</h3>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>由于视图由其底层数据集合并而成，因此给定视图的每个底层数据集必须具备相同的列名和类型集合（尽管列的顺序可以不同）。</p></div>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>如果在底层数据集中添加或删除列，视图可能会报错并抛出 <code>View:MismatchedNumberOfColumns</code> 错误。要解决此问题，请导航至<strong>详情 &gt; 数据集视图设置</strong>，并启用<strong>模式演进</strong>。这允许视图自动适应底层数据集中的模式变化，而无需创建新视图。</p></div>
+<p>构建视图至少需要一个底层数据集。初始配置完成后，可以通过导航至<strong>详情 &gt; 数据集视图设置</strong>来修改视图的底层数据集。</p>
+<p><img alt="Select backing datasets for a View." height="597" src="/docs/resources/foundry/data-integration/views-select-backing-datasets.png" style="aspect-ratio:996 / 597" width="996" node="[object Object]"></p>
+<h3 id="user-content-add-a-primary-key" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#add-a-primary-key"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>添加主键</h3>
+<p>数据去重是视图的一项核心功能，你可以通过添加主键来启用该功能。主键配置完成后，视图将保证主键的唯一性；视图中的每个主键仅出现在一行中。添加主键可确保在读取视图时，每个主键仅返回最新的数据。当视图的底层数据集可能包含不需要的重复行时，这种自动去重功能会显得尤为实用。</p>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>主键一旦设置，除非创建新视图，否则无法修改。</p></div>
+<p>
+
+要添加主键，请选择一列或多列，这些列组合起来将构成主键。所选列不能包含空值。</p>
+<p><img alt="为视图添加主键。" height="600" src="/docs/resources/foundry/data-integration/views-primary-key.png" style="aspect-ratio:984 / 836" width="706.2200956937799" node="[object Object]"></p>
+<p>如果初始配置时未添加主键，后续可以通过导航至 <strong>详情 &gt; 数据集视图设置</strong> 来完成添加。</p>
+<h3 id="user-content-resolve-duplicate-keys" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#resolve-duplicate-keys"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>解决重复键</h3>
+<p>添加主键时，还必须指定用于解决重复主键的列（或多列组合）。对于具有相同主键的行，去重操作会保留这些列中按顺序排列值最大的行，并丢弃其他行。这能确保视图中出现的每个主键都是唯一的。</p>
+<h3 id="user-content-select-a-deletion-column" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#select-a-deletion-column"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>选择删除列</h3>
+<p>您还可以选择指定一个删除列，该列必须包含布尔值。去重后，如果某个给定主键最终保留的行在删除列中的值为 <code>true</code>，该行将从视图中排除。</p>
+<h3 id="user-content-deduplication-and-deletion-in-practice" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#deduplication-and-deletion-in-practice"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>实际操作中的去重与删除</h3>
+<p>重复主键的解决发生在使用删除列排除行<em>之前</em>。因此，只有给定主键对应“最新”行中的删除列值才会起作用。</p>
+<p><img alt="单个底层数据集的去重和删除示例。" height="319" src="/docs/resources/foundry/data-integration/views-pkey-example-single.png" style="aspect-ratio:1459 / 319" width="1459" node="[object Object]"></p>
+<p>去重和删除操作会跨越所有底层数据集执行：</p>
+<p><img alt="两个底层数据集的去重和删除示例。" height="394" src="/docs/resources/foundry/data-integration/views-pkey-example-union.png" style="aspect-ratio:934 / 394" width="934" node="[object Object]"></p>
+<p>去重和删除通过以下组合方式实现：</p>
+<ul>
+<li>视图上经过适当配置且自动创建的投影。</li>
+<li>基于窗口函数并在每次读取时进行评估的过滤逻辑。</li>
+</ul>
+<p>尽管每次读取都会评估过滤逻辑，但只要投影保持最新，且视图的底层数据集自上次投影构建以来仅发生 <code>APPEND</code> 或 <code>UPDATE</code> 事务，该逻辑的评估对运行时间和计算成本的影响微乎其微。</p>
+<p>鉴于这种架构，我们建议仅在以下情况配置主键创建视图：</p>
+<ul>
+<li>所有底层数据集均通过 <code>APPEND</code> 或严格追加的 <code>UPDATE</code> 事务进行更新。</li>
+<li>部分底层数据集通过 <code>APPEND</code> 或严格追加的 <code>UPDATE</code> 事务更新，而另一部分通过 <code>SNAPSHOT</code> 事务更新，但后者构建频率较低。</li>
+</ul>
+<p>如果底层数据集的更新需要完全重建投影，将产生大量的计算成本，因为在投影重建完成之前，读取者（Contour、转换作业等）必须在缺少投影支持的情况下应用过滤逻辑。</p>
+<h3 id="user-content-use-views" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#use-views"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>使用视图</h3>
+<p><img alt="视图的数据血缘关系。" height="342" src="/docs/resources/foundry/data-integration/views-lineage.png" style="aspect-ratio:1157 / 342" width="1157" node="[object Object]"></p>
+<p>在 Foundry 中，视图与常规 Foundry 数据集一样可见，并且可以在任何使用常规数据集的地方使用。唯一的例外是视图不能作为转换输出（但可以作为转换输入）。视图的一个典型用例是高效合并多个数据集，并利用主键确保生成的视图数据具有唯一性。</p>
+<h3 id="user-content-remove-markings-with-views" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#remove-markings-with-views"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>使用视图移除标记</h3>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>视图不支持从数据集中移除组织，仅支持移除强制控制标记。</p></div>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>您的 Foundry 部署中可能未启用使用视图移除标记的功能。请联系 Palantir 支持团队以启用此功能。</p></div>
+<p>您可以使用视图来停止在底层数据集上传播标记。操作方法为：导航至视图的 <strong>详情</strong> 标签页中的 <strong>数据集视图设置</strong>，然后选择 <strong>编辑 &gt; 管理标记传播</strong>。</p>
+<p><img alt="编辑数据集视图设置。" height="600" src="/docs/resources/foundry/data-integration/dataset-view-settings-edit.png" style="aspect-ratio:3540 / 1304" width="1628.8343558282209" node="[object Object]"></p>
+<p>
+
+只有拥有 <code>移除标记</code> 权限的用户才能停止标记的传播。对标记传播的修改将在底层数据集发生任何更新时生效。</p>
+<p><img alt="数据集视图中的移除标记界面。" height="600" src="/docs/resources/foundry/data-integration/views-unmarking.png" style="aspect-ratio:1202 / 1426" width="505.75035063113603" node="[object Object]"></p>
+<p>请查阅我们的 <a href="/docs/foundry/building-pipelines/remove-inherited-markings/">《移除标记指南》</a> 以了解更多信息。</p>
+</article>
+</body>
+</html>

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Maintaining pipelines</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-maintaining-pipelines" level="1" node="[object Object]" data-pagefind-weight="7"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#maintaining-pipelines"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>维护数据管道</h1>
+<p>随着数据管道不断构建并投入生产以支持各类业务场景，部分管道可能会进入停滞阶段，不再进行主动开发，工作重心也相应转向管道维护。</p>
+<p>本页重点介绍管道维护者的职责，以及将管道转入维护模式的前提条件：</p>
+<ul>
+<li><a href="#prerequisites-and-expectations">前提条件与预期</a></li>
+<li><a href="#pipeline-maintenance-responsibilities">管道维护职责</a></li>
+</ul>
+<p>本节后续内容将阐述管道维护的最佳实践与方法：</p>
+<ul>
+<li><a href="/docs/foundry/maintaining-pipelines/stability-recommendations/">稳定性建议</a></li>
+<li><a href="/docs/foundry/maintaining-pipelines/recommended-health-checks/">推荐的健康检查</a></li>
+<li><a href="/docs/foundry/maintaining-pipelines/define-data-expectations/">数据预期概述</a></li>
+<li><a href="/docs/foundry/maintaining-pipelines/support-processes/">推荐的支持流程</a></li>
+</ul>
+<h2 id="user-content-prerequisites-and-expectations" level="2" node="[object Object]" data-pagefind-weight="6.3"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#prerequisites-and-expectations"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>前提条件与预期</h2>
+<p>在开始维护管道之前，必须为其设定明确的预期。这有助于设定合理的告警阈值，科学排定管道维护任务和告警的优先级，划清团队间的职责边界，更重要的是，确保管道能够切实满足用户需求。</p>
+<p>本节所提的各项最佳实践，均建立在您已明确以下预期的基础之上：</p>
+<ul>
+<li>管道处理的数据范围</li>
+<li>交付的数据内容</li>
+<li>数据交付时间</li>
+<li>数据计划构建时间
+<ul>
+<li>特别是管道在周末是否需要运行</li>
+</ul>
+</li>
+<li>数据理想状态下的更新频率</li>
+<li>数据被视为严重过时的时间点</li>
+</ul>
+<h2 id="user-content-pipeline-maintenance-responsibilities" level="2" node="[object Object]" data-pagefind-weight="6.3"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#pipeline-maintenance-responsibilities"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>管道维护职责</h2>
+<p>管道维护者的职责包括：</p>
+<ul>
+<li>配置管道监控的技术细节</li>
+<li>在管道出现故障（健康检查未通过）时进行排错</li>
+<li>必要时修改代码或调整监控配置</li>
+<li>数据有误或未按时接收时，联系上游团队</li>
+</ul>
+<p>为履行上述职责，建议管道维护者具备以下技能 (Skills) 和访问权限：</p>
+<ul>
+<li>数据访问权限（建议尽可能提供）：拥有合规的数据访问权限，有助于在数据出现问题时进行有效排错。</li>
+<li>技术技能 (Skills)（建议）：管道监控团队成员应具备阅读代码及熟练使用管道开发工具的能力，如代码仓库、构建、数据血缘关系和数据健康等。这能确保他们有效分析并分发整个管道链路中的各类问题。</li>
+<li>熟悉管道架构（可选）：团队成员在开展监控工作前，应先熟悉对应管道。可通过完善文档和基础设施知识管理来推进此项工作。</li>
+</ul>
+</article>
+</body>
+</html>

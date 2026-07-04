@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Extractors</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-extractors" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#extractors"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></a>提取器</h1>
+<p>面向 SAP 应用的 Palantir Foundry Connector 2.0（以下简称“Connector”）支持通过多种被称为 <strong>SAP 提取器</strong>的提取接口进行数据接入。这些提取器最初的设计目的是从 SAP 操作系统提取数据至 SAP Business Warehouse (BW)。</p>
+<p>提取器分为以下 3 种类型：</p>
+<ul>
+<li><strong>业务内容提取器</strong>：由 SAP 预先交付的标准提取器，适用于 FI、CO、LO Cockpit 等多种应用组件。在源系统中，它们默认未激活，使用前需通过 <code>RSA5</code> 事务码进行激活。</li>
+<li><strong>客户生成的提取器</strong>：通常基于客户的实施与配置设置生成。</li>
+<li><strong>通用提取器</strong>：具备高度可定制性。客户可基于数据库表/视图、信息集和功能模块生成自身的提取逻辑。此类提取器高度可定制，且提取逻辑由客户掌控。</li>
+</ul>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>Connector 仅支持使用启用了 ODP 的提取器。根据 SAP Note <code>1931427</code> - 《ODP 数据复制 API 2.0》，适用组件（PI_BASIS、SAP_BW 或 DW4CORE）需安装以下支持包 (SP) 才能使用完整的“ODP 数据复制 API 2.0”。请确保满足以下前提条件：</p><ul>
+<li>PI_BASIS 730 SP 14（属于 SAP NetWeaver 7.30 SP 14）+</li>
+<li>PI_BASIS 731 SP 16（属于 SAP NetWeaver 7.03 SP 16 和 7.31 SP 16）+</li>
+<li>PI_BASIS 740 SP 11（属于 SAP NetWeaver 7.40 SP 11）+</li>
+<li>SAP_BW 750 SP 0（包含原 PI_BASIS 包）+</li>
+<li>DW4CORE 100 SP 0（包含原 PI_BASIS 包）+</li>
+<li>DW4CORE 200 SP 0（包含原 PI_BASIS 包）+</li>
+</ul></div>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>关于启用 ODP 提取器的源系统中的授权，请参阅 SAP Note <code>2855052</code> - 《ODP 数据复制 API 2.0 所需的授权》。
+此外，Connector 针对提取器设有独立角色：请将 <code>/PALANTIR/CONTENT_EXT_ALL</code> 授权角色分配给 Foundry 技术用户。</p></div>
+<h2 id="user-content-configuration-of-extractors" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#configuration-of-extractors"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>提取器的配置</h2>
+<h3 id="user-content-from-a-single-source-system-connector-releases-older-than-v2200--sp20" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#from-a-single-source-system-connector-releases-older-than-v2200--sp20"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>来自单一源系统（Connector 版本低于 v2.20.0 (&lt; SP20)）</h3>
+<ul>
+<li>创建从 Connector 到存放提取器的 SAP 源系统的 RFC 连接。</li>
+<li>使用 <code>/n/palantir/param</code> 事务维护以下参数：
+<ul>
+<li>RFC 参数
+<ul>
+<li><strong>参数 ID：</strong> <code>EXTRACTOR</code></li>
+<li><strong>参数名称：</strong> <code>RFC_CONFIGURATION</code></li>
+<li><strong>参数值：</strong> <code>&lt;RFC 连接名称&gt;</code></li>
+</ul>
+</li>
+<li>上下文配置
+<ul>
+<li><strong>参数 ID：</strong> <code>EXTRACTOR</code></li>
+<li><strong>参数名称：</strong> <code>CONTEXT_CONFIGURATION</code></li>
+<li><strong>参数值：</strong> <code>SAPI</code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h3 id="user-content-from-multiple-source-systems-connector-releases-v2200-or-newer--sp20" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#from-multiple-source-systems-connector-releases-v2200-or-newer--sp20"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>来自多个源系统（Connector 版本 v2.20.0 或更高 (&gt;= SP20)）</h3>
+<p>自 Connector SP20 起，系统支持从多个源系统提取数据，这些源系统也被称为“上下文”。</p>
+<p>要配置多个上下文，请按以下步骤操作：</p>
+<ul>
+<li>运行 <code>/PALANTIR/PARAM_E1</code> 事务并定义各个上下文：
+<ul>
+<li><strong>提取器 ID：</strong> <code>&lt;源系统 ID&gt;</code></li>
+<li><strong>描述：</strong> <code>&lt;源系统描述&gt;</code></li>
+</ul>
+</li>
+<li>运行 <code>/PALANTIR/PARAM_E2</code> 事务并定义各上下文参数：
+<ul>
+<li><strong>提取器 ID：</strong> <code>&lt;上下文 ID&gt;</code></li>
+<li><strong>参数 ID：</strong> <code>&lt;Connector 参数 ID&gt;</code></li>
+<li><strong>参数名称：</strong> <code>&lt;Connector 参数名称&gt;</code></li>
+<li><strong>参数值：</strong> <code>&lt;参数值&gt;</code></li>
+</ul>
+</li>
+</ul>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>RFC 和 SOURCE 参数专用于多上下文场景；其他提取器参数为标准 Connector 参数。</p></div>
+<ul>
+<li>可将其中一个上下文设为默认。在此情况下，若 Foundry 未指定上下文信息，Connector 将使用该默认上下文。要定义默认上下文，请运行 <code>/PALANTIR/PARAM</code> 事务并使用以下参数值：
+<ul>
+<li><strong>参数 ID：</strong> <code>EXTRACTOR</code></li>
+<li><strong>参数名称：</strong> <code>DEFAULT_CONFIGURATION</code></li>
+<li><strong>参数值：</strong> <code>&lt;EXTRACTOR ID&gt;</code></li>
+</ul>
+</li>
+</ul>
+<h2 id="user-content-using-extractors" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#using-extractors"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>使用提取器</h2>
+<ul>
+<li>使用 <code>RODPS_OS_EXPOSE</code> 程序在 SAP 源系统中公开 SAP 提取器。</li>
+<li>重启 Foundry Data Connection 智能体以刷新缓存。</li>
+<li>创建新的 BW Content Extractor 同步。</li>
+</ul>
+</article>
+</body>
+</html>

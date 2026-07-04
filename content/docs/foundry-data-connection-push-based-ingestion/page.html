@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Push data into a stream</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-push-data-into-a-stream" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#push-data-into-a-stream"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Push data into a stream</h1>
+<p>Most data ingestion in Foundry focuses on pulling data from a source system and syncing it into a dataset or stream.</p>
+<p>With streams, Foundry supports <strong>push-based ingestion</strong> to support event-based workflows.</p>
+<p>Push-based record ingestion in Foundry follows the same principles as typical REST services. Through a series of REST endpoints, we expose a push-based API that can consume records and write them into streams and datasets. The following high-level information is required to push into a stream:</p>
+<ul>
+<li>The dataset resource identifier of the stream.</li>
+<li>The name of the branch.</li>
+<li>A token to authenticate the request.</li>
+</ul>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>If you already have a Foundry source configured for your data, you may want to connect with that source instead. Learn how to <a href="/docs/foundry/data-connection/set-up-streaming-sync/">set up a streaming sync</a> with an existing source, or learn how to <a href="/docs/foundry/available-connectors/kafka/">set up a Kafka source</a>. <br><br>
+If you need to receive inbound webhooks from systems that cannot properly authenticate with Foundry or conform to standard stream schemas, consider using <a href="/docs/foundry/data-connection/listeners-overview/">listeners</a>.</p></div>
+<p>Below, we will discuss the steps required to push data into a stream:</p>
+<ol>
+<li><a href="#part-1-initial-setup">Set up</a> a new stream.</li>
+<li><a href="#part-2-push-records-into-the-stream">Push records</a> into the stream.</li>
+<li><a href="#part-3-share-the-stream">Share</a> the stream.</li>
+<li><a href="#part-4-test-the-stream">Test</a> the stream.</li>
+</ol>
+<h2 id="user-content-part-1-initial-setup" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#part-1-initial-setup"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Part 1. Initial setup</h2>
+<p>First, begin the stream creation workflow.</p>
+<ol>
+<li>Log into Foundry.</li>
+<li>Navigate to a <a href="/docs/foundry/compass/move-and-share-resources/">Project</a>.</li>
+<li>Select <strong>+ New</strong> in the top right corner.</li>
+<li>Scroll down and select <strong>Stream</strong>.</li>
+</ol>
+<img alt="Create stream" height="493" src="/docs/resources/foundry/data-connection/stream-create@2x.png?width=0.50" srcset="/docs/resources/foundry/data-connection/stream-create@2x.png?width=0.50 1x, /docs/resources/foundry/data-connection/stream-create@2x.png 2x" style="aspect-ratio:583 / 493" width="583" node="[object Object]">
+<p>Next, we must define the schema, throughput, and keys for the stream.</p>
+<ul>
+<li><strong>Schema</strong> defines the structure and types of your stream data.</li>
+<li><strong>Throughput</strong> represents the data processing rate and will impact the number of partitions used in your stream. Learn more in our <a href="/docs/foundry/building-pipelines/streaming-performance-considerations/#throughput">throughput</a> and <a href="/docs/foundry/data-integration/streams/#partitions">partitions</a> documentation.</li>
+<li><strong>Keys</strong> are used to guarantee ordering for unique IDs when using multiple partitions. Learn more in our <a href="/docs/foundry/building-pipelines/streaming-keys/">steaming keys</a> documentation.</li>
+</ul>
+<p>For this tutorial, we will create a simple single partition stream.</p>
+<ul>
+<li>Set the schema to <code>sensor_id: String</code>, <code>temperature: Double</code>, and <code>created_at: Timestamp</code>.</li>
+<li>Set the throughput to <code>Normal</code>.</li>
+</ul>
+<p>Then, configure your stream.</p>
+<ul>
+<li>Automatically generate schema from an existing JSON blob by selecting the <code>Generate from JSON sample...</code> button and pasting in your existing JSON blob.</li>
+<li>Set up <a href="/docs/foundry/data-integration/change-data-capture/">change data capture</a> if you are streaming real-time updates from a relational database.</li>
+<li>Consider the parallelism requirements of your stream to determine if you need higher throughput settings. Review our <a href="/docs/foundry/data-integration/streams/#partitions">partitions</a> documentation for more information.</li>
+<li>Consider setting a key for ordering guarantees when using multiple partitions.</li>
+</ul>
+<img alt="Define stream" height="600" src="/docs/resources/foundry/data-connection/stream-define@2x.png?width=0.50" srcset="/docs/resources/foundry/data-connection/stream-define@2x.png?width=0.50 1x, /docs/resources/foundry/data-connection/stream-define@2x.png 2x" style="aspect-ratio:1810 / 1287" width="843.8228438228438" node="[object Object]">
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>All validation errors must be addressed before selecting <strong>Create stream</strong>. Hover over the tooltips on the bottom of the page for more details about the error.</p></div>
+<p>Select the <strong>Create stream</strong> button in the bottom right corner to navigate to the <strong>Connect</strong> page. Here, you can specify how to connect to the streaming data.</p>
+<h2 id="user-content-part-2-push-records-into-the-stream" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#part-2-push-records-into-the-stream"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Part 2. Push records into the stream</h2>
+<p>We are now ready to connect our stream.</p>
+<ol>
+<li>
+<p>For push-based ingestion, select one of the options under the <strong>Connect via API</strong> section.</p>
+<p>Any language or technology that can make HTTP requests can be used to push records. We provide examples for cURL, Python, JavaScript via Node, and Java. If you want to ingest data via a Foundry sync instead of pushing the data into Foundry, review how to <a href="/docs/foundry/data-connection/set-up-streaming-sync/">set up a streaming sync</a>.</p>
+<p>For this example, we will select <strong>cURL</strong>.</p>
+ <img alt="Stream connection" height="600" src="/docs/resources/foundry/data-connection/stream-connect@2x.png?width=0.50" srcset="/docs/resources/foundry/data-connection/stream-connect@2x.png?width=0.50 1x, /docs/resources/foundry/data-connection/stream-connect@2x.png 2x" style="aspect-ratio:3076 / 2022" width="912.7596439169139" node="[object Object]">
+<p>You will then land on the <strong>Push</strong> data workflow page.</p>
+</li>
+<li>
+<p>Next, select an authentication mechanism. We support two ways to authenticate to the request:</p>
+<ul>
+<li><strong>Push with a third-party application (recommended):</strong> This method uses an OAuth2 workflow to create a secure token that can be used to push records into your stream.</li>
+<li><strong>Push with a personal token:</strong> This method uses a user-generated token for testing purposes only.</li>
+</ul>
+ <img alt="Stream push options" height="600" src="/docs/resources/foundry/data-connection/stream-push-auth@2x.png?width=0.50" srcset="/docs/resources/foundry/data-connection/stream-push-auth@2x.png?width=0.50 1x, /docs/resources/foundry/data-connection/stream-push-auth@2x.png 2x" style="aspect-ratio:1717 / 660" width="1560.9090909090908" node="[object Object]">
+</li>
+<li>
+<p>For this tutorial, choose the <strong>Push with a third-party application</strong> method. Follow the steps on the screen to set up a third-party application and create your <a href="/docs/foundry/platform-security-third-party/register-3pa/">client secret</a>. When configuring the application's operation restrictions, ensure the <code>api:use-streams-write</code> operation is included for the third-party application to push records into the stream.</p>
+ <img alt="Stream push third party auth" height="600" src="/docs/resources/foundry/data-connection/stream-push-auth-third-party@2x.png?width=0.50" srcset="/docs/resources/foundry/data-connection/stream-push-auth-third-party@2x.png?width=0.50 1x, /docs/resources/foundry/data-connection/stream-push-auth-third-party@2x.png 2x" style="aspect-ratio:2096 / 1652" width="761.2590799031477" node="[object Object]">
+</li>
+<li>
+<p>Now, select <strong>Go to third-party applications</strong> to open the third-party application management page in your Foundry platform settings.</p>
+</li>
+<li>
+<p>Select <strong>Register new application</strong> at the top right of your screen.</p>
+ <img alt="Third party new app" height="236" src="/docs/resources/foundry/data-connection/stream-third-party-register@2x.png?width=0.50" srcset="/docs/resources/foundry/data-connection/stream-third-party-register@2x.png?width=0.50 1x, /docs/resources/foundry/data-connection/stream-third-party-register@2x.png 2x" style="aspect-ratio:2090 / 236" width="2090" node="[object Object]">
+</li>
+<li>
+<p>Choose a name, and set the client type to <strong>Server application</strong>.</p>
+ <img alt="Third party create app" height="498" src="/docs/resources/foundry/data-connection/stream-third-party-register-new@2x.png?width=0.50" srcset="/docs/resources/foundry/data-connection/stream-third-party-register-new@2x.png?width=0.50 1x, /docs/resources/foundry/data-connection/stream-third-party-register-new@2x.png 2x" style="aspect-ratio:800 / 498" width="800" node="[object Object]">
+</li>
+<li>
+<p>Select <strong>Create,</strong> and you will be presented with your client ID and secret.</p>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>The client secret will not be accessible once you leave this page. Be sure to store it in a secure location.</p></div>
+</li>
+<li>
+<p>Now, you can add the client ID and secret into the <strong>Push</strong> workflow page.</p>
+ <img alt="Add client secret" height="600" src="/docs/resources/foundry/data-connection/stream-client-secret@2x.png?width=0.50" srcset="/docs/resources/foundry/data-connection/stream-client-secret@2x.png?width=0.50 1x, /docs/resources/foundry/data-connection/stream-client-secret@2x.png 2x" style="aspect-ratio:2092 / 1566" width="801.5325670498084" node="[object Object]">
+</li>
+<li>
+<p>Scroll down to the <strong>Configuring the Application</strong> section of the workflow, then select <strong>Manage application</strong> to open the <strong>Third-party applications</strong> management page in your Foundry platform settings.</p>
+ <img alt="Configure third party app" height="464" src="/docs/resources/foundry/data-connection/stream-configure-third-party-app@2x.png?width=0.50" srcset="/docs/resources/foundry/data-connection/stream-configure-third-party-app@2x.png?width=0.50 1x, /docs/resources/foundry/data-connection/stream-configure-third-party-app@2x.png 2x" style="aspect-ratio:1628 / 464" width="1628" node="[object Object]">
+</li>
+<li>
+<p>Next, enable the <strong>Client credentials grant</strong> setting.</p>
+<img alt="Configure grant" height="600" src="/docs/resources/foundry/data-connection/stream-third-party-app-server@2x.png?width=0.50" srcset="/docs/resources/foundry/data-connection/stream-third-party-app-server@2x.png?width=0.50 1x, /docs/resources/foundry/data-connection/stream-third-party-app-server@2x.png 2x" style="aspect-ratio:915 / 864" width="635.4166666666666" node="[object Object]">
+</li>
+<li>
+<p>Finally, click <strong>Save</strong> in the upper right corner.</p>
+</li>
+</ol>
+<h2 id="user-content-part-3-share-the-stream" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#part-3-share-the-stream"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Part 3: Share the stream</h2>
+<p>Now, we need to share the stream with the application we created.</p>
+<ol>
+<li>
+<p>First, return to the <strong>Push</strong> workflow page. Under the <strong>Using Your New Application</strong> section in the workflow, find the client ID that you generated.</p>
+ <img alt="Client ID" height="364" src="/docs/resources/foundry/data-connection/stream-client-id@2x.png?width=0.50" srcset="/docs/resources/foundry/data-connection/stream-client-id@2x.png?width=0.50 1x, /docs/resources/foundry/data-connection/stream-client-id@2x.png 2x" style="aspect-ratio:1954 / 364" width="1954" node="[object Object]">
+</li>
+<li>
+<p>Next, select <strong>Share</strong> on the top right to open the <strong>Roles</strong> tab of the stream <strong>Details</strong> sidebar to the right side of your screen.</p>
+ <img alt="Share third party app" height="600" src="/docs/resources/foundry/data-connection/stream-share-third-party-app@2x.png?width=0.50" srcset="/docs/resources/foundry/data-connection/stream-share-third-party-app@2x.png?width=0.50 1x, /docs/resources/foundry/data-connection/stream-share-third-party-app@2x.png 2x" style="aspect-ratio:1298 / 1062" width="733.3333333333334" node="[object Object]">
+</li>
+<li>
+<p>Copy and paste the client ID into the <strong>Roles</strong> search field to find the application you created. Select the <strong>+</strong> to search for and choose the <code>Editor</code> role.</p>
+</li>
+<li>
+<p>Choose <strong>Save</strong> at the bottom of the side panel to share the stream.</p>
+</li>
+<li>
+<p>Return to the push workflow and select <strong>Next step.</strong></p>
+</li>
+</ol>
+<h2 id="user-content-part-4-test-the-stream" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#part-4-test-the-stream"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Part 4: Test the stream</h2>
+<p>You will now be presented with code examples that can be used to push test records into the stream. The code examples differ depending on what language you selected in the previous steps. For this example, we are using cURL.</p>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>Before running cURL commands, be sure to install <a href="https://jqlang.org/">jq ↗</a> for command line JSON parsing.</p></div>
+<ol>
+<li>First, copy the command from the first box. This will hit Foundry’s OAuth2 endpoint, providing you with an access token you can use to push records.</li>
+</ol>
+  <img alt="Push records with cURL" height="600" src="/docs/resources/foundry/data-connection/stream-curl-push@2x.png?width=0.50" srcset="/docs/resources/foundry/data-connection/stream-curl-push@2x.png?width=0.50 1x, /docs/resources/foundry/data-connection/stream-curl-push@2x.png 2x" style="aspect-ratio:2106 / 1318" width="958.7253414264036" node="[object Object]">
+<ol start="2">
+<li>
+<p>Execute the command in a bash terminal on your Mac, Windows, or Linux machine.</p>
+<p>Once the command is executed, you will have an available variable called <code>$ACCESS_TOKEN</code>. You will use this variable in the next command to push records.</p>
+<p>The second command will use cURL to hit a Foundry endpoint with a post request that contains the records we want to insert into the stream. The command is prepopulated with a dummy record to push into the stream, but you could provide any data in the HTTP request that adheres to the schema of the stream.</p>
+</li>
+<li>
+<p>Copy and paste the second command into your terminal and execute it.</p>
+<p>If the command is successful, you will see records appear in the stream.</p>
+ <img alt="View records" height="482" src="/docs/resources/foundry/data-connection/stream-view-records@2x.png?width=0.50" srcset="/docs/resources/foundry/data-connection/stream-view-records@2x.png?width=0.50 1x, /docs/resources/foundry/data-connection/stream-view-records@2x.png 2x" style="aspect-ratio:1242 / 482" width="1242" node="[object Object]">
+</li>
+</ol>
+<p>To change the data pushed into the stream, modify the data parameter of the post request.</p>
+<pre><code>[{ \"value\": {\"sensor_id\":\"sensor4\",\"temperature\":4.132} }]
+</code></pre>
+<p>You can also send test records into the stream from the user interface by expanding the <strong>Test with JSON</strong> card.</p>
+<img alt="Test with JSON" height="600" src="/docs/resources/foundry/data-connection/stream-test-with-json.png" style="aspect-ratio:1720 / 664" width="1554.2168674698796" node="[object Object]">
+<h2 id="user-content-next--steps" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#next--steps"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Next  steps</h2>
+<p>Now that you have successfully pushed data into a stream, you are ready to start transforming your data.  Select <strong>Start pipelining</strong> to navigate to the Pipeline Builder application where you will build your streaming pipeline. Learn how to <a href="/docs/foundry/building-pipelines/create-stream-pipeline-pb/">transform your data</a>, and learn more about the <a href="/docs/foundry/pipeline-builder/overview/">different transforms available in Pipeline Builder</a>.</p>
+</article>
+</body>
+</html>

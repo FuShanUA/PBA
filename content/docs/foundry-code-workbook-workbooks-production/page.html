@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Moving to production</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-moving-to-production" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#moving-to-production"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Moving to production</h1>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>We recommend using Code Workbook or Code Workspaces for code-based analyses and pipeline prototypes. We recommend Pipeline Builder and Code Repositories for robust production pipelines and support for workflows that require an additional layer of governance and scrutiny, high data, or optimized performance.</p><p>For more information about where to write your pipeline, review our <a href="/docs/foundry/code-workbook/code-products-comparison/">comparison of Code Workbook, Code Workspaces, and Code Repositories</a>.</p></div>
+<p>Once you’re satisfied with the outputs you have derived in a Workbook, you should harden your logic and output datasets to make them reliable. Doing this in Code Workbook is straightforward. We’ll run through a few simple steps that can help make your work robust and production-ready:</p>
+<ul>
+<li><a href="#protecting-branches">Protecting branches</a></li>
+<li><a href="#using-batch-builds">Using batch builds</a></li>
+<li><a href="#data-health-checks">Data health checks</a></li>
+<li><a href="#organizing-outputs">Organizing outputs</a></li>
+<li><a href="#organizing-the-graph">Organizing the graph</a></li>
+<li><a href="#exporting-to-code-repository">Exporting to Code Repository</a></li>
+</ul>
+<h2 id="user-content-protecting-branches" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#protecting-branches"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Protecting branches</h2>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>To protect a branch in a Workbook, you must have Owner privileges on that Workbook.</p></div>
+<p><strong>Branch protection</strong> allows branches within a Workbook to be locked down, preventing anyone from editing logic in that branch directly. Instead, logic changes must be created in another branch and then merged into the protected branch. Typically, users protect the <code>master</code> branch in a Workbook, but you can protect any other branches as well.</p>
+<p>To protect a branch, click the settings icon (<img alt="Gear icon" height="50" src="/docs/resources/foundry/code-workbook/gear-icon.png" style="aspect-ratio:50 / 50" width="50" node="[object Object]">) in the top right of the branch menu, as shown below.</p>
+<p><img alt="pipeline-branch-menu" height="247" src="/docs/resources/foundry/code-workbook/pipeline-branch-menu.png" style="aspect-ratio:334 / 247" width="334" node="[object Object]"></p>
+<p>Toggle on <strong>Protect this branch</strong> to enable branch protection, as shown below. By default, a protected branch does not allow any user to use the <strong>Run</strong> button on that branch to compute output datasets. This prevents Workbook runs from colliding with scheduled builds, which are described in the next section.</p>
+<p><img alt="pipeline-branch-protection" height="332" src="/docs/resources/foundry/code-workbook/pipeline-branch-protection.png" style="aspect-ratio:498 / 332" width="498" node="[object Object]"></p>
+<p>After saving, your branch will be protected and read-only.</p>
+<p><img alt="pipeline-readonly" height="127" src="/docs/resources/foundry/code-workbook/pipeline-readonly.png" style="aspect-ratio:1230 / 127" width="1230" node="[object Object]"></p>
+<h2 id="user-content-using-batch-builds" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#using-batch-builds"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Using batch builds</h2>
+<p>You may want to regularly refresh output datasets created in Code Workbook, either based on the input dataset(s) updating, or on a time-based cadence. You can do this by scheduling a recurring build on these output datasets.</p>
+<ul>
+<li>To schedule a recurring build on one output dataset, open dataset actions and click on <strong>Manage Schedules</strong>.</li>
+<li>To schedule a recurring build on multiple output datasets, click the cog icon at the top of the workbook and select <strong>Explore Data Lineage</strong>. You should now see all input datasets and saved output datasets from your workbook.</li>
+</ul>
+<p>Both actions will bring you to the Data Lineage app. Click on the calendar icon in the right hand pane to open the <strong>Manage Schedules</strong> interface. Follow the prompts to set up a recurring schedule. In the image below, a schedule that builds <code>dataset_1</code> and <code>dataset_2</code> daily is shown.</p>
+<p><img alt="Build schedules panel" height="600" src="/docs/resources/foundry/code-workbook/workbooks-build-schedules.png" style="aspect-ratio:2456 / 1384" width="1064.7398843930637" node="[object Object]"></p>
+<p><a href="/docs/foundry/data-lineage/manage-schedules/">Learn more about creating schedules in Data Lineage.</a></p>
+<p>Note that batch builds will not update transforms that are not saved as datasets (e.g. unpersisted transforms). Concretely, consider the case where unpersisted transform A is the parent of persisted transform B. If I use batch build to build transform B, transform B will use the latest logic from transform A, and the latest data from the upstream input dataset. However, the preview shown in the workbook for transform A, as well as any visualization created in transform A, will not be updated by this batch build.</p>
+<h2 id="user-content-data-health-checks" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#data-health-checks"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Data health checks</h2>
+<p>Another best practice for output datasets is adding <strong>Data Health checks</strong>. Open your output dataset and click the Health tab to access the Data Health page. Setting health checks allows you to receive notifications if a dataset’s build fails, it becomes stale, or fails to conform to some other requirement you specify.</p>
+<p><a href="/docs/foundry/health-checks/overview/">Learn more about Data Health in Foundry.</a></p>
+<p><img alt="pipeline-data-health" height="600" src="/docs/resources/foundry/code-workbook/pipeline-data-health.png" style="aspect-ratio:1950 / 650" width="1800" node="[object Object]"></p>
+<h2 id="user-content-organizing-outputs" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#organizing-outputs"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Organizing outputs</h2>
+<p>When using Workbooks as part of your project, we recommend creating the following folder structure in the project:</p>
+<ul>
+<li><strong>/data</strong></li>
+<li><strong>/workbooks</strong></li>
+<li><strong>/templates</strong></li>
+</ul>
+<p>Once this folder structure is set up, you can share a new Workbook from your home folder easily:</p>
+<ol>
+<li>Move your Workbook to the <code>/workbooks</code> directory.</li>
+<li>If you created any templates in your Workbook, move them to the <code>/templates</code>directory.</li>
+<li>To move datasets, click the Output dropdown in the top-left of the Workbook and then click “Change folder…” to choose a folder where new output datasets will be added. Choose the <code>/data</code> folder in your project. By default, all the datasets you derived in your Workbook will be moved to the new folder you choose.</li>
+</ol>
+<img alt="pipeline-folder-management" src="/docs/resources/foundry/code-workbook/pipeline-folder-management.png?width=400" style="aspect-ratio:682 / 362" width="400" node="[object Object]">
+<img alt="pipeline-move-datasets" src="/docs/resources/foundry/code-workbook/pipeline-move-datasets.png?width=400" style="aspect-ratio:1006 / 336" width="400" node="[object Object]">
+<h2 id="user-content-organizing-the-graph" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#organizing-the-graph"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Organizing the graph</h2>
+<p>You may want to curate and organize your graph to allow other users to easily understand the flow of transformation. Two organizational features available in Code Workbook are node coloring and auto-layout.</p>
+<p>You can use node coloring to visually group nodes on the graph. Create a new color group by clicking on the <strong>Colors</strong> button at the top right, and add nodes to the color group by selecting them and using the <strong>+</strong> button on the color group. In the workbook contents helper, you can also sort the list of datasets by color group.</p>
+<p><img alt="node-coloring" height="600" src="/docs/resources/foundry/code-workbook/node_coloring.png" style="aspect-ratio:2346 / 954" width="1475.4716981132074" node="[object Object]"></p>
+<p>You can also auto-layout sections of your graph by clicking the layout button at the top right. By default, auto-layout arranges the entire graph, but you can also select specific nodes and click auto-layout to arrange only those nodes.</p>
+<p><img alt="graph-autolayout" height="600" src="/docs/resources/foundry/code-workbook/graph_autolayout.png" style="aspect-ratio:1426 / 602" width="1421.2624584717607" node="[object Object]"></p>
+<h2 id="user-content-exporting-to-code-repository" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#exporting-to-code-repository"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Exporting to Code Repository</h2>
+<p>If you have finished prototyping a pipeline in Code Workbook and would like to move your code to Code Repositories, you can use the <strong>Export to Code Repository</strong> helper. <a href="/docs/foundry/code-workbook/code-repositories-export/">Learn more about exporting to Code Repositories.</a></p>
+<p>You may want to move your code to Code Repositories for a variety of reasons:</p>
+<ul>
+<li>Code Repositories provides full Git support, allowing users to view and revert to previous commits.</li>
+<li>Code Repositories supports incremental transforms and multi-output transforms.</li>
+<li>Code Repositories supports <a href="/docs/foundry/building-pipelines/remove-inherited-markings/">unmarking workflows</a> and provides control over when PRs can be merged using <a href="/docs/foundry/code-repositories/branch-settings/">branch settings</a>.</li>
+</ul>
+</article>
+</body>
+</html>

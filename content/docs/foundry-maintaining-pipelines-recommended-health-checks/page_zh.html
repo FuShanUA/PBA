@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Recommended health checks</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-recommended-health-checks" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#recommended-health-checks"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>推荐的健康检查</h1>
+<p>本文档提供了设置健康检查以监控管道运行状况的最佳实践。遵循这些指南，您将能够实现稳健且有效的监控水平，从而确保：数据进入、数据构建和数据输出。</p>
+<p>这些最佳实践不涵盖确保数据集内容的 质量、准确性或有效性的方法。这要求对管道具备更细粒度和功能性的了解，才能确定管道中需要执行的正确验证逻辑。</p>
+<p>这些指南还应帮助您避免健康检查设置中的以下常见陷阱：</p>
+<ul>
+<li>检查过多导致检查数量产生大量噪音</li>
+<li>检查类型错误导致告警毫无帮助</li>
+<li>检查过少导致出现问题时缺乏有效信号</li>
+</ul>
+<h2 id="user-content-prerequisite-knowledge" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#prerequisite-knowledge"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>前置知识</h2>
+<p>这些指南依赖于对以下内容的理解：</p>
+<ul>
+<li><a href="/docs/foundry/health-checks/overview/">数据健康</a></li>
+<li><a href="/docs/foundry/building-pipelines/scheduling-overview/">调度</a>
+<ul>
+<li>调度将作为监控的基本单位，这意味着这些指南将根据调度运行时发生的情况，给出在何处安装何种检查的建议。</li>
+</ul>
+</li>
+<li><a href="/docs/foundry/data-lineage/overview/">数据血缘关系</a></li>
+</ul>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>在本文档中，对调度的输入、中间产物和输出的引用，均指代已解析的调度，这与数据血缘关系应用中的调度配置不同。</p></div>
+<h2 id="user-content-important-monitoring-concepts" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#important-monitoring-concepts"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>重要的监控概念</h2>
+<h3 id="user-content-unit-of-monitoring-resolved-schedules" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#unit-of-monitoring-resolved-schedules"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>监控单位：已解析的调度</h3>
+<p><strong>已解析的调度</strong>是一种心智模型，用于为调度涉及的不同数据集分配角色。某些数据集的介入是因为它们可以由该调度构建，这意味着它们是调度数据集选择的一部分。其他数据集作为构建所需的必要输入而介入。根据数据集的角色，我们推荐使用不同的健康检查。</p>
+<p>数据集在调度中可以担任以下角色之一：</p>
+<ul>
+<li><strong>输出：</strong>作为调度最后一步的数据集。它们由调度构建，但不被调度中的任何其他数据集使用。</li>
+<li><strong>中间产物：</strong>由调度构建但不作为调度输出的所有数据集。</li>
+<li><strong>输入：</strong>不由调度构建但被调度使用的数据集。输入构成了被读取的调度外部第一层；例如，数据连接同步以及您不自行构建的派生数据集。</li>
+</ul>
+<p>举一个具体的例子，假设某个调度构建了以下数据集：</p>
+<p><img alt="unresolved schedule view" height="484" src="/docs/resources/foundry/maintaining-pipelines/unresolved-view.png" style="aspect-ratio:1654 / 484" width="1654" node="[object Object]"></p>
+<p>在这种情况下，您可以将调度进行如下拆分：</p>
+<p><img alt="resolved schedule view" height="427" src="/docs/resources/foundry/maintaining-pipelines/resolved-view.png" style="aspect-ratio:1697 / 427" width="1697" node="[object Object]"></p>
+<h3 id="user-content-understand-what-is-built-in-practice" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#understand-what-is-built-in-practice"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>理解实际构建的内容</h3>
+<p>要确定调度的输入、输出和中间产物分别是什么，最简单的方法是在<a href="/docs/foundry/data-lineage/overview/">数据血缘关系</a>中打开该调度。进入数据血缘关系后，从侧边栏中选择该调度，系统将应用调度着色，帮助您了解该调度将尝试构建哪些内容。</p>
+<ul>
+<li><strong>目标：</strong>会尝试构建，且通常由调度构建。一个例外是数据连接同步的数据集，只有当调度设置了“强制构建”时才会构建它们。</li>
+<li><strong>排除：</strong>从不由调度构建。</li>
+<li><strong>输入（仅连接构建）：</strong>不由调度构建，除非它们在上游还有另一个输入。</li>
+</ul>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>关于数据陈旧度的简要说明：在实践中，调度很少会构建此图中的所有内容，因为某些数据集可能已经是最新的，重新计算它们只会浪费资源。然而，理解解析调度意味着弄清楚调度能够触及的所有内容，这依然很重要。</p></div>
+<h3 id="user-content-target-vs-output" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#target-vs-output"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>目标与输出</h3>
+<p>
+
+计划在目标上定义，通常与输出一致。但在某些情况下，目标与输出可能存在差异：</p>
+<ol>
+<li>数据集可以作为输出，而无需显式定义为目标：</li>
+</ol>
+<p><img alt="multi-output" height="425" src="/docs/resources/foundry/maintaining-pipelines/multi-output.png" style="aspect-ratio:757 / 425" width="757" node="[object Object]"></p>
+<p>构建 <code>output_c</code> 的计划总是必须同时构建 <code>output_d</code>，因为 B、C 和 D 之间的转换是多输出转换。</p>
+<p>因此，以 <code>output_c</code> 为目标的计划会将 <code>output_c</code> 和 <code>output_d</code> 都作为输出，因为 <code>output_d</code> 是由该计划构建的数据集，且不被该计划中的任何其他数据集使用。</p>
+<p><img alt="multi-output labelled" height="220" src="/docs/resources/foundry/maintaining-pipelines/multi-output2.png" style="aspect-ratio:1520 / 220" width="1520" node="[object Object]"></p>
+<ol start="2">
+<li>数据集可以定义为“目标”，而不作为“输出”：</li>
+</ol>
+<p>即使数据集被定义为计划“目标”，如果它被该计划中的其他数据集使用，则会被视为“中间”数据集，而非“输出”数据集。</p>
+<p>在此示例中，dataset_c 是计划“目标”，但不被视为“输出”：</p>
+<p><img alt="unresolved schedule view" height="600" src="/docs/resources/foundry/maintaining-pipelines/unresolved-view-intermediate-target.png" style="aspect-ratio:2032 / 652" width="1869.9386503067485" node="[object Object]"></p>
+<h2 id="user-content-where-should-health-checks-be-installed-on-a-schedule" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#where-should-health-checks-be-installed-on-a-schedule"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>应该在计划中的何处安装健康检查？</h2>
+<p>以下分步指南依赖于对作业状态检查与计划状态检查之间差异的理解，以及对数据新鲜度与自上次更新以来时间检查之间差异的理解。如果不确定这些检查之间的区别，请参阅<a href="/docs/foundry/health-checks/check-types/">《健康检查类型》</a>。</p>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>计划为我们提供了管道的合理表示。由于计划是推荐使用的监控单元，因此监控效果取决于您所设置的计划质量。在开始设置健康检查之前，请花些时间确保您的计划遵循<a href="/docs/foundry/building-pipelines/scheduling-best-practices/">此处概述的最佳实践</a>。</p></div>
+<h3 id="user-content-checks-on-schedules" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#checks-on-schedules"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>计划检查</h3>
+<ol>
+<li><strong>计划状态检查：</strong>这将捕获管道中的所有故障；无需在每个数据集上放置作业状态检查。</li>
+<li><strong>计划持续时间检查：</strong>有助于捕获可能存在的冲突或阻塞管道的构建。此检查也有助于检测由以下原因引起的问题：
+<ul>
+<li>异常输入（例如 join 操作）在输入中的键分布发生变化时可能耗时更长。失败作业在某个阶段除一个任务外全部完成，是连接倾斜的强烈标志。</li>
+<li>代码变更引入的性能下降。</li>
+</ul>
+</li>
+</ol>
+<h3 id="user-content-checks-on-inputs" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#checks-on-inputs"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>输入检查</h3>
+<p>在管道的所有<strong>已解析输入</strong>上安装检查。如果管道失败，能够追踪根因至关重要。输入过时或模式中断的情况时有发生——在输入上安装检查有助于检测这些问题。注意：目前，特定数据集上只能存在一个给定类型的检查。如果您想安装的检查已经存在，只需订阅即可。</p>
+<ol>
+<li><strong>模式检查：</strong>如果添加或删除了列，或者管道所依赖的列名和类型发生意外更改，这会向您发出警告。</li>
+<li><strong>自上次更新以来的时间 (TSLU) [可选]：</strong>允许您验证管道输入的数据是否按时交付。这有助于在管道未按时构建时执行根因分析。这是一个可选检查，仅当您确切知道预期的更新频率时才应安装。
+<ul>
+<li>如果已有上游数据主人监控您的输入数据集，您也应避免应用此检查（您可能甚至没有在上游数据集上添加检查的权限）。</li>
+<li>建议启用“忽略空事务”。</li>
+</ul>
+</li>
+<li><strong>作业或计划状态：</strong>可选，但对于数据连接同步或未明确定义数据权属的数据集推荐使用。推荐使用计划状态，因为计划代表了共同构建的管道单元。推荐使用计划状态而非作业状态，因为如果输入数据集在某个上游数据集上的构建失败并被取消或中止，导致单个作业未运行，您将会收到警报。</li>
+</ol>
+<h3 id="user-content-checks-on-outputs" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#checks-on-outputs"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>输出检查</h3>
+<p>
+
+在管道的所有<strong>已解析输出</strong>上安装检查（请注意，这些输出由调度构建，但不会被调度中的任何其他数据集使用）。</p>
+<ol>
+<li><strong>距上次更新时间检查 (TSLU)：</strong> 使用此检查确保管道按照所需的节奏进行更新。
+<ul>
+<li>示例：如果管道应每 24 小时运行一次（例如每天上午 9 点，平均构建耗时 1 小时），您可以：
+<ul>
+<li>将“距上次更新”阈值设置为 26 小时（以考虑构建时间并留出一定余量），并让检查自动更新。</li>
+<li>将阈值设置为 2 小时并让检查按计划运行：在本例中为每天上午 11 点。提示：勾选“自动解决”标记，否则如果构建稍微延迟，您的管道将被视为不健康状态长达整整 24 小时。</li>
+<li>通过对输出数据集进行调度状态、调度持续时间和 TSLU 检查，您可以获得有关调度状态和调度持续时间出现问题的早期预警。如果 TSLU 最终触发告警，说明很可能出了问题，需要有人进行调查。</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>模式检查：</strong> 如果管道输出被其他应用程序（如 Contour、Slate 或 Object Explorer）的用户所使用，请使用此检查。当输出模式发生破坏性变更时，此检查会向您发出警告，以便您在必要时采取行动并更新下游应用程序或通知用户。</li>
+</ol>
+<h3 id="user-content-optional-checks" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#optional-checks"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>可选检查</h3>
+<p>可选地，可以在用户直接或通过同步在其他应用程序中使用的<strong>重要中间数据集</strong>上安装检查：</p>
+<ol>
+<li><strong>模式检查：</strong> 与输出类似，如果用户在任何应用程序中（无论是通过 Contour 还是同步）使用数据集，模式变更可能导致中断或需要后续手动处理。</li>
+<li><strong>数据新鲜度：</strong> 使用此检查确保数据集内容满足新鲜度要求（前提是您拥有合适的 timestamp 列，可以告诉您源系统中数据行是何时添加到数据集的）。</li>
+<li><strong>距上次更新时间检查：</strong> 如果管道中间存在一个关键数据集（例如被许多其他用户使用的数据集），它可能由于上游延迟等原因而无法及时更新。理想情况下，您应该能通过管道输入检查检测到这种情况，但添加 TSLU 检查是一个有用的补充。</li>
+<li>如果存在同步：
+<ul>
+<li><strong>同步状态检查：</strong> 应安装在正在同步的数据集上（无论是同步到 Slate 等 Foundry 应用程序还是外部系统）</li>
+<li><strong>同步新鲜度检查：</strong> 这在与数据新鲜度和 TSLU 一起评估时特别有用，因为您将能够快速确定问题是以下哪种情况：a) 数据集未及时更新；b) 数据集已更新，但源系统未提供新数据；c) 数据集具有新数据，但同步尚未刷新。</li>
+</ul>
+</li>
+</ol>
+<h3 id="user-content-summary-table" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#summary-table"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>汇总表</h3>
+<p>上述最佳实践总结在此表中，以便快速参考：</p>
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><tbody><tr><th></th><th>模式</th><th>TSLU</th><th>数据新鲜度</th><th>同步新鲜度</th><th>同步状态</th></tr><tr><td>输入</td><td><div>✓</div><div>（允许添加）</div></td><td></td><td></td><td></td><td></td></tr><tr><td>中间</td><td></td><td></td><td></td><td></td><td></td></tr><tr><td>输出</td><td>✓ （精确匹配）</td><td>✓</td><td></td><td></td><td></td></tr><tr><td>面向用户的数据集*</td><td>✓ （精确匹配）</td><td></td><td>✓</td><td></td><td></td></tr><tr><td>已同步数据集*</td><td>✓ （精确匹配）</td><td></td><td>✓</td><td>✓</td><td>✓</td></tr></tbody></table></div>
+<p>[*] 可以是输入、中间或输出数据集。面向用户的数据集是指用户在应用程序（如 Contour）中直接使用的数据集。</p>
+</article>
+</body>
+</html>

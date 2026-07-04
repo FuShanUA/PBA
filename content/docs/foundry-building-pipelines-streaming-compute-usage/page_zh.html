@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Compute usage with Foundry Streaming</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-compute-usage-with-foundry-streaming" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#compute-usage-with-foundry-streaming"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Foundry Streaming 的计算用量</h1>
+<p>Foundry Streaming 是一种高吞吐量、低延迟的计算形式，能够持续监听新传入的消息，应用用户定义的逻辑，并将其推送到管道的下一阶段。</p>
+<p>Foundry 流依赖于基于分布式并行 worker 的架构，每个并行 worker 都拥有专用于其特定流处理作业的资源。流的资源需求会随着活动流的最大吞吐量及其处理的消息总数而动态扩展。</p>
+<h2 id="user-content-how-compute-is-measured" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#how-compute-is-measured"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>计算用量的衡量方式</h2>
+<p>流处理计算用量分为以下两类：</p>
+<ul>
+<li>
+<p><strong>实时处理计算：</strong> 对实时数据运行用户定义转换的过程。此源类型称为“streaming”。</p>
+</li>
+<li>
+<p><strong>归档计算：</strong> 将数据从流处理层移动到 Foundry 存储层的过程。归档计算属于批处理过程，将显示为“transform”。</p>
+</li>
+</ul>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>请注意，在支付 Foundry 使用费用时，默认的 <code>streaming_usage_rate</code> 为 <code>0.5</code>。这是对实时数据运行用户定义转换的费率。如果您与 Palantir 签订了企业合同，请在进行计算用量核算前联系您的 Palantir 代表。</p></div>
+<p>在 Foundry 中，流的实时处理计算用量通过其在整个实际运行时间（wall-clock time）内消耗的计算秒数来衡量。因此，在流处理作业中占用更多计算资源（如 vCPU、内存、并行度）会增加作业成本。作业运行时间越长，消耗的计算量就越大。由于流的设计初衷就是持久运行以持续处理数据，因此它会持续消耗计算资源，直到由用户将其停止。</p>
+<p>流采用静态分配；在流运行期间，每实际运行一秒都会消耗固定数量的计算秒数。此外，通常会对流进行调优以满足峰值需求，这意味着流消耗的计算用量不受数据量波动的影响。即使没有数据流过，流也会消耗计算秒数。</p>
+<p>流的用量可按单个作业管理器和多个任务管理器消耗的总秒数来计算。请注意，每个并行 worker 将拥有相同的计算资源。</p>
+<p>作业管理器的计算秒数按以下方式计算：</p>
+<ul>
+<li><code>max(num_vCPU, gib_ram / 7.5) * streaming_usage_rate * stream_duration_seconds</code></li>
+</ul>
+<p>任务管理器的计算秒数按以下方式计算：</p>
+<ul>
+<li><code>max(num_vCPU, gib_ram / 7.5) * streaming_usage_rate * stream_duration_seconds * (num_parallel_task_managers + 1)</code></li>
+<li><code>compute_seconds = job_manager compute_seconds + task_manager_compute_seconds</code></li>
+</ul>
+<p>了解有关用于计算计算用量的值的更多信息，包括《<a href="/docs/foundry/resource-management/usage-types/#memory-to-core-ratio">内存与核心比率</a>》。</p>
+<p>归档作业是与每个流并行运行的批处理作业。归档作业会定期从流的热存储层读取数据，并将其移入 Foundry 存储中，以实现可靠的持久化存储和历史追踪。由于归档作业没有像流本身那样严格的低延迟要求，它们会按计划运行，并且仅在有数据需要归档时才消耗计算资源。</p>
+<p>归档作业的用量基于单个 Spark driver 计算，可使用以下公式得出：</p>
+<ul>
+<li><code>compute_seconds = max(num_vcpu, gib_ram / 7.5) * num_seconds</code>
+<ul>
+<li>归档作业规模较小。归档器始终以 1 个 vCPU 和 4 GiB RAM 的最低配置运行。</li>
+</ul>
+</li>
+</ul>
+<h2 id="user-content-investigate-foundry-streaming-usage" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#investigate-foundry-streaming-usage"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>调查 Foundry Streaming 用量</h2>
+<p>要查看流的总用量，请先导航至《<a href="/docs/foundry/resource-management/overview/">资源管理应用程序</a>》。然后，在<strong>按资源划分用量</strong>部分下找到您的流，并选择<strong>详情</strong>以查看各个数据集的用量。</p>
+<p><img alt="streaming-compute-usage" height="600" src="/docs/resources/foundry/building-pipelines/stream-compute-usage.png" style="aspect-ratio:2972 / 1400" width="1273.7142857142856" node="[object Object]"></p>
+<p>流的成本归因于该流生成的检查点数据集。此数据集作为该流处理过程的永久用量记录。在资源管理应用程序中，该数据集上的流处理用量归类于“streaming”类别下。</p>
+<p>流每次启动后都会持续运行，直到被用户停止。当用户停止流时，该次运行将显示在数据集的<strong>历史记录</strong>选项卡下。您可以调查每个单独流的配置文件，以了解历史流运行的性能和计算用量。</p>
+<p>
+
+每次运行历史归档时，它都会在<a href="/docs/foundry/data-integration/application-reference/#builds">《构建应用程序》</a>中发布计算指标。使用《构建应用程序》来调查每个已运行归档的资源分配情况。</p>
+<h2 id="user-content-understand-drivers-of-usage" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#understand-drivers-of-usage"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>了解资源使用的驱动因素</h2>
+<p>流式处理资源使用的主要驱动因素是流本身的计算资源占用。这里的计算资源包括每个任务管理器的 vCPU 数量、每个分区的 RAM 大小（GiB）以及流中的分区数量。这些资源在流的配置文件中设定，并在整个运行周期内保持不变。</p>
+<ul>
+<li>流资源的分配应满足传入数据流的峰值吞吐量需求。如果传入的消息量过大，超出了计算资源的有效处理能力，流就会出现处理滞后的情况。</li>
+<li>要更改流所使用的资源，必须修改资源配置文件并重启该流。</li>
+<li>归档作业的计算使用量随流中传输的数据量而动态调整。归档作业会读取自上次归档以来的所有数据。如果没有数据流入，则归档作业不会消耗任何计算资源。在流处于活跃状态时，归档作业每 10 分钟运行一次。</li>
+</ul>
+<h2 id="user-content-manage-usage-with-foundry-streaming" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#manage-usage-with-foundry-streaming"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>通过 Foundry Streaming 管理资源使用</h2>
+<p>针对特定工作流，明确何时选择流式处理、何时选择批处理至关重要。流式处理专为要求秒级延迟和持续计算的工作流而设计。如果数据允许每隔几分钟运行一次，可以考虑采用小型微批处理作业，它能够推送与流式处理相同量级的数据，但能降低计算秒成本，代价是数据延迟会有所增加。</p>
+<ul>
+<li>流的规模会显著影响每次运行消耗的总计算秒数。应为流配置充足的资源，以应对该流预期的最大并发负载。</li>
+<li>合理确定流的规模，既要确保能够承载峰值负载，又要避免过度分配资源，这一点非常关键。这需要精细调整每个作业的规模（vCPU 和内存）以及流中任务管理器的总数。</li>
+<li>流会持续运行直到被手动停止。请密切监控流式计算的资源来源，确保仅在需要时才运行流。</li>
+</ul>
+<h2 id="user-content-calculating-usage" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#calculating-usage"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>计算资源使用量</h2>
+<p>以下示例展示了如何计算一个假设运行 10 分钟的流的计算使用量。请注意，大多数生产环境的流都是持续运行的。</p>
+<p><strong>流配置文件</strong></p>
+<ul>
+<li>作业管理器 vCPU：0.5</li>
+<li>作业管理器 gib_ram：1</li>
+<li>任务管理器 vCPU：0.5</li>
+<li>任务管理器 gib_ram：2g</li>
+<li>并行度：2</li>
+<li>gib_ram：4</li>
+<li>流持续时间：10 分钟（600 秒）</li>
+<li>streaming_usage_rate：0.5</li>
+</ul>
+<p><strong>计算过程</strong></p>
+<ul>
+<li>作业管理器计算秒数 = max(vCPU, gib_ram / 7.5 gib_ram) * streaming_usage_rate * 600s = max(0.5, 0.133) * 0.5 * 600s = 150 计算秒
+<ul>
+<li>换算一下，即每秒 0.25 计算秒，或每小时 900 计算秒</li>
+</ul>
+</li>
+<li>任务管理器计算秒数 = max(vCPU, gib_ram / 7.5 gib_ram) * (parallelism + 1) * streaming_usage_rate * 600s = max(0.5, 0.267) * 3 * 0.5 * 600s = 450 计算秒
+<ul>
+<li>换算一下，即每秒 0.75 计算秒，或每小时 2700 计算秒</li>
+</ul>
+</li>
+</ul>
+<p>该流运行 10 分钟的总计算使用量为 150 个作业管理器计算秒和 450 个任务管理器计算秒。如需详细了解影响 <a href="/docs/foundry/resource-management/usage-types/">《Foundry 中的计算使用量》</a>的因素，请参阅相关文档。</p>
+</article>
+</body>
+</html>

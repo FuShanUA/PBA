@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Branching and release process</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-branching-and-release-process" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#branching-and-release-process"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>分支与发布流程</h1>
+<p>本文档旨在概述通过代码仓库中的项目管理的分支管理最佳实践和数据管道发布流程。</p>
+<p>其高层目标是设计一套流程，在快速迭代新数据特性与数据质量修复之间取得平衡，同时保持稳定且符合流程规范的变更管理机制。</p>
+<h2 id="user-content-scope-of-release" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#scope-of-release"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>发布范围</h2>
+<p>在深入探讨发布管理流程的内部细节之前，我们需要更明确地定义究竟“产品是什么”。就本文档而言，我们将<code>产品</code>定义为<em>作为概念单元发布的一组资产集合</em>。</p>
+<p>以《推荐的项目结构》作为我们在 Foundry 中构建管道的参考，可以看到管道由多种不同类型的多个项目定义——数据源、转换、本体和工作流。然而，在大多数情况下，我们不会将每个项目单独作为产品进行管理，而是将每个项目中的部分资源定义为以下产品类型之一：</p>
+<ul>
+<li>本体产品：该产品是由数据源、管道和本体项目创建的输出数据集集合。</li>
+<li>用例产品：每个用例项目代表一个独立的用例。每个用例都定义为一个产品。</li>
+</ul>
+<p><img alt="pipeline-overview" height="600" src="/docs/resources/foundry/building-pipelines/pipeline_overview.png" style="aspect-ratio:4380 / 985" width="2668.020304568528" node="[object Object]"></p>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>我们在此对产品给出的定义，可以涵盖由多个仓库管理的代码以及其他 Foundry 资源。</p></div>
+<h2 id="user-content-product-branch-management" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#product-branch-management"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>产品分支管理</h2>
+<p>以下部分涉及我们计划部署的分支策略，用于管理每个产品的发布。《了解更多关于分支的一般概念，以及分支在代码仓库和数据集之间的运作方式。》</p>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><div class="ptcom-design__title__19o1cwu">分支命名</div><p>强烈建议在产品内的所有仓库中使用相同的分支名称。这能确保下游分支从正确的上游分支读取数据。</p></div>
+<p>我们推荐遵循的通用分支策略基于名为 GitFlow ↗ 的常见实践并作了一些调整。主要变更是建议跳过 <code>release</code> 分支。由于 Foundry 中工件的部署方式，我们可以在测试后直接将变更从 <code>dev</code> 合并到 <code>master</code>。</p>
+<h3 id="user-content-common-branches" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#common-branches"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>常用分支</h3>
+<p><code>master</code>&nbsp;- 这是生产分支。因此，它是受保护分支，只有发布管理员角色才能批准将 PR 合并到此分支。假定 <code>master</code> 分支接入的是生产数据。</p>
+<p><code>dev</code> - <code>dev</code>（即开发）分支是预发分支，派生自&nbsp;<code>master</code>&nbsp;分支。当您想使用测试数据测试完整功能时，它尤为重要。<code>dev</code> 分支的数据可以来自 <code>master</code>（通过回退分支自动实现）或 UAT 数据源。</p>
+<p><code>feature-[X]</code>&nbsp;- 功能分支用于开发和测试特定功能。该分支派生自 <code>dev</code>&nbsp;分支。这是一个短生命周期分支，意味着一旦合并到 master 即可删除。由于该分支派生自 <code>dev</code>&nbsp;，它将接入与 <code>dev</code> 分支相同的数据。&nbsp;请注意，只要不重新配置回退分支，且功能分支上不存在输入数据集，此情况就始终成立。</p>
+<p><img alt="basic-branching" height="393" src="/docs/resources/foundry/building-pipelines/branches-1.png" style="aspect-ratio:877 / 393" width="877" node="[object Object]"></p>
+<h3 id="user-content-other-special-branches" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#other-special-branches"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>其他特殊分支</h3>
+<p><code>major-release-[X]</code>&nbsp;- 特殊分支，用于整合因源系统模式变更（以特定周期发生）而需要进行的所有变更。</p>
+<p><code>hot-fix-[X]</code>&nbsp;- 特殊分支，用于修复在生产环境中发现的问题，同时代码库已推进至新版本。由于我们假定 dev&nbsp;和 master&nbsp;保持同步（除非有正在测试的功能），因此不太可能需要此类分支。</p>
+<h3 id="user-content-branch-management-workflow" level="3" node="[object Object]" data-pagefind-weight="0.8">
+
+<a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#branch-management-workflow"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>分支管理流程</h3>
+<p>如前所述，部分分支是长期存在的，而另一些则是临时的。以下章节介绍了推荐的分支间工作流。</p>
+<p><img alt="advanced-branching" height="445" src="/docs/resources/foundry/building-pipelines/branches-2.png" style="aspect-ratio:877 / 445" width="877" node="[object Object]"></p>
+<ul>
+<li>
+<p>在 <em>t0</em> 时，创建 <code>master</code> 和 <code>dev</code> 分支。</p>
+</li>
+<li>
+<p>在 <em>t1</em> 时，从 <code>dev</code> 分支创建 <code>feature x</code> 分支。</p>
+</li>
+<li>
+<p>在 <em>t2</em> 时，从 <code>dev</code> 分支创建 <code>feature y</code> 分支。</p>
+</li>
+<li>
+<p>在 <em>t3</em> 时，将 <code>feature x</code> 合并到 <code>dev</code> 分支。</p>
+</li>
+<li>
+<p>在 <em>t4</em> 时，将 <code>dev</code> 合并到 <code>master</code>，并删除 <code>feature x</code> 分支。</p>
+</li>
+<li>
+<p>在 <em>t5</em> 时，将 <code>dev</code> 合并到 <code>feature y</code> 分支，以同步 <code>dev</code> 的最新状态。</p>
+</li>
+<li>
+<p>在 <em>t6</em> 时，将 feature y 合并到 <code>dev</code> 分支，随后按照前面的方式，从 <code>dev</code> 合并到 <code>master</code>。</p>
+</li>
+</ul>
+<p>除了将开发的功能发布到 <code>dev</code> 和 <code>master</code> 分支外，还可以为重大版本发布开发一个长期分支，例如 <code>major-release-[X]</code>。</p>
+<p>建议持续将 <code>dev</code> 合并到 <code>major-release-[X]</code> 中，以保持最新功能的同步。我们建议尽可能保持本体结构稳定，并通过数据源和转换项目中的转换来隐藏后端结构变更。</p>
+<h3 id="user-content-repository-upgrades" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#repository-upgrades"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>代码仓库升级</h3>
+<p><em>代码仓库升级</em> 是定期提示用户更新代码仓库中配置文件的操作。这些更新会应用修复程序或升级语言包依赖的版本，最佳实践是及时应用这些推荐的升级。</p>
+<p><img alt="upgrade button" height="66" src="/docs/resources/foundry/building-pipelines/upgrade.png" style="aspect-ratio:529 / 66" width="529" node="[object Object]"></p>
+<p>请注意，如果错过了提示中的“升级”按钮，该按钮也可在右上角“...”选项菜单下的任何分支中找到：</p>
+<p><img alt="upgrade button" height="184" src="/docs/resources/foundry/building-pipelines/upgrade-2.png" style="aspect-ratio:251 / 184" width="251" node="[object Object]"></p>
+<p>升级过程应与功能开发周期同等对待。这意味着：</p>
+<ol>
+<li>
+<p><code>master</code> 应通过 <code>dev</code> 进行升级。</p>
+</li>
+<li>
+<p>当提示升级 <code>dev</code> 时，系统会自动创建一个功能分支。待 CI 检查完成后，您可以在该分支上运行构建以测试配置变更。确认升级后转换操作仍能正常执行，即可将配置变更合并到 <code>dev</code> 中。一旦 <code>dev</code> 完成升级，应使用 PR 将这些变更推送到 master。</p>
+</li>
+<li>
+<p>要升级所有未合并的功能分支，请将 <code>dev</code> 合并回各个分支以包含这些配置升级。</p>
+</li>
+</ol>
+<h3 id="user-content-maintenance-windows" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#maintenance-windows"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>维护窗口</h3>
+<p>在开发实践中，从创意到生产的快速迭代循环十分常见，对于依赖终端用户反馈来决定下一轮迭代的项目而言，这更是项目成功的关键。为了支持这一流程，我们建议设立预定的维护窗口。</p>
+<p>例如，当所有功能的 PR 都合并后，所有数据集会在 <code>dev</code> 分支上进行构建，以便在周三和周五验证结果。在这几天里，只有验证期间发现问题的修复程序才会合并到 <code>dev</code> 中，直到 <code>dev</code> 最终在周四和周一（即“发布日”）合并到 <code>master</code> 中。</p>
+<p><img alt="upgrade-windows" height="424" src="/docs/resources/foundry/building-pipelines/branches-3.png" style="aspect-ratio:974 / 424" width="974" node="[object Object]"></p>
+<p>建议与所有相关方就这种节奏达成一致，以确保他们在这几天内能投入足够的时间来推进新功能的落地。</p>
+<h2 id="user-content-feature-testing-and-end-user-verification" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#feature-testing-and-end-user-verification"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>功能测试与终端用户验证</h2>
+<p>功能开发完成后，对功能输出的正确性及其对任何相关依赖资源的影响进行测试和验证至关重要。在代码仓库中，我们将输出数据集视为需要进行测试的功能输出。</p>
+<p>基于我们上文定义的分支结构，当我们构建输出数据集时，它要么会使用该功能同分支上的输入数据集数据，要么通过回退逻辑从源分支读取数据——在简化版中是 master 分支，在其他情况下则是 dev 分支。</p>
+<p>开发人员级别的测试可以通过数据集《健康检查》、依赖测试数据集来完成，或者使用 Contour 等工具手动进行。</p>
+<div class="ptcom-design__callout__19o1cwu">
+
+<svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><div class="ptcom-design__title__19o1cwu">测试方法论</div><p>强烈建议不要通过预览或 SQL 助手进行此类测试。预览助手在执行代码时仅使用数据样本，可能无法揭示所有情况——尤其是涉及一个或多个连接操作的代码。SQL 助手仅测试代码的正确性，而不测试构建输出的正确性，而在某些情况下两者可能存在差异。</p></div>
+<p>功能开发完成后，新功能代码在合并入 <code>dev</code> 分支前需要进行代码审查，同时功能的最终结果需由最终用户验证其正确性和完整性。</p>
+<p>我们建议将拉取请求审查用于前者，将 Foundry 工单用于后者，结合两者使用，具体说明如下图所示。</p>
+<p><img alt="pull-request" height="420" src="/docs/resources/foundry/building-pipelines/branches-4.png" style="aspect-ratio:877 / 420" width="877" node="[object Object]"></p>
+<ol>
+<li>
+<p>开发人员从其功能分支向 <code>dev</code> 分支发起拉取请求，并添加实现说明。</p>
+</li>
+<li>
+<p>开发主管审查拉取请求，与开发人员协作完成必要的修改，最后将拉取请求合并至 <code>dev</code> 分支。</p>
+</li>
+</ol>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>在拉取请求审查期间，务必检查任何受影响数据集的模式变更。模式应视为你的数据 API，因此对列名或列类型的任何更改均视为对使用者的“破坏性”更改。尽量限制破坏性更改，建议创建新列而非删除或修改旧列，同时声明旧列弃用，并向数据使用者（通过 Data Connection 识别）提供更新至新列的指引。在下一个主要版本发布时，可以移除上一个主要版本中声明弃用的列。</p><p>要审查拉取请求中的模式更改，请在受影响数据集选项卡中使用模式差异视图。</p></div>
+<ol start="3">
+<li>开发主管在 <code>dev</code> 分支运行构建，生成功能输出数据集。</li>
+<li>开发人员在输出数据集上创建 Foundry 工单，记录所有测试与验证请求，并将工单分配给相关最终用户进行验证。</li>
+<li>最终用户收到工单后，可获取完整上下文并查看待测试的相关数据集与分支。他们与开发人员协作完成所需修改，直至问题解决并标记为“准备合并”。随后，该工单将分配给发布经理。</li>
+<li>发布经理关闭工单，并将 <code>dev</code> 分支合并至 <code>master</code> 分支。</li>
+<li>发布经理删除功能分支。</li>
+</ol>
+<p>上述工作流允许各方之间进行相对快速的协作周期，同时不丢失上下文。已关闭的工单会保留在平台上，可充当变更管理流程的审计追踪记录。</p>
+<h3 id="user-content-foundry-issues-feature-review-workflow" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#foundry-issues-feature-review-workflow"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Foundry 工单功能审查工作流</h3>
+<p>以下示例展示了团队如何利用 Foundry 工单来跟踪来自其他利益相关者的审查请求，开展围绕新功能的讨论，并控制和记录代码合并至 <code>master</code> 分支的流程，确保所有相关方保持知情与同步。请将此视为指导性建议而非强制性规范，可根据现有的操作和技术流程进行适当调整。</p>
+<p><strong>示例工作流</strong></p>
+<p>开发人员首次创建功能审查请求工单时，该工单会被赋予 <code>Feature Review: Request Review</code> 状态。该工单可附加至整个数据集，若功能针对特定列，也可附加至特定列。</p>
+<p>与最终用户的协作通过评论区完成，可在 <code>Request Change</code> 或 <code>Ready to Merge</code> 之间更改状态，并变更工单的处理人。</p>
+<p>工单是存储功能审查工作流的理想场所，最终用户还可以在此记录其验证过程（用于审计目的）并附加指向其他资产的链接。</p>
+<p>下图展示了如何在构建输出数据集上创建工单。</p>
+<p><img alt="issue-review" height="391" src="/docs/resources/foundry/building-pipelines/branches-5.png" style="aspect-ratio:877 / 391" width="877" node="[object Object]"></p>
+<ol>
+<li>
+<p>在 Foundry Explorer 中，选择输出数据集。</p>
+</li>
+<li>
+<p>点击报告问题，对整个数据集报告工单。</p>
+</li>
+<li>
+<p>如果功能涉及特定列，可以使用列级别的报告问题功能，为审查者提供有关所做更改的更好上下文。</p>
+</li>
+<li>
+<p>根据表单提示完成工单字段填写。</p>
+</li>
+<li>
+<p>创建工单后，务必将标签更改为 <code>Feature Review: Request Review</code>。（如果没有可用的标签，请联系您的 Palantir 代表寻求协助。）</p>
+</li>
+</ol>
+<p><img alt="issue-review3" height="543" src="/docs/resources/foundry/building-pipelines/branches-7.png" style="aspect-ratio:877 / 543" width="877" node="[object Object]"></p>
+<p>
+
+随着审查流程的推进，包含所有状态变更与验证证据的协作记录都会保存在该 issue 中。</p>
+<p><img alt="issue-review4" height="527" src="/docs/resources/foundry/building-pipelines/branches-8.png" style="aspect-ratio:877 / 527" width="877" node="[object Object]"></p>
+</article>
+</body>
+</html>
