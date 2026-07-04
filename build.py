@@ -24,10 +24,12 @@ def build_index(sources):
     dt = {}
     tag_freq = {}
     cat_hierarchy = {}
+    tag_zh = {}
     source_meta = {}
 
     for source_name, source_data in sources.items():
         articles = source_data.get("articles", [])
+        articles = [a for a in articles if not a.get("hidden", False)]
         source_meta[source_name] = {
             "source_name": source_data.get("source_name", source_name),
             "source_name_zh": source_data.get("source_name_zh", source_name),
@@ -58,6 +60,8 @@ def build_index(sources):
                     if sc not in existing:
                         cat_hierarchy[cat]["subcats"].append(sc)
                         existing.add(sc)
+        for k, v in source_data.get("tag_zh", {}).items():
+            tag_zh[k] = v
         for year, months in source_data.get("dt", {}).items():
             if year not in dt:
                 dt[year] = {}
@@ -75,6 +79,7 @@ def build_index(sources):
         "dt": dt,
         "tag_freq": tag_freq,
         "cat_hierarchy": cat_hierarchy,
+        "tag_zh": tag_zh,
     }
     return index
 
