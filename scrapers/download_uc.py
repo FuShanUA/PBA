@@ -341,19 +341,25 @@ def download_one(slug, url):
         # Check for downloads
         time.sleep(5)
         
-        # Check DOC_DIR
-        downloaded = list(DOC_DIR.glob(f"{slug}.*"))
-        if downloaded:
-            doc_path = f"content/website/documents/{downloaded[0].name}"
+        # Check DOC_DIR for any new PDF (Chrome saves with original filename)
+        all_pdfs = list(DOC_DIR.glob("*.pdf"))
+        # Find PDFs that were downloaded in the last 60 seconds
+        import time as _time
+        now = _time.time()
+        recent_pdfs = [p for p in all_pdfs if now - p.stat().st_mtime < 60]
+        if recent_pdfs:
+            pdf = recent_pdfs[0]
+            doc_path = f"content/website/documents/{pdf.name}"
             print(f"Downloaded: {doc_path}")
             return doc_path
         
-        # Check Downloads folder
+        # Check Downloads folder for recent PDFs
         downloads_dir = Path.home() / "Downloads"
-        for f in downloads_dir.glob(f"*{slug}*"):
-            if f.stat().st_size > 1000:
+        for f in downloads_dir.glob("*.pdf"):
+            if now - f.stat().st_mtime < 60 and f.stat().st_size > 1000:
                 dest = DOC_DIR / f.name
-                f.rename(dest)
+                import shutil
+                shutil.move(str(f), str(dest))
                 doc_path = f"content/website/documents/{f.name}"
                 print(f"Found in Downloads: {doc_path}")
                 return doc_path
