@@ -101,15 +101,18 @@ def build_node_script(slug, url, method, ext_path=None):
             ],
         }
     elif method == "buster":
-        # Load Buster reCAPTCHA solver extension
+        # Use real Chrome (not Chromium) + Buster extension
+        # Playwright Chromium is detected as bot, Marketo form won't load
         buster_path = str(ROOT / "extensions" / "buster")
         launch_opts = {
+            "channel": "chrome",
             "headless": False,
             "args": [
                 "--disable-extensions-except=" + buster_path,
                 "--load-extension=" + buster_path,
                 "--disable-blink-features=AutomationControlled",
                 "--no-first-run",
+                "--no-default-browser-check",
             ],
         }
     else:
