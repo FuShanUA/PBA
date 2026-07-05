@@ -362,22 +362,34 @@ def build_node_script(slug, url, method, ext_path=None):
     if (i % 15 === 0 && i > 0) console.log('  Waiting for CAPTCHA... ' + i + 's');
   }
 
-  // Wait for downloads
+  // Wait for page to settle after submission
+  console.log('Waiting for page to settle...');
+  await page.waitForTimeout(5000);
+
+  // Debug: what is on the page now?
+  var afterUrl = page.url();
+  var afterTitle = await page.title().catch(function() { return '?'; });
+  var afterText = await page.evaluate(function() { return document.body ? document.body.innerText.substring(0, 1000) : ''; }).catch(function() { return ''; });
+  console.log('After submit URL: ' + afterUrl);
+  console.log('After submit title: ' + afterTitle);
+  console.log('After submit body text: ' + afterText.substring(0, 500));
+
+  // Take screenshot
+  try { await page.screenshot({ path: '/tmp/form_after_submit.png', fullPage: false }); console.log('Screenshot: /tmp/form_after_submit.png'); } catch(e) {}
+
+  // Check for download links
+  try {
+    var links = await page.evaluate(function() {
+      return Array.from(document.querySelectorAll('a[href]'))
+        .filter(function(a) { var h = a.href.toLowerCase(); return h.indexOf('pdf') >= 0 || h.indexOf('download') >= 0 || h.indexOf('asset') >= 0 || a.textContent.toLowerCase().indexOf('download') >= 0; })
+        .map(function(a) { return { href: a.href, text: a.textContent.trim().substring(0, 60) }; });
+    });
+    if (links.length > 0) console.log('DOWNLOAD_LINKS:' + JSON.stringify(links));
+    else console.log('No download links found');
+  } catch(e) { console.log('Link check error'); }
+
   console.log('Waiting for downloads...');
   await page.waitForTimeout(8000);
-
-  // Check for download links on the page
-  try {
-    const links = await page.evaluate(() => {
-      return Array.from(document.querySelectorAll('a[href]'))
-        .filter(a => a.href.includes('pdf') || a.href.includes('download') || 
-                     (a.href.includes('asset') && !a.href.endsWith('.png') && !a.href.endsWith('.jpg')))
-        .map(a => ({ href: a.href, text: a.textContent.trim().substring(0, 40) }));
-    });
-    if (links.length > 0) {
-      console.log('LINKS:' + JSON.stringify(links));
-    }
-  } catch {}
 
   if (pdfUrls.length > 0) console.log('PDF_URLS:' + JSON.stringify(pdfUrls));
   if (savedFile) console.log('RESULT:' + savedFile);
