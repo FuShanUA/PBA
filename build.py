@@ -39,6 +39,9 @@ def build_index(sources):
 
         for a in articles:
             a["source"] = source_name
+            # Map doc_url to short key "du" for the UI
+            if a.get("doc_url"):
+                a["du"] = a["doc_url"]
 
         all_articles.extend(articles)
 
