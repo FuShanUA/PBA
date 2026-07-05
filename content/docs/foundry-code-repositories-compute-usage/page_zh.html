@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Compute usage with Code Repositories</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-compute-usage-with-code-repositories" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#compute-usage-with-code-repositories"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>代码仓库的计算资源使用情况</h1>
+<p>在代码仓库中运行构建任务需要使用 Foundry 计算资源，该资源以计算秒数进行度量。本文档详细说明了构建任务如何消耗计算资源，并提供了在产品中排查和管理计算资源使用情况的相关信息。</p>
+<p>运行一个或多个《数据集》的《转换构建》时，Foundry 会将转换逻辑拉取至其无服务器计算集群中执行代码。构建的时长和规模取决于代码复杂度、输入和输出数据集的大小，以及代码中设置的《Spark 计算配置文件》。</p>
+<p>对输入数据集执行代码时，在运行并行计算期间会消耗 Foundry 计算资源（以《Foundry 计算秒数》为单位），在将转换结果写入 Foundry 存储时则会占用 Foundry 存储资源。编写代码本身不会产生计算消耗，只有构建数据集时才会产生计算资源用量。</p>
+<h2 id="user-content-measuring-foundry-compute" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#measuring-foundry-compute"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>衡量 Foundry 计算资源</h2>
+<p>支撑代码仓库的转换引擎在后端采用并行计算，通常使用 Spark 弹性计算框架。代码仓库中的转换操作以作业在运行期间消耗的 Foundry <em>计算秒数</em>总量来衡量。这些计算秒数贯穿作业的整个运行周期，包括读取输入数据集、执行代码（涵盖 I/O 等待等操作）以及将输出数据集写回 Foundry 的时间。</p>
+<p>你可以通过配置转换操作来启用并行计算。计算秒数衡量的是计算运行时间，而非自然时间，因此并行转换在每个自然秒内会产生多个计算秒。有关代码仓库作业的 Foundry 计算秒数中并行计算如何衡量的详细拆解，请查阅《下方的示例》。</p>
+<p>在为 Foundry 使用量付费时，默认的用量费率如下：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>vCPU / GPU</th><th>用量费率</th></tr></thead><tbody><tr><td>vCPU</td><td>1</td></tr><tr><td>T4 GPU</td><td>1.2</td></tr><tr><td>V100 GPU</td><td>3</td></tr><tr><td>A100 GPU</td><td>1.3</td></tr><tr><td>A10G GPU</td><td>1.5</td></tr><tr><td>L4 GPU</td><td>2.1</td></tr><tr><td>H100 GPU</td><td>4.7</td></tr></tbody></table></div>
+<p>如果您与 Palantir 签有企业级合同，请在进行计算资源用量核算前联系您的 Palantir 代表。</p>
+<h2 id="user-content-investigating-foundry-compute-usage-from-code-repositories" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#investigating-foundry-compute-usage-from-code-repositories"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>排查来自代码仓库的 Foundry 计算资源使用情况</h2>
+<p>使用量信息可在《资源管理应用》中查看，该应用支持下钻分析使用量指标。</p>
+<p>虽然构建任务是 Foundry 计算资源用量的驱动因素，但这部分用量会记录在与之关联的长期资源上。对于数据集转换而言，该资源即为作业物化生成的单个或多个数据集。你可以在数据集详情标签页的<strong>资源使用指标</strong>下查看该数据集的使用量时间线。</p>
+<p>请注意，对于会生成多个输出数据集的转换操作，其计算资源用量会平均分配给所有数据集。例如，假设某个转换作业创建了两个数据集，其中一个包含 5 行数据，另一个包含 500 万行数据，Foundry 计算秒数仍会在两者之间平均分配。</p>
+<h2 id="user-content-understanding-drivers-of-foundry-compute-usage" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#understanding-drivers-of-foundry-compute-usage"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>理解 Foundry 计算资源使用量的驱动因素</h2>
+<p>除非提前取消，否则代码仓库中的转换操作会一直运行，直到所有逻辑处理完所有数据并将输出写回 Foundry。影响运行时长的两大主要因素是：（1）输入数据的大小；（2）转换逻辑执行的计算操作复杂度。</p>
+<ul>
+<li>在逻辑相同的情况下，输入数据越大的作业比输入数据较小的作业需要更多的计算资源。例如，对 100GB 数据执行列处理作业所消耗的 Foundry 计算秒数，会多于对 10GB 数据执行相同处理的作业。</li>
+<li>对数据执行较复杂操作的作业，其所需的计算资源多于执行操作相对较少的作业。这有时被称为“作业复杂度”。
+<ul>
+<li>举个基础示例，比较两种数学操作 <code>5 * 5</code> 和 <code>5!</code> 的运算次数。<code>5 * 5</code> 是一次单一的乘法操作。<code>5!</code> 等同于 <code>5 * 4 * 3 * 2 *1</code>（四次乘法操作），其复杂度是 <code>5 * 5</code> 示例的两倍。随着作业在聚合、连接或机器学习算法等任务上变得越来越复杂，作业必须对数据完成的操作数量也会随之增加。</li>
+</ul>
+</li>
+</ul>
+
+<h2 id="user-content-managing-foundry-compute-usage-with-code-repositories" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#managing-foundry-compute-usage-with-code-repositories"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>使用代码仓库管理 Foundry 计算用量</h2>
+<p>针对每个作业，你可以查看驱动其性能和计算用量的底层计算指标。有关更多详细信息，请查阅《了解 Spark 详情》。</p>
+<p>在作业中，Foundry 计算秒数由并行化执行器的大小和数量决定。这两项设置均支持按作业进行完全配置。请查阅《Spark 计算配置文件》文档，了解如何按作业进行设置。执行器的大小由其内存和 vCPU 数量决定。增加每个执行器的 vCPU 和内存，会增加该执行器消耗的计算秒数。</p>
+<p>同时执行的任务数量由配置的执行器数量及其对应的 vCPU 数量决定。如果未指定配置覆盖项，转换操作将使用默认的 Spark 配置文件。生成数据集的 Foundry 存储量由所创建数据集的大小决定。</p>
+<p>归根结底，逻辑不同的作业即使实现相同的结果，其所需的操作次数也可能大相径庭。</p>
+<h3 id="user-content-optimizing-code-to-manage-usage" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#optimizing-code-to-manage-usage"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>优化代码以管理用量</h3>
+<p>有多种方法可以优化代码并管理作业所消耗的计算秒数。本节提供了常用优化技术的更多相关链接。</p>
+<ul>
+<li>Spark 是 Foundry 为大多数类型的代码仓库批处理计算所采用的分布式集群计算框架，支持多种优化技术。《了解更多关于优化 Spark 的信息。》</li>
+<li>在 Spark 中，你可以优化分区以加速构建。最佳分区数取决于行数、列数、列类型以及内容。我们建议的近似比例为：每 128 MB 数据集大小对应一个分区。</li>
+<li>增量计算是执行转换以生成输出数据集的高效方法。利用转换的构建历史，增量计算避免了每次运行转换时重新计算整个输出数据集的必要。
+<ul>
+<li>《了解关于 Python 增量转换的更多信息。》</li>
+<li>《了解关于 Java 增量转换的更多信息。》</li>
+</ul>
+</li>
+<li>特别是对于中小型数据集，除了 Spark 之外，还有几种计算引擎在单节点应用的基准测试中性能始终优于 Spark。因此，使用这些替代方案来运行管道可以提升处理速度并减少计算消耗。为了充分利用这些选项，我们建议熟悉《轻量级转换》。</li>
+<li>如果构建是通过《调度》编排的，我们建议阅读《调度最佳实践》以优化成本。</li>
+</ul>
+<h2 id="user-content-calculating-foundry-compute-usage" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#calculating-foundry-compute-usage"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>计算 Foundry 计算用量</h2>
+<h3 id="user-content-usage-example-1-standard-memory" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#usage-example-1-standard-memory"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>用量示例 1：标准内存</h3>
+<p>此示例展示了具有标准内存请求的静态分配作业的 Foundry 计算用量是如何衡量的。</p>
+<pre><code>Driver profile:
+    vCPUs: 1
+    GiB_RAM: 6
+Executor profile:
+    vCPUs: 1
+    GiB_RAM: 6
+    Count: 4
+Total Job Wall-Clock Runtime: 
+    120 seconds
+
+
+
+Calculation
+driver_compute_seconds = max(num_vcpu, GiB_RAM/7.5) * num_seconds
+                       = max(1vcpu, 6gib/7.5gib) * 120sec
+                       = 120 compute-seconds
+
+executor_compute_seconds = num_executors * max(num_vcpu, GiB_RAM/7.5) * num_seconds 
+
+                         = 4 * max(1, 6/7.5) * 120sec 
+                         = 480 compute-seconds
+
+total_compute_seconds = 120 + 480 = 600 compute-seconds 
+</code></pre>
+<h3 id="user-content-usage-example-2-large-memory" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#usage-example-2-large-memory"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>用量示例 2：大内存</h3>
+<p>此示例展示了具有更大内存请求的静态分配作业的 Foundry 计算用量是如何衡量的。</p>
+<pre><code>Driver Profile:
+    vCPUs: 2
+    GiB_RAM: 6
+Executor profile:
+    vCPUs: 1
+    GiB_RAM: 15
+    Count: 4
+Total Job Wall-Clock Runtime: 
+    120 seconds
+
+
+
+Calculation:
+driver_compute_seconds = max(num_vcpu, GiB_RAM/7.5) * num_seconds
+                       = max(2vcpu, 6gib/7.5gib) * 120sec
+                       = 240 compute-seconds
+
+executor_compute_seconds = num_executors * max(num_vcpu, GiB_RAM/7.5) * num_seconds 
+                         = 4 * max(1, 15/7.5) * 120sec 
+                         = 960 compute-seconds
+
+total_compute_seconds = driver_compute_seconds + executor_compute_seconds
+                      = 240 + 960 = 1200 compute-seconds
+</code></pre>
+<h3 id="user-content-usage-example-3-dynamic-executor-counts" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#usage-example-3-dynamic-executor-counts"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>用量示例 3：动态执行器数量</h3>
+<p>此示例展示了动态分配作业的 Foundry 计算用量是如何衡量的，其中部分作业执行时间使用两个执行器完成，而作业的其余时间使用四个执行器完成。</p>
+<pre>
+
+驱动节点配置：
+    vCPUs: 2
+    GiB_RAM: 6
+执行节点配置：
+    vCPUs: 1
+    GiB_RAM: 6
+    数量： 
+        最小：2
+        最大：4
+作业总运行时间（Wall-Clock）： 
+    120 秒：
+        2 个执行节点：60 秒
+        4 个执行节点：60 秒
+
+
+
+计算过程：
+driver_compute_seconds = max(num_vcpu, GiB_RAM/7.5) * num_seconds
+                       = max(2vcpu, 6gib/7.5gib) * 120sec
+                       = 240 计算秒
+
+# 计算 2 个执行节点作业时间的计算秒
+2_executor_compute_seconds = num_executors * max(num_vcpu, GiB_RAM/7.5) * num_seconds 
+                           = 2 * max(1, 6/7.5) * 60sec 
+                           = 120 计算秒 
+
+# 计算 4 个执行节点作业时间的计算秒
+4_executor_compute_seconds = num_executors * max(num_vcpu, GiB_RAM/7.5) * num_seconds 
+                           = 4 * max(1, 6/7.5) * 60sec 
+                           = 240 计算秒
+                         
+
+total_compute_seconds = driver_compute_seconds + 2_executor_compute_seconds + 4_executor_compute_seconds
+                      = 240 + 120 + 240 = 600 计算秒
+</code></pre>
+<h3 id="user-content-usage-example-4-gpu-compute" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#usage-example-4-gpu-compute"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>使用示例 4：GPU 计算</h3>
+<p>本示例演示了如何为静态分配的作业度量 Foundry GPU 计算。</p>
+<pre><code>驱动节点配置：
+    T4 GPU: 1
+执行节点配置：
+    T4 GPU: 1
+    数量: 4
+作业总运行时间（Wall-Clock）： 
+    120 秒
+
+
+计算过程：
+driver_compute_seconds = num_gpu * gpu_usage_rate * num_seconds
+                       = 1gpu * 1.2 * 120sec
+                       = 144 计算秒
+
+executor_compute_seconds = num_executors * num_gpu * gpu_usage_rate * num_seconds 
+                         = 4 * 1 * 1.2 * 120sec 
+                         = 576 计算秒
+
+total_compute_seconds = 144 + 576 = 720 计算秒
+</article>
+</body>
+</html>

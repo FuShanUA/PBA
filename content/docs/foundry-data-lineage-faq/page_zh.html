@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Data Lineage questions</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-data-lineage-questions" level="1" node="[object Object]" data-pagefind-weight="0.2"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#data-lineage-questions"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></a>数据血缘关系常见问题</h1>
+<p>以下是关于血缘关系的一些常见问题。</p>
+<p>如需了解常规信息，请查阅我们的《血缘关系文档》。</p>
+<ul>
+<li><a href="#how-can-i-see-the-backing-and-writeback-datasets-for-my-object-type-in-data-lineage">如何在血缘关系中查看我对象类型的底层数据集和回写数据集？</a></li>
+<li><a href="#what-datasets-in-my-pipeline-also-have-a-specific-column">我的管道中哪些数据集也包含特定列？</a></li>
+<li><a href="#who-was-the-last-person-to-modify-a-resource-on-this-pipeline">谁是最后修改此管道上资源的人？</a></li>
+<li><a href="#how-can-i-find-which-of-my-datasets-have-open-transactions">如何查找我的哪些数据集存在未完成的事务？</a></li>
+<li><a href="#where-are-most-of-the-datasets-used-in-the-pipeline-stored">管道中使用的多数数据集存储在哪里？</a></li>
+<li><a href="#how-can-i-share-my-unsaved-data-lineage-graph">如何分享我未保存的血缘关系图？</a></li>
+<li><a href="#why-is-my-dataset-not-up-to-date">为什么我的数据集不是最新的？</a></li>
+</ul>
+<hr>
+<h2 id="user-content-how-can-i-see-the-backing-and-writeback-datasets-for-my-object-type-in-data-lineage" level="2" node="[object Object]" data-pagefind-weight="0.18"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#how-can-i-see-the-backing-and-writeback-datasets-for-my-object-type-in-data-lineage"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></a>如何在血缘关系中查看我对象类型的底层数据集和回写数据集？</h2>
+<ul>
+<li>
+<p>首先，通过在右侧面板（带有放大镜图标的选项卡）中搜索，将您的对象添加到血缘关系图中。选择 <strong>对象类型</strong> 进行搜索过滤，然后输入您要查看其底层数据集和回写数据集的对象名称。</p>
+</li>
+<li>
+<p>接下来，选择对象类型左侧的箭头以显示其上游节点。如果您的对象类型是只读的，这会产生一个上游节点；如果您的对象类型启用了回写，则会产生两个上游节点。确保在 <strong>节点颜色选项</strong> 下拉菜单中选择了 <strong>资源概述</strong>，以便根据右上角的图例查看回写数据集的颜色。底层架构数据集的颜色取决于所使用的转换类型。</p>
+</li>
+<li>
+<p>对象类型的回写和底层数据集的右上角也会有一个小地球图标。</p>
+</li>
+</ul>
+<p><a href="#data-lineage-questions">返回顶部</a></p>
+<hr>
+<h2 id="user-content-what-datasets-in-my-pipeline-also-have-a-specific-column" level="2" node="[object Object]" data-pagefind-weight="0.18"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#what-datasets-in-my-pipeline-also-have-a-specific-column"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></a>我的管道中哪些数据集也包含特定列？</h2>
+<ol>
+<li>首先，确保管道中所有目标数据集都已添加到血缘关系图中。</li>
+<li>接下来，使用画布左上角 <strong>工具</strong> 切换开关中的 <strong>选择</strong> 模式来选择目标数据集。</li>
+<li>然后从右侧面板打开 <strong>所选属性直方图</strong>。在 <strong>常用列</strong> 部分下，您将看到所选数据集中按列名排序的最常见列。</li>
+</ol>
+<p>选择其中一列将高亮显示您选择中包含该列的数据集。</p>
+<p><a href="#data-lineage-questions">返回顶部</a></p>
+<hr>
+<h2 id="user-content-who-was-the-last-person-to-modify-a-resource-on-this-pipeline" level="2" node="[object Object]" data-pagefind-weight="0.18"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#who-was-the-last-person-to-modify-a-resource-on-this-pipeline"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></a>谁是最后修改此管道上资源的人？</h2>
+<ul>
+<li>首先，确保管道中所有关注的数据集都已添加到血缘关系图中。</li>
+<li>接下来，使用屏幕左上角 <strong>工具</strong> 切换开关中的选择模式来选择数据集。然后，从右侧面板打开 <strong>所选属性直方图</strong>。</li>
+<li>在 <strong>最后修改</strong> 部分下，您将看到最后修改所选数据集的用户。选择用户名将在图中高亮显示该用户最后修改的数据集。</li>
+</ul>
+<p><a href="#data-lineage-questions">返回顶部</a></p>
+<hr>
+<h2 id="user-content-how-can-i-find-which-of-my-datasets-have-open-transactions" level="2" node="[object Object]" data-pagefind-weight="0.18"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#how-can-i-find-which-of-my-datasets-have-open-transactions"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></a>如何查找我的哪些数据集存在未完成的事务？</h2>
+<p>在右上角的下拉菜单中，选择 <strong>构建状态</strong>。现在，您应该能够查看是否有任何数据集正在运行。任何此类数据集都存在未完成的事务。</p>
+<p><a href="#data-lineage-questions">返回顶部</a></p>
+<hr>
+<h2 id="user-content-where-are-most-of-the-datasets-used-in-the-pipeline-stored" level="2" node="[object Object]" data-pagefind-weight="0.18"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#where-are-most-of-the-datasets-used-in-the-pipeline-stored"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></a>管道中使用的多数数据集存储在哪里？</h2>
+<ul>
+<li>首先，确保管道中所有关注的数据集都已添加到血缘关系图中。</li>
+<li>接下来，使用屏幕左上角 <strong>工具</strong> 切换开关中的 <strong>选择</strong> 模式选择所有关注的数据集。然后，从右侧面板打开 <strong>所选属性直方图</strong>。</li>
+<li>在 <strong>常用文件夹路径</strong> 部分下，您将看到所选资源最常见的文件夹路径。</li>
+</ul>
+
+<p>选择黄金路径后，图上会高亮显示该路径中的资源。将鼠标悬停在文件夹路径上，即可查看完整路径。</p>
+<p>你可以在<strong>所选属性的直方图</strong>面板中选择多个属性，图上便会高亮显示所有满足选择条件的资源。</p>
+<p><a href="#data-lineage-questions">返回顶部</a></p>
+<hr>
+<h2 id="user-content-how-can-i-share-my-unsaved-data-lineage-graph" level="2" node="[object Object]" data-pagefind-weight="0.18"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#how-can-i-share-my-unsaved-data-lineage-graph"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>如何分享我未保存的血缘关系图？</h2>
+<p>要分享你未保存的血缘关系，请选择右上角“保存”旁边的箭头。在那里你可以看到一个快速分享链接。</p>
+<p><a href="#data-lineage-questions">返回顶部</a></p>
+<hr>
+<h2 id="user-content-why-is-my-dataset-not-up-to-date" level="2" node="[object Object]" data-pagefind-weight="0.18"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#why-is-my-dataset-not-up-to-date"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>为什么我的数据集不是最新的？</h2>
+<p>数据集未更新为最新状态可能有以下几个原因。</p>
+<p>请考虑以下可能导致数据集未更新的原因：</p>
+<ul>
+<li>数据集构建是否失败？</li>
+<li>是否存在上游数据集尚未构建或未更新为最新状态？</li>
+<li>是否已从源端收到最新数据？</li>
+</ul>
+<p>你可以在血缘关系中轻松解答这些问题：</p>
+<ol>
+<li>
+<p>首先，在血缘关系中打开目标数据集，然后右键点击节点，验证管道中各个资源的状态。</p>
+</li>
+<li>
+<p>接着，选择<strong>展开节点...</strong>。点击<strong>展开父节点...</strong>上方的双向左箭头，即可查看该数据集的所有上游节点。</p>
+</li>
+<li>
+<p>随后，在右上角的<strong>节点颜色选项</strong>下拉菜单中选择<strong>构建状态</strong>选项，查看管道中每个资源的构建状态。通过这种管道视图，可以更轻松地诊断数据陈旧问题。</p>
+</li>
+</ol>
+<p><a href="#data-lineage-questions">返回顶部</a></p>
+</article>
+</body>
+</html>
