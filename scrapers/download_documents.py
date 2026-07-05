@@ -290,7 +290,7 @@ def build_node_script(slug, url, method, ext_path=None):
     await page.waitForTimeout(200);
   }
 
-  // Fill select (Country)
+  // Fill select (Country) - skip if already handled by fillField
   try {
     const target = formFrame || page;
     const sel = target.locator('#Country__c_contact, select[name="Country__c_contact"]');
@@ -321,22 +321,26 @@ def build_node_script(slug, url, method, ext_path=None):
   for (let i = 0; i < 120; i++) {
     await page.waitForTimeout(1000);
 
-    // Check if form is gone (submitted)
-    try {
-      const target = formFrame || page;
-      const form = target.locator('form');
-      const formVisible = await form.first().isVisible({ timeout: 300 }).catch(() => false);
-      if (!formVisible) {
-        submitted = true;
-        console.log('FORM_SUBMITTED at ' + i + 's');
-        break;
-      }
-    } catch {}
+    // Don't check for submission in first 5 seconds (form just filled)
+    // Check if form is gone (submitted) - wait at least 5s before checking
+    if (i > 5) {
+      try {
+        const target = formFrame || page;
+        const form = target.locator('form.mktoForm, .mktoForm');
+        const formVisible = await form.first().isVisible({ timeout: 300 }).catch(() => false);
+        const firstNameGone = !(await target.locator('#FirstName').first().isVisible({ timeout: 300 }).catch(() => false));
+        if (!formVisible || firstNameGone) {
+          submitted = true;
+          console.log('FORM_SUBMITTED at ' + i + 's');
+          break;
+        }
+      } catch {}
+    }
 
-    // Check for thank-you text
+    // Check for thank-you text (only specific phrases, not just "Download")
     try {
       const bodyText = await page.evaluate(() => document.body.innerText);
-      if (bodyText.includes('Thank you') || bodyText.includes('Download your') || bodyText.includes('Success')) {
+      if (bodyText.includes('Thank you') || bodyText.includes('thank you for') || bodyText.includes('Success!') || bodyText.includes('Your download') || bodyText.includes('Check your email')) {
         submitted = true;
         console.log('THANK_YOU at ' + i + 's');
         break;
