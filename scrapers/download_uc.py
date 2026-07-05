@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 """
-Document downloader using undetected-chromedriver to bypass bot detection.
-Palantir's site detects Playwright/Puppeteer and won't load Marketo forms.
-undetected-chromedriver patches Chrome to avoid this detection.
+Fully automatic document downloader:
+1. Uses undetected_chromedriver to bypass bot detection
+2. Auto-fills Marketo form
+3. Auto-solves reCAPTCHA v2 (click checkbox, or audio challenge + speech recognition)
+4. Submits form and downloads PDF
 """
-import json, os, sys, time, argparse, subprocess
+import json, os, sys, time, argparse, subprocess, tempfile, hashlib
 from pathlib import Path
 
 ROOT = Path(__file__).parent.parent
@@ -42,8 +44,142 @@ def detect_form_pages():
             form_pages.append(a_copy)
     return form_pages
 
-def download_one(slug, url, buster_path=None):
-    """Download a document from a Palantir form page using undetected-chromedriver."""
+def solve_recaptcha_audio(driver):
+    """Try to solve reCAPTCHA v2 audio challenge using speech recognition."""
+    import speech_recognition as sr
+    from pydub import AudioSegment
+    from selenium.webdriver.common.by import By
+    
+    # Find the audio challenge iframe
+    iframes = driver.find_elements(By.CSS_SELECTOR, "iframe[src*='recaptcha/api2/bframe']")
+    for iframe in iframes:
+        try:
+            driver.switch_to.frame(iframe)
+            time.sleep(1)
+            
+            # Click audio button if present
+            try:
+                audio_btn = driver.find_element(By.ID, "recaptcha-audio-button")
+                if audio_btn.is_displayed():
+                    audio_btn.click()
+                    print("  Clicked audio button")
+                    time.sleep(2)
+            except:
+                try:
+                    # Try alternative selectors
+                    btns = driver.find_elements(By.CSS_SELECTOR, "button[aria-label*='audio'], .rc-button-goog")
+                    for btn in btns:
+                        if btn.is_displayed():
+                            btn.click()
+                            print("  Clicked audio button (alt)")
+                            time.sleep(2)
+                            break
+                except:
+                    pass
+            
+            # Get audio source
+            try:
+                audio_el = driver.find_element(By.CSS_SELECTOR, "audio source, audio")
+                audio_src = audio_el.get_attribute("src")
+                if audio_src:
+                    print(f"  Audio source: {audio_src[:80]}...")
+                    
+                    # Download audio file
+                    tmp_audio = "/tmp/recaptcha_audio.mp3"
+                    subprocess.run(["curl", "-s", "-L", "-o", tmp_audio, audio_src], timeout=15)
+                    
+                    if os.path.exists(tmp_audio) and os.path.getsize(tmp_audio) > 100:
+                        # Convert to WAV
+                        tmp_wav = "/tmp/recaptcha_audio.wav"
+                        try:
+                            audio = AudioSegment.from_mp3(tmp_audio)
+                            audio.export(tmp_wav, format="wav")
+                        except:
+                            # Try direct conversion
+                            subprocess.run(["ffmpeg", "-y", "-i", tmp_audio, tmp_wav], 
+                                         capture_output=True, timeout=10)
+                        
+                        # Recognize speech
+                        if os.path.exists(tmp_wav):
+                            r = sr.Recognizer()
+                            with sr.AudioFile(tmp_wav) as source:
+                                audio_data = r.record(source)
+                            try:
+                                text = r.recognize_google(audio_data)
+                                print(f"  Speech recognized: '{text}'")
+                                
+                                # Enter the answer
+                                input_el = driver.find_element(By.ID, "audio-response")
+                                input_el.clear()
+                                input_el.send_keys(text.lower())
+                                time.sleep(0.5)
+                                
+                                # Click verify
+                                verify_btn = driver.find_element(By.ID, "recaptcha-verify-button")
+                                verify_btn.click()
+                                print("  Submitted audio answer")
+                                time.sleep(3)
+                                
+                                driver.switch_to.default_content()
+                                return True
+                            except sr.UnknownValueError:
+                                print("  Could not understand audio")
+                            except Exception as e:
+                                print(f"  Recognition error: {e}")
+                    else:
+                        print("  Audio download failed")
+            except Exception as e:
+                print(f"  Audio element error: {e}")
+            
+            driver.switch_to.default_content()
+        except:
+            driver.switch_to.default_content()
+    
+    return False
+
+def click_recaptcha_checkbox(driver):
+    """Click the reCAPTCHA v2 checkbox. Returns True if solved without challenge."""
+    from selenium.webdriver.common.by import By
+    
+    # Find reCAPTCHA anchor iframe
+    iframes = driver.find_elements(By.CSS_SELECTOR, "iframe[src*='recaptcha/api2/anchor'], iframe[title*='reCAPTCHA']")
+    for iframe in iframes:
+        try:
+            driver.switch_to.frame(iframe)
+            time.sleep(0.5)
+            
+            # Click the checkbox
+            checkbox = driver.find_element(By.ID, "recaptcha-anchor")
+            if checkbox.is_displayed():
+                aria_checked = checkbox.get_attribute("aria-checked")
+                if aria_checked != "true":
+                    checkbox.click()
+                    print("  Clicked reCAPTCHA checkbox")
+                    time.sleep(3)
+                    
+                    # Check if solved (no challenge appeared)
+                    aria_checked = checkbox.get_attribute("aria-checked")
+                    if aria_checked == "true":
+                        print("  reCAPTCHA SOLVED (no challenge)")
+                        driver.switch_to.default_content()
+                        return True
+                    else:
+                        print("  Challenge appeared")
+                        driver.switch_to.default_content()
+                        return False
+                else:
+                    print("  reCAPTCHA already solved")
+                    driver.switch_to.default_content()
+                    return True
+        except:
+            pass
+        finally:
+            driver.switch_to.default_content()
+    
+    return False
+
+def download_one(slug, url):
+    """Download a document from a Palantir form page."""
     import undetected_chromedriver as uc
     from selenium.webdriver.common.by import By
     from selenium.webdriver.support.ui import WebDriverWait
@@ -54,26 +190,22 @@ def download_one(slug, url, buster_path=None):
     options.add_argument("--no-first-run")
     options.add_argument("--no-default-browser-check")
     
-    if buster_path:
-        options.add_argument("--disable-extensions-except=" + buster_path)
-        options.add_argument("--load-extension=" + buster_path)
-    
-    # Set download directory
     options.add_experimental_option("prefs", {
         "download.default_directory": str(DOC_DIR),
         "download.prompt_for_download": False,
         "download.directory_upgrade": True,
         "safebrowsing.enabled": True,
+        "plugins.always_open_pdf_externally": True,
     })
     
     print(f"Launching Chrome (undetected)...")
     driver = uc.Chrome(options=options, version_main=None)
+    driver.implicitly_wait(3)
     
     try:
-        # Pre-set OneTrust cookie
+        # Pre-set cookie consent
         driver.get("https://www.palantir.com")
         time.sleep(2)
-        
         driver.add_cookie({
             "name": "OptanonConsent",
             "value": "isIABGlobal=false&datestamp=Mon+Jan+01+2024&version=6.10.0&hosts=&consentId=&interactionCount=0&isGpcEnabled=0&browserGpcFlag=0&OTDataConsent=%5B%5D&groups=C0001%3A1%2CC0002%3A1%2CC0003%3A1%2CC0004%3A1",
@@ -94,8 +226,8 @@ def download_one(slug, url, buster_path=None):
                 time.sleep(2)
         except:
             try:
-                buttons = driver.find_elements(By.CSS_SELECTOR, "button")
-                for btn in buttons:
+                btns = driver.find_elements(By.CSS_SELECTOR, "button")
+                for btn in btns:
                     if "Accept" in btn.text and btn.is_displayed():
                         btn.click()
                         print("Accepted cookies (text)")
@@ -104,11 +236,10 @@ def download_one(slug, url, buster_path=None):
             except:
                 pass
         
-        # Wait for Marketo form
+        # Wait for form
         print("Waiting for Marketo form...")
         form_found = False
-        for i in range(60):
-            time.sleep(1)
+        for i in range(30):
             try:
                 el = driver.find_element(By.ID, "FirstName")
                 if el.is_displayed():
@@ -117,37 +248,13 @@ def download_one(slug, url, buster_path=None):
                     break
             except:
                 pass
-            
-            # Check iframes
-            iframes = driver.find_elements(By.TAG_NAME, "iframe")
-            for iframe in iframes:
-                try:
-                    driver.switch_to.frame(iframe)
-                    el = driver.find_element(By.ID, "FirstName")
-                    if el.is_displayed():
-                        form_found = True
-                        print(f"Form found in iframe at {i}s!")
-                        break
-                    driver.switch_to.default_content()
-                except:
-                    driver.switch_to.default_content()
-            
-            if form_found:
-                break
-            
-            if i % 10 == 0:
-                title = driver.title
+            time.sleep(1)
+            if i % 5 == 0:
                 has_mkto = "mktoweb" in driver.page_source
-                has_recaptcha = "recaptcha" in driver.page_source.lower()
-                has_cookie = "onetrust-banner-sdk" in driver.page_source
-                print(f"  {i}s: title={title[:30]} mkto={has_mkto} recaptcha={has_recaptcha} cookie={has_cookie}")
+                print(f"  {i}s: mkto={has_mkto}")
         
         if not form_found:
-            print(f"ERROR: Form never appeared")
-            print(f"Title: {driver.title}")
-            print(f"URL: {driver.current_url}")
-            body = driver.find_element(By.TAG_NAME, "body").text[:200]
-            print(f"Body: {body}")
+            print(f"ERROR: Form not found. Title: {driver.title}")
             return None
         
         # Fill form
@@ -157,19 +264,19 @@ def download_one(slug, url, buster_path=None):
                 el = driver.find_element(By.ID, field_id)
                 el.clear()
                 el.send_keys(value)
-                print(f"  Filled: {field_id}")
+                print(f"  {field_id} = {value}")
                 time.sleep(0.2)
             except Exception as e:
-                print(f"  Failed: {field_id} - {e}")
+                print(f"  {field_id} FAILED: {e}")
         
         # Country
         try:
             from selenium.webdriver.support.ui import Select
             sel = Select(driver.find_element(By.ID, "Country__c_contact"))
             sel.select_by_visible_text("United States")
-            print("  Filled: Country")
-        except Exception as e:
-            print(f"  Failed: Country - {e}")
+            print("  Country = United States")
+        except:
+            pass
         
         # Opt-in
         for cb_id in ["Opt_In_Educational_Resources__c", "Opt_In_for_Future_Events__c"]:
@@ -177,73 +284,87 @@ def download_one(slug, url, buster_path=None):
                 cb = driver.find_element(By.ID, cb_id)
                 if not cb.is_selected():
                     cb.click()
-                    print(f"  Checked: {cb_id}")
+                    print(f"  {cb_id} checked")
             except:
                 pass
         
-        print("Form filled. Waiting for CAPTCHA to be solved...")
-        print("(Buster extension should auto-solve reCAPTCHA, or solve manually)")
+        # Solve reCAPTCHA
+        print("Solving reCAPTCHA...")
+        time.sleep(2)
         
-        # Wait for form submission (up to 120s)
+        # Try clicking the checkbox first (might pass without challenge)
+        solved = click_recaptcha_checkbox(driver)
+        
+        if not solved:
+            # Try audio challenge
+            print("Trying audio challenge...")
+            solved = solve_recaptcha_audio(driver)
+        
+        if not solved:
+            # Retry checkbox click (sometimes second attempt works)
+            print("Retrying checkbox...")
+            time.sleep(2)
+            solved = click_recaptcha_checkbox(driver)
+        
+        if not solved:
+            # One more audio attempt
+            print("Retrying audio...")
+            solved = solve_recaptcha_audio(driver)
+        
+        print(f"reCAPTCHA solved: {solved}")
+        
+        # Submit form
+        print("Submitting form...")
+        try:
+            btn = driver.find_element(By.CSS_SELECTOR, "button[type=submit], .mktoButton")
+            btn.click()
+            print("Clicked submit")
+        except:
+            print("Submit button not found")
+        
+        # Wait for submission
+        print("Waiting for submission result...")
         submitted = False
-        for i in range(120):
+        for i in range(30):
             time.sleep(1)
-            
-            # Check if form is gone
-            try:
-                form = driver.find_element(By.CSS_SELECTOR, "form.mktoForm, form")
-                if not form.is_displayed():
-                    submitted = True
-                    print(f"Form submitted at {i}s!")
-                    break
-            except:
-                # Form element not found = submitted
-                submitted = True
-                print(f"Form submitted at {i}s!")
-                break
-            
-            # Check for thank-you text
             try:
                 body = driver.find_element(By.TAG_NAME, "body").text
                 if "Thank you" in body or "Download" in body or "Success" in body:
                     submitted = True
-                    print(f"Thank-you page at {i}s!")
+                    print(f"Success at {i}s!")
                     break
             except:
                 pass
-            
-            # Try clicking submit every 10s
-            if i > 5 and i % 10 == 0:
-                try:
-                    btn = driver.find_element(By.CSS_SELECTOR, "button[type=submit], .mktoButton")
-                    if btn.is_displayed():
-                        btn.click()
-                        print(f"  Clicked submit at {i}s")
-                except:
-                    pass
-            
-            if i % 15 == 0 and i > 0:
-                print(f"  Waiting for CAPTCHA... {i}s")
+            if i % 5 == 0:
+                print(f"  Waiting... {i}s")
         
-        # Wait for download
-        print("Waiting for download...")
-        time.sleep(10)
+        # Check for downloads
+        time.sleep(5)
         
-        # Check for downloaded files
+        # Check DOC_DIR
         downloaded = list(DOC_DIR.glob(f"{slug}.*"))
         if downloaded:
             doc_path = f"content/website/documents/{downloaded[0].name}"
             print(f"Downloaded: {doc_path}")
             return doc_path
         
-        # Check for PDF links on the page
+        # Check Downloads folder
+        downloads_dir = Path.home() / "Downloads"
+        for f in downloads_dir.glob(f"*{slug}*"):
+            if f.stat().st_size > 1000:
+                dest = DOC_DIR / f.name
+                f.rename(dest)
+                doc_path = f"content/website/documents/{f.name}"
+                print(f"Found in Downloads: {doc_path}")
+                return doc_path
+        
+        # Check for download links
         try:
             links = driver.find_elements(By.CSS_SELECTOR, "a[href*='pdf'], a[href*='download']")
             for link in links:
                 href = link.get_attribute("href")
-                if href and (".pdf" in href or "download" in href):
-                    print(f"Found download link: {href}")
-                    # Download via curl
+                if href and ".pdf" in href.lower():
+                    print(f"Downloading: {href}")
                     safe_name = f"{slug}.pdf"
                     local_path = DOC_DIR / safe_name
                     subprocess.run(["curl", "-s", "-L", "-o", str(local_path), href], timeout=30)
@@ -254,7 +375,12 @@ def download_one(slug, url, buster_path=None):
         except:
             pass
         
-        print("No document downloaded")
+        # Debug
+        print(f"URL: {driver.current_url}")
+        print(f"Title: {driver.title}")
+        body = driver.find_element(By.TAG_NAME, "body").text[:300]
+        print(f"Body: {body}")
+        
         return None
         
     finally:
@@ -266,16 +392,14 @@ def update_website_json(slug, doc_path):
     for a in d["articles"]:
         if a["s"] == slug:
             a["doc_url"] = doc_path
-            print(f"Updated {slug}: doc_url = {doc_path}")
             break
     with open(WEBSITE_JSON, "w") as f:
         json.dump(d, f, ensure_ascii=False, separators=(",", ":"))
 
 def main():
-    parser = argparse.ArgumentParser(description="Download documents using undetected-chromedriver")
+    parser = argparse.ArgumentParser(description="Auto-download documents (undetected_chromedriver + reCAPTCHA solver)")
     parser.add_argument("--slug", help="Specific page slug")
     parser.add_argument("--all", action="store_true", help="Process all form pages")
-    parser.add_argument("--no-buster", action="store_true", help="Don't load Buster extension")
     args = parser.parse_args()
     
     form_pages = detect_form_pages()
@@ -283,16 +407,16 @@ def main():
         print("No form pages found.")
         return
     
-    print(f"Found {len(form_pages)} pages with download forms:")
+    print(f"Found {len(form_pages)} pages:")
     for i, a in enumerate(form_pages):
-        print(f"  [{i+1}] {a['s']}  ({a.get('t', '')[:50]})")
+        print(f"  [{i+1}] {a['s']}")
     
     if args.slug:
         targets = [a for a in form_pages if a["s"] == args.slug]
     elif args.all:
         targets = form_pages
     else:
-        print("\nSelect pages (comma-separated, or 'all'):")
+        print("Select (comma-separated, or 'all'):")
         choice = input("> ").strip()
         if choice.lower() == "all":
             targets = form_pages
@@ -300,29 +424,22 @@ def main():
             indices = [int(x.strip()) - 1 for x in choice.split(",") if x.strip().isdigit()]
             targets = [form_pages[i] for i in indices if 0 <= i < len(form_pages)]
     
-    buster_path = None if args.no_buster else str(ROOT / "extensions" / "buster")
-    
-    print(f"\nProcessing {len(targets)} pages...")
-    
     for a in targets:
         slug = a["s"]
         url = a.get("u", f"https://www.palantir.com/{slug}/")
-        
         print(f"\n{'='*60}")
         print(f"Processing: {slug}")
-        print(f"URL: {url}")
         print(f"{'='*60}\n")
         
-        doc_path = download_one(slug, url, buster_path)
-        
+        doc_path = download_one(slug, url)
         if doc_path:
             update_website_json(slug, doc_path)
             subprocess.run(["python3", "build.py"], cwd=str(ROOT))
-            print(f"\nSUCCESS: {slug}\n")
+            print(f"SUCCESS: {slug}")
         else:
-            print(f"\nFAILED: {slug}\n")
+            print(f"FAILED: {slug}")
     
-    print("Done!")
+    print("\nDone!")
 
 if __name__ == "__main__":
     main()
