@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Visualize time series</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-visualize-time-series" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#visualize-time-series"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>可视化时间序列</h1>
+<p>Quiver 提供了丰富的时间序列可视化功能。</p>
+<p>在探讨 Quiver 中的时间序列可视化时，我们使用以下术语：</p>
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>术语</th><th>描述</th></tr></thead><tbody><tr><td>图表</td><td>时间序列图表是 Quiver 画布上的一张卡片，用作查看时间序列的容器。将时间序列数据添加到分析中时，系统会自动创建时间序列图表。一个图表可以包含多个时间序列图。它们还包含一个或多个 x 轴和 y 轴。</td></tr><tr><td>图</td><td>单个时间序列的可视化表示。一个图一次只能在一个图表上查看。</td></tr><tr><td>轴</td><td>定义图表视图范围的 x 轴或 y 轴。轴可以是时间型、相对时间型、数值型或序数型。多个图表之间可以共享轴。</td></tr></tbody></table></div>
+<p>例如，在下图中，我们有两个时间序列图表。第一个图表（图表 1）包含三个时间序列图：<code>Gulkana Temperature</code>、<code>Newark Temperature</code> 和 <code>Newark Wind Gust</code>。该图表还有两个数值型 y 轴：<code>kt</code> 和 <code>°F</code>。两个温度图使用 <code>°F</code> 轴，而阵风图使用 <code>kt</code> 轴。第二个图表（图表 2）包含单个分类时间序列图：<code>Newark Rain Status</code>。它使用序数型 y 轴：<code>Status</code>。两个图表共享同一个 x 轴：<code>Time</code>。</p>
+<p><img alt="Two time series charts. One with three plots, and one with a single categorical series plot." height="600" src="/docs/resources/foundry/quiver/howto-time-series-visualize.png" style="aspect-ratio:3224 / 1498" width="1291.3217623497997" node="[object Object]"></p>
+<h2 id="user-content-panning-and-zooming" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#panning-and-zooming"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>平移与缩放</h2>
+<p>时间序列图表支持交互操作，允许进行平移和缩放。将鼠标悬停在轴上，会显示平移、放大和缩小按钮。此外，直接拖动轴即可进行平移；按住 Cmd（macOS）或 Ctrl（Windows）键同时在轴上上下滚动，即可实现放大或缩小。还可以在主图表区域单击并拖拽以框选范围，然后选择 <strong>缩放至选区</strong>，从而缩放到图表的特定部分。</p>
+<p>平移和缩放操作后，可以选择轴上的 <strong>适应全屏</strong> 按钮。这将使轴自动调整以显示完整的数据范围。</p>
+<p>Quiver 会自动跨时间序列图表链接所有时间轴。因此，当平移或缩放某个图表的时间轴时，画布中其他时间序列图表的缩放范围也会同步更新。</p>
+<p><img alt="Panning and zooming on a time series chart." height="600" src="/docs/resources/foundry/quiver/howto-time-series-pan-and-zoom.gif" style="aspect-ratio:1339 / 638" width="1259.2476489028213" node="[object Object]"></p>
+<h2 id="user-content-moving-plots-between-charts" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#moving-plots-between-charts"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>在图表间移动图</h2>
+<p>可以通过多种方式在图表间移动图来重新组织它们。</p>
+<p>首先，可以通过从图表图例中拖拽来移动图。将图拖拽到另一个图表上会将其移动到该图表。将图拖拽到画布上会创建一个新图表。如果按根对象进行分组，同样可以拖拽该对象，将使用该对象的所有图移动到另一个图表。</p>
+<p>其次，可以使用图表“下一步操作”菜单中的 <strong>移动图</strong> 部分。这允许将当前图表中的图移动到其他图表，同时也支持将其他图表中的图调入当前图表。</p>
+<p>最后，可以使用分析内容面板在图表之间拖放图。</p>
+<p>在下面的示例中，我们首先将图例中的图 <code>Newark Rain Statis</code> 拖拽到画布上，将其移动到新图表中。然后，将图例中的根对象 <code>NEWARK LIBERTY INTERNATIONAL</code> 拖拽到新图表上，这会将图 <code>Newark Wind Gust</code> 和 <code>Newark Temperature</code> 移动到该新图表中。最后，我们使用“下一步操作”菜单的 <strong>移动图</strong> 部分，将其中一些图移回原始图表。</p>
+<p><img alt="Move plots between time series charts." height="600" src="/docs/resources/foundry/quiver/howto-time-series-move-plots.gif" style="aspect-ratio:1337 / 638" width="1257.3667711598746" node="[object Object]"></p>
+<h2 id="user-content-formatting-plots" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#formatting-plots"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>格式化图</h2>
+<p>图提供了多种不同的可视化显示选项。要查看单个图的完整配置选项，请在图表图例中选择 <strong>配置图</strong> (<img alt="Open editor icon" src="/docs/resources/foundry/quiver/time-series-visualize-plot-config-icon.png?width=25px" style="aspect-ratio:44 / 44" width="25px" node="[object Object]">) 图标，然后在编辑器面板中打开 <strong>显示</strong> 选项卡。</p>
+<p>
+
+常见的绘图显示选项包括：</p>
+<ul>
+<li>显示为线或点</li>
+<li>线宽</li>
+<li>在时间序列线下方显示细微的渐变</li>
+<li>显示数据点，并配置点的大小、形状和填充选项</li>
+<li>渲染为虚线或实线</li>
+<li>线条颜色</li>
+</ul>
+<p>配置绘图的<a href="/docs/foundry/quiver/cards-interpolation-usage/">插值</a>也可用于更新任意两点之间时间序列线的形状。</p>
+<p>在下面的示例中，我们首先在图例中选择<strong>配置绘图</strong>以打开绘图的编辑器面板。然后，我们重命名该绘图。接下来，我们将其内部插值更新为<code>Previous</code>。最后，我们选择<strong>显示</strong>选项卡并更新线宽、渐变和颜色。</p>
+<p><img alt="Configure plot display options." height="600" src="/docs/resources/foundry/quiver/howto-time-series-plot-display.gif" style="aspect-ratio:1339 / 638" width="1259.2476489028213" node="[object Object]"></p>
+<h2 id="user-content-formatting-charts" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#formatting-charts"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>格式化图表</h2>
+<p>图表有其自己的一套显示选项。Y轴和图例都可以通过拖拽进行移动。此外，配置图表并在编辑器面板中选择<strong>显示</strong>选项卡，将提供额外的显示选项，例如显示全局标识符、图例样式和轴样式。</p>
+<p>还可以通过图表卡片标题栏中的<strong>更多操作</strong>菜单开启或关闭图表标题。<strong>更多操作</strong>菜单还包含其他图表操作，例如将数据下载为 CSV 文件、复制图表和删除图表。</p>
+<p>在下面的示例中，我们将图例拖动到右侧，将 Y 轴拖动到左侧。然后我们选择图表的<strong>配置</strong>按钮并打开<strong>显示</strong>选项卡，将图例样式更新为<code>Side</code>，并将覆盖 Y 轴设置更新为<code>False</code>。如果您不希望坐标轴或图例覆盖任何绘图数据，这两个显示设置会非常有用。</p>
+<p><img alt="Configure chart display options." height="600" src="/docs/resources/foundry/quiver/howto-time-series-chart-display.gif" style="aspect-ratio:1339 / 638" width="1259.2476489028213" node="[object Object]"></p>
+<h2 id="user-content-analysis-time-series-settings" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#analysis-time-series-settings"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>分析时间序列设置</h2>
+<p>除了绘图和图表特定的显示选项外，Quiver 还在<a href="/docs/foundry/quiver/analysis-settings/">设置面板</a>的分析级别支持大量额外的时间序列显示选项。在这里，您可以配置时间序列工具提示、时间序列坐标轴和图例，以及时间序列日期/数字格式。</p>
+<p><a href="/docs/foundry/quiver/analysis-settings/#time-series-axes-and-legends">查看可配置设置的完整列表。</a></p>
+<p><img alt="Time series analysis settings." height="600" src="/docs/resources/foundry/quiver/howto-time-series-global-settings.png" style="aspect-ratio:3352 / 1606" width="1252.3038605230386" node="[object Object]"></p>
+<h2 id="user-content-configuring-axes" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#configuring-axes"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>配置坐标轴</h2>
+<p>选择轴标签可打开其配置窗口。</p>
+<h4 id="user-content-value-axis-y-axis-configuration"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#value-axis-y-axis-configuration"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>数值轴（Y轴）配置</h4>
+<p>在数值轴（Y轴）配置窗口中，您可以：</p>
+<ul>
+<li>自定义轴标签（默认情况下，Quiver 使用轴的单位作为轴标签）。</li>
+<li>手动设置默认显示范围。</li>
+<li>选择对数刻度显示。</li>
+<li>反转刻度（将刻度更改为从上到下递增）。</li>
+<li>更改轴格式（例如，选择百分比或货币格式，添加后缀或前缀，选择科学计数法，将负数显示在括号中等）。</li>
+</ul>
+<p>还可以在图表的一侧或两侧折叠 Y 轴，以最大化图表显示区域。为此，请选择轴旁边的小三角形图标。</p>
+<p><img alt="Configure a time series chart y-axis" height="600" src="/docs/resources/foundry/quiver/howto-time-series-y-axis-configure.png" style="aspect-ratio:3216 / 1126" width="1713.676731793961" node="[object Object]"></p>
+<h4 id="user-content-time-axis-x-axis-configuration"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#time-axis-x-axis-configuration"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>时间轴（X轴）配置</h4>
+<p>在时间轴（X轴）配置窗口中，您可以：</p>
+<ul>
+<li>自定义轴标签（默认情况下，Quiver 使用轴的单位作为轴标签）。</li>
+<li>手动设置默认显示范围。</li>
+<li>配置适应范围行为</li>
+<li>控制<strong>数据流</strong>按钮的行为</li>
+</ul>
+<p>时间轴（X轴）支持两种适应范围行为模式：</p>
+<ul>
+<li>
+<p><strong>自动：</strong>查找使用该轴的所有绘图的最早和最晚点。这是所有时间序列图表的默认模式。</p>
+</li>
+<li>
+<p><strong>受控：</strong>允许直接控制端点，或通过时间范围源（例如<a href="/docs/foundry/quiver/card-datetime-range-parameter/">时间范围参数</a>）进行控制。如果开启了<strong>更新时重新启用适应范围</strong>开关，当任何绘图数据更新时，适应范围配置将切换回<strong>自动</strong>模式。</p>
+</li>
+</ul>
+<p>
+
+默认情况下，激活 <strong>Stream</strong> 按钮会启用<a href="/docs/foundry/quiver/analysis-settings/#time-series-axes-and-legends">分析级流式传输</a>。在配置窗口中启用 <strong>Stream individual axis</strong> 设置，可将此行为配置为仅流式传输选定的轴。如果为时间轴开启了流式传输，还可以通过选择以下选项之一来配置流式传输轴的行为：</p>
+<ul>
+<li><strong>Rolling</strong> 随着新数据点的流入而向前滚动的固定大小窗口</li>
+<li><strong>Growing</strong> 具有固定起始时间的视图范围，其结束位置会随着流式更新动态增长</li>
+<li><strong>Fixed</strong> 不会随流式更新而改变的固定视图范围</li>
+</ul>
+<p><img alt="Configure a time series chart x-axis" height="600" src="/docs/resources/foundry/quiver/howto-time-series-x-axis-configure.png" style="aspect-ratio:3204 / 1428" width="1346.218487394958" node="[object Object]"></p>
+<h2 id="user-content-linking-and-sharing-axes" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#linking-and-sharing-axes"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>链接与共享轴</h2>
+<p>默认情况下，Quiver 会自动链接时间序列图中的所有时间轴。因此，当您平移或缩放某个图表的时间轴时，画布中其他时间序列图的缩放范围也会同步更新。</p>
+<p>对于数值轴，默认情况下各图表间的轴是不链接的。在同一个图表内，如果图表线使用相同的单位，则会共用同一个 y 轴。若要强制两条图表线使用同一个轴，可以在图表线的 <strong>Unit options</strong> 配置中覆盖其单位。同一图表中的 y 轴也可以通过拖拽叠放来合并。</p>
+<p>虽然 Quiver 的轴默认采用上述设置，但您也可以手动链接或取消链接轴，并配置哪些图表线连接到哪些轴。操作方法是在打开轴的配置窗口后，选择 <strong>Linked Plots</strong> 选项卡。在此处，您可以独立将图表线在不同轴之间移动，而无须考虑它们位于哪个图表中。</p>
+<p><img alt="Configure plot axis linking" height="600" src="/docs/resources/foundry/quiver/howto-time-series-axis-linking.png" style="aspect-ratio:2428 / 1000" width="1456.8" node="[object Object]"></p>
+<h2 id="user-content-time-and-values-ranges" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#time-and-values-ranges"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>时间与数值范围</h2>
+<p>时间和数值范围可用于突出显示和深入分析数据中的异常情况，例如观察到问题的特定时间段，或设备在最佳容量下运行时的温度范围。范围还可通过捕获特定时间段或数值范围的上下文来丰富时间序列数据，例如进行设备维护的时段。</p>
+<p><a href="/docs/foundry/quiver/timeseries-ranges/">了解如何</a>配置和使用时间与数值范围。</p>
+<h2 id="user-content-date-markers" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#date-markers"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>日期标记</h2>
+<p>日期标记是可视化的符号（垂直线），用于帮助识别和区分所绘制时间序列中的各个数据点。时间序列图中与日期标记相交的数据点，会显示在图表中各图表线的标签上。</p>
+<p><img alt="A time series chart showing a date marker highlighed with a red rectangle." height="482" src="/docs/resources/foundry/quiver/time-series-visualize-marker-on-chart.png" style="aspect-ratio:2538 / 482" width="2538" node="[object Object]"></p>
+<p>日期标记由<a href="/docs/foundry/quiver/card-datetime-parameter/">日期/时间参数</a>控制。向时间序列图添加标记时，会自动添加一个日期/时间参数，并用作日期标记的输入。</p>
+<p><img alt="Quiver canvas showing a date/time parameter controlling a date marker which is highlighted on a time series chart and in the chart's legend." height="600" src="/docs/resources/foundry/quiver/time-series-visualize-markers.png" style="aspect-ratio:3070 / 1566" width="1176.2452107279694" node="[object Object]"></p>
+<h4 id="user-content-add-a-marker"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#add-a-marker"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>添加标记</h4>
+<p>若要向时间序列图添加标记：</p>
+<ol>
+<li>将光标移动到图表上的目标时间位置，然后选择该图表。</li>
+<li>选择 <strong>Save new date marker</strong>。</li>
+</ol>
+<p><img alt="Marker selection context menu with the option to save date as marker highlighted with a red rectangle." height="476" src="/docs/resources/foundry/quiver/time-series-visualize-save-marker.png" style="aspect-ratio:1674 / 476" width="1674" node="[object Object]"></p>
+<h4 id="user-content-delete-a-marker"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#delete-a-marker"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>删除标记</h4>
+<p>若要从时间序列图中删除标记，请将鼠标悬停在时间序列图中的标记上，然后选择<strong>垃圾桶图标</strong>。</p>
+<p><img alt="Marker selection context menu with the option to delete a marker highlighted with a red rectangle." height="476" src="/docs/resources/foundry/quiver/time-series-visualize-delete-marker-from-chart.png" style="aspect-ratio:2532 / 476" width="2532" node="[object Object]"></p>
+<p>
+
+或者，打开时序图编辑器，导航至<strong>标记</strong>部分，并在目标标记旁点击<strong>垃圾桶图标</strong>。<img alt="时序图编辑器菜单，显示了标记配置部分，删除标记的选项用红框标出。" src="/docs/resources/foundry/quiver/time-series-visualize-delete-marker-from-editor.png?width=350px" style="aspect-ratio:798 / 1424" width="350px" node="[object Object]"></p>
+<h2 id="user-content-annotate-ranges-with-action-buttons" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#annotate-ranges-with-action-buttons"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>使用操作按钮标注区间</h2>
+<p>可以在时序图中添加<a href="/docs/foundry/quiver/card-action-button/">操作按钮</a>，以便用户将数据写回到本体中。例如，用户可以创建对象、更新现有对象的属性，或修改对象间的链接。</p>
+<p><a href="/docs/foundry/quiver/cards-index-writeback/#invoke-ontology-actions-directly-from-a-time-series-chart">了解如何</a>直接从时序图的选择菜单中调出本体操作按钮。</p>
+<h2 id="user-content-shade-areas-with-bounded-time-series" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#shade-areas-with-bounded-time-series"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>使用有界时序对区域进行着色</h2>
+<p>你可以使用<a href="/docs/foundry/quiver/analysis-data-model/">有界时序</a>对时序图的区域进行着色。有界时序由一条上界序列和一条下界序列组成，并对两者之间的区域进行着色。</p>
+<p>常见的有界时序图包括：</p>
+<ul>
+<li><a href="/docs/foundry/quiver/card-bollinger-bands/">布林带</a>：在滚动时间窗口上绘制布林带。</li>
+<li><a href="/docs/foundry/quiver/card-time-series-bounds/">时序边界</a>：绘制由两条时序线所界定的区域。</li>
+</ul>
+<p><img alt="使用有界时序对时序图的区域进行着色" height="600" src="/docs/resources/foundry/quiver/howto-time-series-bounded-series.png" style="aspect-ratio:3356 / 1352" width="1489.3491124260354" node="[object Object]"></p>
+</article>
+</body>
+</html>

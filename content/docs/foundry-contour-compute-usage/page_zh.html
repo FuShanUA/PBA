@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Compute usage with Contour</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-compute-usage-with-contour" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#compute-usage-with-contour"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Contour 的计算资源使用</h1>
+<p>在 Foundry 中基于数据运行 Contour 工作流需要使用 Foundry 的计算资源，该资源以“计算秒”为单位进行计量。本文档详细说明了 Contour 如何使用计算资源，并提供了在产品中排查和管理计算资源使用情况的相关信息。</p>
+<p>每个展示数据的 Contour 看板背后，都有对 Contour 后端发出的查询请求作为支撑。Foundry 通过在自动伸缩的 Spark 集群上执行这些查询来响应请求。Contour 查询的计算秒数，完全根据查询实际执行期间所消耗的计算秒数来计量。然而，在交互模式下，为了提供更快的响应速度，所有 Contour 分析的计算资源均处于“常开”状态；这意味着每个交互式查询消耗计算秒数的速率要高于批量计算。</p>
+<p>查询所消耗的资源量受多种因素影响，例如输入数据集的规模与布局，以及查询本身的复杂度（如所使用的 Contour 看板数量）。</p>
+<h2 id="user-content-how-compute-is-measured" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#how-compute-is-measured"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>计算资源的计量方式</h2>
+<p>Contour 借助 Foundry 的并行计算后端来执行针对 Foundry 数据的查询。因此，Contour 中的计算资源用量按以下公式进行计量。</p>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>请注意，默认的 <code>interactive_contour_usage_rate</code> 为 <code>15</code>。这是 Contour 基于常开的并行计算框架消耗计算资源的速率。如果您与 Palantir 签订了企业级合同，请在进行计算资源使用量核算前联系您的 Palantir 代表。</p></div>
+<pre><code>total_compute_seconds = contour_usage_rate * (driver_compute_seconds + executor_compute_seconds)
+</code></pre>
+<h3 id="user-content-interactive-contour-usage" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#interactive-contour-usage"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>交互式 Contour 用量</h3>
+<p>Contour 的“常备”执行系统专为快速响应终端用户发起的即席查询而设计。在 Foundry 计算秒数维度上，单次 Contour 查询的成本取决于在 Spark 集群上执行该查询所需的时间，以及查询执行期间所占用的核心数量。核心数量则是根据查询在调度它的 Spark 应用中所分摊的资源份额来确定的。</p>
+<p>在交互模式下，每次创建或更新 Contour 看板都会消耗计算资源。这包括会产生“级联”效应的计算消耗，即影响 Contour 路径中特定看板下游的其他看板。例如，在 Contour 分析中，以下操作均会消耗计算资源：</p>
+<ul>
+<li>创建新看板（可能会影响所有下游看板）</li>
+<li>更新看板（可能会影响所有下游看板）</li>
+<li>点击路径顶部的<strong>更新数据</strong></li>
+</ul>
+<h3 id="user-content-batch-contour-usage" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#batch-contour-usage"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>批量 Contour 用量</h3>
+<p>Contour 路径可以“另存为”数据集。此操作会将 Contour 后端生成的底层代码保存到数据集作业规范中。随后，可以按计划或以即席方式运行该数据集构建任务。这类数据集作业将作为批量作业进行计量，不会像交互式 Contour 用量那样产生“常开”开销。</p>
+<p>Contour 批量数据集作为通用的并行批量计算进行计量，类似于通过 Code Repositories 和 Code Workbook 创建及更新的数据集。这些批量计算与其他批量计算消耗计算资源的速率保持一致。</p>
+<h2 id="user-content-investigating-contour-usage" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#investigating-contour-usage"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>排查 Contour 用量</h2>
+<p>Contour 产生的交互式用量始终归属于触发该操作的分析任务。对于指定的 Contour 分析任务，其所有的交互式计算消耗均归属至该分析资源本身。</p>
+<p>执行计算任务的各个看板会生成相应的 Spark 指标，可通过 Builds 应用程序进行查看。在每个看板上下文菜单的<strong>查看作业</strong>选项中即可进入此功能。来自 Contour 的批量计算用量归属于计算结果输出的目标数据集，这与 Code Repositories 和 Code Workbook 的机制类似。对于交互式和批量计算，您均可在 Resource Management 应用程序中查看整体的资源使用情况。</p>
+<h2 id="user-content-understanding-drivers-of-usage" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#understanding-drivers-of-usage"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>理解资源使用的驱动因素</h2>
+<p>
+
+Contour 运行于 Spark 计算框架之上，因此主要受两大因素影响：数据规模与查询复杂度（即对数据执行的操作数量与类型）。对数据执行的操作越多，后端计算结果所消耗的计算资源就越大。不过，由于某些操作的计算开销远高于其他操作，通过增加操作反而可能降低整体用量（例如，在高开销操作前添加过滤条件）。</p>
+<p>对数据的操作次数取决于 Contour 路径中的看板数量。处于路径下游的看板依赖于上游看板的输出结果。在路径中新增看板会改变流经该路径的数据，从而要求重新计算看板，进而增加计算开销。</p>
+<p>Contour 用户增多会带来查询量上升，可能导致计算开销增加。然而，Contour 提供了两项特性来降低多用户场景下的计算资源消耗：<em>检查点</em>（checkpoints）与<em>缓存</em>（caching）。</p>
+<ul>
+<li>Contour 的<em>检查点</em>由 Contour 后端自动管理。检查点使得 Contour 能够快速提供路径下游的查询结果。随着时间推移，这有助于减少较长 Contour 路径所带来的计算量，但无法彻底消除计算开销。</li>
+<li>Contour 还会对相同数据上的相同查询结果进行<em>缓存</em>。这意味着，如果两名用户先后打开同一个 Contour 分析，计算过程只会执行一次。这极大提升了仪表板的响应效率，并削弱了用户数量对计算资源用量的影响。
+<ul>
+<li>需要注意的是，更改输入数据或参数会导致缓存失效，但在使用相同输入数据与参数进行后续计算时，将再次启用缓存。</li>
+</ul>
+</li>
+</ul>
+<h2 id="user-content-managing-usage-with-contour" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#managing-usage-with-contour"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>使用 Contour 管理用量</h2>
+<p>优化分析过程与输入数据集可以降低成本并缩短分析时间。<a href="/docs/foundry/contour/performance-optimize/">了解有关 Contour 优化的更多信息。</a></p>
+<h2 id="user-content-calculating-usage" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#calculating-usage"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>计算用量</h2>
+<p>Contour 遵循与平台中其他基于 Spark 的产品（如 Code Repositories）相同的 Spark 计量原则。借助基于成本的路由机制，Contour 会自动调整后端驱动器（drivers）和执行器（executors）的规格，以高效满足数据规模与查询类型的需求。</p>
+<pre><code> 示例 Contour 驱动器规格：
+    num_vcpu: 2
+    gib_ram: 11
+ 示例 Contour 执行器规格：
+    num_vcpu: 2
+    gib_ram: 12
+    num_executors: 3
+ 查询时长：3 秒
+ 交互式 Contour 用量费率：15
+</code></pre>
+<pre><code>driver_compute_seconds = interactive_usage_rate * driver_compute_seconds
+                       = 15 * max(2vcpu, 11gib / 7.5gib) * 3sec
+                       = 15 * 2 * 3 = 90 compute-seconds
+
+executor_compute_seconds = interactive_usage_rate * executor_compute_seconds
+                         = 15 * max(2vcpu, 12gib / 7.5gib) * 3sec * 3executors
+                         = 15 * 2 * 3 * 3 = 270 compute-seconds
+
+
+total_compute_seconds = driver_compute_seconds + executor_compute_seconds
+                      = 90 compute-seconds + 270 compute-seconds = 360 compute-seconds
+</code></pre>
+</article>
+</body>
+</html>

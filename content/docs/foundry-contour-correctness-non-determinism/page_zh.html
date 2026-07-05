@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Non-determinism in Contour</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-non-determinism-in-contour" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#non-determinism-in-contour"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Contour 中的非确定性</h1>
+<h3 id="user-content-non-deterministic-window-functions" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#non-deterministic-window-functions"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>非确定性窗口函数</h3>
+<p>在窗口函数中使用 <code>ROW_NUMBER</code>、<code>FIRST</code>、<code>LAST</code>、<code>LEAD</code>、<code>LAG</code>、<code>NTILE</code>、<code>ARRAY_AGG</code> 或 <code>ARRAY_AGG_DISTINCT</code> 时，需注意非确定性问题。假设我们按列 A 进行分区，并按列 B 进行排序。若列 A 的同一个值对应多行列 B 的相同值，这些窗口函数的结果可能是不确定的，即面对相同的数据和逻辑输入，可能产生不同的输出结果。</p>
+<p>在表达式面板中使用这些表达式时，系统会弹出警告提示，以确保窗口函数中的 <code>ORDER BY</code> 子句具备确定性。</p>
+<p><img alt="window-function-warning" height="600" src="/docs/resources/foundry/contour/correctness-window-function-warning.png" style="aspect-ratio:1436 / 813" width="1059.7785977859778" node="[object Object]"></p>
+<p>我们通过一组数据示例来具体说明：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>name</th><th>class</th><th>grade</th></tr></thead><tbody><tr><td>Aaron</td><td>Math</td><td>95</td></tr><tr><td>Burt</td><td>Math</td><td>95</td></tr><tr><td>Chrissy</td><td>Math</td><td>80</td></tr><tr><td>Angelica</td><td>Science</td><td>77</td></tr><tr><td>Burt</td><td>Science</td><td>81</td></tr><tr><td>Charlie</td><td>Science</td><td>66</td></tr></tbody></table></div>
+<p>若要按成绩对每个班级的学生进行排名，可添加新列 <code>rank</code>，并使用表达式 <code>ROW_NUMBER() OVER (PARTITION BY "class" ORDER BY "grade" DESC)</code>。</p>
+<p>得到的结果如下：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>name</th><th>class</th><th>grade</th><th>rank</th></tr></thead><tbody><tr><td>Aaron</td><td>Math</td><td>95</td><td>1</td></tr><tr><td>Burt</td><td>Math</td><td>95</td><td>2</td></tr><tr><td>Chrissy</td><td>Math</td><td>80</td><td>3</td></tr><tr><td>Angelica</td><td>Science</td><td>77</td><td>2</td></tr><tr><td>Burt</td><td>Science</td><td>81</td><td>1</td></tr><tr><td>Charlie</td><td>Science</td><td>66</td><td>3</td></tr></tbody></table></div>
+<p>但有时，我们会得到如下结果：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>name</th><th>class</th><th>grade</th><th>rank</th></tr></thead><tbody><tr><td>Aaron</td><td>Math</td><td>95</td><td>2</td></tr><tr><td>Burt</td><td>Math</td><td>95</td><td>1</td></tr><tr><td>Chrissy</td><td>Math</td><td>80</td><td>3</td></tr><tr><td>Angelica</td><td>Science</td><td>77</td><td>2</td></tr><tr><td>Burt</td><td>Science</td><td>81</td><td>1</td></tr><tr><td>Charlie</td><td>Science</td><td>66</td><td>3</td></tr></tbody></table></div>
+<p>由于 Aaron 和 Burt 的数学成绩相同，<code>rank</code> 列的结果是非确定的。为使该列结果具备确定性，可在表达式的排序子句中加入 "name" 列：<code>ROW_NUMBER() OVER (PARTITION BY "class" ORDER BY "grade" DESC, "name" ASC)</code>。通过此表达式，利用 <code>name</code> 列对成绩相同的行进行决胜排序，即可确保始终得到以下结果：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>name</th><th>class</th><th>grade</th><th>rank</th></tr></thead><tbody><tr><td>Aaron</td><td>Math</td><td>95</td><td>1</td></tr><tr><td>Burt</td><td>Math</td><td>95</td><td>2</td></tr><tr><td>Chrissy</td><td>Math</td><td>80</td><td>3</td></tr><tr><td>Angelica</td><td>Science</td><td>77</td><td>2</td></tr><tr><td>Burt</td><td>Science</td><td>81</td><td>1</td></tr><tr><td>Charlie</td><td>Science</td><td>66</td><td>3</td></tr></tbody></table></div>
+<h3 id="user-content-other-non-deterministic-functions" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#other-non-deterministic-functions"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>其他非确定性函数</h3>
+<p>除上述窗口函数外，<code>CURRENT_DATE</code>、<code>CURRENT_TIMESTAMP</code>、<code>CURRENT_UNIX_TIMESTAMP</code> 和 <code>MONOTONICALLY_INCREASING_ID</code> 函数同样具有非确定性。</p>
+<p>对于 <code>CURRENT_DATE</code>、<code>CURRENT_TIMESTAMP</code> 和 <code>CURRENT_UNIX_TIMESTAMP</code>，这些值仅在路径更新时进行计算。例如，若在第 1 天使用 <code>CURRENT_DATE</code> 新建了一列，第 2 天回到该分析中时，该新列显示的仍是昨天的日期。</p>
+<h3 id="user-content-aggregation-over-double-columns" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#aggregation-over-double-columns"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>双精度列的聚合</h3>
+<p>由于 Spark 计算具有分布式特性，算术运算中操作数的顺序是非确定的（即 1+2 与 2+1 的区别）。当输入类型为 <code>double</code> 时，这种非确定的运算顺序会导致聚合操作产生非确定的输出。这意味着对于双精度浮点数的聚合运算，即便输入数据完全相同，每次计算的结果也可能存在差异，不过这种差异极小，例如 0.000001。</p>
+<p>例如，对双精度列求解 <code>mean</code> 或 <code>variance</code> 将生成非确定性列。对非确定性列执行操作（如过滤）的结果同样也是非确定的。</p>
+<p>在分析中对双精度列执行 <code>mean</code>、<code>sum</code>、<code>stddev</code>、<code>variance</code>、<code>corr</code> 或 <code>sum_distinct</code> 操作，都会产生非确定性列。</p>
+<p>来看一个具体示例：</p>
+<p>假设有一个双精度列 <code>pickup_latitude</code>。在数据透视表中，我们对双精度列 <code>pickup_latitude</code> 取均值。若切换至透视数据，就会生成一个非确定性列。</p>
+<p><img alt="pivot-table-nondeterminism" height="600" src="/docs/resources/foundry/contour/correctness-pivot-table.png" style="aspect-ratio:1673 / 792" width="1267.4242424242425" node="[object Object]"></p>
+<p>随后若对该新建列进行过滤，过滤结果也将是非确定的。例如，在上方截图中，Staten Island 的 <code>pickup_latitude</code> 均值为 40.5830495。如果按该值进行过滤，将看到仅剩一行数据。</p>
+<p>然而，若重新计算该路径，过滤后可能不再显示该行，因为均值的微小变化改变了其数值。<strong>建议避免对非确定性列使用精确过滤（例如过滤均值 = 40.5830495）。同时，也应避免将非确定性列作为连接键使用。</strong></p>
+<p><img alt="non-determinism-warning" height="600" src="/docs/resources/foundry/contour/correctness-nondeterminism-warning.png" style="aspect-ratio:1887 / 840" width="1347.857142857143" node="[object Object]"></p>
+<p>在 Contour 中对非确定性列执行操作（例如过滤该列）时，执行操作的面板将弹出警告。该警告会指出引发非确定性列的具体聚合操作。</p>
+<h3 id="user-content-diagnosing-non-determinism" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#diagnosing-non-determinism"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>诊断非确定性</h3>
+<p>
+
+分析存在非确定性的一个信号是行数不一致。例如，假设你在一个分析中插入了汇总看板，随后执行了一系列不会改变行数的转换操作，接着又添加了另一个汇总看板。如果这两个汇总看板的行数不匹配，你就应该检查上方的路径中是否存在非确定性操作。注意留意界面中的警告提示，这些提示会在使用非确定性函数或对双精度浮点数进行聚合时发出警告。</p>
+</article>
+</body>
+</html>

@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Host an OSDK application on Foundry</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-host-an-osdk-application-on-foundry" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#host-an-osdk-application-on-foundry"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>在 Foundry 上托管 OSDK 应用</h1>
+<p>Developer Console 中的网站托管功能为使用 OSDK 构建纯前端应用的开发者提供了直接在 Foundry 上托管这些应用的选项，从而无需额外的托管基础设施。</p>
+<p>与 GitHub Pages 类似，该网站托管功能仅支持托管静态资源，不支持运行服务器。这意味着您可以托管：</p>
+<ul>
+<li>HTML、CSS 和 JavaScript 文件</li>
+<li>完全在浏览器中运行的单页应用（React、Vue、Angular 等）</li>
+<li>图像、字体和其他静态资源</li>
+</ul>
+<p>您无法使用此功能运行诸如 Node.js 后端、Python 服务器或服务端渲染等服务器端代码。对于任何服务端功能，您的应用必须通过 OSDK 或其他外部服务向 Foundry 发起 API 调用。</p>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>网站托管仅适用于配置为<strong>面向客户端的应用</strong>。如果您的应用同时配置为<strong>后端服务</strong>，网站托管选项将不会显示，因为这种组合会创建专用于服务器端应用的机密客户端。</p></div>
+<p>每个托管的网站都可以通过您 Foundry 注册域名的子域名或您拥有的自定义域名进行访问。默认情况下，您将选择一个子域名，并且您的应用将通过 <code>&lt;YOUR-APPLICATION-SUBDOMAIN&gt;.[YOUR-ENROLLMENT].palantirfoundry.com</code> 提供服务。或者，您也可以将应用托管在自定义域名上，例如 <code>[your-organization].com</code>。详情请参阅<a href="#host-your-website-on-a-custom-domain">在自定义域名上托管网站</a>。</p>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>如果您的 Foundry 注册域名不以 <code>.palantirfoundry.com</code> 结尾，请联系 Palantir 支持团队以协助设置网站托管，因为这需要进行额外的协调。</p></div>
+<h2 id="user-content-prepare-your-application" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#prepare-your-application"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>准备您的应用</h2>
+<p>以下部分介绍了在 Foundry 上托管 Developer Console 应用所需的步骤。</p>
+<h3 id="user-content-single-page-application-rendering" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#single-page-application-rendering"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>单页应用渲染</h3>
+<p>如果您的应用中未包含<a href="#custom-404-page">自定义 404 页面</a>，Foundry 将假定这是一个<a href="https://en.wikipedia.org/wiki/Single-page_application">单页应用 ↗</a>，并将指向该子域名下任意路径的请求路由至 <code>index.html</code>。</p>
+<h3 id="user-content-updating-the-redirect-url" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#updating-the-redirect-url"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>更新重定向 URL</h3>
+<p>作为身份验证流程的一部分，您需要更新重定向 URL，使其包含您的托管域名并在末尾加上 <code>/auth/callback</code>。如果您使用的是注册子域名，该 URL 应为 <code>&lt;YOUR-APPLICATION-SUBDOMAIN&gt;.[YOUR-ENROLLMENT].palantirfoundry.com/auth/callback</code>。如果您使用的是自定义域名，该 URL 应为 <code>&lt;YOUR-CUSTOM-DOMAIN&gt;/auth/callback</code>。
+您还必须在 Developer Console 中将相同的重定向 URL 添加到您的应用中。详情请参阅<a href="/docs/foundry/developer-console/create-application/">创建新的 OSDK</a>。</p>
+<h3 id="user-content-prepare-the-asset" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#prepare-the-asset"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>准备资源</h3>
+<p>将包含网站文件生产构建版本的目录内容进行压缩。<strong>请勿</strong>包含目录本身。在常见的 Web 框架中，该目录通常是 <code>dist/</code>。</p>
+<p>如果在压缩文件中包含了任何目录，这些目录将成为您网站路径的一部分。</p>
+<h2 id="user-content-set-up-the-domain" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#set-up-the-domain"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>设置域名</h2>
+<p>在 Developer Console 的应用页面中，从左侧菜单中选择<strong>网站托管</strong>。</p>
+<h2 id="user-content-host-your-website-on-a-subdomain" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#host-your-website-on-a-subdomain"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>在子域名上托管网站</h2>
+<p>若要在您注册域名的子域名上托管网站，请按照以下步骤操作。</p>
+<ol>
+<li>
+<p>为您的应用选择子域名；可以是应用名称或您选择的任何其他名称。然后，选择<strong>申请应用域名</strong>。在以下示例中，我们选择了 <code>my-first-hosted-app.example.palantirfoundry.com</code>：<br><br>
+<img alt="The domain request interface shows the subdomain field and request button." height="522" src="/docs/resources/foundry/developer-console/web-hosting-domain-request.png" style="aspect-ratio:1568 / 522" width="1568" node="[object Object]"> <br><br></p>
+</li>
+<li>
+<p>请求您所在环境的<strong>信息安全官</strong>审批，或者如果您具备相应权限，可通过选择<strong>查看申请</strong>自行批准。环境管理员可以在 Control Panel 中管理环境权限。<br><br>
+<img alt="The domain status shows pending approval with a view request link." height="574" src="/docs/resources/foundry/developer-console/web-hosting-domain-pending.png" style="aspect-ratio:1566 / 574" width="1566" node="[object Object]"> <br><br></p>
+</li>
+<li>
+<p>
+
+请求获批后，刷新页面。此时应显示 **Domain ready**，表明该域名已准备就绪。此过程可能需要几分钟完成。 <br><br>
+<img alt="The domain status shows ready after approval is complete." height="456" src="/docs/resources/foundry/developer-console/web-hosting-domain-ready.png" style="aspect-ratio:1562 / 456" width="1562" node="[object Object]"> <br><br></p>
+</li>
+</ol>
+<h2 id="user-content-host-your-website-on-a-custom-domain" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#host-your-website-on-a-custom-domain"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>在自定义域名上托管您的网站</h2>
+<p>您可以不使用环境子域名，而是将应用程序托管在自己拥有的自定义域名上，例如 <code>[your-organization].com</code>。当您希望通过品牌化或面向公众的域名访问应用程序时，此功能非常实用。</p>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>并非所有环境都提供自定义域名托管功能。如果该选项未在您的 Developer Console 应用程序中显示，请联系您的 Palantir 代表寻求帮助。</p></div>
+<h3 id="user-content-prerequisites" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#prerequisites"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>前提条件</h3>
+<p>在为应用程序申请自定义域名之前，请确保已在 Control Panel 中创建了涵盖该域名的证书。如果该域名没有对应的证书，审批请求将无法成功。有关创建证书的说明，请参阅《配置域名和证书》。</p>
+<h3 id="user-content-request-a-custom-domain" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#request-a-custom-domain"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>申请自定义域名</h3>
+<p>在 Developer Console 的应用程序中，从左侧菜单中选择 **Website hosting**。</p>
+<ol>
+<li>
+<p>选择 **Request to host on a custom domain**。该选项显示在环境子域名注册表单下方。 <br><br>
+<img alt="The domain request interface shows the subdomain field and the option to host on a custom domain." height="580" src="/docs/resources/foundry/developer-console/web-hosting-with-custom-domain.png" style="aspect-ratio:1118 / 580" width="1118" node="[object Object]"> <br><br></p>
+</li>
+<li>
+<p>在弹出的对话框中，输入您的自定义域名（例如 <code>[your-organization].com</code>）、请求标题和可选的描述，然后选择 **Request**。 <br><br>
+<img alt="The custom domain request interface shows fields for the custom domain, the request title, and the request description." height="461" src="/docs/resources/foundry/developer-console/web-hosting-custom-domain-request.png" style="aspect-ratio:507 / 461" width="507" node="[object Object]"> <br><br></p>
+</li>
+<li>
+<p>这将创建一个审批任务，必须由您所在环境的 **Information Security Officer** 批准。您可以在成功通知中选择 **View**，以导航到 Control Panel 中的审批请求。 <br><br>
+<img alt="The custom domain request interface shows that the custom domain you requested is not yet approved." height="398" src="/docs/resources/foundry/developer-console/web-hosting-custom-domain-not-yet-approved.png" style="aspect-ratio:1292 / 398" width="1292" node="[object Object]"> <br><br></p>
+</li>
+<li>
+<p>请求获批后，自定义域名即与您的应用程序关联。您可能需要刷新页面才能看到更新后的状态。请注意，您用于登录 Foundry 的域名将与您配置的自定义域名关联。换言之，网络入口和身份验证提供程序配置将继承自该域名。 <br><br>
+<img alt="The custom domain request interface shows that the custom domain you requested has been approved." height="344" src="/docs/resources/foundry/developer-console/web-hosting-custom-domain-ready.png" style="aspect-ratio:1291 / 344" width="1291" node="[object Object]"> <br><br></p>
+</li>
+</ol>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>您还必须更新自定义域名的 DNS 设置，使其指向您的 Foundry 环境。有关更新 DNS 记录的指导，请参阅《配置域名和证书》。</p></div>
+<h2 id="user-content-upload-your-assets-and-deploy" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#upload-your-assets-and-deploy"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>上传您的资产并部署</h2>
+<p>作为开发者，您可以选择通过 Developer Console 网站托管用户界面手动上传资产，也可以使用 <code>@osdk/cli</code> 命令行工具上传。</p>
+<ul>
+<li>要了解如何使用 Developer Console 用户界面上传，请参阅下方的指南。</li>
+<li>要了解如何使用命令行界面上传资产，请按照平台中的 **Deploying applications** 指南操作，如以下屏幕截图所示。您可以在公共 npm 代码库中找到关于 <code>@osdk/cli</code> 命令行工具的更多详细信息。 <br><br>
+<img alt="The deploying applications guide shows CLI deployment commands." height="295" src="/docs/resources/foundry/developer-console/deploy-cli-guide.png" style="aspect-ratio:1259 / 295" width="1259" node="[object Object]"> <br><br></li>
+</ul>
+<h3 id="user-content-upload-assets-using-the-developer-console" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#upload-assets-using-the-developer-console"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>使用 Developer Console 上传资产</h3>
+<p>在接下来的步骤中，我们将把之前创建的压缩资产上传到 Foundry。</p>
+<ol>
+<li>
+<p>在页面的 **Assets** 部分选择 **Upload new asset**。</p>
+</li>
+<li>
+<p>
+
+将 zip 归档文件拖放到此处，或从计算机中选择文件并点击 <strong>上传</strong>。 <br><br>
+<img alt="Upload asset to web hosting." height="518" src="/docs/resources/foundry/developer-console/web-hosting-asset-upload.png" style="aspect-ratio:1024 / 518" width="1024" node="[object Object]"> <br><br></p>
+</li>
+<li>
+<p>上传完成后，使用 <strong>预览</strong> 在部署到生产环境前预览你的站点，或使用 <strong>...</strong> 选项来 <strong>部署到生产环境</strong>，如下所示。 <br><br>
+<img alt="Preview version." height="600" src="/docs/resources/foundry/developer-console/web-hosting-asset-preview.png" style="aspect-ratio:1600 / 1120" width="857.1428571428571" node="[object Object]"> <br><br></p>
+<p>选择 <strong>部署到生产环境</strong> 后，该版本将面向所有用户提供服务。我们建议先进行 <strong>预览站点</strong>。</p>
+</li>
+<li>
+<p>现在，选择 <strong>查看站点</strong> 以访问已部署的站点。 <br><br>
+<img alt="View deployed site." height="600" src="/docs/resources/foundry/developer-console/web-hosting-deployed-site.png" style="aspect-ratio:1600 / 1100" width="872.7272727272726" node="[object Object]"> <br><br></p>
+</li>
+</ol>
+<h2 id="user-content-grant-website-access" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#grant-website-access"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>授予网站访问权限</h2>
+<p>由 Foundry 托管的网站仅对拥有 Foundry 登录凭据的用户可用。默认情况下，任何有权访问你的开发者控制台应用的用户也将有权访问已部署的站点，但这通常仅包括你和你的开发团队。
+要使站点对其他 Foundry 用户可用，请导航至左侧的 <strong>共享和令牌</strong> 菜单。在页面的 <strong>共享托管网站</strong> 部分添加用户名称，如下所示。</p>
+<p><img alt="Share application with users." height="600" src="/docs/resources/foundry/developer-console/web-hosting-share.png" style="aspect-ratio:2000 / 1485" width="808.0808080808081" node="[object Object]"></p>
+<h2 id="user-content-advanced-configuration" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#advanced-configuration"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>高级配置</h2>
+<p>你可以在 <strong>网站托管</strong> 页面的 <strong>高级</strong> 选项卡中找到额外的配置选项。</p>
+<h3 id="user-content-content-security-policy" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#content-security-policy"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>内容安全策略</h3>
+<p>默认情况下，你的应用将使用受限的 <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP">内容安全策略 (CSP) ↗</a> 提供服务，该策略仅允许从你的子域加载资源。如有需要，你可以为应用内的特定交互配置额外的 CSP 规则，这些规则将与默认策略合并。但请注意，进行这些更改可能会增加你的应用遭受跨站脚本 (XSS) 和数据注入攻击的风险。</p>
+<p>在下图所示的 <strong>内容安全策略</strong> 部分中，你可以控制应用的 CSP。在检索托管在其他位置的图像或内容以及调用外部服务时，更新 CSP 至关重要。</p>
+<p><img alt="Content security policy edit." height="600" src="/docs/resources/foundry/developer-console/web-hosting-csp-config.png" style="aspect-ratio:799 / 695" width="689.7841726618705" node="[object Object]"></p>
+<p>有关语法的帮助，请参阅 <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP">Mozilla 的文档 ↗</a>。这些字段不进行验证。</p>
+<h2 id="user-content-route-matching-rules" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#route-matching-rules"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>路由匹配规则</h2>
+<p>Foundry 支持在带有或不带有扩展名和尾部斜杠的路由上提供 HTML 页面。</p>
+<p>给定以下网站文件布局：</p>
+<pre><code>├── file.html
+├── folder
+│   └── index.html
+├── both.html
+└── both
+    └── index.html
+</code></pre>
+<p>Foundry 在以下路由上提供这些 HTML 页面：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>路由</th><th>文件</th></tr></thead><tbody><tr><td>/file</td><td>/file.html</td></tr><tr><td>/file/</td><td>/file.html</td></tr><tr><td>/file.html</td><td>/file.html</td></tr><tr><td>/folder</td><td>/folder/index.html</td></tr><tr><td>/folder/</td><td>/folder/index.html</td></tr><tr><td>/folder/index.html</td><td>/folder/index.html</td></tr><tr><td>/both</td><td>/both.html</td></tr><tr><td>/both.html</td><td>/both.html</td></tr><tr><td>/both/</td><td>/both/index.html</td></tr><tr><td>/both/index.html</td><td>/both/index.html</td></tr></tbody></table></div>
+<p>Foundry 不会重定向到首选路由格式，例如强制使用尾部斜杠或从路由中移除扩展名。</p>
+<h2 id="user-content-custom-404-page" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#custom-404-page"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>自定义 404 页面</h2>
+<p>你可以在网站的根目录添加一个 <code>404.html</code> 页面，作为路由未匹配时的自定义错误页面。这将禁用为未匹配路由提供根 <code>index.html</code> 页面的默认行为，如 <a href="#single-page-application-rendering">单页应用 (SPA) 渲染</a> 中所述。</p>
+</article>
+</body>
+</html>

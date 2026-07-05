@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Export Contour logic to Pipeline Builder</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-export-contour-logic-to-pipeline-builder" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#export-contour-logic-to-pipeline-builder"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>将 Contour 逻辑导出至管道构建器</h1>
+<p>在 Foundry 中，你可以提取复杂的 Contour 分析，并将底层逻辑导出至《管道构建器》。虽然 Contour 是进行探索性分析和深入剖析特定问题的理想工具，但它并不适合用于生产管道的维护。如果你的分析逻辑在具体用例中不会频繁变更，我们建议将其导出至《管道构建器》，以便在生产管道的维护配置和性能调优上获得更大的灵活性。</p>
+<p>下文提供了选择导出 Contour 分析时的注意事项，并附有详细的操作指南，教你如何轻松将逻辑导出至《管道构建器》。</p>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>“Contour 导出至管道构建器”工具无法保证导出后的逻辑与原来完全一致。对于依赖严格逻辑的敏感用例，我们建议你自行进行验证。</p></div>
+<h2 id="user-content-considerations" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#considerations"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>注意事项</h2>
+<p>在决定将 Contour 逻辑导出至《管道构建器》之前，请先了解以下优势、不支持的功能，以及可能出现的破坏性变更。</p>
+<h3 id="user-content-benefits" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#benefits"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>优势</h3>
+<p>在大多数用例中，《管道构建器》是 Foundry 推荐用于构建和维护管道的工具。当你开始使用稳态管道，并且有下游应用或用户依赖一致的表结构时，你可能会发现《管道构建器》在管道维护和性能管理方面更加灵活、更易配置。它提供了丰富的生产级质量实用工具，包括以下内容：</p>
+<ul>
+<li>通过分支和拉取请求实现轻松协作。</li>
+<li>安全且一致的表结构。</li>
+<li>种类丰富的类型安全函数。</li>
+<li>支持自定义的强大计算配置。</li>
+<li>支持增量转换模式，避免重复构建相同数据。</li>
+</ul>
+<h3 id="user-content-unsupported-features" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#unsupported-features"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>不支持的功能</h3>
+<p>转换器目前不支持 SPLIT 函数或透视转换。透视看板中的聚合操作则可正常运行。</p>
+<p>除了上述不支持的配置外，其他函数也可能因各种原因不受支持。在这些情况下，转换器应返回一个错误提示，说明失败原因。如果你仍希望将不受支持的逻辑移至《管道构建器》，请移除不受支持的看板，直到转换成功。然后，将该逻辑添加到《管道构建器》图中的相应位置。</p>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__danger__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><div class="ptcom-design__title__19o1cwu">破坏性变更</div><p>在尝试将 Contour 逻辑转换为《管道构建器》时，可能会出现以下破坏性变更：</p><ul>
+<li>Contour 极其灵活的类型系统可能无法与《管道构建器》中使用的强类型系统相匹配。在大多数情况下，转换会失败并提示修正类型错误。在某些边缘情况下，《管道构建器》可能会为你的表结构选择不同的输出类型。</li>
+<li>Contour 中的某些参数无法转换为《管道构建器》的参数。如果出现这种情况，转换器将创建一个空白参数供你填写。</li>
+<li>《管道构建器》处理时区的方式可能与 Contour 不同。转换分析后，请务必确认时区行为是否符合预期。</li>
+</ul></div>
+<h2 id="user-content-convert-a-contour-analysis-to-pipeline-builder" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#convert-a-contour-analysis-to-pipeline-builder"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>将 Contour 分析转换为管道构建器</h2>
+<p>请按照以下步骤将你的 Contour 分析转换为《管道构建器》：</p>
+<ol>
+<li>
+<p>在 Foundry 中导航至某个 Contour 分析。</p>
+</li>
+<li>
+<p>滚动到分析页面底部，然后选择 <strong>转换为管道构建器</strong>。 <br><br>
+<img alt="Select the Convert to Pipeline Builder button at the bottom of the analysis page" height="592" src="/docs/resources/foundry/contour/convert-to-pipeline-builder-button.png" style="aspect-ratio:2120 / 592" width="2120" node="[object Object]"> <br><br></p>
+</li>
+<li>
+<p>在弹出的对话框中，为新管道选择目标文件夹，然后选择 <strong>保存</strong>。 <br><br>
+<img alt="The dialog asking you to select a destination folder for your pipeline in Pipeline Builder." height="600" src="/docs/resources/foundry/contour/convert-select-destination-window.png" style="aspect-ratio:1998 / 1206" width="994.0298507462687" node="[object Object]"> <br><br></p>
+</li>
+<li>
+<p>进入《管道构建器》后，预览并构建你的管道。</p>
+</li>
+</ol>
+<h2 id="user-content-troubleshooting" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#troubleshooting"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>故障排除</h2>
+<h3 id="user-content-analysis-fails-to-convert" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#analysis-fails-to-convert"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>分析转换失败</h3>
+<p>
+
+大多数情况下，如果分析转换失败，系统会返回一条明确的错误提示。这表明该问题属于已知缺陷。如果解决此问题对您的业务场景至关重要，请联系 Palantir 支持团队，确认能否予以处理。</p>
+<img alt="Screenshot of a clear error message" src="/docs/resources/foundry/contour/clear-error-message.png?width=700" style="aspect-ratio:1018 / 118" width="700" node="[object Object]">
+<p>当遇到未知或预期之外的错误时，系统会尽最大努力返回一条提示信息，指出可能失败的操作类型，并再次说明 Pipeline Builder 的类型检查机制比 Contour 严格得多（这很可能就是导致错误的根本原因）。</p>
+<img alt="Screenshot of an unclear error message" src="/docs/resources/foundry/contour/best-effort-error-message.png?width=700" style="aspect-ratio:996 / 168" width="700" node="[object Object]">
+</article>
+</body>
+</html>

@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Window functions</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-window-functions" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#window-functions"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>窗口函数</h1>
+<p>《PostgreSQL 官方文档 ↗》对窗口函数的定义如下：</p>
+<blockquote>
+<p><em>窗口函数</em>会在与当前行存在某种关联的一组表行上执行计算。这与聚合函数所能执行的计算类型相似。但与常规聚合函数不同的是，使用窗口函数不会导致行被分组为单行输出——各行会保持其独立的标识。在底层处理中，窗口函数能够访问的数据不仅限于查询结果中的当前行。</p>
+</blockquote>
+<p>本文档将介绍一些在 Contour <a href="/docs/foundry/contour/expressions-overview/">表达式</a>中可能用到的窗口函数的语法。有关窗口函数的更多背景信息，请参阅以下补充资料：</p>
+<ul>
+<li>《窗口函数（PostgreSQL 官方文档） ↗》</li>
+<li>《SQL 窗口函数（Mode Analytics 教程） ↗》</li>
+<li>《SQL 窗口函数简介（Apache Drill） ↗》</li>
+<li>《分析函数（Oracle 官方文档） ↗》</li>
+</ul>
+<h2 id="user-content-basic-syntax" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#basic-syntax"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>基本语法</h2>
+<p>从最基本的形式来看，窗口函数可以拆解为：</p>
+<p><code>&lt;函数&gt; OVER &lt;某个窗口&gt;</code></p>
+<p>这里的<strong>函数</strong>是指<a href="/docs/foundry/contour/expressions-syntax/#functions">受支持的聚合函数</a>之一，而<strong>窗口</strong>则是指表中的部分行集合。</p>
+<p>你可以使用 <code>()</code> 来省略窗口设定——这会将函数应用于表中的<em>所有</em>行。</p>
+<p>以下示例会在每一行中添加一个条目，其值为 <code>date</code> 列中的最大值。</p>
+<pre><code>MAX("date") OVER ()
+</code></pre>
+<h2 id="user-content-partition-by" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#partition-by"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>PARTITION BY</h2>
+<p>你也可以在窗口定义之前添加一个可选的 <code>PARTITION BY</code> 子句。<code>PARTITION BY</code> 会根据给定列中的值对窗口内的行进行分组。随后，聚合函数会<em>分别应用于每个分区</em>。</p>
+<p>例如，在一个包含人员记录的表中，以下表达式会分别计算男性和女性的总数，并将该性别的计数值添加到对应的每一行中：</p>
+<pre><code>COUNT("person_id") OVER (PARTITION BY "gender")
+</code></pre>
+<h2 id="user-content-order-by" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#order-by"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>ORDER BY</h2>
+<p>如果你<em>确实</em>定义了窗口的表达式，就必须指定窗口的边界以及对表中行进行排序的方式。这个子表达式可以简写为：</p>
+<p><code>&lt;排序方式&gt; ROWS BETWEEN &lt;起始位置&gt; AND &lt;结束位置&gt;</code></p>
+<p>这里的“排序方式”是指：（1）依据哪一列进行排序；（2）按升序还是降序排列。</p>
+<p>指定窗口边界（即“起始位置”和“结束位置”）有以下几种方式：</p>
+<ul>
+<li><code>UNBOUNDED PRECEDING</code>：从表的起始处到当前行。</li>
+<li><code>n PRECEDING</code>（例如 <code>2 PRECEDING</code>）：从当前行之前的第 n 行到当前行。</li>
+<li><code>CURRENT ROW</code></li>
+<li><code>n FOLLOWING</code>（例如 <code>5 FOLLOWING</code>）：从当前行到当前行之后的第 n 行。</li>
+<li><code>UNBOUNDED FOLLOWING</code>：从当前行到表的末尾。</li>
+</ul>
+<p>以下是一个示例表，标注了上述每种情况的具体位置：</p>
+<pre><code>FIRST_NAME |
+------------
+Adam       |&lt;-- UNBOUNDED PRECEDING
+...        |
+Alison     |
+Amanda     |
+Jack       |
+Jasmine    |
+Jonathan   | &lt;-- 1 PRECEDING
+Leonard    | &lt;-- CURRENT ROW
+Mary       | &lt;-- 1 FOLLOWING
+Tracey     |
+...        |
+Zoe        | &lt;-- UNBOUNDED FOLLOWING
+</code></pre>
+<p>（<em>来源：</em>《blog.jooq.org ↗》）</p>
+<p>因此，假设有一个包含销售记录的表，你可以使用以下语句来计算过去 5 笔销售的平均销售额：</p>
+<pre><code>AVG("sale_value") OVER (ORDER BY "date_of_sale" ASC 
+    ROWS BETWEEN 4 PRECEDING AND CURRENT ROW)
+</code></pre>
+<p>这里的“过去 5 笔销售”就是窗口。<code>OVER</code> 之后的子表达式会按日期对表进行排序，随后针对每一行，计算其前面 4 行以及当前行的平均值。</p>
+<h2 id="user-content-putting-it-all-together" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#putting-it-all-together"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>综合运用</h2>
+<p>以下这个综合示例将上述所有语法结合在一起。
+该表达式会显示按产品类别分组的、截至当前销售的累计销售数量。</p>
+<pre><code>COUNT("sale_id") OVER (PARTITION BY "product_category" 
+    ORDER BY "date_of_sale" ASC 
+    ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)
+</code></pre>
+<p>
+
+请注意，条目现在按<em>分区</em>排序——也就是说，表首先进行分区，然后在每个分区内对行进行排序。</p>
+<h2 id="user-content-more-examples" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#more-examples"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>更多示例</h2>
+<p>假设你有一张记录已购商品的表。你可以使用以下窗口函数派生出一个新列，用于计算 purchases 的累计运行总额：</p>
+<pre><code>SUM("item_cost") OVER (ORDER BY "purchase_date" ASC 
+    RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW )
+</code></pre>
+<p>若要计算按<em>类别</em>分组的累计运行总额，可以添加分区：</p>
+<pre><code>SUM(“item_cost”) OVER (PARTITION BY “category” 
+    ORDER BY “purchase_date” ASC 
+    RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)
+</code></pre>
+<p>这将会按“category”列对行进行分区，在每个类别内按购买日期对行进行排序，并计算该类别下所有商品成本的累计运行总额。</p>
+<h2 id="user-content-examples-with-meteorites-data" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#examples-with-meteorites-data"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>陨石数据示例</h2>
+<p>你可以使用《陨石着陆数据集》自行尝试以下示例。该数据集源自国际陨石学会，通过 NASA 数据门户获取。</p>
+<p>以下表达式用于计算每个类别中最大陨石的质量：</p>
+<pre><code>MAX("mass") OVER (PARTITION BY "class" )
+</code></pre>
+<p>如果我们使用上述窗口函数派生出一个新列 <code>max_size_by_class</code>：</p>
+<p><img alt="partition-by" height="114" src="/docs/resources/foundry/contour/expressions-partition-by.png" style="aspect-ratio:362 / 114" width="362" node="[object Object]"></p>
+<p>……那么生成的表将如下所示：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>name</th><th>class</th><th>mass</th><th>max_size_by_class</th></tr></thead><tbody><tr><td>Jiddat al Harasis 450</td><td>H3.7-5</td><td>217.741</td><td>3879</td></tr><tr><td>Ramlat as Sahmah 422</td><td>H3.7-5</td><td>3879</td><td>3879</td></tr><tr><td>…</td><td></td><td></td><td></td></tr><tr><td>Beni Semguine</td><td>H5-an</td><td>18</td><td>33.9</td></tr><tr><td>Miller Range 07273</td><td>H5-an</td><td>33.9</td><td>33.9</td></tr><tr><td>…</td><td></td><td></td><td></td></tr><tr><td>Allan Hills 88102</td><td>Howardite</td><td>8.33</td><td>40000</td></tr><tr><td>Allan Hills 88135</td><td>Howardite</td><td>4.75</td><td>40000</td></tr><tr><td>…</td><td></td><td></td><td></td></tr><tr><td>Yamato 81020</td><td>CO3.0</td><td>270.34</td><td>3912</td></tr><tr><td>Northwest Africa 2918</td><td>CO3.0</td><td>237</td><td>3912</td></tr></tbody></table></div>
+<p>若要计算随着时间推移，按陨石类别划分的质量累计总和（运行总额）：</p>
+<pre><div class="ptcom-design__wrapper__12wpwnx" data-pagefind-weight="0.5"><span class="ptcom-design__clipboard__1l1gb20 ptcom-design__clipboard__12wpwnx"><span data-pagefind-ignore="true" class="ptcom-design__confirmation__1l1gb20">Copied!</span><svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1" width="16" data-view-component="true" aria-label="clipboard"><path fill-rule="evenodd" fill="currentColor" d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z"></path><path fill-rule="evenodd" fill="currentColor" d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z"></path></svg></span><div style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;overflow:auto;position:relative;margin:0;padding:0.75em"><code class="language-sql" style="white-space: pre; text-align: left; word-spacing: normal; word-break: normal; overflow-wrap: normal; color: rgb(195, 206, 227); background: rgb(38, 50, 56); font-family: &quot;SF Mono&quot;, Menlo, Consolas, Monaco, Inconsolata, &quot;Fira Mono&quot;, &quot;Droid Sans Mono&quot;, &quot;Source Code Pro&quot;, monospace; font-size: 14px; line-height: 1.5em; tab-size: 4; hyphens: none;"><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 1.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">1</span><span class="token token" style="color: rgb(199, 146, 234);">SUM</span><span class="token token" style="color: rgb(137, 221, 255);">(</span><span class="token token" style="color: rgb(195, 232, 141);">"mass"</span><span class="token token" style="color: rgb(137, 221, 255);">)</span><span> </span><span class="token token" style="color: rgb(199, 146, 234); font-style: italic;">OVER</span><span> </span><span class="token token" style="color: rgb(137, 221, 255);">(</span><span class="token token" style="color: rgb(199, 146, 234); font-style: italic;">PARTITION</span><span> </span><span class="token token" style="color: rgb(199, 146, 234); font-style: italic;">BY</span><span> </span><span class="token token" style="color: rgb(195, 232, 141);">"class"</span><span>
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 1.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">2</span><span>    </span><span class="token token" style="color: rgb(199, 146, 234); font-style: italic;">ORDER</span><span> </span><span class="token token" style="color: rgb(199, 146, 234); font-style: italic;">BY</span><span> </span><span class="token token" style="color: rgb(195, 232, 141);">"year"</span><span> </span><span class="token token" style="color: rgb(199, 146, 234); font-style: italic;">ASC</span><span>
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 1.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">3</span><span>    </span><span class="token token" style="color: rgb(199, 146, 234); font-style: italic;">ROWS</span><span> </span><span class="token token" style="color: rgb(137, 221, 255);">BETWEEN</span><span> </span><span class="token token" style="color: rgb(199, 146, 234); font-style: italic;">UNBOUNDED</span><span> </span><span class="token token" style="color: rgb(199, 146, 234); font-style: italic;">PRECEDING</span><span> </span><span class="token token" style="color: rgb(137, 221, 255);">AND</span><span> </span><span class="token token" style="color: rgb(199, 146, 234); font-style: italic;">CURRENT</span><span> </span><span class="token token" style="color: rgb(199, 146, 234); font-style: italic;">ROW</span><span>
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 1.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">4</span><span></span><span class="token token" style="color: rgb(137, 221, 255);">)</span></span></code></div></div></pre>
+<p>这会按陨石类别对表进行分区，按日期对每个分区进行排序，然后针对每一行，计算当前行与之前所有行在 <code>mass</code> 列上的总和，并将该总和作为新列添加到当前行中。</p>
+<p>若要计算按陨石类别划分的<em>总</em>（非累计运行）质量总和：</p>
+<pre>
+
+<div class="ptcom-design__wrapper__12wpwnx" data-pagefind-weight="0.5"><span class="ptcom-design__clipboard__1l1gb20 ptcom-design__clipboard__12wpwnx"><span data-pagefind-ignore="true" class="ptcom-design__confirmation__1l1gb20">已复制！</span><svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1" width="16" data-view-component="true" aria-label="clipboard"><path fill-rule="evenodd" fill="currentColor" d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z"></path><path fill-rule="evenodd" fill="currentColor" d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z"></path></svg></span><div style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;overflow:auto;position:relative;margin:0;padding:0.75em"><code class="language-sql" style="white-space: pre; text-align: left; word-spacing: normal; word-break: normal; overflow-wrap: normal; color: rgb(195, 206, 227); background: rgb(38, 50, 56); font-family: &quot;SF Mono&quot;, Menlo, Consolas, Monaco, Inconsolata, &quot;Fira Mono&quot;, &quot;Droid Sans Mono&quot;, &quot;Source Code Pro&quot;, monospace; font-size: 14px; line-height: 1.5em; tab-size: 4; hyphens: none;"><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 1.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">1</span><span class="token token" style="color: rgb(199, 146, 234);">SUM</span><span class="token token" style="color: rgb(137, 221, 255);">(</span><span class="token token" style="color: rgb(195, 232, 141);">"mass"</span><span class="token token" style="color: rgb(137, 221, 255);">)</span><span> </span><span class="token token" style="color: rgb(199, 146, 234); font-style: italic;">OVER</span><span> </span><span class="token token" style="color: rgb(137, 221, 255);">(</span><span class="token token" style="color: rgb(199, 146, 234); font-style: italic;">PARTITION</span><span> </span><span class="token token" style="color: rgb(199, 146, 234); font-style: italic;">BY</span><span> </span><span class="token token" style="color: rgb(195, 232, 141);">"class"</span><span class="token token" style="color: rgb(137, 221, 255);">)</span></span></code></div></div></pre>
+<p>这种聚合计算单独拿出来可能没什么用，但如果我们将其展开，就能算出一个更有意义的统计指标——这颗陨石的质量在该类别总质量中占了多少百分比？</p>
+<pre><div class="ptcom-design__wrapper__12wpwnx" data-pagefind-weight="0.5"><span class="ptcom-design__clipboard__1l1gb20 ptcom-design__clipboard__12wpwnx"><span data-pagefind-ignore="true" class="ptcom-design__confirmation__1l1gb20">已复制！</span><svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1" width="16" data-view-component="true" aria-label="clipboard"><path fill-rule="evenodd" fill="currentColor" d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z"></path><path fill-rule="evenodd" fill="currentColor" d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z"></path></svg></span><div style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;overflow:auto;position:relative;margin:0;padding:0.75em"><code class="language-sql" style="white-space: pre; text-align: left; word-spacing: normal; word-break: normal; overflow-wrap: normal; color: rgb(195, 206, 227); background: rgb(38, 50, 56); font-family: &quot;SF Mono&quot;, Menlo, Consolas, Monaco, Inconsolata, &quot;Fira Mono&quot;, &quot;Droid Sans Mono&quot;, &quot;Source Code Pro&quot;, monospace; font-size: 14px; line-height: 1.5em; tab-size: 4; hyphens: none;"><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 1.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">1</span><span class="token token" style="color: rgb(195, 232, 141);">"mass"</span><span> </span><span class="token token" style="color: rgb(137, 221, 255);">/</span><span> </span><span class="token token" style="color: rgb(137, 221, 255);">(</span><span class="token token" style="color: rgb(199, 146, 234);">SUM</span><span class="token token" style="color: rgb(137, 221, 255);">(</span><span class="token token" style="color: rgb(195, 232, 141);">"mass"</span><span class="token token" style="color: rgb(137, 221, 255);">)</span><span> </span><span class="token token" style="color: rgb(199, 146, 234); font-style: italic;">OVER</span><span> </span><span class="token token" style="color: rgb(137, 221, 255);">(</span><span class="token token" style="color: rgb(199, 146, 234); font-style: italic;">PARTITION</span><span> </span><span class="token token" style="color: rgb(199, 146, 234); font-style: italic;">BY</span><span> </span><span class="token token" style="color: rgb(195, 232, 141);">"class"</span><span class="token token" style="color: rgb(137, 221, 255);">)</span><span class="token token" style="color: rgb(137, 221, 255);">)</span><span> </span><span class="token token" style="color: rgb(137, 221, 255);">*</span><span> </span><span class="token token" style="color: rgb(253, 145, 112);">100</span></span></code></div></div></pre>
+<p>要计算每个类别发现的陨石总数（计数），可以这样写：</p>
+<pre><div class="ptcom-design__wrapper__12wpwnx" data-pagefind-weight="0.5"><span class="ptcom-design__clipboard__1l1gb20 ptcom-design__clipboard__12wpwnx"><span data-pagefind-ignore="true" class="ptcom-design__confirmation__1l1gb20">已复制！</span><svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1" width="16" data-view-component="true" aria-label="clipboard"><path fill-rule="evenodd" fill="currentColor" d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z"></path><path fill-rule="evenodd" fill="currentColor" d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z"></path></svg></span><div style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;overflow:auto;position:relative;margin:0;padding:0.75em"><code class="language-sql" style="white-space: pre; text-align: left; word-spacing: normal; word-break: normal; overflow-wrap: normal; color: rgb(195, 206, 227); background: rgb(38, 50, 56); font-family: &quot;SF Mono&quot;, Menlo, Consolas, Monaco, Inconsolata, &quot;Fira Mono&quot;, &quot;Droid Sans Mono&quot;, &quot;Source Code Pro&quot;, monospace; font-size: 14px; line-height: 1.5em; tab-size: 4; hyphens: none;"><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 1.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">1</span><span class="token token" style="color: rgb(199, 146, 234);">COUNT</span><span class="token token" style="color: rgb(137, 221, 255);">(</span><span class="token token" style="color: rgb(195, 232, 141);">"id"</span><span class="token token" style="color: rgb(137, 221, 255);">)</span><span> </span><span class="token token" style="color: rgb(199, 146, 234); font-style: italic;">OVER</span><span> </span><span class="token token" style="color: rgb(137, 221, 255);">(</span><span class="token token" style="color: rgb(199, 146, 234); font-style: italic;">PARTITION</span><span> </span><span class="token token" style="color: rgb(199, 146, 234); font-style: italic;">BY</span><span> </span><span class="token token" style="color: rgb(195, 232, 141);">"class"</span><span class="token token" style="color: rgb(137, 221, 255);">)</span></span></code></div></div></pre>
+<h2 id="user-content-non-determinism" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#non-determinism"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>非确定性</h2>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu">
+
+<svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><div class="ptcom-design__title__19o1cwu">警告</div><p>在窗口函数中使用 <code>ROW_NUMBER</code>、<code>FIRST</code>、<code>LAST</code>、<code>ARRAY_AGG</code> 或 <code>ARRAY_AGG_DISTINCT</code> 时，需注意非确定性问题。假设我们按列 A 进行分区并按列 B 进行排序。如果列 A 的值相同，且存在多行列 B 的值也相同的行，那么这些窗口函数的返回结果可能是不确定的——即对于相同的输入数据和逻辑，可能产生不同的结果。</p></div>
+</article>
+</body>
+</html>
