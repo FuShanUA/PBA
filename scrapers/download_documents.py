@@ -162,29 +162,56 @@ def build_node_script(slug, url, method, ext_path=None):
     }
   });
 
+  // Pre-set OneTrust consent cookie to skip cookie banner
+  const context = browser instanceof Object && browser.newPage ? browser : null;
+  try {
+    await page.context().addCookies([{
+      name: 'OptanonConsent',
+      value: 'isIABGlobal=false&datestamp=Mon+Jan+01+2024&version=6.10.0&hosts=&consentId=&interactionCount=0&isGpcEnabled=0&browserGpcFlag=0&OTDataConsent=%5B%5D&groups=C0001%3A1%2CC0002%3A1%2CC0003%3A1%2CC0004%3A1',
+      domain: '.palantir.com',
+      path: '/',
+    }]);
+  } catch(e) { console.log('Cookie preset failed: ' + e.message.substring(0, 60)); }
+
   console.log('Loading: __URL__');
   await page.goto('__URL__', { waitUntil: 'domcontentloaded', timeout: 30000 });
 
-  // Step 1: Accept cookie consent if present
+  // Step 1: Accept cookie consent (try multiple methods)
   console.log('Checking cookie consent...');
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < 15; i++) {
+    // Method 1: OneTrust accept button
     try {
-      const acceptBtn = page.locator('#onetrust-accept-all-handler, button:has-text("Accept"), button:has-text("Allow all"), #truste-consent-button');
-      if (await acceptBtn.first().isVisible({ timeout: 1000 })) {
-        await acceptBtn.first().click();
-        console.log('Accepted cookies');
+      const btn1 = page.locator('#onetrust-accept-all-handler');
+      if (await btn1.isVisible({ timeout: 500 })) { await btn1.click(); console.log('Accepted cookies (OneTrust)'); break; }
+    } catch {}
+    // Method 2: Text-based
+    try {
+      const btn2 = page.locator('button:has-text("Accept All"), button:has-text("Allow All"), button:has-text("Accept"), a:has-text("Accept")');
+      if (await btn2.first().isVisible({ timeout: 500 })) { await btn2.first().click(); console.log('Accepted cookies (text)'); break; }
+    } catch {}
+    // Method 3: Click on the banner container
+    try {
+      const banner = page.locator('#onetrust-banner-sdk, #onetrust-pc-btn-text');
+      if (await banner.isVisible({ timeout: 500 })) {
+        await page.evaluate(() => {
+          const btn = document.querySelector('#onetrust-accept-all-handler') ||
+                      document.querySelector('button[class*="accept"]') ||
+                      Array.from(document.querySelectorAll('button')).find(b => b.textContent.includes('Accept'));
+          if (btn) btn.click();
+        });
+        console.log('Accepted cookies (eval)');
         break;
       }
     } catch {}
     await page.waitForTimeout(500);
   }
 
-  // Step 2: Wait for Marketo form to load (up to 30s)
+  // Step 2: Wait for Marketo form to load (up to 60s)
   console.log('Waiting for Marketo form...');
   let formFound = false;
   let formFrame = null;
 
-  for (let i = 0; i < 30; i++) {
+  for (let i = 0; i < 60; i++) {
     await page.waitForTimeout(1000);
 
     // Check main frame
@@ -192,7 +219,7 @@ def build_node_script(slug, url, method, ext_path=None):
       const firstName = page.locator('#FirstName, input[name="FirstName"]');
       if (await firstName.first().isVisible({ timeout: 500 })) {
         formFound = true;
-        formFrame = null; // main frame
+        formFrame = null;
         console.log('Form found in main frame at ' + i + 's');
         break;
       }
@@ -207,19 +234,32 @@ def build_node_script(slug, url, method, ext_path=None):
         if (await el.first().isVisible({ timeout: 300 })) {
           formFound = true;
           formFrame = frame;
-          console.log('Form found in iframe at ' + i + 's: ' + frame.url().substring(0, 80));
+          console.log('Form found in iframe at ' + i + 's');
           break;
         }
       } catch {}
     }
     if (formFound) break;
 
-    if (i % 5 === 0) console.log('  Still waiting... ' + i + 's');
+    if (i % 10 === 0) {
+      // Debug: what's on the page?
+      const title = await page.title().catch(() => '?');
+      const bodyLen = await page.evaluate(() => document.body ? document.body.innerHTML.length : 0).catch(() => 0);
+      const hasMktoScript = await page.evaluate(() => !!document.querySelector('script[src*="mktoweb"]')).catch(() => false);
+      const hasRecaptcha = await page.evaluate(() => !!document.querySelector('iframe[src*="recaptcha"]')).catch(() => false);
+      const cookieBanner = await page.evaluate(() => !!document.querySelector('#onetrust-banner-sdk')).catch(() => false);
+      console.log('  ' + i + 's: title=' + title.substring(0,30) + ' bodyLen=' + bodyLen + ' mkto=' + hasMktoScript + ' recaptcha=' + hasRecaptcha + ' cookie=' + cookieBanner);
+    }
   }
 
   if (!formFound) {
-    console.log('ERROR: Form never appeared after 30s');
-    console.log('Page URL: ' + page.url());
+    console.log('ERROR: Form never appeared after 60s');
+    const title = await page.title().catch(() => '?');
+    const url = page.url();
+    const bodyText = await page.evaluate(() => document.body ? document.body.innerText.substring(0, 300) : '').catch(() => '');
+    console.log('Title: ' + title);
+    console.log('URL: ' + url);
+    console.log('Body text: ' + bodyText.substring(0, 200));
     console.log('Frames: ' + page.frames().map(f => f.url().substring(0, 60)).join(', '));
     await browser.close();
     return;
