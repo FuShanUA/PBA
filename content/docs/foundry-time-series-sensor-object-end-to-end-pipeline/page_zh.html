@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Create sensor object type data in Pipeline Builder</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-create-sensor-object-type-data-in-pipeline-builder" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#create-sensor-object-type-data-in-pipeline-builder"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>在 Pipeline Builder 中创建传感器对象类型数据</h1>
+<p>按照本指南创建的管道将对导入的飞行传感器读数数据集进行转换，以创建一个支持传感器对象类型的数据集，随后将传感器读数转换为时间序列格式，从而创建时间序列同步输出。接着，系统将使用这些数据创建传感器对象类型，供平台使用。本指南末尾的最终管道效果如下图所示：</p>
+<p><img alt="Pipeline builder final output" height="600" src="/docs/resources/foundry/time-series/sensor-object-pipeline-overview.png" style="aspect-ratio:2280 / 752" width="1819.1489361702127" node="[object Object]"></p>
+<p>本用例提供的示例展示了如何从源数据集中转换传感器数据。尽管传感器读数存在多种结构以及大量可能的模式，我们的示例仍采用了常见模式；每一行代表关联至某次航班的多个传感器（例如速度或高度）的单次传感器读数（因此，<code>flight_ID</code> 将作为指向 <code>Flight</code> 对象的外键）。</p>
+<p><img alt="Sample starting data from a sensor reading dataset" height="600" src="/docs/resources/foundry/time-series/sensor-object-pipeline-starting-data.png" style="aspect-ratio:2140 / 710" width="1808.4507042253522" node="[object Object]"></p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>timestamp</th><th>flight_id</th><th>heading</th><th>altitude</th><th>speed</th><th>latitude</th><th>longitude</th><th>vertical_speed</th><th>flight_ title</th></tr></thead><tbody><tr><td>2023-01-11T23...</td><td>021fcdbsd ...</td><td>211</td><td>134</td><td>50</td><td>40.78354</td><td>-73.87231</td><td>-320</td><td>YX4472...</td></tr></tbody></table></div>
+<p>本指南假定您已对 Pipeline Builder 有基本了解。请查阅我们的《Pipeline Builder 文档》以获取有关常规管道操作的信息。此用例示例还假定飞行传感器读数数据已《导入至管道中》。</p>
+<h2 id="user-content-part-i-enrich-sensor-reading-data" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#part-i-enrich-sensor-reading-data"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>第一部分：丰富传感器读数数据</h2>
+<p>将传感器读数数据集添加至新管道后，您需要添加一些元数据。</p>
+<h3 id="user-content-1-apply-transforms-to-reformat-sensor-readings" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#1-apply-transforms-to-reformat-sensor-readings"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>1. 应用转换以重新格式化传感器读数</h3>
+<p>针对传感器读数数据集，按照以下步骤应用转换。</p>
+<h4 id="user-content-unpivot-data-to-merge-series-values"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#unpivot-data-to-merge-series-values"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>逆透视数据以合并序列值</h4>
+<p>由于该数据集在不同列中包含时间序列数据，您必须使用逆透视转换将其合并至单一值列中，使数据能够符合时间序列同步所需的模式，如下所示：</p>
+<ul>
+<li><strong>序列 ID：</strong> <code>string</code> | TSP 所指的一组时间戳和值对应的序列 ID，必须与 TSP 的序列 ID 相匹配。</li>
+<li><strong>时间戳：</strong> <code>timestamp</code> 或 <code>long</code> | 测量该数值的时间点。</li>
+<li><strong>值：</strong> <code>integer</code>、<code>float</code>、<code>double</code>、<code>string</code> | 测量点处该数值的大小。字符串类型表示分类时间序列；每个分类时间序列最多可包含 10,000 个唯一变体。</li>
+</ul>
+<p>下方展示的逆透视转换将 <code>altitude</code> 和 <code>speed</code> 的值统一放入同一个 <code>series_value</code> 列中。原始列名将输出至新的 <code>series_name</code> 列，以便父根对象能够识别每个传感器代表的含义（例如 <code>altitude</code>）。</p>
+<p><img alt="The unpivot transform board in Pipeline Builder, merging sensor data into one column" height="545" src="/docs/resources/foundry/time-series/sensor-object-pipeline-unpivot.png" style="aspect-ratio:982 / 545" width="982" node="[object Object]"></p>
+<p>转换后的数据集应预览显示新的 <code>series_value</code> 和 <code>series_id</code> 列：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>series_name</th><th>series_value</th><th>timestamp</th><th>flight_id</th><th>flight_ title</th></tr></thead><tbody><tr><td>altitude</td><td>134</td><td>2023-01-11T23...</td><td>021fcdbsd...</td><td>YX4472...</td></tr><tr><td>speed</td><td>114.00</td><td>2023-01-11T23...</td><td>021fcdbsd...</td><td>YX4472...</td></tr></tbody></table></div>
+<h4 id="user-content-concatenate-primary-keys-to-create-the-series-id"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#concatenate-primary-keys-to-create-the-series-id"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>拼接主键以创建序列 ID</h4>
+<p>现在，您可以使用字符串拼接转换来创建序列 ID（即关联时间序列值的标识符）。利用该转换，将 <code>series_name</code>（每个传感器代表的含义）与各对象的主键结合起来。</p>
+<p><img alt="The concatenate strings transform board in Pipeline Builder" height="600" src="/docs/resources/foundry/time-series/sensor-object-pipeline-create-series-id.png" style="aspect-ratio:1948 / 674" width="1734.1246290801187" node="[object Object]"></p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>flight_sensor_series_id</th><th>series_name</th><th>series_value</th><th>timestamp</th><th>flight_id</th><th>flight_ title</th></tr></thead><tbody><tr><td>altitude_021fcdbsd...</td><td>altitude</td><td>134</td><td>2023-01-11T23...</td><td>021fcdbsd...</td><td>YX4472...</td></tr><tr><td>speed_021fcdbsd...</td><td>speed</td><td>114.00</td><td>2023-01-11T23...</td><td>021fcdbsd...</td><td>YX4472...</td></tr></tbody></table></div>
+<h4 id="user-content-remove-null-values"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#remove-null-values"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>移除空值</h4>
+<p>应用筛选转换，移除所有包含 <code>null</code> 值的行，这些行不会参与我们的时间序列计算。</p>
+<p><img alt="A filter transform board in Pipeline Builder, configured to filter out rows containing null values." height="460" src="/docs/resources/foundry/time-series/sensor-object-pipeline-drop-null-series-values.png" style="aspect-ratio:1960 / 460" width="1960" node="[object Object]"></p>
+<h3 id="user-content-2-add-units-to-the-dataset" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#2-add-units-to-the-dataset"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>2. 在数据集中添加单位</h3>
+<h4 id="user-content-manually-upload-a-units-dataset"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#manually-upload-a-units-dataset"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>手动上传单位数据集</h4>
+<p>
+
+由于原始的示例传感器读数数据集不包含单位，因此你必须添加一个生成的数据集，以将单位映射到序列名称。在 Pipeline Builder 图表的左上角，选择 <strong>添加数据</strong>，然后选择 <strong>手动输入数据</strong>。创建一个名为 <code>series_name</code> 的列，再创建一个名为 <code>units</code> 的列。如有必要，你可以针对内部插值重复此步骤（尽管我们的示例中并不需要）。</p>
+<p><strong>内部插值</strong>用于让 <a href="/docs/foundry/quiver/overview/">Quiver</a> 推断相邻数据点之间的序列值。内部插值列会为本体提供一个属性，以便为每个传感器对象保存插值设置。Quiver 在可视化时间序列数据时将依赖该属性。查阅<a href="/docs/foundry/quiver/timeseries-visualize/">我们的插值文档</a>以获取更多信息。</p>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>部分传感器读数数据集确实包含单位；在这些情况下，你可以跳过此步骤，直接进行<a href="#3-concatenate-strings-to-create-title-properties-for-objects">创建支持传感器对象类型的数据集</a>。</p></div>
+<p><img alt="在 Pipeline Builder 中手动创建单位数据集" height="172" src="/docs/resources/foundry/time-series/sensor-object-pipeline-units-dataset.png" style="aspect-ratio:655 / 172" width="655" node="[object Object]"></p>
+<h4 id="user-content-create-a-join-to-combine-the-units-and-sensor-datasets"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#create-a-join-to-combine-the-units-and-sensor-datasets"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>创建连接以合并单位和传感器数据集</h4>
+<p>使用连接面板，创建一个连接以合并来自单位和传感器数据集的数据。请确保设置了以下配置：</p>
+<ul>
+<li>添加一个 <strong>左连接</strong> 并按 <code>series_name</code> 进行匹配。</li>
+<li>自动从左侧数据集中选择列。</li>
+<li>仅选择 <code>units</code> 列作为右侧列。</li>
+</ul>
+<p><img alt="使用连接面板合并单位和传感器数据集" height="600" src="/docs/resources/foundry/time-series/sensor-object-pipeline-join.png" style="aspect-ratio:1083 / 687" width="945.8515283842795" node="[object Object]"></p>
+<p>数据预览时应显示新的 <code>units</code> 列，如下所示：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>flight_sensor_series_id</th><th>series_name</th><th>series_value</th><th>timestamp</th><th>flight_id</th><th>flight_ title</th><th>units</th></tr></thead><tbody><tr><td>altitude_021fcdbsd...</td><td>altitude</td><td>134</td><td>2023-01-11T23...</td><td>021fcdbsd...</td><td>YX4472...</td><td>ft</td></tr><tr><td>altitude_021fcdbsd...</td><td>altitude</td><td>155</td><td>2023-01-11T23...</td><td>021fcdbsd...</td><td>YX4472...</td><td>ft</td></tr><tr><td>speed_021fcdbsd...</td><td>speed</td><td>114.00</td><td>2023-01-11T23...</td><td>021fcdbsd...</td><td>YX4472...</td><td>mph</td></tr><tr><td>speed_021fcdbsd...</td><td>speed</td><td>135.00</td><td>2023-01-11T23...</td><td>021fcdbsd...</td><td>YX4472...</td><td>mph</td></tr></tbody></table></div>
+<h2 id="user-content-part-ii-create-a-sensor-object-type-backing-dataset" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#part-ii-create-a-sensor-object-type-backing-dataset"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>第二部分：创建支持传感器对象类型的数据集</h2>
+<p>现在，你可以开始创建传感器对象类型了。按照以下步骤对连接输出应用转换，从而创建一个最终支持传感器对象类型的数据集。</p>
+<h3 id="user-content-1-drop-duplicates-to-create-one-row-per-sensor" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#1-drop-duplicates-to-create-one-row-per-sensor"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>1. 删除重复项以实现每个传感器仅保留一行</h3>
+<p>一个传感器对象代表且仅代表一组相关的时间序列数据（例如某个特定航班的 <code>altitude</code>）。由于每个相关时间序列集合都通过 <code>flight_sensor_series_id</code> 进行唯一标识，因此你可以假设，为每个唯一的飞行传感器序列 ID 仅保留一行，即对应一个传感器对象。通过对生成的 <code>flight_sensor_series_id</code> 使用删除重复项转换，你可以为每个传感器对象创建一行。你将在后续步骤中移除其余的序列数据（时间戳和值）。</p>
+<p><img alt="Pipeline Builder 中的删除重复项转换面板" height="167" src="/docs/resources/foundry/time-series/sensor-object-pipeline-drop-duplications.png" style="aspect-ratio:977 / 167" width="977" node="[object Object]"></p>
+<p>数据集应如下所示：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>flight_sensor_series_id</th><th>series_name</th><th>series_value</th><th>timestamp</th><th>flight_id</th><th>flight_ title</th><th>units</th></tr></thead><tbody><tr><td>altitude_021fcdbsd...</td><td>altitude</td><td>134</td><td>2023-01-11T23...</td><td>021fcdbsd...</td><td>YX4472...</td><td>ft</td></tr><tr><td>speed_021fcdbsd...</td><td>speed</td><td>114.00</td><td>2023-01-11T23...</td><td>021fcdbsd...</td><td>YX4472...</td><td>mph</td></tr></tbody></table></div>
+<h3 id="user-content-2-hash-the-series-id-to-create-a-primary-key" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#2-hash-the-series-id-to-create-a-primary-key"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>2. 对序列 ID 进行哈希处理以创建主键</h3>
+<p>由于每个传感器对象都必须可唯一标识，因此你必须使用哈希 sha256 转换为每个对象创建一个主键。你可以重用 <code>series_id</code>，因为它在所有这些传感器对象中应该是唯一的，但进行哈希处理能更直接地表明 <code>series_id</code> 仅应作为唯一标识符使用。</p>
+<p><img alt="Pipeline Builder 中的哈希 sha256 转换面板，用于从序列 ID 创建主键。" height="178" src="/docs/resources/foundry/time-series/sensor-object-pipeline-create-primary-key.png" style="aspect-ratio:977 / 178" width="977" node="[object Object]"></p>
+<p>数据集预览应如下所示：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>unique_sensor_flight_id</th><th>flight_sensor_series_id</th><th>series_name</th><th>series_value</th><th>timestamp</th><th>flight_id</th><th>flight_ title</th><th>units</th></tr></thead><tbody><tr><td>2492af5a2fe62c78ad8d...</td><td>altitude_021fcdbsd...</td><td>altitude</td><td>134.00</td><td>2023-01-11T23...</td><td>021fcdbsd...</td><td>YX4472...</td><td>ft</td></tr><tr><td>ec4808668f4b48cc5104...</td><td>altitude_011794756...</td><td>altitude</td><td>0.0000</td><td>2023-01-22T17...</td><td>011794756...</td><td>UA1878...</td><td>ft</td></tr></tbody></table></div>
+<h3 id="user-content-3-concatenate-strings-to-create-title-properties-for-objects" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#3-concatenate-strings-to-create-title-properties-for-objects"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>3. 拼接字符串以为对象创建标题属性</h3>
+<p>现在，你应该使用拼接字符串转换为我们的传感器对象创建人类可读的标题属性。即使传感器对象将嵌入到另一个 <code>Flight</code> 对象的对象视图中，为传感器对象创建专用名称也能让用户在平台中构建和分析传感器时更加直观。</p>
+<p><img alt="拼接字符串转换面板，用于为传感器对象创建新标题。" height="424" src="/docs/resources/foundry/time-series/sensor-object-pipeline-create-title.png" style="aspect-ratio:979 / 424" width="979" node="[object Object]"></p>
+<p>数据集预览应如下所示：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>title</th><th>unique_sensor_flight_id</th><th>flight_sensor_series_id</th><th>series_name</th><th>series_value</th><th>timestamp</th><th>flight_id</th><th>flight_ title</th><th>units</th></tr></thead><tbody><tr><td>Altitude sensor for YX4472...</td><td>2492af5a2fe62c78ad8d...</td><td>altitude_021fcdbsd...</td><td>altitude</td><td>134.00</td><td>2023-01-11T23...</td><td>021fcdbsd...</td><td>YX4472...</td><td>ft</td></tr><tr><td>Altitude sensor for UA1878...</td><td>ec4808668f4b48cc5104...</td><td>altitude_011794756...</td><td>altitude</td><td>0.0000</td><td>2023-01-22T17...</td><td>011794756...</td><td>UA1878...</td><td>ft</td></tr></tbody></table></div>
+<h3 id="user-content-4-drop-unnecessary-columns" level="3" node="[object Object]" data-pagefind-weight="0.8">
+
+<a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#4-drop-unnecessary-columns"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>4. 删除不必要的列</h3>
+<p>由于传感器对象仅代表传感器本身，你可以通过删除列转换来移除剩余的 <code>series_value</code> 和 <code>timestamp</code> 列。这些列体现在时间序列属性上，并将基于 <code>flight_sensor_series</code> 值在 Ontology 中与传感器建立关联。此外，由于传感器对象类型不需要 <code>flight_title</code> 列，你也需要将其删除。</p>
+<p>你需要保留 <code>flight_id</code>，以便将传感器对象（<code>Flight Sensors</code>）与其根对象（<code>Flights</code>）关联起来。</p>
+<p><img alt="Drop timestamp and series value columns" height="161" src="/docs/resources/foundry/time-series/sensor-object-pipeline-drop-timestamp-values.png" style="aspect-ratio:975 / 161" width="975" node="[object Object]"></p>
+<p>数据集预览结果应如下所示：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>title</th><th>unique_sensor_flight_id</th><th>flight_sensor_series_id</th><th>series_name</th><th>flight_id</th><th>units</th></tr></thead><tbody><tr><td>Altitude sensor for YX4472...</td><td>2492af5a2fe62c78ad8d...</td><td>altitude_021fcdbsd...</td><td>altitude</td><td>021fcdbsd...</td><td>ft</td></tr><tr><td>Altitude sensor for UA1878...</td><td>ec4808668f4b48cc5104...</td><td>altitude_011794756...</td><td>altitude</td><td>011794756...</td><td>ft</td></tr></tbody></table></div>
+<h3 id="user-content-5-add-a-dataset-output-to-back-sensor-object-type" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#5-add-a-dataset-output-to-back-sensor-object-type"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>5. 添加数据集输出以支持传感器对象类型</h3>
+<p>选择 <code>Add output</code>，然后选择 <code>Add dataset</code>。生成的数据集应与转换中创建的表结构保持一致。后续的任何更改可能需要更新生成数据集中的表结构。</p>
+<h2 id="user-content-part-iii-create-the-sensor-object-type-time-series-sync" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#part-iii-create-the-sensor-object-type-time-series-sync"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>第三部分：创建传感器对象类型时间序列同步</h2>
+<h3 id="user-content-1-transform-the-sensor-readings-to-a-time-series-sync-format" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#1-transform-the-sensor-readings-to-a-time-series-sync-format"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>1. 将传感器读数转换为时间序列同步格式</h3>
+<p>使用选择列转换，仅保留时间序列同步所需的列：<code>series_id</code>、<code>timestamp</code> 和 <code>value</code>。支持数据集将保存所有传感器的值，无论其测量内容是什么（例如 <code>altitude</code> 和 <code>speed</code>）。你可以将生成的 <code>flight_sensor_series_id</code> 用作 <code>series_id</code>，作为特定传感器数据集的唯一标识符。例如，从拉瓜迪亚机场 (LGA) 飞往洛杉矶国际机场 (LAX) 的 A445B 航班将关联一个 <code>speed</code> 传感器对象，用于保存该航班的速度传感器数据。同样，它也会关联一个 <code>altitude</code> 传感器对象。</p>
+<p><img alt="Pipeline select columns for sensor data" height="306" src="/docs/resources/foundry/time-series/sensor-object-pipeline-transform-select-columns.png" style="aspect-ratio:977 / 306" width="977" node="[object Object]"></p>
+<p>数据集输出预览结果应如下所示：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>flight_sensor_series_id</th><th>series_value</th><th>timestamp</th></tr></thead><tbody><tr><td>altitude_021fcdbsd...</td><td>134.00</td><td>2023-01-11T23...</td></tr><tr><td>altitude_011794756...</td><td>0.0000</td><td>2023-01-22T17...</td></tr></tbody></table></div>
+<h2 id="user-content-part-iii-create-the-time-series-sync" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#part-iii-create-the-time-series-sync"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>第三部分：创建时间序列同步</h2>
+<h3 id="user-content-1-configure-the-time-series-sync" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#1-configure-the-time-series-sync"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>1. 配置时间序列同步</h3>
+<p>现在，通过在屏幕右侧的管道输出部分选择 <strong>Add</strong> 来创建《时间序列同步》。然后，选择 <strong>Time series sync</strong>。为新的时间序列同步填写必要的数据，并注意以下事项：</p>
+<ul>
+<li>为《序列 ID》字段选择 <code>flight_sensor_series_id</code> 列。</li>
+<li>在 <strong>Time</strong> 字段中添加创建的 <code>timestamp</code> 列。</li>
+<li>在 <strong>Value</strong> 字段中添加 <code>series_value</code>。</li>
+</ul>
+<p><img alt="Configure a time series sync output in Pipeline Builder." height="381" src="/docs/resources/foundry/time-series/sensor-object-pipeline-time-series-sync-output.png" style="aspect-ratio:339 / 381" width="339" node="[object Object]"></p>
+<p>现在，保存并构建管道。输出结果将创建在管道所在的同一文件夹中。</p>
+<h3 id="user-content-2-use-a-time-series-sync-to-add-properties-to-sensor-object-types" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#2-use-a-time-series-sync-to-add-properties-to-sensor-object-types"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>2. 使用时间序列同步为传感器对象类型添加属性</h3>
+<p>既然你已经创建了包含时间序列同步的管道，便可以使用该同步为传感器对象类型添加时间序列属性。如需更多指导，请查阅关于《为传感器对象类型添加时间序列属性》的文档。</p>
+</article>
+</body>
+</html>

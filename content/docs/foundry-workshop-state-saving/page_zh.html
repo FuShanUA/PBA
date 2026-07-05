@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>State saving</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-state-saving" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#state-saving"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>状态保存</h1>
+<p>状态保存是 Workshop 的一项强大功能，模块使用者能够借此保存当前的工作状态，日后既可以重新载入该状态，也能将其共享给其他用户。</p>
+<p>借助状态保存，在 Workshop 中构建复杂且耗时的流程将更加轻松，同时也促进了用户间的协作。状态保存的典型应用场景包括：</p>
+<ul>
+<li>筛选 <code>Status</code> 属性为“未解决”、<code>Location</code> 属性为“苏黎世”的告警对象，随后保存该状态以备日后查阅。</li>
+<li>选中某个特定的目标对象，随后保存当前视图并分享给同事。</li>
+<li>在使用 Workshop 原生组件（如文本输入组件或日期输入组件）构建的表单中填写了部分内容，通过保存状态以便后续继续完成数据录入。</li>
+</ul>
+<p>保存状态时，Workshop 会留存两部分信息：(1) 已启用状态保存功能的变量的当前取值（即“状态”）；(2) 用户正在查看的当前页面（此为可选操作）。在 Workshop 的编辑模式下，模块开发者可以<a href="#how-to-enable-state-saving">决定哪些变量需参与状态保存</a>，并<a href="#configuration-options">配置其他状态保存选项</a>。而在 Workshop 的查看模式下，模块使用者可以根据流程需要，自行保存、打开和分享状态。</p>
+<p>以下截图展示了状态保存的示例。在这个案例中，模块开发者配置了状态保存功能，以保留由筛选列表输出的对象集筛选器变量，这将会保存用户所选的过滤条件——即纽约市各机场中高、中优先级的未处理告警。模块开发者还配置了由对象表格组件输出的活动对象集变量，这将会保存表格中当前高亮显示的告警，并在该模块右侧的对象视图组件中进行展示。保存此状态后，模块使用者日后就能轻松回到这个特定的纽约航班告警视图，或者以链接形式将其分享给其他用户。</p>
+<p><img alt="State Saving: Save Dialog" height="600" src="/docs/resources/foundry/workshop/state_saving_1.png" style="aspect-ratio:1774 / 927" width="1148.220064724919" node="[object Object]"></p>
+<p><img alt="State Saving: Saved State" height="600" src="/docs/resources/foundry/workshop/state_saving_2.png" style="aspect-ratio:1776 / 930" width="1145.8064516129032" node="[object Object]"></p>
+<h2 id="user-content-how-to-enable-state-saving" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#how-to-enable-state-saving"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>如何启用状态保存</h2>
+<p>在 Workshop 的编辑模式下，开发者可通过以下三个步骤来启用状态保存功能，详情如下：</p>
+<ol>
+<li><a href="#toggle-on-state-saving">打开模块设置面板，开启 <strong>Enable State Saving</strong> 开关</a>。</li>
+<li><a href="#configure-state-saving-for-variables">为需要保存状态的变量启用状态保存功能</a>。</li>
+<li><a href="#configure-optional-settings">（可选）配置该模块已保存状态的允许存放位置和快捷方式</a>。</li>
+</ol>
+<h3 id="user-content-toggle-on-state-saving" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#toggle-on-state-saving"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>开启状态保存</h3>
+<p>选择设置图标 (<img alt="Gear icon" height="38" src="/docs/resources/foundry/workshop/settings-gear-icon.png" style="aspect-ratio:38 / 38" width="38" node="[object Object]">) 以打开 <strong>Settings</strong> 面板。在此面板中，找到并开启 <strong>Enable State Saving</strong> 开关，如下图所示。</p>
+<p><img alt="State Saving: Configuration Panel" height="600" src="/docs/resources/foundry/workshop/state_saving_config.png" style="aspect-ratio:353 / 874" width="242.33409610983983" node="[object Object]"></p>
+<h3 id="user-content-configure-state-saving-for-variables" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#configure-state-saving-for-variables"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>为变量配置状态保存</h3>
+<p>打开变量面板，为需要保存状态的变量启用状态保存功能。具体操作为：选中一个变量，切换至设置选项卡，并为该变量添加一个外部 ID。下图展示了为筛选列表组件输出的 <code>Object Set Filter</code> 变量启用状态保存的示例，此举将会保存用户所选的过滤条件：</p>
+<p><img alt="Enabling state saving for an object set filter variable" height="477" src="/docs/resources/foundry/workshop/state_saving_configuring_filters_variable.png" style="aspect-ratio:610 / 477" width="610" node="[object Object]"></p>
+<p>有关配置对象集筛选器变量的更多信息（包括默认筛选器和筛选值提取），请参阅《对象集筛选器变量》。</p>
+<div class="ptcom-design__callout__19o1cwu">
+
+<svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>变量值通过其外部 ID 存储在已保存的状态中。因此，在配置状态保存后修改变量的外部 ID，可能会导致之前配置的状态无法成功重新加载。</p><p>修改变量的外部 ID，使得模块配置可以在随时间推移发生变化的同时，依然支持状态保存。例如，如果某个模块最初配置为对象下拉组件（允许用户选择单个对象），随后被替换为对象选择组件（允许用户选择多个对象），只要这些组件输出的对象集使用相同的外部 ID，状态保存就会继续生效。</p></div>
+<h3 id="user-content-configure-optional-settings" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#configure-optional-settings"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>配置可选设置</h3>
+<p>在 <strong>设置</strong> 面板的 <strong>状态保存</strong> 部分，您可以配置相关设置，以便在已保存的状态中保留用户当前所在的页面。您还可以为该模块已保存的状态设定允许的保存位置和文件夹快捷方式。通过文件夹快捷方式，可以更轻松地确保该模块的所有可共享状态都保存到同一位置。</p>
+<h2 id="user-content-configuration-options" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#configuration-options"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>配置选项</h2>
+<p>对于状态保存，核心配置选项如下：</p>
+<ul>
+<li><strong>启用状态保存：</strong> 此开关用于控制是否为当前模块启用状态保存。如果开启，模块使用者可以保存已启用变量的状态以及模块内的当前页面。如果关闭，模块使用者将看不到任何状态保存选项。</li>
+<li><strong>显示</strong>
+<ul>
+<li><strong>状态显示名称：</strong> 此字段决定在此模块中向使用者引用单个已保存状态的方式，旨在使屏幕上的语言适应特定应用程序的需求。默认设置为 <strong>模块状态</strong>。如果设置为 <strong>收件箱</strong>，模块使用者将在屏幕上看到对 <strong>已保存的收件箱</strong> 的引用，而不是 <strong>已保存的模块状态</strong>。</li>
+<li><strong>状态显示名称（复数）：</strong> 此字段决定在此模块中向使用者引用多个已保存状态的方式，旨在使屏幕上的语言适应特定应用程序的需求。默认设置为 <strong>模块状态</strong>。如果设置为 <strong>收件箱</strong>，模块使用者将在屏幕上看到对 <strong>已保存的收件箱</strong> 的引用，而不是 <strong>已保存的模块状态</strong>。</li>
+</ul>
+</li>
+<li><strong>数据</strong>
+<ul>
+<li><strong>状态保存变量：</strong> 保存状态将保留模块内任何已启用状态保存的变量的当前值。</li>
+<li><strong>页面：</strong> 如果启用，保存状态将保留模块内当前活动的页面。</li>
+</ul>
+</li>
+<li><strong>位置</strong>
+<ul>
+<li><strong>添加快捷方式：</strong> 此选项允许构建者配置指向特定项目文件夹的快捷方式，以便将此模块的状态保存到这些文件夹中。可以选择为每个文件夹快捷方式配置自定义显示名称。</li>
+<li><strong>用户主文件夹：</strong> 如果启用，状态可以保存到用户的私有主文件夹中。</li>
+<li><strong>任何 Compass 位置：</strong> 如果启用，状态可以保存到模块使用者选择的任何项目文件夹中。</li>
+</ul>
+</li>
+</ul>
+<h2 id="user-content-supported-variable-types-and-widgets" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#supported-variable-types-and-widgets"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>支持的变量类型和组件</h2>
+<p>通过状态保存，您可以为以下 Workshop 变量类型保留值：</p>
+<ul>
+<li>由布尔值、日期、数值、字符串或时间戳值组成的数组</li>
+<li>布尔值</li>
+<li>日期</li>
+<li>对象集</li>
+<li>对象集筛选器</li>
+<li>数值</li>
+<li>字符串</li>
+<li>时间戳</li>
+</ul>
+<p>输出上述所列变量类型之一的组件也支持状态保存。部分受支持的组件包括：</p>
+<ul>
+<li>复选框</li>
+<li>日期输入</li>
+<li>日期时间选择器</li>
+<li>筛选列表</li>
+<li>数值输入</li>
+<li>对象下拉列表</li>
+<li>对象列表</li>
+<li>对象表格</li>
+<li>字符串下拉列表</li>
+</ul>
+<h2 id="user-content-limitations" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#limitations"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>限制</h2>
+<h3 id="user-content-no-inheritance-of-state-saving-configuration-from-embedded-modules" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#no-inheritance-of-state-saving-configuration-from-embedded-modules"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>不继承被嵌入模块的状态保存配置</h3>
+<p><a href="/docs/foundry/workshop/embedding-workshop-modules-overview/">嵌入 Workshop 模块</a>不会继承被嵌入模块的状态保存配置。若要将被嵌入模块的变量值保存到状态中，请将所需变量添加到子模块的<a href="/docs/foundry/workshop/module-interface/">模块接口</a>中，并在被嵌入模块配置中从父模块传入已保存的状态变量。</p>
+<h3 id="user-content-state-saving-is-only-available-for-users-with-platform-access" level="3" node="[object Object]" data-pagefind-weight="0.8">
+
+<a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#state-saving-is-only-available-for-users-with-platform-access"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>状态保存仅对拥有平台访问权限的用户开放</h3>
+<p>只有为最终用户启用平台访问权限后，该用户才能使用状态保存功能。未获得平台访问权限的用户无法访问状态保存组件。了解更多关于《平台访问限制》的信息。</p>
+<h3 id="user-content-module-header-visibility-required" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#module-header-visibility-required"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>需保持模块标题可见</h3>
+<p>要让模块使用者在查看模式下使用状态保存选项，必须确保模块标题可见。如果隐藏了模块标题，即使已为该模块正确配置了状态保存功能，界面中也不会显示状态保留下拉菜单。</p>
+</article>
+</body>
+</html>

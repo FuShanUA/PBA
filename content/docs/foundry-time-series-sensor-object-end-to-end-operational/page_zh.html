@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Use sensor object type time series data in Workshop and Quiver</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-use-sensor-object-type-time-series-data-in-workshop-and-quiver" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#use-sensor-object-type-time-series-data-in-workshop-and-quiver"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>在 Workshop 和 Quiver 中使用传感器对象类型的时序数据</h1>
+<p>要开始使用传感器对象类型的时序数据，请在 Workshop 中打开 <strong>飞行传感器数据</strong> 模块。你可以使用平台的快速搜索功能找到该模块。在你配置自己的使用传感器对象类型时序数据的 Workshop 模块时，此示例模块将作为参考。</p>
+<p>在本指南结束时，我们的模块将允许你根据出发时间和机场筛选航班。然后，对象表格组件将显示航班列表，你可以选择这些航班以查看关联的传感器对象类型时序数据。</p>
+<p><img alt="The example Workshop module, using sensor object time series data" height="600" src="/docs/resources/foundry/time-series/sensor-object-workshop-module-overview.png" style="aspect-ratio:2764 / 1604" width="1033.9152119700748" node="[object Object]"></p>
+<h2 id="user-content-part-i-set-up-initial-widgets-in-a-workshop-module" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#part-i-set-up-initial-widgets-in-a-workshop-module"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>第一部分：在 Workshop 模块中设置初始组件</h2>
+<p>模块中的地图、对象表格和筛选组件是 Workshop 的标准功能。请按照以下步骤配置这些组件，然后再将特定于时序数据的组件添加到模块中。</p>
+<h3 id="user-content-filter-flights-by-route-id" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#filter-flights-by-route-id"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>按航线 ID 筛选航班</h3>
+<p>筛选列表组件应接收 <code>Flight</code> 对象集，并根据 <code>route id</code> 应用筛选。</p>
+<ol>
+<li>在你的 Workshop 模块中，选择 <strong>+ 添加组件</strong>，然后选择筛选列表组件。</li>
+<li>在筛选列表组件右侧的配置面板中，为 <strong>对象集输入</strong> 创建一个新变量，并将其命名为“按航线 ID 筛选航班”。<strong>起始对象集</strong> 应使用 <code>Flights with linked flight sensors</code> 对象类型变量。</li>
+</ol>
+<p><img alt="Filter list widget input variable" height="600" src="/docs/resources/foundry/time-series/sensor-object-workshop-filter-list-variable.png" style="aspect-ratio:2506 / 1738" width="865.1323360184119" node="[object Object]"></p>
+<ol start="3">
+<li>选择 <strong>+ 添加筛选</strong>，添加 <code>Route Id</code> 属性。</li>
+<li>向下滚动到 <strong>筛选输出</strong> 字段，找到已为你创建的筛选输出。为其指定一个描述性名称，例如“按航线 ID 筛选的航班”；无需其他配置。</li>
+</ol>
+<p><img alt="Filter list widget output variable" height="600" src="/docs/resources/foundry/time-series/sensor-object-workshop-filter-list-output.png" style="aspect-ratio:2508 / 1740" width="864.8275862068966" node="[object Object]"></p>
+<h3 id="user-content-configure-object-table-widgets-to-select-flights-for-comparison" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#configure-object-table-widgets-to-select-flights-for-comparison"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>配置对象表格组件以选择航班进行比较</h3>
+<ol>
+<li>在你的 Workshop 模块中，选择 <strong>+ 添加组件</strong>，然后选择对象表格组件。</li>
+<li>在右侧配置面板的 <strong>输入数据</strong> 下拉菜单中，选择 <strong>+ 新建对象集变量</strong>。</li>
+<li>将该变量命名为 <code>Flights filtered by route id</code>。</li>
+<li>选择 <strong>起始对象集</strong>，并选择现有变量 <code>Flights with linked flight sensors</code>。</li>
+<li>选择筛选条件 <strong>使用变量</strong>，并选择 <code>Filter by route</code> 变量。</li>
+</ol>
+<p><img alt="Object table widget input variable" height="600" src="/docs/resources/foundry/time-series/sensor-object-workshop-table-input.png" style="aspect-ratio:2292 / 1738" width="791.2543153049482" node="[object Object]"></p>
+<ol start="6">
+<li>选择 <strong>+ 添加列</strong>，然后从下拉菜单中选择 <strong>出发时间戳</strong>。</li>
+<li>滚动到 <strong>选择</strong> 部分，打开 <strong>启用活动选择</strong> 选项。这将配置表格中所选对象的输出。</li>
+<li>在 <strong>活动对象</strong> 下拉菜单中，选择 <strong>新建对象集变量</strong> 以创建一个新变量。将该变量重命名为 <code>Selected flight from table 1</code>。无需其他配置。</li>
+</ol>
+<p><img alt="Object table widget output variable" height="600" src="/docs/resources/foundry/time-series/sensor-object-workshop-table-widget-output.png" style="aspect-ratio:2512 / 1738" width="867.2036823935558" node="[object Object]"></p>
+<ol start="9">
+<li>对第二个表格组件重复此过程，接收你在第 3 至 5 步中创建的 <code>Flights filtered by route id</code>，并创建一个名为 <code>Selected flight from table 2</code> 的输出变量。</li>
+</ol>
+<h2 id="user-content-part-ii-add-sensor-object-type-time-series-data-from-a-root-object-type" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#part-ii-add-sensor-object-type-time-series-data-from-a-root-object-type"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>第二部分：从根对象类型添加传感器对象类型时序数据</h2>
+<h3 id="user-content-create-sensor-name-selector" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#create-sensor-name-selector"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>创建传感器名称选择器</h3>
+<p>创建一个包含所需序列名称的下拉菜单，以便传递给你将在后续步骤中创建的 Quiver 仪表板。</p>
+<ol>
+<li>在你的 Workshop 模块中，选择 <strong>+ 添加组件</strong>，然后选择字符串选择器组件。</li>
+<li>在组件配置面板的 <strong>选项生成</strong> 下，选择 <strong>+ 添加选择器选项</strong>。</li>
+<li>添加 <code>heading</code>、<code>vertical_speed</code>、<code>speed</code> 以及任何其他想要显示的传感器名称作为选项。</li>
+</ol>
+<p><img alt="Sensor name string selector widget configuration" height="600" src="/docs/resources/foundry/time-series/sensor-object-workshop-sensor-name-select.png" style="aspect-ratio:2304 / 1744" width="792.6605504587155" node="[object Object]"></p>
+
+<ol start="4">
+<li>在 <strong>Selection</strong> 部分的下拉菜单中，选择 <code>Selected series name</code> 变量。</li>
+<li>为 <strong>Selection Display</strong> 配置保留默认的 <strong>Dropdown</strong> 选项。</li>
+</ol>
+<p><img alt="Sensor name string selector output" height="600" src="/docs/resources/foundry/time-series/sensor-object-workshop-sensor-name-selection-output.png" style="aspect-ratio:2280 / 1748" width="782.6086956521739" node="[object Object]"></p>
+<h3 id="user-content-create-flight-id-variables" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#create-flight-id-variables"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>创建航班 ID 变量</h3>
+<p>现在，您将创建两个变量，分别代表从左侧和右侧表格中选择的航班 ID。每个变量都是一个字符串，其值由对象表格组件中配置的 <code>Selected flight from table 1</code> 和 <code>Selected flight from table 2</code> 变量的 <code>Flight Id</code> 属性提供。您需要将这些变量传递到 Quiver 仪表板中。</p>
+<ol>
+<li>从 Workshop 模块的左侧导航至 <strong>Variables</strong>，然后选择 <strong>+</strong> 添加一个新变量。</li>
+<li>在下拉菜单中，选择 <strong>String</strong>。</li>
+<li>在下一个下拉菜单中，选择 <strong>Object property</strong>。</li>
+</ol>
+<p><img alt="Create a new string variable from an object property" height="600" src="/docs/resources/foundry/time-series/sensor-object-workshop-create-flight-id-variable.png" style="aspect-ratio:2114 / 1354" width="936.7799113737076" node="[object Object]"></p>
+<ol>
+<li>选择 <code>Selected Flight from Table</code> 变量作为包含单一选项的对象集，然后将 <code>Flight Id</code> 选作 <code>Selected Flight Id</code> 变量的属性。</li>
+</ol>
+<p><img alt="Flight ID variable configuration" height="600" src="/docs/resources/foundry/time-series/sensor-object-workshop-flight-id.png" style="aspect-ratio:1714 / 1056" width="973.8636363636365" node="[object Object]"></p>
+<h2 id="user-content-part-iii-create-a-quiver-dashboard" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#part-iii-create-a-quiver-dashboard"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>第三部分：创建 Quiver 仪表板</h2>
+<p>以下指南假设您已具备 Quiver 的基本导航知识。要进一步了解 Quiver 的常规功能，请查阅《我们的文档》。</p>
+<p>此 Workshop 模块包含一个《嵌入式 Quiver 仪表板》。请按照以下说明设置仪表板中显示的时间序列图表和指标卡。</p>
+<h3 id="user-content-1-create-a-quiver-analysis-using-the-flight-sensor-object-type" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#1-create-a-quiver-analysis-using-the-flight-sensor-object-type"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>1. 使用 <code>Flight Sensor</code> 对象类型创建 Quiver 分析</h3>
+<h4 id="user-content-use-the-flight-sensor-object-set"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#use-the-flight-sensor-object-set"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>使用 Flight Sensor 对象集</h4>
+<p>通过从顶部菜单栏选择 <strong>Objects</strong> 并搜索 <code>Flight Sensor</code> 对象类型，创建一个《新的 Quiver 分析》并设置 <code>Flight Sensor</code> 对象类型。选择 <strong>Add object set</strong> 将对象集表格添加到画布中。</p>
+<p><img alt="Add objects to Quiver analysis" height="600" src="/docs/resources/foundry/time-series/sensor-object-quiver-add-objects.png" style="aspect-ratio:2102 / 1560" width="808.4615384615385" node="[object Object]"></p>
+<p><img alt="Select the flight sensor object set" height="600" src="/docs/resources/foundry/time-series/sensor-object-quiver-add-flight-sensor-set.png" style="aspect-ratio:2104 / 1556" width="811.3110539845758" node="[object Object]"></p>
+<h4 id="user-content-add-two-string-parameters-for-the-flight-ids"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#add-two-string-parameters-for-the-flight-ids"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>为航班 ID 添加两个字符串参数</h4>
+<ol>
+<li>在屏幕左侧选择 <strong>(x)</strong> 以打开 <strong>Parameters</strong> 配置。</li>
+<li>选择 <strong>+</strong> 添加一个参数，然后从下拉菜单中选择 <strong>String</strong>。该字符串参数将代表航班 ID，您将使用该 <code>flight_id</code> 属性来检索 <code>Flight Sensor</code> 对象。</li>
+<li>将该字符串参数重命名为“Flight Id”，以便于追踪。</li>
+<li>针对第二个航班 ID 重复步骤 1-3，并将其命名为“Flight Id 2”。</li>
+</ol>
+<p><img alt="Add string parameter to Quiver analysis" height="600" src="/docs/resources/foundry/time-series/sensor-object-quiver-text-parameter.png" style="aspect-ratio:2662 / 1390" width="1149.0647482014388" node="[object Object]"></p>
+<h4 id="user-content-add-a-string-parameter-for-the-sensor-name"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#add-a-string-parameter-for-the-sensor-name"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>为传感器名称添加一个字符串参数</h4>
+<ol>
+<li>导航至屏幕左侧。</li>
+<li>选择 <strong>+</strong> 添加一个参数，然后从下拉菜单中选择 <strong>String</strong>。该字符串参数将代表传感器名称，您将使用它来筛选与从 Workshop 模块传入的传感器名称相匹配的 <code>Flight Sensor</code> 对象。</li>
+<li>将该字符串参数重命名为“Sensor name”，以便于追踪。</li>
+</ol>
+<h4 id="user-content-add-object-set-filters-for-all-parameters"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#add-object-set-filters-for-all-parameters"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>为所有参数添加对象集筛选器</h4>
+<ol>
+<li>将鼠标悬停在 <code>Flight Sensor</code> 对象集表格上以显示 <strong>Search</strong> 菜单，或者选择 <strong>Search cards</strong> 来添加一个筛选对象集卡片。此卡片将根据选定的 <code>flight id</code> 筛选传感器对象。有关更多信息，请查阅《对象集筛选器文档》。</li>
+</ol>
+<p><img alt="Add object set filter card" height="600" src="/docs/resources/foundry/time-series/sensor-object-quiver-filter-object-set-card.png" style="aspect-ratio:2562 / 1438" width="1068.9847009735743" node="[object Object]"></p>
+<ol start="2">
+<li>
+<p>选择 <strong>Add a filter to limit your resulting object set</strong> 添加一个筛选器，然后选择 <strong>...where flight id is</strong> 选项。</p>
+</li>
+<li>
+<p>在下拉菜单中选择 <strong>String</strong> 变量，然后选择您在上一步中创建的 <code>Flight Id 1</code> 字符串参数。</p>
+</li>
+<li>
+<p>
+
+选择<strong>添加过滤器以限制结果对象集</strong>来添加另一个过滤器，然后选择<strong>…其中序列名称为</strong>选项。</p>
+</li>
+<li>
+<p>从下拉菜单中选择<strong>是（精确匹配）</strong>，然后选择<strong>字符串</strong>变量。</p>
+</li>
+<li>
+<p>选择您之前创建的 <code>传感器名称</code> 字符串参数。</p>
+</li>
+</ol>
+<p><img alt="配置过滤器对象集卡片" height="600" src="/docs/resources/foundry/time-series/sensor-object-quiver-filter-cards.png" style="aspect-ratio:2096 / 1440" width="873.3333333333334" node="[object Object]"></p>
+<h4 id="user-content-add-a-grouped-time-series-plot-of-flight-ids"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#add-a-grouped-time-series-plot-of-flight-ids"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>添加飞行 ID 的分组时间序列图</h4>
+<ol>
+<li>将鼠标悬停在过滤器对象集卡片上以显示<strong>搜索</strong>菜单，或选择<strong>搜索卡片</strong>以添加分组时间序列图。这将绘制对象上的所有时间序列属性并将它们放在一个图上。在这种情况下，您会期望此分组时间序列图仅包含一个传感器对象的一个时间序列。</li>
+</ol>
+<p><img alt="分组时间序列卡片" height="600" src="/docs/resources/foundry/time-series/sensor-object-quiver-grouped-tsp.png" style="aspect-ratio:1936 / 1022" width="1136.5949119373777" node="[object Object]"></p>
+<ol start="2">
+<li>将鼠标悬停的时间序列图配置上以找到<strong>配置图表</strong>图标，并打开配置面板。</li>
+<li>在<strong>批量时间序列选项</strong>下，找到<strong>时间序列列</strong>下拉菜单并选择<strong>默认时间序列属性</strong>。这将确保图表显示对象名称而不是序列 ID 列的名称。</li>
+</ol>
+<p><img alt="为分组时间序列图在传感器对象上选择默认 TSP" height="600" src="/docs/resources/foundry/time-series/sensor-object-quiver-grouped-time-series-plot-tsp-selection.png" style="aspect-ratio:1938 / 1156" width="1005.8823529411764" node="[object Object]"></p>
+<ol start="4">
+<li>针对为 <code>飞行 ID 2</code> 参数创建的过滤器卡片重复这些步骤。然后，您应该拥有两个独立的分组时间序列图表。</li>
+</ol>
+<p><img alt="添加第二个分组时间序列卡片" height="600" src="/docs/resources/foundry/time-series/sensor-object-quiver-grouped-tsp-cards.png" style="aspect-ratio:1000 / 975" width="615.3846153846155" node="[object Object]"></p>
+<h4 id="user-content-overlay-plots-and-add-relative-time-shift"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#overlay-plots-and-add-relative-time-shift"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>叠加图表并添加相对时间偏移</h4>
+<ol>
+<li>选择分组时间序列图以访问快捷操作菜单。</li>
+<li>选择<strong>转换</strong>并搜索<strong>相对时间序列</strong>卡片。</li>
+</ol>
+<p><img alt="相对时间序列卡片" height="600.0000000000001" src="/docs/resources/foundry/time-series/sensor-object-quiver-select-relative-time-series.png" style="aspect-ratio:2388 / 1168" width="1226.7123287671234" node="[object Object]"></p>
+<ol start="3">
+<li>对第二个分组时间序列图重复上述操作。</li>
+<li>然后，在第二个分组时间序列图中，选择<strong>配置图表</strong>选项，并导航至配置面板的<strong>显示</strong>选项卡。</li>
+<li>在<strong>颜色</strong>下，选择一种颜色以使其与之前的图表区分开来。在此示例中，选择了橙色以优化与蓝色的视觉对比度。</li>
+</ol>
+<p><img alt="为图表添加对比度" height="600" src="/docs/resources/foundry/time-series/sensor-object-quiver-relative-time-series-contrast.png" style="aspect-ratio:2420 / 1396" width="1040.1146131805158" node="[object Object]"></p>
+<ol start="6">
+<li>选择其中一个分组时间序列图并将其拖动到另一个图上，以合并为单个图表。您可能会注意到图表似乎消失了。您需要使图表使用正确的范围才能一起显示。</li>
+</ol>
+<p><img alt="相对时间图表中丢失的图表" height="600" src="/docs/resources/foundry/time-series/sensor-object-quiver-relative-time-no-plot.png" style="aspect-ratio:1914 / 1392" width="825" node="[object Object]"></p>
+<ol start="7">
+<li>选择<strong>相对时间序列</strong>卡片的图表配置。在<strong>相对时间选项</strong>下，开启<strong>使用源范围</strong>设置。确保<strong>相对于</strong>下拉菜单设置为<strong>开始</strong>。</li>
+</ol>
+<p><img alt="包含两个图表的偏移相对时间序列卡片" height="600" src="/docs/resources/foundry/time-series/sensor-object-quiver-completed-relative-time-series-card.png" style="aspect-ratio:3052 / 1728" width="1059.7222222222222" node="[object Object]"></p>
+<h4 id="user-content-add-charts-to-new-dashboard"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#add-charts-to-new-dashboard"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>将图表添加到新仪表板</h4>
+<ol>
+<li>从左侧的<strong>仪表板</strong>选项卡中选择<strong>+ 创建新仪表板</strong>。</li>
+<li>通过从各个卡片中选择<strong>添加到新仪表板</strong>来添加时间序列图表。</li>
+</ol>
+<p><img alt="添加到仪表板" height="204" src="/docs/resources/foundry/time-series/sensor-object-quiver-add-to-dashboard.png" style="aspect-ratio:1412 / 204" width="1412" node="[object Object]"></p>
+<h3 id="user-content-2-configure-the-new-dashboard" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#2-configure-the-new-dashboard"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>2. 配置新仪表板</h3>
+<p>通过选择<strong>查看仪表板</strong>导航至该仪表板，或者从屏幕左侧的<strong>仪表板</strong>选项卡访问它。</p>
+<p><img alt="导航至 Quiver 仪表板" height="600" src="/docs/resources/foundry/time-series/sensor-object-quiver-dashboard-icon.png" style="aspect-ratio:2420 / 1400" width="1037.142857142857" node="[object Object]"></p>
+<h4 id="user-content-resize-and-name-the-cards"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#resize-and-name-the-cards"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>调整大小并命名卡片</h4>
+<p>确保对象选择卡片位于仪表板顶部，并将小组件重命名为有用的名称。例如，“选择一个对象”和“飞行传感器滚动 10 分钟聚合”。</p>
+<h4 id="user-content-add-a-string-input-to-the-dashboard"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#add-a-string-input-to-the-dashboard"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>向仪表板添加字符串输入</h4>
+<p>选择仪表板中的<strong>设置</strong>齿轮图标以打开仪表板配置面板，并添加以下字符串输入：</p>
+<ul>
+<li><code>飞行 ID 1</code> 的输入。</li>
+<li>
+
+`Flight Id 2` 的输入。
+`Sensor name` 的输入。
+
+<p><img alt="向仪表板添加字符串输入" height="600" src="/docs/resources/foundry/time-series/sensor-object-quiver-text-inputs.png" style="aspect-ratio:2440 / 1624" width="901.4778325123152" node="[object Object]"></p>
+<h4 id="user-content-publish-dashboard"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#publish-dashboard"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>发布仪表板</h4>
+<p>重命名仪表板，以便在 Workshop 模块中能够轻松搜索到它。在本例中，仪表板命名为 <code>[示例] 传感器对象时间序列数据 | 飞行传感器读数对比</code>。</p>
+<p><img alt="发布 Quiver 仪表板" height="600" src="/docs/resources/foundry/time-series/sensor-object-quiver-publish.png" style="aspect-ratio:2444 / 1342" width="1092.6974664679583" node="[object Object]"></p>
+<p>有关如何创建和自定义 Quiver 仪表板的更多信息，请查阅《Quiver 仪表板文档》。</p>
+<h2 id="user-content-part-iv-embed-your-dashboard-in-workshop" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#part-iv-embed-your-dashboard-in-workshop"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>第四部分：在 Workshop 中嵌入仪表板</h2>
+<ol>
+<li>返回到本指南前面创建的 Workshop 模块。</li>
+<li>选择添加 Quiver 仪表板小部件，然后选中新创建的仪表板。</li>
+</ol>
+<p>如有需要，你可以导航回仪表板并通过编辑 Workshop 模块、选择 Quiver 仪表板小部件的配置以及选择查看 Quiver 仪表板来启动分析。然后选择<strong>编辑</strong>以查看底层分析。</p>
+<p><img alt="在 Workshop 模块中嵌入仪表板" height="385" src="/docs/resources/foundry/time-series/sensor-object-workshop-embed-dashboard.png" style="aspect-ratio:354 / 385" width="354" node="[object Object]"></p>
+<p>有关如何在 Workshop 中自定义 Quiver 仪表板的更多信息，请查阅《我们的文档》。</p>
+</article>
+</body>
+</html>

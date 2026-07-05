@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Optimize indexes and schema design</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-optimize-indexes-and-schema-design" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#optimize-indexes-and-schema-design"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>优化索引与架构设计</h1>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>本页文档重点介绍如何通过调整索引来优化 Postgres 和 ElasticSearch 的性能。我们通常建议在 Ontology 功能的基础上构建 Slate 应用，并使用<a href="/docs/foundry/slate/concepts-object-sets/">对象集</a>和<a href="/docs/foundry/slate/applications-writeback/#write-back-data-with-actions">操作</a>等功能进行数据读写。</p></div>
+<p>高性能且易于维护的应用离不开合理拆分的数据集和正确的索引。</p>
+<p>Postgres 的架构设计在绝大多数方面与 Slate 毫无关联。这些概念在其他资料中已有详尽说明，数据库设计的通用最佳实践不在本文讨论范围内。如果你对不同架构模式或如何选择索引列尚不熟悉，搜索引擎会迅速带你深入这个话题。</p>
+<p>相反，我们将重点探讨一些与 Slate 和 Foundry 联系更为紧密的最佳实践。</p>
+<h4 id="user-content-push-work-as-far-upstream-as-possible"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#push-work-as-far-upstream-as-possible"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>尽可能将计算逻辑向上游推移</h4>
+<p>在应用开发流程的每个阶段，都要问自己一个问题：“这项工作放在哪里处理最合适？”并且始终倾向于将其尽量向上游推移。举例来说，如果你正在编写复杂的 JavaScript 函数来聚合数据或提取指标，不妨问问：“我能在查询中完成这个操作吗？”</p>
+<p>如果每次加载页面时都要在查询中执行相同的操作，例如使用 <code>SUM()</code> 计算年度总计，或使用 <code>DISTINCT()</code> 生成列表，这时你应该思考：“我能否在派生数据集中处理这些逻辑？”</p>
+<p>在 Foundry 中，相比于在查询或用户浏览器中执行的操作，分布式存储和计算的成本更低，因此请尽可能进行预计算。</p>
+<h4 id="user-content-postgate-postgres"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#postgate-postgres"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Postgate (Postgres)</h4>
+<p>Postgate 封装了 Postgres 或 RDS，以便通过 PostgreSQL 查询对 Foundry 数据集进行简单的只读访问。请注意，应用查询的局限性通常取决于关系型数据库（而非平台其余部分使用的 Spark/HDFS）的特性，尤其是 Postgres 本身的特性。</p>
+<p>在编写数据检索查询时，请使用 EXPLAIN ANALYZE 来分析查询性能并找出瓶颈。你可以在这篇《Thoughtbot 博文 ↗》中详细了解 Postgres 如何解析查询以及如何解读 EXPLAIN ANALYZE 的结果。如需了解更多信息，也可以阅读我们关于《优化 Slate 的 Postgres 查询》的详细说明。</p>
+<p>你可以使用<a href="/docs/foundry/slate/concepts-queries/#query-partials">查询片段</a>构建模块化查询，从而避免代码重复并更好地封装共享逻辑。我们建议结合使用查询片段和函数，在保持查询精简与确保其具备足够的可读性之间取得平衡。</p>
+<h4 id="user-content-phonograph-elasticsearch"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#phonograph-elasticsearch"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Phonograph (ElasticSearch)</h4>
+<p>Phonograph 提供了一个读写数据存储，支持使用 ElasticSearch 风格的语法进行查询和聚合，同时还允许对 Foundry 数据集执行 CRUD 操作。有关 Phonograph 实践的更多内容，请参阅《从 Slate 向 Foundry 写回数据》章节。</p>
+</article>
+</body>
+</html>

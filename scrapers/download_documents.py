@@ -100,6 +100,18 @@ def build_node_script(slug, url, method, ext_path=None):
                 "--disable-blink-features=AutomationControlled",
             ],
         }
+    elif method == "buster":
+        # Load Buster reCAPTCHA solver extension
+        buster_path = str(ROOT / "extensions" / "buster")
+        launch_opts = {
+            "headless": False,
+            "args": [
+                "--disable-extensions-except=" + buster_path,
+                "--load-extension=" + buster_path,
+                "--disable-blink-features=AutomationControlled",
+                "--no-first-run",
+            ],
+        }
     else:
         launch_opts = {
             "headless": False,
@@ -178,7 +190,7 @@ def build_node_script(slug, url, method, ext_path=None):
   
   const method = '__METHOD__';
   
-  if (method === 'extension' || method === 'load-ext') {
+  if (method === 'extension' || method === 'load-ext' || method === 'buster') {
     console.log('WAITING_FOR_CAPTCHA: Extension should solve reCAPTCHA...');
     let captchaSolved = false;
     for (let i = 0; i < 60; i++) {
@@ -317,7 +329,7 @@ def main():
     parser = argparse.ArgumentParser(description="Download documents from Palantir form pages")
     parser.add_argument("--slug", help="Specific page slug to process")
     parser.add_argument("--all", action="store_true", help="Process all detected form pages")
-    parser.add_argument("--method", choices=["manual", "extension", "load-ext"], default="manual",
+    parser.add_argument("--method", choices=["manual", "extension", "load-ext", "buster"], default="buster",
                         help="CAPTCHA solving method: manual (default), extension (Chrome with plugins), load-ext (load specific extension)")
     parser.add_argument("--ext-path", help="Path to extension directory (for load-ext method)")
     args = parser.parse_args()

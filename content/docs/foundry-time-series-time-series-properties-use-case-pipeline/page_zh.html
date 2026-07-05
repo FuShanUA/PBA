@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Create time series data with Pipeline Builder</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-create-time-series-data-with-pipeline-builder" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#create-time-series-data-with-pipeline-builder"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>使用 Pipeline Builder 创建时间序列数据</h1>
+<p>按照本指南创建的数据管道将生成时序数据，该数据支持时序同步，以便与 <code>Carrier</code>、<code>Route</code> 和 <code>Airport</code> 对象类型上的时序属性相关联，从而创建新的时序对象。由于我们需要对非时序数据进行计算来生成时序数据，因此该数据管道的设置比从时序数据集到时序属性的标准映射更为复杂。请查阅《Pipeline Builder 文档》以获取有关常规数据管道指导的信息。</p>
+<p>我们正在使用的航班数据集包含以下列，我们将用它们来创建时序属性：</p>
+<ul>
+<li><strong>flight_id：</strong> <code>string</code> | 用于标识航班及数据集中每一行的唯一字符串。</li>
+<li><strong>date：</strong> <code>date</code> | 航班执行的日期。</li>
+<li><strong>destination_airport_id：</strong> <code>string</code> | 用于标识目的地机场的字符串。</li>
+<li><strong>airline_id：</strong> <code>string</code> | 航空公司的 ID。</li>
+<li><strong>origin_airport_id：</strong> <code>string</code> | 出发地机场的 ID。</li>
+<li><strong>dep_delay：</strong> <code>integer</code> | 出发延误的分钟数。</li>
+<li><strong>arr_delay：</strong> <code>integer</code> | 到达延误的分钟数。</li>
+<li><strong>route_id：</strong> <code>string</code>| 用于标识路线的唯一字符串。</li>
+</ul>
+<p>本指南末尾的数据管道将如下所示：</p>
+<p><img alt="Overview of final time series pipeline" height="600" src="/docs/resources/foundry/time-series/time-series-properties-pipeline-final-output.png" style="aspect-ratio:3002 / 1110" width="1622.7027027027027" node="[object Object]"></p>
+<h2 id="user-content-part-i-generate-time-series-data" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#part-i-generate-time-series-data"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>第一部分：生成时序数据</h2>
+<p>使用同样用于支持 <code>Flights</code> 对象类型的航班数据集，我们可以执行一些聚合转换，并根据航班指标生成时序数据。请注意，如果您的时序数据是通过历史数据库或边缘传感器接入 Foundry 的，则无需执行此步骤。您可以直接进入下一环节生成时序同步。</p>
+<h3 id="user-content-1-apply-transforms-to-carrier-and-route-object-types" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#1-apply-transforms-to-carrier-and-route-object-types"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>1. 对 <code>Carrier</code> 和 <code>Route</code> 对象类型应用转换</h3>
+<p>根据航班数据集，按照以下步骤应用转换。您需要对 <code>Carrier</code> 和 <code>Route</code> 对象类型分别执行此操作。</p>
+<h4 id="user-content-aggregate-the-data"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#aggregate-the-data"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>聚合数据</h4>
+<p>使用聚合转换按日期和对象 ID 进行分组（在本例中，对 <code>Route</code> 对象类型使用 <code>route_id</code>；您还需要对 <code>Carrier</code> 对象类型使用 <code>airline_id</code> 单独执行相同操作），并计算平均到达延误、平均出发延误和每日航班数量。</p>
+<p><img alt="The aggregate transform board in Pipeline Builder." height="600" src="/docs/resources/foundry/time-series/time-series-properties-pipeline-aggregate.png" style="aspect-ratio:980 / 668" width="880.2395209580839" node="[object Object]"></p>
+<p>聚合后，数据集应预览为以下架构：</p>
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>route_id</th><th>date</th><th>daily_avg_dep_delay</th><th>daily_avg_arr_delay</th><th>daily_count_of_flights</th></tr></thead><tbody><tr><td>ATL -&gt; SFO</td><td>2023-06-12</td><td>33.4545454545450000</td><td>40.0000000000000000</td><td>11</td></tr><tr><td>ATL -&gt; FLL</td><td>2023-08-24</td><td>29.7272727272720000</td><td>19.4090909090909100</td><td>22</td></tr><tr><td>ATL -&gt; TVC</td><td>2023-07-05</td><td>-8.0000000000000000</td><td>-8.0000000000000000</td><td>1</td></tr></tbody></table></div>
+<h4 id="user-content-cast-to-a-new-data-type"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#cast-to-a-new-data-type"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>转换为新的数据类型</h4>
+<p>要将这些新数据用作时序数据，我们必须创建一个时间戳类型的列。为此，请使用类型转换将 <code>date</code> 列转换为时间戳类型的列。我们接下来还将应用逆透视转换，以将 <code>daily_avg_dep_delay</code>、<code>daily_avg_arr_delay</code> 和 <code>daily_count_of_flights</code> 的值合并到一列中。由于此函数要求所有值必须为相同的数据类型，我们还必须将每日航班数量指标转换为双精度浮点型（即与平均延误指标相同的数据类型）。</p>
+<p><img alt="The cast board in Pipeline Builder, showing a cast to timestamp and a cast to double" height="79" src="/docs/resources/foundry/time-series/time-series-properties-cast-to-new-datatype.png" style="aspect-ratio:979 / 79" width="979" node="[object Object]"></p>
+<h4 id="user-content-unpivot-to-merge-time-series-values"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#unpivot-to-merge-time-series-values"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>逆透视以合并时序值</h4>
+<p>由于此数据集在不同列中包含时序数据，我们必须使用逆透视转换将其合并为一个值列，以便数据能够符合时序同步所需的架构，如下所示：</p>
+<ul>
+<li><strong>series ID：</strong> <code>string</code> | 由 TSP 引用的一组时间戳和值对的序列 ID，必须与 TSP 的序列 ID 匹配。</li>
+<li><strong>timestamp：</strong> <code>timestamp</code> 或 <code>long</code> | 测量该数值的时间。</li>
+<li>
+
+<strong>value:</strong> <code>integer</code>、<code>float</code>、<code>double</code>、<code>string</code> | 测量点处该量的数值。若为 string 类型，则表示分类时间序列；每个分类时间序列最多可有 10,000 种唯一变体。</li>
+</ul>
+<p>下方的逆透视转换将 <code>daily_avg_dep_delay</code>、<code>daily_avg_arr_delay</code> 和 <code>daily_count_of_flights</code> 的值放入同一个 <code>series_value</code> 列中。这些原始列名将输出到新的 <code>series_name</code> 列中，供 <code>series_id</code> 使用。</p>
+<p><img alt="Pipeline Builder 中的逆透视转换看板" height="450" src="/docs/resources/foundry/time-series/time-series-properties-pipeline-unpivot.png" style="aspect-ratio:976 / 450" width="976" node="[object Object]"></p>
+<p>数据集架构现在应如下所示：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>series_name</th><th>series_value</th><th>route_id</th><th>date</th></tr></thead><tbody><tr><td>daily_avg_dep_delay</td><td>33.4545454545450000</td><td>ATL -&gt; SFO</td><td>2023-06-12T00:00:00.000Z</td></tr><tr><td>daily_avg_arr_delay</td><td>40.0000000000000000</td><td>ATL -&gt; SFO</td><td>2023-06-12T00:00:00.000Z</td></tr><tr><td>daily_count_of_flights</td><td>11.0000000000000000</td><td>ATL -&gt; SFO</td><td>2023-06-12T00:00:00.000Z</td></tr></tbody></table></div>
+<h4 id="user-content-concatenate-string-values-to-create-the-series-id"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#concatenate-string-values-to-create-the-series-id"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>拼接字符串值以创建序列 ID</h4>
+<p>现在，我们可以使用字符串拼接转换来创建序列 ID（关联时间序列值的标识符）。通过此转换，将 <code>series_name</code>（每个传感器代表的内容）与各对象的主键进行组合。</p>
+<p><img alt="Pipeline Builder 中的字符串拼接转换看板" height="342" src="/docs/resources/foundry/time-series/time-series-properties-pipeline-series-id.png" style="aspect-ratio:974 / 342" width="974" node="[object Object]"></p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>series_id</th><th>series_name</th><th>series_value</th><th>route_id</th><th>date</th></tr></thead><tbody><tr><td>CMH -&gt; IAH_daily_avg_dep_delay</td><td>daily_avg_dep_delay</td><td>33.4545454545450000</td><td>ATL -&gt; SFO</td><td>2023-06-12T00:00:00.000Z</td></tr><tr><td>CMH -&gt; IAH_daily_avg_arr_delay</td><td>daily_avg_arr_delay</td><td>40.0000000000000000</td><td>ATL -&gt; SFO</td><td>2023-06-12T00:00:00.000Z</td></tr><tr><td>CMH -&gt; IAH_daily_count_of_flights</td><td>daily_count_of_flights</td><td>11.0000000000000000</td><td>ATL -&gt; SFO</td><td>2023-06-12T00:00:00.000Z</td></tr></tbody></table></div>
+<h4 id="user-content-select-necessary-columns"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#select-necessary-columns"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>选择必要的列</h4>
+<p>通过选择列转换，我们仅保留时间序列同步所需的列：<code>series_id</code>、<code>series_value</code> 和 <code>date</code>。flights 支撑数据集将保存所有序列的时间序列值，而不论其衡量的是什么指标。对 <code>airline_carrier_id</code> 列（来自 flights 数据集）重复此操作。</p>
+<p><img alt="Pipeline Builder 中的选择列转换看板" height="78" src="/docs/resources/foundry/time-series/time-series-properties-pipeline-select-columns.png" style="aspect-ratio:971 / 78" width="971" node="[object Object]"></p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>series_id</th><th>series_value</th><th>date</th></tr></thead><tbody><tr><td>CMH -&gt; IAH_daily_avg_dep_delay</td><td>33.4545454545450000</td><td>2023-06-12T00:00:00.000Z</td></tr><tr><td>CMH -&gt; IAH_daily_avg_arr_delay</td><td>40.0000000000000000</td><td>2023-06-12T00:00:00.000Z</td></tr><tr><td>CMH -&gt; IAH_daily_count_of_flights</td><td>11.0000000000000000</td><td>2023-06-12T00:00:00.000Z</td></tr></tbody></table></div>
+<h3 id="user-content-2-add-a-transform-to-aggregate-and-generate-data-for-origin-and-destination-airports" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#2-add-a-transform-to-aggregate-and-generate-data-for-origin-and-destination-airports"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>2. 添加转换以聚合并生成出发地和目的地机场数据</h3>
+<p>现在，你需要对出发地机场和目的地机场分别重复执行聚合和类型转换步骤。</p>
+<h4 id="user-content-aggregate-for-the-number-of-flights-per-day-per-route"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#aggregate-for-the-number-of-flights-per-day-per-route"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>按航线聚合每日航班数量</h4>
+<p>使用聚合转换，按 <code>date</code> 和 <code>origin_airport_id</code> 分组，然后计算平均到达和起飞时间。每个分组内的总行数即对应每条航线每天的航班数量。</p>
+<p><img alt="Pipeline Builder 中的聚合转换看板，用于聚合每日航班数量" height="556" src="/docs/resources/foundry/time-series/time-series-properties-pipeline-aggregate-origin-airport.png" style="aspect-ratio:743 / 556" width="743" node="[object Object]"></p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>date</th><th>origin_airport_id</th><th>daily_avg_dep_delay</th><th>daily_count_of_departing_flights</th></tr></thead><tbody><tr><td>2023-07-02</td><td>10299</td><td>9.34375000000000000</td><td>33</td></tr><tr><td>2023-09-06</td><td>10431</td><td>-2.3333333333333333</td><td>6</td></tr><tr><td>2023-01-12</td><td>10620</td><td>-7.0000000000000000</td><td>2</td></tr></tbody></table></div>
+<h4 id="user-content-cast-to-timestamp"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#cast-to-timestamp"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>转换为时间戳</h4>
+<p>要将此新数据作为时间序列使用，必须创建一个时间戳列。为此，使用类型转换将 <code>date</code> 列转换为 timestamp 类型列。</p>
+<p><img alt="Pipeline Builder 中的类型转换看板，用于将数据转换为 timestamp 类型" height="220" src="/docs/resources/foundry/time-series/time-series-properties-cast-to-timestamp.png" style="aspect-ratio:746 / 220" width="746" node="[object Object]"></p>
+<h3 id="user-content-3-create-a-join-to-combine-destination-and-origin-airports" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#3-create-a-join-to-combine-destination-and-origin-airports"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>3. 创建连接以合并目的地与出发地机场</h3>
+<p>使用连接看板创建一个左连接，将目的地机场与出发地机场的数据合并，从而生成完整的机场时间序列属性。请确保为你的连接设置以下配置：</p>
+<ul>
+<li>将日期和 <code>origin_airport_id</code> 与 <code>dest_airport_id</code> 进行匹配。</li>
+<li>自动选择左侧数据集的列。</li>
+<li>作为右侧列，选择代表每日平均延误和每日航班数量的那两列。</li>
+</ul>
+<p><img alt="Pipeline Builder 中的连接看板，配置为为机场数据创建左连接。" height="600" src="/docs/resources/foundry/time-series/time-series-properties-pipeline-join.png" style="aspect-ratio:1087 / 796" width="819.3467336683418" node="[object Object]"></p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>date</th><th>origin_airport_id</th><th>daily_avg_dep_delay</th><th>daily_count_of_departing_flights</th><th>daily_avg_arr_delay</th><th>daily_count_of_arriving_flights</th></tr></thead><tbody><tr><td>2023-07-02</td><td>10299</td><td>9.34375000000000000</td><td>33</td><td>18.5294117647058840</td><td>34</td></tr><tr><td>2023-09-06</td><td>10431</td><td>-2.3333333333333333</td><td>6</td><td>-8.0000000000000000</td><td>6</td></tr><tr><td>2023-01-12</td><td>10620</td><td>-7.0000000000000000</td><td>2</td><td>56.5000000000000000</td><td>2</td></tr></tbody></table></div>
+<h3 id="user-content-4-apply-transforms-to-format-data-for-a-time-series-sync" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#4-apply-transforms-to-format-data-for-a-time-series-sync"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>4. 应用转换以格式化时间序列同步数据</h3>
+<h4 id="user-content-rename-column"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#rename-column"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>重命名列</h4>
+<p>既然已经将出发地机场数据与目的地机场数据连接起来，我们就拥有了所有机场的到达和起飞指标。我们不再需要区分出发地和目的地，因此可以使用列重命名转换，将 <code>origin_airport_id</code> 直接更改为 <code>airport_id</code>。</p>
+<p>
+
+<img alt="The rename column transform board in Pipeline Builder" height="374" src="/docs/resources/foundry/time-series/time-series-properties-pipeline-rename-column.png" style="aspect-ratio:1950 / 374" width="1950" node="[object Object]"></p>
+<p>The data should preview as follows with the renamed column:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>date</th><th>airport_id</th><th>daily_avg_dep_delay</th><th>daily_count_of_departing_flights</th><th>daily_avg_arr_delay</th><th>daily_count_of_arriving_flights</th></tr></thead><tbody><tr><td>2023-07-02</td><td>10299</td><td>9.34375000000000000</td><td>33</td><td>18.5294117647058840</td><td>34</td></tr><tr><td>2023-09-06</td><td>10431</td><td>-2.3333333333333333</td><td>6</td><td>-8.0000000000000000</td><td>6</td></tr><tr><td>2023-01-12</td><td>10620</td><td>-7.0000000000000000</td><td>2</td><td>56.5000000000000000</td><td>2</td></tr></tbody></table></div>
+<h4 id="user-content-cast-to-double"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#cast-to-double"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Cast to double</h4>
+<p>We will soon apply an unpivot transform. This function requires that all values be of the same data type, so we must use the cast transform board again to cast our daily count of flights metrics to a double data type so they are the same type as the average delay metrics.</p>
+<h4 id="user-content-add-flight-numbers"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#add-flight-numbers"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Add flight numbers</h4>
+<p>To calculate the full daily flight count, we will use the add numbers transform to add together the daily count of arriving flights and the daily count of departing flights, as shown below.</p>
+<p><img alt="The cast and add numbers transform boards in Pipeline Builder" height="600" src="/docs/resources/foundry/time-series/time-series-properties-pipeline-cast-tsps.png" style="aspect-ratio:1938 / 1396" width="832.9512893982808" node="[object Object]"></p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>daily_count_of_flights</th><th>date</th><th>airport_id</th><th>daily_avg_dep_delay</th><th>daily_count_of_departing_flights</th><th>daily_avg_arr_delay</th><th>daily_count_of_arriving_flights</th></tr></thead><tbody><tr><td>77</td><td>2023-07-02</td><td>10299</td><td>9.34375000000000000</td><td>33</td><td>18.5294117647058840</td><td>34</td></tr><tr><td>12</td><td>2023-09-06</td><td>10431</td><td>-2.3333333333333333</td><td>6</td><td>-8.0000000000000000</td><td>6</td></tr><tr><td>4</td><td>2023-01-12</td><td>10620</td><td>-7.0000000000000000</td><td>2</td><td>56.5000000000000000</td><td>2</td></tr></tbody></table></div>
+<h4 id="user-content-unpivot-to-merge-series-values"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#unpivot-to-merge-series-values"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Unpivot to merge series values</h4>
+<p>Since this dataset contains time series data in different columns, we must use an unpivot transform to merge it into one value column so the data can match the required schema for a time series sync, as shown below:</p>
+<ul>
+<li><strong>series ID:</strong> <code>string</code> | The series ID for the set of timestamp and value pairs referred to by a TSP, which must match the TSP's series ID.</li>
+<li><strong>timestamp:</strong> <code>timestamp</code> or <code>long</code> | The time at which the quantity is measured.</li>
+<li><strong>value:</strong> <code>integer</code>, <code>float</code>, <code>double</code>, <code>string</code> | The value of the quantity at the point that it is measured. A string type indicates a categorical time series; each categorical time series can have, at most, 10,000 unique variants.</li>
+</ul>
+<p>The unpivot transform shown below places values for <code>daily_avg_dep_delay</code>, <code>daily_avg_arr_delay</code>, and <code>daily_count_of_flights</code> into the same <code>series_value</code> column. Those original column names are outputs to the new <code>series_name</code> column that will be used in the series ID.</p>
+<p><img alt="The unpivot transform board in Pipeline Builder, configured to create a series_name column output" height="600" src="/docs/resources/foundry/time-series/time-series-properties-pipeline-unpivot-merge-series.png" style="aspect-ratio:1952 / 1062" width="1102.8248587570622" node="[object Object]"></p>
+<p>The data should preview with the following schema:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>series_name</th><th>series_value</th><th>date</th><th>airport_id</th></tr></thead><tbody><tr><td>daily_count_of_flights</td><td>77</td><td>2023-07-02T00:00:00.000Z</td><td>10299</td></tr><tr><td>daily_avg_dep_delay</td><td>9.34375000000000000</td><td>2023-07-02T00:00:00.000Z</td><td>10299</td></tr><tr><td>daily_avg_arr_delay</td><td>18.5294117647058840</td><td>2023-07-02T00:00:00.000Z</td><td>10299</td></tr></tbody></table></div>
+<h4 id="user-content-concatenate-string-values-to-create-the-series-id-1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#concatenate-string-values-to-create-the-series-id-1"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Concatenate string values to create the series ID</h4>
+<p>Now, we can use the concatenate strings transform to create the series ID (the identifier for the associated time series values). Use the transform to combine the <code>series_name</code> (what each sensor represents) with the primary key of the <code>Airport</code> object (<code>airport_id</code>).</p>
+<p><img alt="The concatenate strings board in Pipeline Builder, configured to combine the series_name with the airport_id" height="600" src="/docs/resources/foundry/time-series/time-series-properties-pipeline-create-series-id.png" style="aspect-ratio:1954 / 676" width="1734.319526627219" node="[object Object]"></p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>series_id</th><th>series_name</th><th>series_value</th><th>date</th><th>airport_id</th></tr></thead><tbody><tr><td>12099_daily_count_of_flights</td><td>daily_count_of_flights</td><td>77</td><td>2023-07-02T00:00:00.000Z</td><td>10299</td></tr><tr><td>12099_daily_avg_dep_delay</td><td>daily_avg_dep_delay</td><td>9.34375000000000000</td><td>2023-07-02T00:00:00.000Z</td><td>10299</td></tr><tr><td>12099_daily_avg_arr_delay</td><td>daily_avg_arr_delay</td><td>18.5294117647058840</td><td>2023-07-02T00:00:00.000Z</td><td>10299</td></tr></tbody></table></div>
+<h4 id="user-content-select-necessary-columns-1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#select-necessary-columns-1"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Select necessary columns</h4>
+<p>Using the select columns transform, we will only keep the columns that are required for the time series sync: <code>series_id</code>, <code>series_value</code>, and <code>date</code>. The flights backing dataset will hold time series values for all series, regardless of what they are measuring.</p>
+<p><img alt="The select columns board in Pipeline Builder" height="600" src="/docs/resources/foundry/time-series/time-series-properties-pipeline-select-sync-column.png" style="aspect-ratio:1942 / 610" width="1910.1639344262294" node="[object Object]"></p>
+<p>The resulting dataset should look as follows:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>series_id</th><th>series_value</th><th>date</th></tr></thead><tbody><tr><td>12099_daily_count_of_flights</td><td>77</td><td>2023-07-02T00:00:00.000Z</td></tr><tr><td>12099_daily_avg_dep_delay</td><td>9.34375000000000000</td><td>2023-07-02T00:00:00.000Z</td></tr><tr><td>12099_daily_avg_arr_delay</td><td>18.5294117647058840</td><td>2023-07-02T00:00:00.000Z</td></tr></tbody></table></div>
+<h3 id="user-content-5-union-the-time-series-properties-into-a-backing-dataset" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#5-union-the-time-series-properties-into-a-backing-dataset"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>5. Union the time series properties into a backing dataset</h3>
+<p>Create a union with the type <code>Union by name</code>, using the transforms representing the <code>Carrier</code>, <code>Route</code>, and <code>Airport</code> time series properties.</p>
+<p><img alt="Three time series properties nodes are selected for unioning from the Pipeline Builder graph" height="418" src="/docs/resources/foundry/time-series/time-series-properties-pipeline-union-graph.png" style="aspect-ratio:764 / 418" width="764" node="[object Object]"></p>
+<p><img alt="The union board in Pipeline Builder, configured to union the three TSP property sets by name" height="331" src="/docs/resources/foundry/time-series/time-series-properties-pipeline-union-by-name.png" style="aspect-ratio:579 / 331" width="579" node="[object Object]"></p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>series_id</th><th>series_value</th><th>date</th></tr></thead><tbody><tr><td>12099_daily_count_of_flights</td><td>77</td><td>2023-07-02T00:00:00.000Z</td></tr><tr><td>12099_daily_avg_dep_delay</td><td>9.34375000000000000</td><td>2023-07-02T00:00:00.000Z</td></tr><tr><td>12099_daily_avg_arr_delay</td><td>18.5294117647058840</td><td>2023-07-02T00:00:00.000Z</td></tr><tr><td>CMH -&gt; IAH_daily_avg_dep_delay</td><td>-8.0000000000000000</td><td>2023-03-21T00:00:00.000Z</td></tr><tr><td>20304_daily_avg_arr_delay</td><td>9.12500000000000000</td><td>2023-08-13T00:00:00.000Z</td></tr></tbody></table></div>
+<h2 id="user-content-part-ii-create-the-time-series-sync" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#part-ii-create-the-time-series-sync"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Part II: Create the time series sync</h2>
+<h3 id="user-content-1-remove-null-values" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#1-remove-null-values"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>1. Remove null values</h3>
+<p>Apply a filter transform on the resulting dataset to remove any <code>null</code> values.</p>
+<p>
+
+<img alt="Pipeline Builder 中的过滤器转换面板，配置为移除空值。" height="276" src="/docs/resources/foundry/time-series/time-series-properties-pipeline-remove-null-values.png" style="aspect-ratio:976 / 276" width="976" node="[object Object]"></p>
+<h3 id="user-content-2-configure-the-time-series-sync" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#2-configure-the-time-series-sync"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>2. 配置时序同步</h3>
+<p>现在，在屏幕右侧的管道输出部分选择 <strong>Add</strong>，创建一个<a href="/docs/foundry/time-series/time-series-concepts-glossary/#time-series-sync">时序同步</a>。接着，选择 <strong>Time series sync</strong>。为新建的时序同步填写必要的数据，请注意以下几点：</p>
+<ul>
+<li>标题“[示例] 时序同步 | 事件”将对应于你 Palantir 文件系统文件夹中生成的资源。</li>
+<li>为 <a href="/docs/foundry/time-series/time-series-concepts-glossary/#series-id"><strong>Series ID</strong></a> 字段选择 <code>series_id</code> 列。</li>
+<li>在 <strong>Time</strong> 字段中添加已创建的 <code>date</code> 时间戳列。</li>
+<li>将 <code>series_value</code> 添加到 <strong>Value</strong> 字段中。</li>
+</ul>
+<p>现在，<a href="/docs/foundry/pipeline-builder/outputs-deliver-pipeline/#save">保存并构建</a>管道。输出内容将在管道所在的同一文件夹中生成。</p>
+<h3 id="user-content-3-use-a-time-series-sync-to-add-properties-to-object-types" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#3-use-a-time-series-sync-to-add-properties-to-object-types"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>3. 使用时序同步向对象类型添加属性</h3>
+<p>创建带有时间序列同步的管道后，你就可以使用该同步向 <code>Route</code>、<code>Carrier</code> 和 <code>Airport</code> 对象类型添加时间序列属性了。如需更多指导，请参阅我们关于<a href="/docs/foundry/time-series/time-series-properties-use-case-ontology/">向对象类型添加时间序列属性</a>的文档。</p>
+</article>
+</body>
+</html>

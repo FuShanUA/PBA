@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Use Actions in Workshop</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-use-actions-in-workshop" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#use-actions-in-workshop"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>在 Workshop 中使用操作</h1>
+<p>Foundry 中的操作允许用户根据已定义的规则集（称为操作类型）来编辑、创建、删除和链接对象数据。例如，某个操作可能允许用户执行以下一项或多项操作：</p>
+<ul>
+<li>创建一个新的 <code>Flight</code> 对象，并填写其 <code>Flight Number</code>、<code>Time of Departure</code>、<code>Origin</code> 和 <code>Destination</code> 属性。</li>
+<li>修改现有的 <code>Flight</code> 对象，以更改 <code>Destination</code> 属性。</li>
+<li>将特定的 <code>Flight</code> 对象与特定的 <code>Passenger</code> 对象进行链接。</li>
+<li>删除误创建的 <code>Flight</code> 对象。</li>
+</ul>
+<p>通过为复杂的对象数据编辑创建易于使用的封装，操作使应用创建者能够使用有意义且安全的构建块来实现向对象数据的用户回写。随后，这些构建块可以：</p>
+<ul>
+<li>在多个应用程序（如 Workshop 或对象视图）中使用，以支持业务流程工作流。
+<ul>
+<li>系统会根据操作定义自动生成表单组件，因此向对象数据的回写及其关联的用户界面无需单独定义。Workshop 和操作的核心交互详见下文。</li>
+</ul>
+</li>
+<li>进行细粒度的权限设置，以针对不同用户和条件支持不同的回写权限。
+<ul>
+<li>例如，可能允许分析师启动新的调查，但关闭调查的权限可能仅限于经理用户组的成员。</li>
+</ul>
+</li>
+</ul>
+<h2 id="user-content-define-an-action-in-the-ontology-manager" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#define-an-action-in-the-ontology-manager"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>在 Ontology Manager 中定义操作</h2>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>要创建、配置或编辑操作，Palantir Foundry 用户必须属于 <code>actions-admins</code> 组。</p></div>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>有关定义操作的完整详细信息，请参阅《操作文档》。下文提供的文档简要说明了一个侧重于在 Workshop 中使用操作的操作配置示例。</p></div>
+<p>操作管理员可以在 Ontology Manager 中创建、配置和编辑操作类型。要进行访问，请从 Apps 侧边栏中选择 <strong>Ontology manager</strong>。<strong>Action types</strong> 选项卡（如以下屏幕截图所示）提供了现有操作类型的列表，您可以从中选择进行查看和编辑。<strong>New action type</strong> 按钮允许您从头开始定义新的操作类型。此外，您也可以直接从其应基于的对象类型创建操作类型。导航至该对象类型，并在操作类型框中选择 <strong>Create new</strong>。</p>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>请注意，此示例仅用于说明，您可能无法完全按原文完成每一个步骤。由于您的 Foundry Ontology 是根据您的需求和数据定制的，您可能无法访问完成本教程所需的 Ontology 对象。</p></div>
+<p>选择对象类型上的 <strong>Create new</strong> 按钮开始。在本示例中，我们将定义一个“修改航班目的地”操作，允许用户修改现有 Flight 对象的 <code>Destination</code> 属性。</p>
+<p>创建向导将引导您完成引导新操作类型的最重要步骤。输入 <strong>Display name</strong>，并在 <strong>Change object(s)</strong> 选项下选择 <strong>Modify</strong> 来配置您的操作类型。从对象下拉菜单中，选择您先前创建的 <code>Flight</code> 对象，然后选择此操作类型应修改的 <code>Comment</code> 和 <code>Destination</code> 属性。</p>
+<p><img alt="action_wizard" height="600" src="/docs/resources/foundry/workshop/action_wizard.png" style="aspect-ratio:3024 / 1670" width="1086.4670658682635" node="[object Object]"></p>
+<p>操作类型定义的第一个选项卡名为 <strong>Overview</strong>，允许您定义 <strong>API Name</strong>（唯一 ID）、面向用户的 <strong>Display Name</strong>、面向用户的 <strong>Description</strong> 以及操作的 <strong>Status</strong>。其中某些字段已根据上一步骤自动填充。请使用如下所示的值填充缺失的字段。API 名称在保存后<strong>无法编辑</strong>，因此在选择 API 名称时务必谨慎。</p>
+<p><img alt="action_type" height="600" src="/docs/resources/foundry/workshop/action_type.png" style="aspect-ratio:3024 / 1666" width="1089.0756302521008" node="[object Object]"></p>
+<p>接下来，选择此操作类型定义的 <strong>Rules</strong> 选项卡。您可以在此配置操作类型的核心：其 <strong>Rules</strong> 或输出/执行。选择对象类型和您希望此操作类型执行的更改类型后，您可以看到配置为修改规则的规则以及添加的属性。如有需要，可从下拉菜单中添加其他属性。</p>
+<p><img alt="action_rules" height="600" src="/docs/resources/foundry/workshop/action_form.png" style="aspect-ratio:3024 / 1670" width="1086.4670658682635" node="[object Object]"></p>
+<p>
+
+<strong>表单</strong>选项卡列出了动作类型的<strong>参数</strong>或输入项。这些参数已由<strong>规则</strong>部分自动添加。</p>
+<p><img alt="action_form" height="600" src="/docs/resources/foundry/workshop/action_form.png" style="aspect-ratio:3024 / 1670" width="1086.4670658682635" node="[object Object]"></p>
+<p>接下来，我们为动作类型配置一些基本的<strong>提交条件</strong>。在此示例中，我们要确认用户为修改后的目的地输入了有效的三字符机场代码（如 <code>EWR</code>）。导航至<strong>安全与提交条件</strong>选项卡，并在<strong>提交条件</strong>部分选择<strong>添加条件</strong>。在本例中，请使用<strong>参数</strong>条件模板，将 <code>Destination</code> 属性与 <code>^[A-Z]{3}$</code> 这样的正则表达式进行比较；这让我们能够确认目的地参数的输入值正好是三个字符。为了让用户了解提交为何可能未通过条件检查，请在侧边栏底部添加一条错误消息。</p>
+<p><img alt="configure_submission_criteria" height="600" src="/docs/resources/foundry/workshop/configure_submission_criteria.png" style="aspect-ratio:3024 / 1668" width="1087.7697841726617" node="[object Object]"></p>
+<p>要测试新的动作类型，请导航回<strong>表单</strong>选项卡，并使用屏幕右侧的表单预览来测试您的动作类型。您可以输入不同的值并选择<strong>提交</strong>按钮。这仅用于测试动作是否可提交，并不会实际提交动作。</p>
+<p><img alt="action_form" height="600" src="/docs/resources/foundry/workshop/action_form.png" style="aspect-ratio:3024 / 1670" width="1086.4670658682635" node="[object Object]"></p>
+<p>您已完成第一个动作类型的配置，需要将其保存到我们的本体中。为此，请选择屏幕右上角的<strong>保存</strong>按钮，查看模态框中出现的修改列表，然后再次选择两次<strong>保存</strong>以确认。</p>
+<p><img alt="save_action" height="600" src="/docs/resources/foundry/workshop/save_action.png" style="aspect-ratio:3024 / 1668" width="1087.7697841726617" node="[object Object]"></p>
+<p>您的第一个动作类型现已保存，我们可以前往 Workshop 构建一个模块，让用户能够执行此动作类型。</p>
+<h2 id="user-content-use-an-action-within-workshop" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#use-an-action-within-workshop"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>在 Workshop 中使用动作</h2>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__success__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><div class="ptcom-design__title__19o1cwu">提示</div><p>以下部分假设您已熟悉构建 Workshop 模块。有关涵盖这些主题的教程，请参阅此页面。</p></div>
+<p>在 Workshop 中，可以通过多种不同的微件（包括按钮组和创建动作面板）向用户展示动作。以下示例从航班收件箱模块开始，描述如何从该 Workshop 模块中通过按钮组触发动作。</p>
+<p><img alt="flight_inbox" height="600" src="/docs/resources/foundry/workshop/flight_inbox.png" style="aspect-ratio:1279 / 843" width="910.3202846975089" node="[object Object]"></p>
+<h3 id="user-content-button-groups" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#button-groups"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>按钮组</h3>
+<p>Workshop 中的按钮组微件允许模块构建者向其模块添加一个或多个按钮。在本示例中，我们将重点介绍如何使用按钮组在 Workshop 中展示动作。</p>
+<h4 id="user-content-configuring-an-action-in-a-button-group"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#configuring-an-action-in-a-button-group"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>在按钮组中配置动作</h4>
+<p>将按钮组添加到您的 Workshop 模块后，单击屏幕上模块内的按钮组，将在屏幕右侧打开微件的配置面板。核心配置选项可在<strong>微件设置</strong>选项卡中找到，分为三个部分——<strong>布局</strong>、<strong>样式</strong>和<strong>按钮</strong>。<strong>布局</strong>和<strong>样式</strong>部分控制高级显示选项，但本示例将重点关注<strong>按钮</strong>部分，模块构建者可在此处配置基本显示选项，并确定选择按钮时如何应用动作。</p>
+<p><img alt="button_group" height="600" src="/docs/resources/foundry/workshop/button_group.png" style="aspect-ratio:349 / 911" width="229.85729967069156" node="[object Object]"></p>
+<p>在上述<strong>按钮</strong>部分中，您可以调整<strong>文本</strong>、<strong>颜色</strong>、<strong>左侧图标</strong>和<strong>右侧图标</strong>选项来控制按钮的显示。举例来说，让我们为打算通过该按钮触发的“修改目的地”动作配置这四个选项。</p>
+<p><img alt="button_config" height="310" src="/docs/resources/foundry/workshop/button_config.png" style="aspect-ratio:320 / 310" width="320" node="[object Object]"></p>
+<p>上述配置将生成一个如下所示的按钮。使用适当的文本、颜色和图标为按钮准确添加标签，有助于用户了解选择该按钮后会发生什么。您可以选择预设颜色（<strong>主要</strong>、<strong>成功</strong>、<strong>警告</strong>、<strong>危险</strong>），或通过十六进制代码等方式指定自定义颜色。</p>
+<p><img alt="modify_destination" height="44" src="/docs/resources/foundry/workshop/modify_destination.png" style="aspect-ratio:172 / 44" width="172" node="[object Object]"></p>
+<p>
+
+按钮完成标签设置后，我们进入<strong>点击时</strong>部分，连接预期操作。具体而言，点击<strong>选择操作...</strong>下拉菜单，筛选并选择“修改目的地”操作。随后会显示以下界面，其中包含我们在上文创建“修改目的地”操作时定义的所有三个操作参数。</p>
+<p><img alt="on_click" height="505" src="/docs/resources/foundry/workshop/on_click.png" style="aspect-ratio:303 / 505" width="303" node="[object Object]"></p>
+<p><strong>参数默认值</strong>允许用户根据需要为操作参数设置默认值。再次提醒，每个参数都对应操作类型定义中的一种输入（如对象列表、对象引用、整数、字符串等）。对于每个参数，用户有两种选择：</p>
+<ul>
+<li><strong>设置与 Workshop 模块中变量相等的默认值</strong>
+<ul>
+<li>为此，我们可以选择<strong>所选航班</strong>参数的“无默认值”选项，将其设置为航班对象表输出的“活动对象”变量。设置完成后，将显示额外选项，可将参数设为<strong>可见</strong>（用户可在操作表单中进一步修改默认值）、<strong>隐藏</strong>（参数在操作表单中对用户完全隐藏）或<strong>禁用</strong>（参数在操作表单中对用户显示为只读）。在本示例中，我们保留默认选项<strong>可见</strong>。</li>
+</ul>
+</li>
+<li><strong>不留默认值</strong>
+<ul>
+<li>无默认值的参数最初会在操作表单中显示为空白字段，其值将由用户输入。</li>
+<li>在本示例中，我们将“修改后的目的地”和“评论”字段留空，不设默认值。</li>
+</ul>
+</li>
+</ul>
+<p><img alt="on_click_2" height="600" src="/docs/resources/foundry/workshop/on_click_2.png" style="aspect-ratio:308 / 627" width="294.7368421052632" node="[object Object]"></p>
+<h4 id="user-content-applying-an-action-from-a-button-group"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#applying-an-action-from-a-button-group"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>从按钮组应用操作</h4>
+<p>在按钮组中配置好操作后，当用户在 Workshop 模块中选择<strong>修改目的地</strong>按钮时，将会看到一个操作表单弹出。字段的默认值基于上述配置；<strong>所选航班</strong>字段会根据模块变量自动填充，而<strong>修改后的目的地</strong>和<strong>评论</strong>字段则为空，等待用户输入。</p>
+<p><img alt="modify flight" height="343" src="/docs/resources/foundry/workshop/modify_flight.png" style="aspect-ratio:491 / 343" width="491" node="[object Object]"></p>
+<p>在上方表单中，操作表单左下角标记了<strong>1 个问题</strong>。将鼠标悬停在<strong>1 个问题</strong>文本上，用户可以看到问题在于<strong>修改后的目的地</strong>字段当前不是有效的三字符机场代码。</p>
+<p><img alt="validation" height="149" src="/docs/resources/foundry/workshop/validation.png" style="aspect-ratio:361 / 149" width="361" node="[object Object]"></p>
+<p>填写完操作表单且所有参数通过校验后，即可提交操作（提交按钮将变为可用状态）。</p>
+<p><img alt="action submit" height="350" src="/docs/resources/foundry/workshop/action_submit.png" style="aspect-ratio:500 / 350" width="500" node="[object Object]"></p>
+<p>点击提交后，用户会在模块顶部看到一个绿色的提示框，表明操作已成功完成，且所选的 <code>Flight</code> 对象已更新，反映了所输入的更改。</p>
+<p><img alt="action complete" height="49" src="/docs/resources/foundry/workshop/action_complete.png" style="aspect-ratio:318 / 49" width="318" node="[object Object]"></p>
+<h3 id="user-content-trigger-actions-from-the-media-uploader-widget" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#trigger-actions-from-the-media-uploader-widget"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>从媒体上传器组件触发操作</h3>
+<p>用户通过媒体上传器组件上传文件时，也可以触发操作。这对于依赖新上传媒体的工作流（如处理、丰富或链接工作流）非常有用。</p>
+<p>在配置媒体上传器以在上传时触发操作时，可以在操作的参数配置中使用特殊的文件标识符值来引用上传的文件：</p>
+<ul>
+<li>对于上传到数据集的文件，文件标识符为上传的文件名。</li>
+<li>对于上传到 Compass 文件夹的文件，文件标识符为上传文件的 RID。</li>
+<li>对于上传到媒体集的文件，文件标识符为上传文件的媒体引用。</li>
+</ul>
+<p>如果启用了多文件上传，配置的操作将针对每个上传的文件触发一次，文件标识符与正在处理的具体文件相对应。</p>
+<p>有关设置详情（包括按钮配置、上传目标、允许的文件扩展名、动态目标和多文件选项），请参阅《媒体上传器组件文档》。</p>
+</article>
+</body>
+</html>
