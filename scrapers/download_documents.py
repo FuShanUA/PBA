@@ -73,9 +73,7 @@ def detect_form_pages():
 def build_node_script(slug, url, method, ext_path=None):
     """Build the Node.js Playwright script."""
     
-    launch_opts = {}
     if method == "extension":
-        # Use installed Chrome with user's extensions via persistent context
         profile_src = os.path.expanduser("~/Library/Application Support/Google/Chrome")
         profile_dst = tempfile.mkdtemp(prefix="chrome_profile_")
         ext_src = os.path.join(profile_src, "Default", "Extensions")
@@ -93,19 +91,16 @@ def build_node_script(slug, url, method, ext_path=None):
                 "--disable-default-apps",
             ],
         }
-        
     elif method == "load-ext":
-        # Load a specific extension
         launch_opts = {
             "headless": False,
             "args": [
-                f"--disable-extensions-except={ext_path}",
-                f"--load-extension={ext_path}",
+                "--disable-extensions-except=" + (ext_path or ""),
+                "--load-extension=" + (ext_path or ""),
                 "--disable-blink-features=AutomationControlled",
             ],
         }
     else:
-        # Manual - just headful
         launch_opts = {
             "headless": False,
             "args": ["--disable-blink-features=AutomationControlled"],
@@ -115,10 +110,10 @@ def build_node_script(slug, url, method, ext_path=None):
     profile_json = json.dumps(FORM_PROFILE)
     doc_dir = str(DOC_DIR)
     
-    return f"""
-const {{ chromium }} = require('playwright');
-(async () => {{
-  const opts = {opts_json};
+    # Use plain string with .replace() to avoid f-string brace conflicts
+    template = '''const { chromium } = require('playwright');
+(async () => {
+  const opts = __OPTS__;
   let browser, page;
   if (opts.userDataDir) {
     const ud = opts.userDataDir;
@@ -130,166 +125,125 @@ const {{ chromium }} = require('playwright');
     page = await browser.newPage();
   }
   
-  const downloadUrls = [];
   const pdfUrls = [];
   let savedFile = null;
   
-  // Capture downloads
-  page.on('download', async download => {{
+  page.on('download', async download => {
     const name = download.suggestedFilename();
     console.log('DOWNLOAD:' + name);
     const ext = name.split('.').pop();
-    const path = '{doc_dir}/{slug}.' + ext;
+    const path = '__DOC_DIR__/__SLUG__.' + ext;
     await download.saveAs(path);
     savedFile = path;
     console.log('SAVED:' + path);
-  }});
+  });
   
-  // Capture PDF responses
-  page.on('response', resp => {{
+  page.on('response', resp => {
     const u = resp.url();
     const ct = resp.headers()['content-type'] || '';
-    if (ct.includes('pdf') || u.endsWith('.pdf')) {{
+    if (ct.includes('pdf') || u.endsWith('.pdf')) {
       pdfUrls.push(u);
       console.log('PDF_RESPONSE:' + u.substring(0, 200));
-    }}
-  }});
+    }
+  });
   
-  // Capture navigations to thank-you/download pages
-  page.on('framenavigated', frame => {{
+  page.on('framenavigated', frame => {
     const u = frame.url();
-    if (u.includes('thank') || u.includes('download') || u.includes('success')) {{
+    if (u.includes('thank') || u.includes('download') || u.includes('success')) {
       console.log('NAV:' + u);
-    }}
-  }});
+    }
+  });
   
-  console.log('Loading page: {url}');
-  await page.goto('{url}', {{ waitUntil: 'domcontentloaded', timeout: 30000 }});
+  console.log('Loading: __URL__');
+  await page.goto('__URL__', { waitUntil: 'domcontentloaded', timeout: 30000 });
   await page.waitForTimeout(5000);
   
   // Pre-fill form
-  const fields = {profile_json};
-  for (const [id, value] of Object.entries(fields)) {{
-    try {{
+  const fields = __PROFILE__;
+  for (const [id, value] of Object.entries(fields)) {
+    try {
       const el = page.locator('#' + id);
-      if (await el.isVisible({{ timeout: 2000 }})) {{
+      if (await el.isVisible({ timeout: 2000 })) {
         const tag = await el.evaluate(e => e.tagName);
-        if (tag === 'SELECT') {{
-          await el.selectOption(value);
-        }} else {{
-          await el.fill(value);
-        }}
+        if (tag === 'SELECT') await el.selectOption(value);
+        else await el.fill(value);
         console.log('FILLED:' + id);
-      }}
-    }} catch(e) {{}}
-  }}
+      }
+    } catch(e) {}
+  }
   
-  // Check opt-in boxes
-  for (const id of ['Opt_In_Educational_Resources__c', 'Opt_In_for_Future_Events__c']) {{
-    try {{
-      await page.locator('#' + id).check({{ timeout: 2000 }});
-      console.log('CHECKED:' + id);
-    }} catch {{}}
-  }}
+  for (const id of ['Opt_In_Educational_Resources__c', 'Opt_In_for_Future_Events__c']) {
+    try { await page.locator('#' + id).check({ timeout: 2000 }); console.log('CHECKED:' + id); } catch {}
+  }
   
-  // Strategy: wait for reCAPTCHA to be solved (by extension or manually)
-  // Then auto-click submit when reCAPTCHA checkbox is checked
-  const method = '{method}';
+  const method = '__METHOD__';
   
-  if (method === 'extension' || method === 'load-ext') {{
-    // Try to detect when reCAPTCHA is solved, then auto-submit
-    console.log('WAITING_FOR_CAPTCHA: Extension should solve reCAPTCHA automatically...');
-    
-    // Wait up to 60s for reCAPTCHA to be solved
+  if (method === 'extension' || method === 'load-ext') {
+    console.log('WAITING_FOR_CAPTCHA: Extension should solve reCAPTCHA...');
     let captchaSolved = false;
-    for (let i = 0; i < 60; i++) {{
+    for (let i = 0; i < 60; i++) {
       await page.waitForTimeout(1000);
-      // Check if reCAPTCHA iframe shows a checkmark
-      const solved = await page.evaluate(() => {{
-        // reCAPTCHA v2: check for checked checkbox
-        const frames = document.querySelectorAll('iframe[title*="reCAPTCHA"]');
-        // Also check if form was already submitted (form gone)
+      const solved = await page.evaluate(() => {
         const formGone = !document.querySelector('form');
-        // Check for "Thank you" text
         const thankYou = document.body.innerText.includes('Thank you') || 
-                         document.body.innerText.includes('Download your');
+                         document.body.innerText.includes('Download');
         return formGone || thankYou;
-      }}).catch(() => false);
-      
-      if (solved) {{
-        captchaSolved = true;
-        console.log('CAPTCHA_SOLVED_OR_SUBMITTED');
-        break;
-      }}
-      
-      // Try clicking submit button every 5s (in case CAPTCHA was auto-solved)
-      if (i > 3 && i % 5 === 0) {{
-        try {{
+      }).catch(() => false);
+      if (solved) { captchaSolved = true; console.log('CAPTCHA_SOLVED'); break; }
+      if (i > 3 && i % 5 === 0) {
+        try {
           const btn = page.locator('button[type=submit], .mktoButton').first();
-          if (await btn.isVisible({{ timeout: 500 }})) {{
-            await btn.click();
-            console.log('CLICK_SUBMIT');
-          }}
-        }} catch {{}}
-      }}
-    }}
-    
-    if (!captchaSolved) {{
-      // Fall back: try clicking submit one more time
-      try {{
+          if (await btn.isVisible({ timeout: 500 })) { await btn.click(); console.log('CLICK_SUBMIT'); }
+        } catch {}
+      }
+    }
+    if (!captchaSolved) {
+      try {
         const btn = page.locator('button[type=submit], .mktoButton').first();
-        if (await btn.isVisible({{ timeout: 1000 }})) {{
-          await btn.click();
-          console.log('FINAL_SUBMIT_CLICK');
-        }}
-      }} catch {{}}
-    }}
-  }} else {{
-    // Manual mode: just wait
+        if (await btn.isVisible({ timeout: 1000 })) { await btn.click(); console.log('FINAL_SUBMIT'); }
+      } catch {}
+    }
+  } else {
     console.log('MANUAL: Please solve reCAPTCHA and click Submit.');
-  }}
+  }
   
-  // Wait for form submission result
   console.log('WAITING_FOR_RESULT...');
-  try {{
-    await page.waitForFunction(() => {{
+  try {
+    await page.waitForFunction(() => {
       return !document.querySelector('form') || 
              document.body.innerText.includes('Thank you') ||
-             document.body.innerText.includes('Download') ||
-             document.body.innerText.includes('download');
-    }}, {{ timeout: 60000 }});
+             document.body.innerText.includes('Download');
+    }, { timeout: 60000 });
     console.log('FORM_SUBMITTED');
-  }} catch {{
-    console.log('TIMEOUT_WAITING');
-  }}
+  } catch { console.log('TIMEOUT_WAITING'); }
   
-  // Wait for downloads to complete
   await page.waitForTimeout(5000);
   
-  // Check for download links on the page
-  const links = await page.evaluate(() => {{
+  const links = await page.evaluate(() => {
     return Array.from(document.querySelectorAll('a[href]'))
       .filter(a => a.href.includes('pdf') || a.href.includes('download') || 
                    (a.href.includes('asset') && !a.href.includes('.png') && !a.href.includes('.jpg')))
-      .map(a => ({{ href: a.href, text: a.textContent.trim() }}));
-  }}).catch(() => []);
+      .map(a => ({ href: a.href, text: a.textContent.trim() }));
+  }).catch(() => []);
   
-  if (links.length > 0) {{
-    console.log('LINKS:' + JSON.stringify(links));
-  }}
-  
-  if (pdfUrls.length > 0) {{
-    console.log('PDF_URLS:' + JSON.stringify(pdfUrls));
-  }}
-  
-  // Print result for the Python wrapper
-  if (savedFile) {{
-    console.log('RESULT:' + savedFile);
-  }}
+  if (links.length > 0) console.log('LINKS:' + JSON.stringify(links));
+  if (pdfUrls.length > 0) console.log('PDF_URLS:' + JSON.stringify(pdfUrls));
+  if (savedFile) console.log('RESULT:' + savedFile);
   
   await browser.close();
-}})();
-"""
+})();
+'''
+    
+    script = template
+    script = script.replace('__OPTS__', opts_json)
+    script = script.replace('__PROFILE__', profile_json)
+    script = script.replace('__DOC_DIR__', doc_dir)
+    script = script.replace('__SLUG__', slug)
+    script = script.replace('__URL__', url)
+    script = script.replace('__METHOD__', method)
+    
+    return script
+
 
 def download_with_playwright(slug, url, method="manual", ext_path=None):
     """Run the Playwright script and return the saved document path."""
