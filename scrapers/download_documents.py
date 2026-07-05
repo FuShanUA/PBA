@@ -136,10 +136,10 @@ def build_node_script(slug, url, method, ext_path=None):
     browser = await chromium.launch(opts);
     page = await browser.newPage();
   }
-  
+
   const pdfUrls = [];
   let savedFile = null;
-  
+
   page.on('download', async download => {
     const name = download.suggestedFilename();
     console.log('DOWNLOAD:' + name);
@@ -149,7 +149,7 @@ def build_node_script(slug, url, method, ext_path=None):
     savedFile = path;
     console.log('SAVED:' + path);
   });
-  
+
   page.on('response', resp => {
     const u = resp.url();
     const ct = resp.headers()['content-type'] || '';
@@ -158,90 +158,183 @@ def build_node_script(slug, url, method, ext_path=None):
       console.log('PDF_RESPONSE:' + u.substring(0, 200));
     }
   });
-  
-  page.on('framenavigated', frame => {
-    const u = frame.url();
-    if (u.includes('thank') || u.includes('download') || u.includes('success')) {
-      console.log('NAV:' + u);
-    }
-  });
-  
+
   console.log('Loading: __URL__');
   await page.goto('__URL__', { waitUntil: 'domcontentloaded', timeout: 30000 });
-  await page.waitForTimeout(5000);
-  
-  // Pre-fill form
-  const fields = __PROFILE__;
-  for (const [id, value] of Object.entries(fields)) {
+
+  // Step 1: Accept cookie consent if present
+  console.log('Checking cookie consent...');
+  for (let i = 0; i < 10; i++) {
     try {
-      const el = page.locator('#' + id);
-      if (await el.isVisible({ timeout: 2000 })) {
-        const tag = await el.evaluate(e => e.tagName);
-        if (tag === 'SELECT') await el.selectOption(value);
-        else await el.fill(value);
-        console.log('FILLED:' + id);
+      const acceptBtn = page.locator('#onetrust-accept-all-handler, button:has-text("Accept"), button:has-text("Allow all"), #truste-consent-button');
+      if (await acceptBtn.first().isVisible({ timeout: 1000 })) {
+        await acceptBtn.first().click();
+        console.log('Accepted cookies');
+        break;
       }
-    } catch(e) {}
+    } catch {}
+    await page.waitForTimeout(500);
   }
-  
-  for (const id of ['Opt_In_Educational_Resources__c', 'Opt_In_for_Future_Events__c']) {
-    try { await page.locator('#' + id).check({ timeout: 2000 }); console.log('CHECKED:' + id); } catch {}
-  }
-  
-  const method = '__METHOD__';
-  
-  if (method === 'extension' || method === 'load-ext' || method === 'buster') {
-    console.log('WAITING_FOR_CAPTCHA: Extension should solve reCAPTCHA...');
-    let captchaSolved = false;
-    for (let i = 0; i < 60; i++) {
-      await page.waitForTimeout(1000);
-      const solved = await page.evaluate(() => {
-        const formGone = !document.querySelector('form');
-        const thankYou = document.body.innerText.includes('Thank you') || 
-                         document.body.innerText.includes('Download');
-        return formGone || thankYou;
-      }).catch(() => false);
-      if (solved) { captchaSolved = true; console.log('CAPTCHA_SOLVED'); break; }
-      if (i > 3 && i % 5 === 0) {
-        try {
-          const btn = page.locator('button[type=submit], .mktoButton').first();
-          if (await btn.isVisible({ timeout: 500 })) { await btn.click(); console.log('CLICK_SUBMIT'); }
-        } catch {}
+
+  // Step 2: Wait for Marketo form to load (up to 30s)
+  console.log('Waiting for Marketo form...');
+  let formFound = false;
+  let formFrame = null;
+
+  for (let i = 0; i < 30; i++) {
+    await page.waitForTimeout(1000);
+
+    // Check main frame
+    try {
+      const firstName = page.locator('#FirstName, input[name="FirstName"]');
+      if (await firstName.first().isVisible({ timeout: 500 })) {
+        formFound = true;
+        formFrame = null; // main frame
+        console.log('Form found in main frame at ' + i + 's');
+        break;
       }
-    }
-    if (!captchaSolved) {
+    } catch {}
+
+    // Check iframes
+    const frames = page.frames();
+    for (const frame of frames) {
+      if (frame === page.mainFrame()) continue;
       try {
-        const btn = page.locator('button[type=submit], .mktoButton').first();
-        if (await btn.isVisible({ timeout: 1000 })) { await btn.click(); console.log('FINAL_SUBMIT'); }
+        const el = frame.locator('#FirstName, input[name="FirstName"]');
+        if (await el.first().isVisible({ timeout: 300 })) {
+          formFound = true;
+          formFrame = frame;
+          console.log('Form found in iframe at ' + i + 's: ' + frame.url().substring(0, 80));
+          break;
+        }
       } catch {}
     }
-  } else {
-    console.log('MANUAL: Please solve reCAPTCHA and click Submit.');
+    if (formFound) break;
+
+    if (i % 5 === 0) console.log('  Still waiting... ' + i + 's');
   }
-  
-  console.log('WAITING_FOR_RESULT...');
+
+  if (!formFound) {
+    console.log('ERROR: Form never appeared after 30s');
+    console.log('Page URL: ' + page.url());
+    console.log('Frames: ' + page.frames().map(f => f.url().substring(0, 60)).join(', '));
+    await browser.close();
+    return;
+  }
+
+  // Helper: fill a field in the right frame
+  async function fillField(id, value) {
+    const target = formFrame || page;
+    try {
+      const el = target.locator('#' + id + ', input[name="' + id + '"]');
+      await el.first().waitFor({ state: 'visible', timeout: 3000 });
+      await el.first().click();
+      await el.first().fill('');
+      await el.first().fill(value);
+      console.log('FILLED: ' + id + ' = ' + value);
+      return true;
+    } catch(e) {
+      console.log('FILL_FAILED: ' + id + ' - ' + e.message.substring(0, 60));
+      return false;
+    }
+  }
+
+  // Step 3: Fill form fields
+  console.log('Filling form...');
+  const fields = __PROFILE__;
+  for (const [id, value] of Object.entries(fields)) {
+    await fillField(id, value);
+    await page.waitForTimeout(200);
+  }
+
+  // Fill select (Country)
   try {
-    await page.waitForFunction(() => {
-      return !document.querySelector('form') || 
-             document.body.innerText.includes('Thank you') ||
-             document.body.innerText.includes('Download');
-    }, { timeout: 60000 });
-    console.log('FORM_SUBMITTED');
-  } catch { console.log('TIMEOUT_WAITING'); }
-  
-  await page.waitForTimeout(5000);
-  
-  const links = await page.evaluate(() => {
-    return Array.from(document.querySelectorAll('a[href]'))
-      .filter(a => a.href.includes('pdf') || a.href.includes('download') || 
-                   (a.href.includes('asset') && !a.href.includes('.png') && !a.href.includes('.jpg')))
-      .map(a => ({ href: a.href, text: a.textContent.trim() }));
-  }).catch(() => []);
-  
-  if (links.length > 0) console.log('LINKS:' + JSON.stringify(links));
+    const target = formFrame || page;
+    const sel = target.locator('#Country__c_contact, select[name="Country__c_contact"]');
+    await sel.first().selectOption('United States', { timeout: 3000 });
+    console.log('FILLED: Country');
+  } catch(e) {
+    console.log('FILL_FAILED: Country - ' + e.message.substring(0, 60));
+  }
+
+  // Check opt-in boxes
+  for (const id of ['Opt_In_Educational_Resources__c', 'Opt_In_for_Future_Events__c']) {
+    try {
+      const target = formFrame || page;
+      const cb = target.locator('#' + id);
+      if (!(await cb.first().isChecked())) {
+        await cb.first().click({ timeout: 2000 });
+        console.log('CHECKED: ' + id);
+      }
+    } catch {}
+  }
+
+  console.log('Form filled. Waiting for CAPTCHA solver...');
+
+  // Step 4: Wait for CAPTCHA to be solved and form submitted
+  const method = '__METHOD__';
+  let submitted = false;
+
+  for (let i = 0; i < 120; i++) {
+    await page.waitForTimeout(1000);
+
+    // Check if form is gone (submitted)
+    try {
+      const target = formFrame || page;
+      const form = target.locator('form');
+      const formVisible = await form.first().isVisible({ timeout: 300 }).catch(() => false);
+      if (!formVisible) {
+        submitted = true;
+        console.log('FORM_SUBMITTED at ' + i + 's');
+        break;
+      }
+    } catch {}
+
+    // Check for thank-you text
+    try {
+      const bodyText = await page.evaluate(() => document.body.innerText);
+      if (bodyText.includes('Thank you') || bodyText.includes('Download your') || bodyText.includes('Success')) {
+        submitted = true;
+        console.log('THANK_YOU at ' + i + 's');
+        break;
+      }
+    } catch {}
+
+    // Try clicking submit every 10s (in case CAPTCHA was auto-solved)
+    if (i > 5 && i % 10 === 0) {
+      try {
+        const target = formFrame || page;
+        const btn = target.locator('button[type=submit], .mktoButton, button:has-text("Submit"), button:has-text("Download")');
+        if (await btn.first().isVisible({ timeout: 500 })) {
+          await btn.first().click();
+          console.log('CLICK_SUBMIT at ' + i + 's');
+        }
+      } catch {}
+    }
+
+    if (i % 15 === 0 && i > 0) console.log('  Waiting for CAPTCHA... ' + i + 's');
+  }
+
+  // Wait for downloads
+  console.log('Waiting for downloads...');
+  await page.waitForTimeout(8000);
+
+  // Check for download links on the page
+  try {
+    const links = await page.evaluate(() => {
+      return Array.from(document.querySelectorAll('a[href]'))
+        .filter(a => a.href.includes('pdf') || a.href.includes('download') || 
+                     (a.href.includes('asset') && !a.href.endsWith('.png') && !a.href.endsWith('.jpg')))
+        .map(a => ({ href: a.href, text: a.textContent.trim().substring(0, 40) }));
+    });
+    if (links.length > 0) {
+      console.log('LINKS:' + JSON.stringify(links));
+    }
+  } catch {}
+
   if (pdfUrls.length > 0) console.log('PDF_URLS:' + JSON.stringify(pdfUrls));
   if (savedFile) console.log('RESULT:' + savedFile);
-  
+
   await browser.close();
 })();
 '''
