@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Classification-based Access Controls</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-classification-based-access-controls" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#classification-based-access-controls"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>基于密级的访问控制</h1>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>Foundry 默认不启用基于密级的访问控制。不同机构的密级标示各不相同，因此 Palantir 环境之间的配置也会有所差异。配置密级标示需 Palantir 参与。</p></div>
+<p>基于密级的访问控制（CBAC）是用于保护政府敏感信息的强制控制手段。CBAC 标记也称为密级标示，其通过要求用户持有特定密级标示来限制对信息的访问。</p>
+<p>对密级标示的访问权限可能与 Palantir 平台之外进行的安全审查流程相关联。与一般的强制控制机制一样，密级标示可与其他访问要求（例如自由裁量角色和可能应用于资源的强制标记）结合使用。</p>
+<h2 id="user-content-key-characteristics-of-classification-markings" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#key-characteristics-of-classification-markings"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>密级标示的核心特征</h2>
+<p>密级标示具有以下三个显著特征：</p>
+<ul>
+<li><strong>层级结构：</strong>密级标示的常见应用场景是对敏感信息的访问限制，此时信息的敏感程度是按层级定义的。例如，某组用户仅具备访问标为“机密”及以下级别敏感数据的权限；而另一组用户则有资格访问标为“绝密”及以下级别的敏感信息，其中可包含“机密”数据。</li>
+<li><strong>密级标示中的析取元素：</strong>非密级标示采取合取逻辑——用户需具备应用于某资源的所有标记方可访问。而密级标示可包含析取组件，只要用户属于密级标示析取组件中的任一群体，即可满足 CBAC 的访问条件。这种机制常用于定义发布范围，例如在不同组织或国家间共享信息。举例来说，来自<code>国家 A</code> 或 <code>国家 B</code> 的用户均可满足密级标示中的析取元素（见下文）。</li>
+<li><strong>密级标示的普遍性：</strong>采用 CBAC 强制控制的环境要求所有项目均须设定项目密级。此外，所有数据集都必须具备数据密级，这意味着原始数据集（即无输入数据源的数据集）必须拥有文件密级。</li>
+</ul>
+<h2 id="user-content-key-concepts" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#key-concepts"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>核心概念</h2>
+<h3 id="user-content-classification-markings" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#classification-markings"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>密级标示</h3>
+<p>密级标示按类别进行配置。例如，一个类别可用于定义数据类型，另一个类别则可用于描述该数据的传播（即共享）方式。</p>
+<p>一个密级可包含多个密级标示，且这些标示可分属不同类别。关于哪些标示组合构成有效密级的规则，可由 Palantir 进行配置并在平台中强制执行。</p>
+<h4 id="user-content-conjunctive-and-disjunctive-classification-marking-categories"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#conjunctive-and-disjunctive-classification-marking-categories"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>合取与析取密级标示类别</h4>
+<p>密级标示类别的一个关键特征在于其支持析取（<code>OR</code>）逻辑。当类别为合取（<code>AND</code>）时，用户必须拥有对该类别中所有已用密级标示的访问权限，方可访问涉密数据。当类别为析取时，用户只要持有该类别中的任意一个标示，即可获准访问带标示的涉密数据。</p>
+<p>整个密级的各组件之间采取合取方式结合。这意味着如果某个密级包含来自多个类别的密级标示，用户必须满足每个密级标示类别下的所有组件条件，方能访问相关数据。</p>
+<p>假设一个仅含单个类别和两个密级标示的简单配置。该配置包含两名用户：Martha Washington（<code>mwashington</code>）和 John Adams（<code>jadams</code>）。</p>
+<p><img alt="classification-example" height="195" src="/docs/resources/foundry/security/classification-example.png" style="aspect-ratio:487 / 195" width="487" node="[object Object]"></p>
+<p><code>mwashington</code> 用户同时属于 <code>GBR</code> 和 <code>CAN</code> 密级标示群组。而 <code>jadams</code> 用户仅属于 <code>GBR</code> 群组。<code>RELEASE TO</code> 类别是析取性的，意味着用户至少需具备其中一个标示的访问权限。在析取类别中，只要用户拥有密级标示中某一个标示的访问权限，即使数据标有同一类别下的其他标示，该用户依然可查看数据。这意味着标有 <code>GBR</code>、<code>CAN</code> 的数据可由 <code>mwashington</code> 或 <code>jadams</code> 中的任意一人查看，因为这两名用户均至少具备其中一个标示的访问权限。</p>
+<p>
+
+前一个示例展示的是单独的一个分类类别。在实际应用中，一个分类标记可以包含多个类别的标记。</p>
+<h3 id="user-content-file-and-data-classification" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#file-and-data-classification"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>文件与数据分类</h3>
+<p>文件分类是用户在发现该文件时必须满足的分类条件。此限制是对其他要求的补充，例如项目的分类以及项目或文件的强制标记。</p>
+<p>数据分类适用于特定类型的文件，例如数据集。数据分类是指用户查看文件中的数据所必须满足的分类要求。用户必须满足数据分类才能查看文件中的数据，但这并不影响他们发现该数据集的存在以及查看其元数据（如名称、描述和架构）。数据分类无法直接编辑；相反，数据分类是由以下几项组合而成的：</p>
+<ul>
+<li>资源的文件分类（如果已设置）。</li>
+<li>所有上游<a href="/docs/foundry/security/markings/#data-dependency">数据依赖项</a>的数据分类。</li>
+</ul>
+<p><img alt="此图展示了数据分类继承及其与文件分类交互的示例。它展示了数据分类如何从上游原始数据集中自动派生并设置为文件分类。还展示了派生数据集如何继承数据分类，并自动将所有输入数据分类值中“最高”的数据分类进行设置。" height="600" src="/docs/resources/foundry/security/file-data-classifications-inheritance.png" style="aspect-ratio:1951 / 917" width="1276.5539803707743" node="[object Object]"></p>
+<p>这意味着，数据分类的严格程度始终至少等同于文件分类以及所有上游数据依赖项的数据分类。</p>
+<p>在 Palantir 平台中，文件、数据和项目分类会与其他适用的访问要求一并传达。与自动继承的数据分类不同，文件分类可以在资源侧边栏中进行编辑，如下图所示。</p>
+<p><img alt="这是一张平台截图，展示了项目、文件和数据分类在资源侧边栏中的显示位置。" height="600" src="/docs/resources/foundry/security/file-data-class-screenshot.png" style="aspect-ratio:2928 / 1956" width="898.159509202454" node="[object Object]"></p>
+<p>对于没有上游输入数据集的新建非派生数据集，要求创建用户设置文件分类。</p>
+<h3 id="user-content-project-classification" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#project-classification"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>项目分类</h3>
+<p>项目分类控制着谁能够发现项目并访问其中的资源。为了访问某个资源，用户必须满足该资源所属项目的分类要求，以及该资源的文件和数据分类要求。在使用分类标记的环境中，所有项目都必须具备项目分类。在创建项目时必须选择一个分类。请注意，分类可以被更新，但不能被移除。</p>
+<p><img alt="项目中显示的项目分类。" height="600" src="/docs/resources/foundry/security/project-classification.png" style="aspect-ratio:3354 / 1880" width="1070.4255319148938" node="[object Object]"></p>
+<p>项目分类不会影响项目中数据集的数据分类，因此项目分类不会沿着数据依赖项向下继承。如果其他项目中存在派生的下游数据集，则仅继承<em>数据</em>分类。这与项目标记的行为不同，项目标记会被下游数据集继承。</p>
+<p><img alt="此图表明项目分类不会沿着数据依赖项继承，因此其他项目中的派生下游数据集不会继承项目分类。" height="600" src="/docs/resources/foundry/security/max-class-diagram.png" style="aspect-ratio:7671 / 3665" width="1255.8253751705322" node="[object Object]"></p>
+<h3 id="user-content-project-maximum-classification" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#project-maximum-classification"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>项目最高分类</h3>
+<p>项目最高分类规定了项目内所有资源的最高分类级别。项目最高分类也被称为“允许标记限制”。无法将具有较高数据或文件分类的资源创建或移动到具有较低最高分类的项目中。分类低于或等于项目最高分类的资源可以存在于该项目中，但这些资源仅对满足整体项目分类的用户可见。</p>
+<p>在创建项目时，项目最高分类默认等同于项目分类，但可以独立于项目分类进行编辑或移除。</p>
+<p>若要向项目中添加对象或链接类型，可能需要移除项目的最高分类。但请注意，如果项目中存在对象或链接类型，若其缺少文件分类，将无法物化。</p>
+<p><img alt="项目的最高分类显示在项目分类下方，作为允许标记限制。" height="600" src="/docs/resources/foundry/security/project-max-classification.png" style="aspect-ratio:3356 / 1880" width="1071.063829787234" node="[object Object]"></p>
+<p>
+
+如果在不同项目中将较高密级作为上游数据集的文件密级添加，并作为数据标记被该项目内的数据集继承，该数据标记将违反项目最高密级限制。发生此类情况时，数据仍受较高密级保护，但系统会显示警告，且在该违规状态解除前，无法在该项目中构建该数据集或任何下游资源。要解决此类违规，可以修正上游数据集的密级、移除该上游数据集作为输入并重新构建数据集，或者更新项目的最高密级限制。此行为与<a href="/docs/foundry/platform-security-management/manage-project-constraints/#project-constraint-violations">项目约束违规</a>的处理机制一致。</p>
+</article>
+</body>
+</html>

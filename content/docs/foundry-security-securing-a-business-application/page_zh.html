@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Securing an operational application</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-securing-an-operational-application" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#securing-an-operational-application"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>保障业务应用的安全</h1>
+<p>在建立数据基础之后，你可以开始构建本体，并在此基础上开发一个“航班告警收件箱”应用。这样做的目的是为一线操作人员提供有价值的工作流，同时确保安全机制清晰且易于维护。</p>
+<h2 id="user-content-object-data-inherit-dataset-permissions" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#object-data-inherit-dataset-permissions"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>对象数据继承数据集权限</h2>
+<p>底层支撑数据完成转换后，你可以在本体中创建四个对象：<code>Flight</code>、<code>Flight Alert</code>、<code>Delay</code> 和 <code>Aircraft</code>。为此，请创建新的对象类型，并为每个对象选择已经构建好的底层数据集。在此过程中，你需要将数据集中的列映射为新的对象类型中的属性。底层数据集中的每一列都将成为新对象类型中的一个属性，而每一行则将成为该对象类型的一个实例。因此，对象类型内部的数据将受到底层数据集权限的保护。</p>
+<p>对于 <code>Aircraft</code> 对象，其数据受 <strong>/Sky Industries/Aviation [Ontology]/aircraft</strong> 数据集权限的保护。因此，<strong>Aviation [Ontology]</strong> 项目中 <strong>Aviation [Ontology] - Viewer</strong> 组的用户将能够查看 <code>Aircraft</code> 对象中的数据。</p>
+<p><img alt="Ontology view" height="447" src="/docs/resources/foundry/security/secure-business-app-0.png" style="aspect-ratio:1104 / 447" width="1104" node="[object Object]"></p>
+<p>创建完所需的对象后，你可以根据对象之间的关联方式，在对象之间创建所需的链接类型。以下是我们构建的本体结构。</p>
+<p><img alt="Object links in Ontology" height="348" src="/docs/resources/foundry/security/secure-business-app-1.png" style="aspect-ratio:1148 / 348" width="1148" node="[object Object]"></p>
+<p>为了完整支撑你的工作流，你可能需要为部分对象添加回写功能。回写功能允许编辑现有的属性值（例如，修正错误值或更新状态属性），但更重要的是，它允许记录新的数据和决策，从而实现价值的持续积累。</p>
+<p>为此，只需在编辑器部分生成一个回写数据集。我们建议将编辑后的数据集与底层数据集放置在同一个本体项目中（例如 <strong>Aviation [Ontology]</strong>），以确保对象上的权限统一。编辑对象的推荐方式是使用操作，你也可以通过 API 调用这些操作。以下是带有回写数据集的 Flight Alert 对象。</p>
+<p><img alt="Flight alert object with writeback dataset" height="600" src="/docs/resources/foundry/security/secure-business-app-2.png" style="aspect-ratio:1148 / 616" width="1118.1818181818182" node="[object Object]"></p>
+<p>授予用户访问本体数据的权限，将完全由你在数据基础中创建并应用的组来管理。例如，你只需将新用户添加到 <strong>Aviation [Ontology] - Viewer</strong> 组中，他们就能查看全部四个对象的数据：<code>Flight</code>、<code>Flight Alert</code>、<code>Delay</code> 和 <code>Aircraft</code>。</p>
+<h2 id="user-content-editing-the-ontology" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#editing-the-ontology"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>编辑本体</h2>
+<p>你可以通过管理资源所在项目的权限，来控制谁能够编辑特定本体类型的配置。对本体内资源（如对象类型、链接类型和操作类型）的访问权限，取决于谁有权访问 Compass 文件系统中的相关项目。例如，若要用户在本体中编辑 <code>Flight Alert</code> 对象，该用户只需对包含 <code>Flight Alert</code> 资源的项目具有适当的访问权限即可；无需额外的权限或角色。你可以在每个项目的安全部分管理这些权限。</p>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>向用户和/或组授予对象类型上的角色，仅赋予他们对对象类型定义及其元数据的权限，并不授予对数据本身的任何权限。数据的权限由底层数据源的权限管理。</p></div>
+<p><img alt="Ontology editor role" height="600" src="/docs/resources/foundry/security/secure-business-app-3.png" style="aspect-ratio:1148 / 828" width="831.8840579710145" node="[object Object]"></p>
+<h2 id="user-content-restricting-instances-of-objects" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#restricting-instances-of-objects"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>限制对象实例</h2>
+<p>后续我们决定整合旅客数据，于是便着手接入并搭建旅客数据管道。</p>
+<p>
+
+出于合规性考虑，我们可能希望运营用户只能查看其所在国家的乘客数据（美国用户只能查看美国乘客，德国用户只能查看德国乘客，以此类推）。由于我们的对象类型由底层数据集支撑，其权限与整个数据集绑定。若要限制单个数据行的权限，我们需要使用受限视图来支撑对象类型，受限视图是对单一数据集的行级权限视图。</p>
+<p>创建受限视图时，必须先完成以下前置步骤：</p>
+<ol>
+<li>创建全局用户组 <code>passenger-data-global-access</code>，以便为所有管理用户授予全局乘客数据的访问权限。</li>
+<li>确认用户已具备必要的地理用户属性（例如 <code>location:country - US</code>）</li>
+<li>为受限视图创建一个名为 <strong>Customer Information [Restricted]</strong> 的项目，用于存放当前及未来所有与客户信息相关的受限视图。这样我们就能将受限视图的访问权限与底层输入数据集分离开来单独管理。</li>
+</ol>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>用户属性可以在用户管理界面中手动配置，也可以通过 <a href="/docs/foundry/authentication/saml-getting-started/#map-attributes">SAML 设置</a>自动映射。</p></div>
+<p>完成上述前置条件后，我们就可以创建受限视图了。导航至输入数据集资源，选择 <strong>Create restricted view</strong>，如下图高亮所示。</p>
+<p><img alt="Create restricted view" height="592" src="/docs/resources/foundry/security/secure-business-app-4.png" style="aspect-ratio:1471 / 592" width="1471" node="[object Object]"></p>
+<p>受限视图向导将引导你完成所有步骤。将受限视图保存到我们之前创建的新项目 <strong>Customer Information [Restricted]</strong> 中。</p>
+<p><img alt="Create restricted view step 1" height="600" src="/docs/resources/foundry/security/secure-business-app-5.png" style="aspect-ratio:1148 / 784" width="878.5714285714286" node="[object Object]"></p>
+<p><img alt="Create restricted view step 2" height="600" src="/docs/resources/foundry/security/secure-business-app-6.png" style="aspect-ratio:1148 / 774" width="889.922480620155" node="[object Object]"></p>
+<p>策略是受限视图的核心部分，它决定了用户能够查看哪些数据行。在本例中，我们希望实现：</p>
+<ul>
+<li>仅展示用户属性 <code>location:country</code> 与数据集中 <code>country</code> 列值相匹配的数据行，或者</li>
+<li>当用户属于 <code>passenger-data-global-access</code> 组时，展示所有数据行。</li>
+</ul>
+<p>具体策略如下所示：</p>
+<p><img alt="Configure a policy" height="418" src="/docs/resources/foundry/security/secure-business-app-7.png" style="aspect-ratio:1148 / 418" width="1148" node="[object Object]"></p>
+<p>向导完成后，受限视图将开始构建。构建完毕后，我们可以使用该受限视图来支撑 <code>Passenger</code> 对象。对象类型会自动继承受限视图的策略，并利用该策略限制用户能够查看的对象实例。</p>
+<p><img alt="Object type with restricted view" height="597" src="/docs/resources/foundry/security/secure-business-app-8.png" style="aspect-ratio:1148 / 597" width="1148" node="[object Object]"></p>
+<h2 id="user-content-adding-data-to-the-data-catalog" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#adding-data-to-the-data-catalog"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>将数据添加至数据目录</h2>
+<p><a href="/docs/foundry/compass/data-catalog/">数据目录</a>是 Foundry 中精选内容的浏览视图。尽管在 Foundry 中的每个数据集都可以被分析（前提是你拥有正确的权限），但数据目录中收录的数据集被认定为对用户最有用或最相关的数据，并集中于此以便于访问。</p>
+<p>构建本体后，我们建议将所有本体数据集添加到数据目录中。特别是本体回写数据集，由于它们是对象数据的权威来源，更应该被添加到你的数据目录中。</p>
+<h2 id="user-content-giving-users-access-to-your-application" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#giving-users-access-to-your-application"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>授予用户应用访问权限</h2>
+<p>在构建完 <code>Flight</code>、<code>Flight Alert</code>、<code>Delay</code>、<code>Aircraft</code> 和 <code>Passenger</code> 对象后，我们参照 <a href="/docs/foundry/workshop/getting-started/">Workshop 文档</a>，为运营中心构建了 Flight Alert Inbox 应用。为了将能够编辑 Flight Alert Inbox 应用的用户与能够编辑本体数据的用户区分开来，我们将专门为 Flight Alert Inbox 应用创建一个新项目，名为 <strong>Flight Alert Inbox</strong>。</p>
+<p>用户必须满足所有访问要求才能访问该项目。由于该项目未关联任何标记，用户需要具备相应的角色，并且必须是 Sky Industries 组织的成员。</p>
+<p><img alt="Access requirements" height="600" src="/docs/resources/foundry/security/secure-business-app-9.png" style="aspect-ratio:1863 / 671" width="1665.8718330849479" node="[object Object]"></p>
+<p>运营消费者将被添加到 <strong>Aviation [Ontology] - Viewer</strong> 用户组，以查看 <code>Flight</code>、<code>Flight Alert</code>、<code>Delay</code>、<code>Aircraft</code> 和 <code>Passenger</code> 数据；同时被添加到 <strong>Flight Alert Inbox - Viewer</strong> 用户组，以查看 Flight Alert Inbox 应用。</p>
+<p>
+
+应用开发人员将被加入 <strong>航空 [本体] - 查看者</strong> 组以查看 <code>Flight</code>、<code>Flight Alert</code>、<code>Delay</code>、<code>Aircraft</code> 和 <code>Passenger</code> 数据，并被加入 <strong>航班告警收件箱 - 编辑者</strong> 组以编辑航班告警收件箱应用。</p>
+<p>数据管道开发人员将被加入 <strong>航空 [本体] - 编辑者</strong> 组以编辑 <code>Flight</code>、<code>Flight Alert</code>、<code>Delay</code>、<code>Aircraft</code> 和 <code>Passenger</code> 数据集，并被加入 <strong>航班告警收件箱 - 查看者</strong> 组以查看其变更下游的工作流。</p>
+<p><img alt="Granting roles" height="600" src="/docs/resources/foundry/security/secure-business-app-10.png" style="aspect-ratio:1869 / 848" width="1322.4056603773583" node="[object Object]"></p>
+</article>
+</body>
+</html>

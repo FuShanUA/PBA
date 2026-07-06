@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Amazon S3</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-amazon-s3" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#amazon-s3"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Amazon S3</h1>
+<p>将 Foundry 连接至 AWS S3，以在 S3 和 Foundry 之间读取和同步数据。</p>
+<h2 id="user-content-supported-capabilities" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#supported-capabilities"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>支持的功能</h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>功能</th><th>状态</th></tr></thead><tbody><tr><td>探索</td><td>🟢 正式可用</td></tr><tr><td>批量导入</td><td>🟢 正式可用</td></tr><tr><td>增量同步</td><td>🟢 受支持的文件格式正式可用</td></tr><tr><td>媒体集</td><td>🟢 正式可用</td></tr><tr><td><a href="/docs/foundry/data-integration/virtual-tables/">虚拟表</a></td><td>🟢 正式可用</td></tr><tr><td><a href="/docs/foundry/data-connection/export-overview/#file-exports">文件导出</a></td><td>🟢 正式可用</td></tr></tbody></table></div>
+<h2 id="user-content-setup" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#setup"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>设置</h2>
+<ol>
+<li>打开《<a href="/docs/foundry/data-connection/overview/">数据连接</a>》应用程序，并在屏幕右上角选择 <strong>+ 新建源</strong>。</li>
+<li>从可用的连接器类型中选择 <strong>S3</strong>。</li>
+<li>按照后续的配置提示，结合下方各章节的信息，继续完成连接器的设置。</li>
+</ol>
+<p>详细了解如何在 Foundry 中<a href="/docs/foundry/data-connection/set-up-source/">设置连接器</a>。</p>
+<h2 id="user-content-connection-details" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#connection-details"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>连接详情</h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5">
+
+<table><thead><tr><th>选项</th><th>是否必填</th><th>描述</th></tr></thead><tbody><tr><td><code>URL</code></td><td>是</td><td>S3 存储桶的 URL。数据连接支持 s3a 协议。需以斜杠结尾。详见 AWS 的 <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-bucket-intro.html#accessing-a-bucket-using-S3-format">官方文档 ↗</a>。<br>例如：<code>s3://bucket-name/</code></td></tr><tr><td><code>Endpoint</code></td><td>是</td><td>用于访问 S3 的端点。<br>例如：<code>s3.amazonaws.com</code> 或 <code>s3.us-east-1.amazonaws.com</code></td></tr><tr><td><code>Region</code></td><td>否</td><td>配置 AWS 服务时使用的 AWS 区域。使用 STS 角色时必填。注意：若同时提供区域以及包含该区域的 S3 端点，可能会导致连接失败。<br>例如：<code>us-east-1</code> 或 <code>eu-central-1</code></td></tr><tr><td><code>Network connectivity</code></td><td>是</td><td><strong>第 1 步：Foundry 出站策略</strong><br>将 Foundry <a href="/docs/foundry/administration/configure-egress/#network-egress-overview">出站策略</a>附加到存储桶，允许 Foundry 向 S3 发起出站连接。数据连接应用会根据提供的连接详情推荐合适的出站策略。<br>例如：<code>bucket-name.s3.us-east-1.amazonaws.com (端口 443)</code><br><br><strong>第 2 步：AWS 存储桶策略</strong><br>此外，需将相关的 Foundry IP 和/或存储桶详情加入 S3 的访问白名单。可以在<a href="/docs/foundry/administration/control-panel/">控制面板应用</a>的 <strong>网络出站</strong> 中找到 Foundry IP 详情。有关如何在 S3 中配置存储桶策略的更多详情，请参阅 <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/example-bucket-policies.html#example-bucket-policies-IP">AWS 官方文档 ↗</a>。<br><br><em>注意：若要访问与 Foundry 订阅位于同一区域的 S3 存储桶，需进行额外配置。请阅读<a href="/docs/foundry/administration/configure-egress/#aws-s3-bucket-endpoint-policies">网络出站文档</a>了解相关要求。</em></td></tr><tr><td><code>Client certificates &amp; private key</code></td><td>否</td><td>源系统可能会也可能不要求提供客户端证书和私钥以保障连接安全。</td></tr><tr><td><code>Server certificates</code></td><td>否</td><td>源系统可能会也可能不要求提供服务器证书以保障连接安全。</td></tr><tr><td><code>Credentials</code></td><td>是</td><td><strong>选项 1：访问密钥和 secret</strong><br>提供用于连接 S3 的 Access Key ID 和 Secret。<br>可在 AWS 账户中为 Foundry 创建新的 IAM 用户，并授予该 IAM 用户访问 S3 存储桶的权限，以此生成凭证。<br><br><strong>选项 2：OpenID Connect (OIDC)</strong><br>按照显示的源系统配置说明设置 OIDC。有关 OpenID Connect 的详情，请参阅 <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers_create_oidc.html">AWS 官方文档 ↗</a>；有关 OIDC 如何与 Foundry 配合使用的详情，请参阅<a href="/docs/foundry/data-connection/oidc/">我们的文档</a>。<br><br>有关创建 AWS IAM 用户的更多详情，请参阅 <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/id_users_create.html">AWS 官方文档 ↗</a>。请查阅<a href="#required-read-and-sync-permissions-for-s3">我们关于 S3 权限的文档</a>，了解 Foundry 期望该用户具备哪些 AWS 权限。</td></tr><tr><td><code>STS role</code></td><td>否</td><td>S3 连接器在连接 S3 时，可选择承担<a href="https://docs.aws.amazon.com/STS/latest/APIReference/welcome.html">安全令牌服务 (STS) 角色 ↗</a>。详见<a href="#sts-role-configuration">STS 角色配置</a>。</td></tr><tr><td><code>Connection timeout</code></td><td>否</td><td>初始建立连接时放弃并超时前的等待时间（毫秒）。<br>默认值：<code>50000</code></td></tr><tr><td><code>Socket timeout</code></td><td>否</td><td>在已建立且开启的连接上传输数据时，连接超时并关闭前的等待时间（毫秒）。<br>默认值：<code>50000</code></td></tr><tr><td><code>Max connections</code></td><td>否</td><td>允许开启的 HTTP 连接最大数量。<br>默认值：<code>50</code></td></tr><tr><td><code>Max error retries</code></td><td>否</td><td>针对可重试的失败请求（例如：服务返回 5xx 错误响应）的最大重试次数。<br>默认值：<code>3</code></td></tr><tr><td><code>Client KMS key</code></td><td>否</td><td>用于通过 AWS SDK 执行客户端数据加密的 KMS 密钥名称或别名。在 PCloud 中的智能体上使用此选项需更改代理配置。</td></tr><tr><td><code>Client KMS region</code></td><td>否</td><td>KMS 客户端使用的 AWS 区域。仅在提供了 AWS KMS 密钥时才相关。</td></tr><tr><td><code>Match subfolder exactly</code></td><td>否</td><td>可选择将子文件夹下指定的路径精确匹配为 S3 中的子文件夹。若设为 false，则 <code>s3://bucket-name/foo/bar/</code> 和 <code>s3://bucket-name/foo/bar_baz/</code> 都会与子文件夹设置 <code>foo/bar/</code> 匹配。</td></tr><tr><td><code>Proxy configurations</code></td><td>是 - 仅限基于智能体的连接</td><td>配置 S3 的代理设置。<br><em>注意：如果满足以下条件则必填： Foundry 订阅托管在 AWS 中； 连接的 S3 存储桶所在的 AWS 区域与 Foundry 订阅不同； 通过数据连接智能体进行连接。详见<a href="#s3-proxy-configuration-agent-based-connections">S3 代理配置</a>。</em></td></tr><tr><td><code>Enable path style access</code></td><td>否</td><td>使用路径式访问 URL（例如 <code>https://s3.region-code.amazonaws.com/bucket-name/key-name</code>），而非虚拟主机式访问 URL（例如 <code>https://bucket-name.s3.region-code.amazonaws.com/key-name</code>）。详见 <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/VirtualHosting.html">AWS 官方文档 ↗</a>。</td></tr><tr><td><code>Catalog</code></td><td>否</td><td>为存储在此 S3 存储桶中的表配置数据目录。详见<a href="#virtual-tables">虚拟表</a>。</td></tr></tbody></table></div>
+<h2 id="user-content-required-read-and-sync-permissions-for-s3" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#required-read-and-sync-permissions-for-s3"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>S3 所需的读取和同步权限</h2>
+<p>交互式探索 S3 存储桶需具备以下 AWS 权限：</p>
+<pre>
+
+<div class="ptcom-design__wrapper__12wpwnx" data-pagefind-weight="0.5"><span class="ptcom-design__clipboard__1l1gb20 ptcom-design__clipboard__12wpwnx"><span data-pagefind-ignore="true" class="ptcom-design__confirmation__1l1gb20">Copied!</span><svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1" width="16" data-view-component="true" aria-label="clipboard"><path fill-rule="evenodd" fill="currentColor" d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z"></path><path fill-rule="evenodd" fill="currentColor" d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z"></path></svg></span><div style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;overflow:auto;position:relative;margin:0;padding:0.75em"><code class="language-json" style="white-space: pre; text-align: left; word-spacing: normal; word-break: normal; overflow-wrap: normal; color: rgb(195, 206, 227); background: rgb(38, 50, 56); font-family: &quot;SF Mono&quot;, Menlo, Consolas, Monaco, Inconsolata, &quot;Fira Mono&quot;, &quot;Droid Sans Mono&quot;, &quot;Source Code Pro&quot;, monospace; font-size: 14px; line-height: 1.5em; tab-size: 4; hyphens: none;"><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 1.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">1</span><span class="token token" style="color: rgb(137, 221, 255);">{</span><span>
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 1.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">2</span><span>    </span><span class="token token" style="color: rgb(128, 203, 196);">"Action"</span><span class="token token" style="color: rgb(137, 221, 255);">:</span><span> </span><span class="token token" style="color: rgb(137, 221, 255);">[</span><span class="token token" style="color: rgb(195, 232, 141);">"s3:ListBucket"</span><span class="token token" style="color: rgb(137, 221, 255);">]</span><span class="token token" style="color: rgb(137, 221, 255);">,</span><span>
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 1.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">3</span><span>    </span><span class="token token" style="color: rgb(128, 203, 196);">"Resource"</span><span class="token token" style="color: rgb(137, 221, 255);">:</span><span> </span><span class="token token" style="color: rgb(137, 221, 255);">[</span><span class="token token" style="color: rgb(195, 232, 141);">"arn:aws:s3:::path/to/bucket"</span><span class="token token" style="color: rgb(137, 221, 255);">]</span><span class="token token" style="color: rgb(137, 221, 255);">,</span><span>
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 1.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">4</span><span>    </span><span class="token token" style="color: rgb(128, 203, 196);">"Effect"</span><span class="token token" style="color: rgb(137, 221, 255);">:</span><span> </span><span class="token token" style="color: rgb(195, 232, 141);">"Allow"</span><span class="token token" style="color: rgb(137, 221, 255);">,</span><span>
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 1.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">5</span><span></span><span class="token token" style="color: rgb(137, 221, 255);">}</span></span></code></div></div></pre>
+<p>针对从 S3 进行的批量同步、虚拟表和媒体同步，需要以下 AWS 权限：</p>
+<pre><div class="ptcom-design__wrapper__12wpwnx" data-pagefind-weight="0.5"><span class="ptcom-design__clipboard__1l1gb20 ptcom-design__clipboard__12wpwnx"><span data-pagefind-ignore="true" class="ptcom-design__confirmation__1l1gb20">Copied!</span><svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1" width="16" data-view-component="true" aria-label="clipboard"><path fill-rule="evenodd" fill="currentColor" d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z"></path><path fill-rule="evenodd" fill="currentColor" d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z"></path></svg></span><div style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;overflow:auto;position:relative;margin:0;padding:0.75em"><code class="language-json" style="white-space: pre; text-align: left; word-spacing: normal; word-break: normal; overflow-wrap: normal; color: rgb(195, 206, 227); background: rgb(38, 50, 56); font-family: &quot;SF Mono&quot;, Menlo, Consolas, Monaco, Inconsolata, &quot;Fira Mono&quot;, &quot;Droid Sans Mono&quot;, &quot;Source Code Pro&quot;, monospace; font-size: 14px; line-height: 1.5em; tab-size: 4; hyphens: none;"><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 1.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">1</span><span class="token token" style="color: rgb(137, 221, 255);">{</span><span>
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 1.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">2</span><span>    </span><span class="token token" style="color: rgb(128, 203, 196);">"Action"</span><span class="token token" style="color: rgb(137, 221, 255);">:</span><span> </span><span class="token token" style="color: rgb(137, 221, 255);">[</span><span class="token token" style="color: rgb(195, 232, 141);">"s3:GetObject"</span><span class="token token" style="color: rgb(137, 221, 255);">]</span><span class="token token" style="color: rgb(137, 221, 255);">,</span><span>
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 1.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">3</span><span>    </span><span class="token token" style="color: rgb(128, 203, 196);">"Resource"</span><span class="token token" style="color: rgb(137, 221, 255);">:</span><span> </span><span class="token token" style="color: rgb(137, 221, 255);">[</span><span class="token token" style="color: rgb(195, 232, 141);">"arn:aws:s3:::path/to/bucket/*"</span><span class="token token" style="color: rgb(137, 221, 255);">]</span><span class="token token" style="color: rgb(137, 221, 255);">,</span><span>
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 1.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">4</span><span>    </span><span class="token token" style="color: rgb(128, 203, 196);">"Effect"</span><span class="token token" style="color: rgb(137, 221, 255);">:</span><span> </span><span class="token token" style="color: rgb(195, 232, 141);">"Allow"</span><span class="token token" style="color: rgb(137, 221, 255);">,</span><span>
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 1.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">5</span><span></span><span class="token token" style="color: rgb(137, 221, 255);">}</span></span></code></div></div></pre>
+<p>有关如何在 S3 中配置存储桶策略的更多详细信息，请参阅《Amazon S3 策略和权限官方 AWS 文档》。</p>
+<h2 id="user-content-s3-proxy-configuration-agent-based-connections" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#s3-proxy-configuration-agent-based-connections"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>S3 代理配置（基于智能体的连接）</h2>
+<p>使用数据连接智能体连接到 S3 时，可通过以下两种方式定义代理设置：</p>
+<ul>
+<li>源配置：按照下表所述，直接在源配置中定义各项代理设置。</li>
+<li>
+
+智能体的系统属性：作为备选方案，您可以在智能体的系统属性中配置代理设置。为此，请在智能体的高级配置设置中包含适当的 JVM 参数（例如，<code>-Dhttps.proxyHost=example.proxy.com</code>）。</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>参数</th><th>是否必填</th><th>默认值</th><th>描述</th></tr></thead><tbody><tr><td><code>host</code></td><td>是</td><td></td><td>HTTP 代理主机（无协议）。</td></tr><tr><td><code>port</code></td><td>是</td><td></td><td>HTTP 代理端口。</td></tr><tr><td><code>protocol</code></td><td>否</td><td><code>HTTPS</code></td><td>要使用的协议。可以是 <code>HTTPS</code> 或 <code>HTTP</code>。</td></tr><tr><td><code>nonProxyHosts</code></td><td>否</td><td></td><td>不应使用代理的主机名（或通配符域名）列表。例如：`*.s3-external-1.amazonaws.com</td></tr><tr><td><code>credentials</code></td><td>否</td><td></td><td>如果您的代理需要基本 HTTP 身份验证（由 <a href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.34">HTTP 407 响应 ↗</a> 提示），请包含此块。</td></tr><tr><td><code>credentials.username</code></td><td>否</td><td></td><td>HTTP 代理的明文用户名。</td></tr><tr><td><code>credentials.password</code></td><td>否</td><td></td><td>HTTP 代理的加密密码。</td></tr></tbody></table></div>
+<h2 id="user-content-sts-role-configuration" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#sts-role-configuration"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>STS 角色配置</h2>
+<p>STS 角色配置允许您利用 <a href="https://docs.aws.amazon.com/STS/latest/APIReference/Welcome.html">AWS 安全令牌服务 ↗</a> 在读取 S3 时担任某个角色。</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>参数</th><th>是否必填</th><th>默认值</th><th>描述</th></tr></thead><tbody><tr><td><code>roleArn</code></td><td>是</td><td></td><td>STS 角色 ARN 名称。</td></tr><tr><td><code>roleSessionName</code></td><td>是</td><td></td><td>担任此角色时要使用的会话名称。</td></tr><tr><td><code>roleSessionDuration</code></td><td>否</td><td>3600 秒</td><td>会话持续时间。</td></tr><tr><td><code>externalId</code></td><td>否</td><td></td><td>担任角色时要使用的外部 ID。</td></tr></tbody></table></div>
+<h2 id="user-content-cloud-identity-configuration" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#cloud-identity-configuration"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>云身份配置</h2>
+<p>云身份验证允许 Foundry 访问您 AWS 实例中的资源。云身份在控制面板的 <a href="/docs/foundry/administration/enrollments-and-organizations/">注册</a> 层级进行配置和管理。了解如何 <a href="/docs/foundry/administration/configure-cloud-identities/">配置云身份</a>。</p>
+<p><img alt="S3 Source With Cloud Identity" height="412" src="/docs/resources/foundry/available-connectors/s3-source-with-cloud-identity.png" style="aspect-ratio:1546 / 412" width="1546" node="[object Object]"></p>
+<p>使用云身份验证时，角色 ARN 将显示在凭据部分。选择 <code>云身份</code> 凭据选项后，您还必须配置以下内容：</p>
+<ol>
+<li>在目标 Amazon AWS 账户中配置身份和访问管理 (IAM) 角色。</li>
+<li>授予 IAM 角色访问您希望连接的 S3 存储桶的权限。您通常可以通过 <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucket-policies.html">存储桶策略 ↗</a> 来执行此操作。</li>
+<li>在 S3 源配置详细信息中，将该 IAM 角色添加到 <a href="https://docs.aws.amazon.com/STS/latest/APIReference/API_AssumeRole.html">安全令牌服务 (STS) 角色 ↗</a> 配置下。访问 S3 时，Foundry 中的云身份 IAM 角色将尝试担任 <a href="https://docs.aws.amazon.com/STS/latest/APIReference/API_AssumeRole.html">AWS 账户 IAM 角色 ↗</a>。</li>
+<li><a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_manage.html">配置相应的信任策略 ↗</a>，以允许云身份 IAM 角色担任目标 AWS 账户 IAM 角色。</li>
+</ol>
+<h2 id="user-content-virtual-tables" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#virtual-tables"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>虚拟表</h2>
+<p>本部分提供了有关从 S3 源使用 <a href="/docs/foundry/data-integration/virtual-tables/">虚拟表</a> 的更多详细信息。本部分不适用于同步到 Foundry 数据集的场景。</p>
+<p>下表重点列出了 S3 支持的虚拟表功能。</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>功能</th><th>状态</th></tr></thead><tbody><tr><td>批量注册</td><td>🔴 不可用</td></tr><tr><td>自动注册</td><td>🔴 不可用</td></tr><tr><td>表输入</td><td>🟢 正式可用：<a href="https://avro.apache.org/">Avro ↗</a>、<a href="https://docs.delta.io/latest/">Delta ↗</a>、<a href="https://iceberg.apache.org/">Iceberg ↗</a>、<a href="https://parquet.apache.org/">Parquet ↗</a> 在 <a href="/docs/foundry/code-repositories/overview/">代码仓库</a>、<a href="/docs/foundry/pipeline-builder/overview/">管道构建器</a> 中</td></tr><tr><td>表输出</td><td>🟢 正式可用：<a href="https://avro.apache.org/">Avro ↗</a>、<a href="https://docs.delta.io/latest/">Delta ↗</a>、<a href="https://iceberg.apache.org/">Iceberg ↗</a>、<a href="https://parquet.apache.org/">Parquet ↗</a> 在 <a href="/docs/foundry/code-repositories/overview/">代码仓库</a>、<a href="/docs/foundry/pipeline-builder/overview/">管道构建器</a> 中</td></tr><tr><td>增量管道</td><td>🟢 对于 Delta 表正式可用：仅限 <code>APPEND</code>（<a href="#delta">详细信息</a>）<br> 🟢 对于 Iceberg 表正式可用：仅限 <code>APPEND</code>（<a href="#iceberg">详细信息</a>）<br> 🔴 对于 Parquet 表不可用</td></tr><tr><td>计算下推</td><td>🔴 不可用</td></tr></tbody></table></div>
+<p>有关存储在 S3 中的表可用作输入或输出的受支持 Foundry 工作流的详细信息，请查阅 <a href="/docs/foundry/data-integration/virtual-tables/#supported-foundry-workflows">虚拟表文档</a>。</p>
+<h3 id="user-content-source-configuration-requirements" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#source-configuration-requirements"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>源配置要求</h3>
+<p>注册 <a href="/docs/foundry/data-integration/virtual-tables/">虚拟表</a> 时，请注意以下源配置要求：</p>
+<ul>
+<li>您必须使用 <a href="/docs/foundry/data-connection/core-concepts/#foundry-worker">Foundry worker</a> 源。虚拟表不支持使用 <a href="/docs/foundry/data-connection/core-concepts/#agent-worker">智能体 worker</a> 连接。</li>
+<li>确保建立双向连接和允许列表，如 <a href="#connection-details">连接详细信息</a> 中的 <strong>网络连接</strong> 部分所述。</li>
+<li>如果在代码仓库中使用虚拟表，请参阅 <a href="/docs/foundry/data-integration/virtual-tables/#virtual-tables-in-code-repositories">《虚拟表文档》</a> 了解所需额外源配置的详细信息。</li>
+<li>如果您的存储桶包含 <code>.</code>，则必须启用路径样式访问并设置适当的出口策略。</li>
+</ul>
+<p>有关更多详细信息，请参阅上方的 <a href="#connection-details">连接详细信息</a> 部分。</p>
+<h3 id="user-content-delta" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#delta"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Delta</h3>
+<p>要为以虚拟表为底座的管道启用增量支持，请确保在源 Delta 表上启用 <a href="https://docs.databricks.com/en/delta/delta-change-data-feed.html#enable-change-data-feed">变更数据流 ↗</a>。支持 <a href="/docs/foundry/transforms-python/incremental-usage/#incrementaltransforminput">Python 转换</a> 中的 <code>current</code> 和 <code>added</code> 读取模式。<code>_change_type</code>、<code>_commit_version</code> 和 <code>_commit_timestamp</code> 列将在 Python 转换中可用。</p>
+<h3 id="user-content-iceberg" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#iceberg"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Iceberg</h3>
+<p>
+
+<p>加载由 Apache Iceberg 表支持的虚拟表需要 Iceberg 数据目录。有关 Iceberg 数据目录的更多信息，请参阅《Apache Iceberg 文档》。在数据源上注册的所有 Iceberg 表必须使用同一个 Iceberg 数据目录。</p>
+<p>默认情况下，系统将使用 S3 中的 Iceberg 元数据文件创建表。注册表时必须提供用于指示这些元数据文件位置的 <code>warehousePath</code>。</p>
+<p>当表存储在 S3 中时，可将 AWS Glue 用作 Iceberg 数据目录。有关此集成的更多信息，请参阅《AWS Glue 文档》。在数据源上配置的凭证必须具有访问 AWS Glue Data Catalog 的权限。可以在数据源的“连接详情”选项卡中配置 AWS Glue。在此数据源上注册的所有 Iceberg 表将自动使用 AWS Glue 作为数据目录。注册表时应使用 <code>database_name.table_name</code> 命名模式。</p>
+<p>在 Databricks 平台 中使用 Delta Universal Format (UniForm) 时，可将 Unity Catalog 用作 Iceberg 数据目录。有关此集成的更多信息，请参阅《Databricks 文档》。与 AWS Glue 一样，可以在数据源的“连接详情”选项卡中配置该数据目录。您需要提供端点和个人访问令牌才能连接到 Unity Catalog。注册表时应使用 <code>catalog_name.schema_name.table_name</code> 命名模式。</p>
+<p><img alt="Virtual Tables S3 Catalog" height="600" src="/docs/resources/foundry/available-connectors/virtual_tables_s3_catalog.png" style="aspect-ratio:1428 / 670" width="1278.8059701492539" node="[object Object]"></p>
+<p>增量支持依赖于 Iceberg 的增量读取，目前仅支持仅追加模式。Python Transforms 中的 <code>current</code> 和 <code>added</code> 读取模式均受支持。</p>
+<h3 id="user-content-parquet" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#parquet"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Parquet</h3>
+<p>使用 Parquet 的虚拟表依赖于模式推断。最多将使用 100 个文件来确定模式。</p>
+<h2 id="user-content-export-data-to-s3" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#export-data-to-s3"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>导出数据至 S3</h2>
+<p>要导出至 S3，首先需为您的 S3 连接器启用导出。然后，创建新导出。</p>
+<h2 id="user-content-required-export-permissions-for-s3" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#required-export-permissions-for-s3"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>S3 所需的导出权限</h2>
+<p>将数据导出至 S3 需要以下 AWS 权限：</p>
+<pre><div class="ptcom-design__wrapper__12wpwnx" data-pagefind-weight="0.5"><span class="ptcom-design__clipboard__1l1gb20 ptcom-design__clipboard__12wpwnx"><span data-pagefind-ignore="true" class="ptcom-design__confirmation__1l1gb20">Copied!</span><svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1" width="16" data-view-component="true" aria-label="clipboard"><path fill-rule="evenodd" fill="currentColor" d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z"></path><path fill-rule="evenodd" fill="currentColor" d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z"></path></svg></span><div style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;overflow:auto;position:relative;margin:0;padding:0.75em"><code class="language-json" style="white-space: pre; text-align: left; word-spacing: normal; word-break: normal; overflow-wrap: normal; color: rgb(195, 206, 227); background: rgb(38, 50, 56); font-family: &quot;SF Mono&quot;, Menlo, Consolas, Monaco, Inconsolata, &quot;Fira Mono&quot;, &quot;Droid Sans Mono&quot;, &quot;Source Code Pro&quot;, monospace; font-size: 14px; line-height: 1.5em; tab-size: 4; hyphens: none;"><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 1.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">1</span><span class="token token" style="color: rgb(137, 221, 255);">{</span><span>
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 1.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">2</span><span>    </span><span class="token token" style="color: rgb(128, 203, 196);">"Action"</span><span class="token token" style="color: rgb(137, 221, 255);">:</span><span> </span><span class="token token" style="color: rgb(137, 221, 255);">[</span><span class="token token" style="color: rgb(195, 232, 141);">"s3:PutObject"</span><span class="token token" style="color: rgb(137, 221, 255);">]</span><span class="token token" style="color: rgb(137, 221, 255);">,</span><span>
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 1.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">3</span><span>    </span><span class="token token" style="color: rgb(128, 203, 196);">"Resource"</span><span class="token token" style="color: rgb(137, 221, 255);">:</span><span> </span><span class="token token" style="color: rgb(137, 221, 255);">[</span><span class="token token" style="color: rgb(195, 232, 141);">"arn:aws:s3:::path/to/bucket/*"</span><span class="token token" style="color: rgb(137, 221, 255);">]</span><span class="token token" style="color: rgb(137, 221, 255);">,</span><span>
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 1.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">4</span><span>    </span><span class="token token" style="color: rgb(128, 203, 196);">"Effect"</span><span class="token token" style="color: rgb(137, 221, 255);">:</span><span> </span><span class="token token" style="color: rgb(195, 232, 141);">"Allow"</span><span class="token token" style="color: rgb(137, 221, 255);">,</span><span>
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 1.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">5</span><span></span><span class="token token" style="color: rgb(137, 221, 255);">}</span></span></code></div></div></pre>
+<p>有关如何在 S3 中配置存储桶策略的更多详细信息，请参阅《Amazon S3 官方关于策略和权限的文档》。</p>
+<h3 id="user-content-export-configuration-options" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#export-configuration-options"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>导出配置选项</h3>
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5">
+
+<table><thead><tr><th>选项</th><th>是否必需</th><th>默认值</th><th>描述</th></tr></thead><tbody><tr><td><code>Path Prefix</code></td><td>否</td><td>无</td><td>用于导出文件的路径前缀。导出文件的完整路径计算方式为 <code>s3://&lt;bucket-name&gt;/&lt;path-in-source-config&gt;/&lt;path-prefix&gt;/&lt;exported-file&gt;</code></td></tr><tr><td><code>Canned ACL</code></td><td>否</td><td>无</td><td>使用预定义 ACL 之一，设置附加到上传文件的 AWS 访问控制列表 (ACL)。有关各 ACL 的说明，请参阅 <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/acl-overview.html#canned-acl">AWS 文档 ↗</a>。</td></tr></tbody></table></div>
+<h2 id="user-content-export-tasks-legacy" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#export-tasks-legacy"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>导出任务（遗留）</h2>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p><a href="/docs/foundry/data-connection/export-tasks/">导出任务</a>是一项遗留功能，<em>不</em>建议用于新实施的项目。所有新的导出操作均应使用当前的<a href="#export-data-to-s3">推荐导出工作流</a>。本文档面向仍在使用遗留导出任务的用户提供。</p></div>
+<h3 id="user-content-s3-export-task-configuration" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#s3-export-task-configuration"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>S3 导出任务配置</h3>
+<p>若要通过导出任务将文件从 Foundry 数据集导出至 S3 存储桶，源类型必须为 <code>s3-direct</code>。任务类型为 <code>export-s3-task</code>。</p>
+<h4 id="user-content-basic-configuration"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#basic-configuration"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>基础配置</h4>
+<pre><div class="ptcom-design__wrapper__12wpwnx" data-pagefind-weight="0.5"><span class="ptcom-design__clipboard__1l1gb20 ptcom-design__clipboard__12wpwnx"><span data-pagefind-ignore="true" class="ptcom-design__confirmation__1l1gb20">Copied!</span><svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1" width="16" data-view-component="true" aria-label="clipboard"><path fill-rule="evenodd" fill="currentColor" d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z"></path><path fill-rule="evenodd" fill="currentColor" d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z"></path></svg></span><div style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;overflow:auto;position:relative;margin:0;padding:0.75em"><code class="language-yaml" style="white-space: pre; text-align: left; word-spacing: normal; word-break: normal; overflow-wrap: normal; color: rgb(195, 206, 227); background: rgb(38, 50, 56); font-family: &quot;SF Mono&quot;, Menlo, Consolas, Monaco, Inconsolata, &quot;Fira Mono&quot;, &quot;Droid Sans Mono&quot;, &quot;Source Code Pro&quot;, monospace; font-size: 14px; line-height: 1.5em; tab-size: 4; hyphens: none;"><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 1.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">1</span><span class="token token key" style="color: rgb(199, 146, 234);">type</span><span class="token token" style="color: rgb(137, 221, 255);">:</span><span> export</span><span class="token token" style="color: rgb(137, 221, 255);">-</span><span>s3</span><span class="token token" style="color: rgb(137, 221, 255);">-</span><span>task
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 1.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">2</span><span></span><span class="token token key" style="color: rgb(199, 146, 234);">directoryPath</span><span class="token token" style="color: rgb(137, 221, 255);">:</span><span> /some/directory</span></span></code></div></div></pre>
+<h4 id="user-content-advanced-configuration-options"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#advanced-configuration-options"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>高级配置选项</h4>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>选项</th><th>是否必需</th><th>默认值</th><th>描述</th></tr></thead><tbody><tr><td><code>directoryPath</code></td><td>是</td><td>无</td><td>文件将导出到的 S3 路径</td></tr><tr><td><code>retriesPerFile</code></td><td>否</td><td>0</td><td>每个文件导出的重试次数</td></tr><tr><td><code>setBucketPolicy</code></td><td>否</td><td>true</td><td>是否对导出文件应用存储桶策略</td></tr><tr><td><code>bucketPolicy</code></td><td>否</td><td>无</td><td>要应用的特定存储桶策略（例如 <code>BucketOwnerFullControl</code>）。请参阅 <a href="https://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/services/s3/model/CannedAccessControlList.html">AWS CannedAccessControlList ↗</a></td></tr><tr><td><code>incrementalType</code></td><td>否</td><td>snapshot</td><td>设为 <code>incremental</code> 以进行增量导出</td></tr><tr><td><code>useMultipart</code></td><td>否</td><td>false</td><td>启用并行导出</td></tr><tr><td><code>threads</code></td><td>否</td><td>1</td><td>并行导出的对象数量</td></tr><tr><td><code>rewritePaths</code></td><td>否</td><td>无</td><td>用于路径重写的正则表达式映射</td></tr></tbody></table></div>
+<h4 id="user-content-example-configurations"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#example-configurations"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>配置示例</h4>
+<p>带重试的增量导出：</p>
+<pre><div class="ptcom-design__wrapper__12wpwnx" data-pagefind-weight="0.5"><span class="ptcom-design__clipboard__1l1gb20 ptcom-design__clipboard__12wpwnx"><span data-pagefind-ignore="true" class="ptcom-design__confirmation__1l1gb20">Copied!</span><svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1" width="16" data-view-component="true" aria-label="clipboard"><path fill-rule="evenodd" fill="currentColor" d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z"></path><path fill-rule="evenodd" fill="currentColor" d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z"></path></svg></span><div style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;overflow:auto;position:relative;margin:0;padding:0.75em"><code class="language-yaml" style="white-space: pre; text-align: left; word-spacing: normal; word-break: normal; overflow-wrap: normal; color: rgb(195, 206, 227); background: rgb(38, 50, 56); font-family: &quot;SF Mono&quot;, Menlo, Consolas, Monaco, Inconsolata, &quot;Fira Mono&quot;, &quot;Droid Sans Mono&quot;, &quot;Source Code Pro&quot;, monospace; font-size: 14px; line-height: 1.5em; tab-size: 4; hyphens: none;"><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 1.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">1</span><span class="token token key" style="color: rgb(199, 146, 234);">type</span><span class="token token" style="color: rgb(137, 221, 255);">:</span><span> export</span><span class="token token" style="color: rgb(137, 221, 255);">-</span><span>s3</span><span class="token token" style="color: rgb(137, 221, 255);">-</span><span>task
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 1.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">2</span><span></span><span class="token token key" style="color: rgb(199, 146, 234);">directoryPath</span><span class="token token" style="color: rgb(137, 221, 255);">:</span><span> /exports/data
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 1.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">3</span><span></span><span class="token token key" style="color: rgb(199, 146, 234);">incrementalType</span><span class="token token" style="color: rgb(137, 221, 255);">:</span><span> incremental
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 1.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">4</span><span></span><span class="token token key" style="color: rgb(199, 146, 234);">retriesPerFile</span><span class="token token" style="color: rgb(137, 221, 255);">:</span><span> </span><span class="token token" style="color: rgb(253, 145, 112);">2</span></span></code></div></div></pre>
+<p>带自定义存储桶策略的并行导出：</p>
+<pre>
+
+```yaml
+type: export-s3-task
+directoryPath: /exports/data
+useMultipart: false
+threads: 4
+bucketPolicy: BucketOwnerFullControl
+setBucketPolicy: true
+```
+
+<p>路径重写以移除 Spark 前缀：</p>
+
+```yaml
+type: export-s3-task
+directoryPath: /exports/data
+rewritePaths:
+  "^spark/(.*)": "$1"
+```
+
+<h2 id="user-content-use-s3-sources-in-code" level="2" node="[object Object]" data-pagefind-weight="0.9">在代码中使用 S3 数据源</h2>
+<p>你可以从 <a href="/docs/foundry/transforms-python/getting-started/">Python 转换代码仓库</a>连接到 S3 存储桶，以导出数据集，或使用 <a href="/docs/foundry/data-connection/external-transforms/">外部转换</a>处理文件。</p>
+<h3 id="user-content-write-file-to-s3-bucket" level="3" node="[object Object]" data-pagefind-weight="0.8">将文件写入 S3 存储桶</h3>
+<p>下面的示例演示了如何使用转换生成器将一组数据集 RID 导出到 S3 存储桶：</p>
+
+<div class="ptcom-design__wrapper__12wpwnx" data-pagefind-weight="0.5"><span class="ptcom-design__clipboard__1l1gb20 ptcom-design__clipboard__12wpwnx"><span data-pagefind-ignore="true" class="ptcom-design__confirmation__1l1gb20">Copied!</span><svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1" width="16" data-view-component="true" aria-label="clipboard"><path fill-rule="evenodd" fill="currentColor" d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z"></path><path fill-rule="evenodd" fill="currentColor" d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z"></path></svg></span><div style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;overflow:auto;position:relative;margin:0;padding:0.75em"><code class="language-python" style="white-space: pre; text-align: left; word-spacing: normal; word-break: normal; overflow-wrap: normal; color: rgb(195, 206, 227); background: rgb(38, 50, 56); font-family: &quot;SF Mono&quot;, Menlo, Consolas, Monaco, Inconsolata, &quot;Fira Mono&quot;, &quot;Droid Sans Mono&quot;, &quot;Source Code Pro&quot;, monospace; font-size: 14px; line-height: 1.5em; tab-size: 4; hyphens: none;"><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">1</span><span class="token token" style="color: rgb(84, 110, 122);"># This example shows how to export a list of datasets to an S3 bucket using your AWS session credentials.</span><span>
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">2</span><span></span><span class="token token" style="color: rgb(84, 110, 122);"># For each exported dataset, an output log containing the dataset's RID, export timestamp, number of exported</span><span>
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">3</span><span></span><span class="token token" style="color: rgb(84, 110, 122);"># files, and S3 destination path will be generated.</span><span>
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">4</span>
+</span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">5</span><span></span><span class="token token" style="color: rgb(199, 146, 234); font-style: italic;">from</span><span> pyspark</span><span class="token token" style="color: rgb(137, 221, 255);">.</span><span>sql </span><span class="token token" style="color: rgb(199, 146, 234); font-style: italic;">import</span><span> functions </span><span class="token token" style="color: rgb(199, 146, 234); font-style: italic;">as</span><span> F</span><span class="token token" style="color: rgb(137, 221, 255);">,</span><span> types </span><span class="token token" style="color: rgb(199, 146, 234); font-style: italic;">as</span><span> T
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">6</span><span></span><span class="token token" style="color: rgb(199, 146, 234); font-style: italic;">from</span><span> transforms</span><span class="token token" style="color: rgb(137, 221, 255);">.</span><span>api </span><span class="token token" style="color: rgb(199, 146, 234); font-style: italic;">import</span><span> Input</span><span class="token token" style="color: rgb(137, 221, 255);">,</span><span> Output</span><span class="token token" style="color: rgb(137, 221, 255);">,</span><span> transform</span><span class="token token" style="color: rgb(137, 221, 255);">,</span><span> Transform
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">7</span><span></span><span class="token token" style="color: rgb(199, 146, 234); font-style: italic;">from</span><span> transforms</span><span class="token token" style="color: rgb(137, 221, 255);">.</span><span>external</span><span class="token token" style="color: rgb(137, 221, 255);">.</span><span>systems </span><span class="token token" style="color: rgb(199, 146, 234); font-style: italic;">import</span><span> external_systems</span><span class="token token" style="color: rgb(137, 221, 255);">,</span><span> Source
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">8</span><span></span><span class="token token" style="color: rgb(199, 146, 234); font-style: italic;">from</span><span> typing </span><span class="token token" style="color: rgb(199, 146, 234); font-style: italic;">import</span><span> List
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">9</span><span></span><span class="token token" style="color: rgb(199, 146, 234); font-style: italic;">from</span><span> datetime </span><span class="token token" style="color: rgb(199, 146, 234); font-style: italic;">import</span><span> datetime
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">10</span><span></span><span class="token token" style="color: rgb(199, 146, 234); font-style: italic;">import</span><span> boto3
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">11</span><span></span><span class="token token" style="color: rgb(199, 146, 234); font-style: italic;">import</span><span> logging
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">12</span>
+</span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">13</span><span>log </span><span class="token token" style="color: rgb(137, 221, 255);">=</span><span> logging</span><span class="token token" style="color: rgb(137, 221, 255);">.</span><span>getLogger</span><span class="token token" style="color: rgb(137, 221, 255);">(</span><span>__name__</span><span class="token token" style="color: rgb(137, 221, 255);">)</span><span>
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">14</span>
+</span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">15</span><span>S3_BUCKET_REGION </span><span class="token token" style="color: rgb(137, 221, 255);">=</span><span> </span><span class="token token" style="color: rgb(195, 232, 141);">"&lt;region&gt;"</span><span>
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">16</span><span>S3_BUCKET_NAME </span><span class="token token" style="color: rgb(137, 221, 255);">=</span><span> </span><span class="token token" style="color: rgb(195, 232, 141);">"&lt;name&gt;"</span><span>
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">17</span><span>S3_ENDPOINT_URL </span><span class="token token" style="color: rgb(137, 221, 255);">=</span><span> </span><span class="token token" style="color: rgb(195, 232, 141);">"&lt;endpoint_url&gt;"</span><span>
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">18</span><span>S3_DEST_PATH </span><span class="token token" style="color: rgb(137, 221, 255);">=</span><span> </span><span class="token token" style="color: rgb(195, 232, 141);">"&lt;s3_dest_path&gt;"</span><span>
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">19</span>
+</span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">20</span><span>S3_SOURCE_RID </span><span class="token token" style="color: rgb(137, 221, 255);">=</span><span> </span><span class="token token" style="color: rgb(195, 232, 141);">"&lt;s3_source_rid&gt;"</span><span>
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">21</span>
+</span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">22</span><span>LOG_OUTPUT_PATH </span><span class="token token" style="color: rgb(137, 221, 255);">=</span><span> </span><span class="token token" style="color: rgb(195, 232, 141);">"&lt;log_output_path&gt;"</span><span>
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">23</span>
+</span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">24</span><span>DATASET_RID </span><span class="token token" style="color: rgb(137, 221, 255);">=</span><span> </span><span class="token token" style="color: rgb(195, 232, 141);">"&lt;dataset_rid&gt;"</span><span>
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">25</span>
+</span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">26</span><span></span><span class="token token decorator annotation" style="color: rgb(137, 221, 255);">@external_systems</span><span class="token token" style="color: rgb(137, 221, 255);">(</span><span>
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">27</span><span>    s3_source</span><span class="token token" style="color: rgb(137, 221, 255);">=</span><span>Source</span><span class="token token" style="color: rgb(137, 221, 255);">(</span><span>S3_SOURCE_RID</span><span class="token token" style="color: rgb(137, 221, 255);">)</span><span>
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">28</span><span></span><span class="token token" style="color: rgb(137, 221, 255);">)</span><span>
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">29</span><span></span><span class="token token decorator annotation" style="color: rgb(137, 221, 255);">@transform</span><span class="token token" style="color: rgb(137, 221, 255);">(</span><span>
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">30</span><span>    export_log</span><span class="token token" style="color: rgb(137, 221, 255);">=</span><span>Output</span><span class="token token" style="color: rgb(137, 221, 255);">(</span><span class="token token string-interpolation" style="color: rgb(195, 232, 141);">f"</span><span class="token token string-interpolation interpolation" style="color: rgb(137, 221, 255);">{</span><span class="token token string-interpolation interpolation">LOG_OUTPUT_PATH</span><span class="token token string-interpolation interpolation" style="color: rgb(137, 221, 255);">}</span><span class="token token string-interpolation" style="color: rgb(195, 232, 141);">/export_</span><span class="token token string-interpolation interpolation" style="color: rgb(137, 221, 255);">{</span><span class="token token string-interpolation interpolation">DATASET_RID</span><span class="token token string-interpolation interpolation" style="color: rgb(137, 221, 255);">}</span><span class="token token string-interpolation" style="color: rgb(195, 232, 141);">_log"</span><span class="token token" style="color: rgb(137, 221, 255);">)</span><span class="token token" style="color: rgb(137, 221, 255);">,</span><span>
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">31</span><span>    input_dataset</span><span class="token token" style="color: rgb(137, 221, 255);">=</span><span>Input</span><span class="token token" style="color: rgb(137, 221, 255);">(</span><span class="token token string-interpolation" style="color: rgb(195, 232, 141);">f"</span><span class="token token string-interpolation interpolation" style="color: rgb(137, 221, 255);">{</span><span class="token token string-interpolation interpolation">DATASET_RID</span><span class="token token string-interpolation interpolation" style="color: rgb(137, 221, 255);">}</span><span class="token token string-interpolation" style="color: rgb(195, 232, 141);">"</span><span class="token token" style="color: rgb(137, 221, 255);">)</span><span>
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">32</span><span></span><span class="token token" style="color: rgb(137, 221, 255);">)</span><span>
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">33</span><span></span><span class="token token" style="color: rgb(199, 146, 234); font-style: italic;">def</span><span> </span><span class="token token" style="color: rgb(199, 146, 234);">compute_function</span><span class="token token" style="color: rgb(137, 221, 255);">(</span><span>ctx</span><span class="token token" style="color: rgb(137, 221, 255);">,</span><span> input_dataset</span><span class="token token" style="color: rgb(137, 221, 255);">,</span><span> s3_source</span><span class="token token" style="color: rgb(137, 221, 255);">,</span><span> export_log</span><span class="token token" style="color: rgb(137, 221, 255);">)</span><span class="token token" style="color: rgb(137, 221, 255);">:</span><span>
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">34</span><span>    </span><span class="token token" style="color: rgb(84, 110, 122);"># 1. Retrieve credentials for the S3 bucket</span><span>
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">35</span><span>    refreshable_creds </span><span class="token token" style="color: rgb(137, 221, 255);">=</span><span> s3_source</span><span class="token token" style="color: rgb(137, 221, 255);">.</span><span>get_session_credentials</span><span class="token token" style="color: rgb(137, 221, 255);">(</span><span class="token token" style="color: rgb(137, 221, 255);">)</span><span>
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">36</span><span>    creds </span><span class="token token" style="color: rgb(137, 221, 255);">=</span><span> refreshable_creds</span><span class="token token" style="color: rgb(137, 221, 255);">.</span><span>get</span><span class="token token" style="color: rgb(137, 221, 255);">(</span><span class="token token" style="color: rgb(137, 221, 255);">)</span><span>
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">37</span>
+</span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">38</span><span>    </span><span class="token token" style="color: rgb(84, 110, 122);"># 2. Construct S3 key for the current dataset</span><span>
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">39</span><span>    s3_dataset_key </span><span class="token token" style="color: rgb(137, 221, 255);">=</span><span> </span><span class="token token string-interpolation" style="color: rgb(195, 232, 141);">f"</span><span class="token token string-interpolation interpolation" style="color: rgb(137, 221, 255);">{</span><span class="token token string-interpolation interpolation">S3_DEST_PATH</span><span class="token token string-interpolation interpolation" style="color: rgb(137, 221, 255);">}</span><span class="token token string-interpolation" style="color: rgb(195, 232, 141);">/</span><span class="token token string-interpolation interpolation" style="color: rgb(137, 221, 255);">{</span><span class="token token string-interpolation interpolation">DATASET_RID</span><span class="token token string-interpolation interpolation" style="color: rgb(137, 221, 255);">}</span><span class="token token string-interpolation" style="color: rgb(195, 232, 141);">/"</span><span>
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">40</span>
+</span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">41</span><span>    </span><span class="token token" style="color: rgb(84, 110, 122);"># 3. Set up the boto3 client</span><span>
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">42</span><span>    </span><span class="token token" style="color: rgb(84, 110, 122);"># NOTE: For large exports that may exceed credential TTL (~1 hour),</span><span>
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">43</span><span>    </span><span class="token token" style="color: rgb(84, 110, 122);"># consider refreshing credentials periodically or implementing</span><span>
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">44</span><span>    </span><span class="token token" style="color: rgb(84, 110, 122);"># boto3's RefreshableCredentials pattern</span><span>
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">45</span><span>    s3_client </span><span class="token token" style="color: rgb(137, 221, 255);">=</span><span> boto3</span><span class="token token" style="color: rgb(137, 221, 255);">.</span><span>client</span><span class="token token" style="color: rgb(137, 221, 255);">(</span><span>
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">46</span><span>        </span><span class="token token" style="color: rgb(195, 232, 141);">"s3"</span><span class="token token" style="color: rgb(137, 221, 255);">,</span><span>
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">47</span><span>        aws_access_key_id</span><span class="token token" style="color: rgb(137, 221, 255);">=</span><span>creds</span><span class="token token" style="color: rgb(137, 221, 255);">.</span><span>access_key_id</span><span class="token token" style="color: rgb(137, 221, 255);">,</span><span>
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">48</span><span>        aws_secret_access_key</span><span class="token token" style="color: rgb(137, 221, 255);">=</span><span>creds</span><span class="token token" style="color: rgb(137, 221, 255);">.</span><span>secret_access_key</span><span class="token token" style="color: rgb(137, 221, 255);">,</span><span>
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">49</span><span>        region_name</span><span class="token token" style="color: rgb(137, 221, 255);">=</span><span>S3_BUCKET_REGION</span><span class="token token" style="color: rgb(137, 221, 255);">,</span><span>
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">50</span><span>        endpoint_url</span><span class="token token" style="color: rgb(137, 221, 255);">=</span><span>S3_ENDPOINT_URL</span><span class="token token" style="color: rgb(137, 221, 255);">,</span><span>
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">51</span><span>    </span><span class="token token" style="color: rgb(137, 221, 255);">)</span><span>
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">52</span>
+</span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">53</span><span>    </span><span class="token token" style="color: rgb(84, 110, 122);"># Helper function to write dataset files to S3</span><span>
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">54</span><span>    </span><span class="token token" style="color: rgb(199, 146, 234); font-style: italic;">def</span><span> </span><span class="token token" style="color: rgb(199, 146, 234);">write_file</span><span class="token token" style="color: rgb(137, 221, 255);">(</span><span>row</span><span class="token token" style="color: rgb(137, 221, 255);">)</span><span class="token token" style="color: rgb(137, 221, 255);">:</span><span>
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">55</span><span>        </span><span class="token token" style="color: rgb(199, 146, 234); font-style: italic;">try</span><span class="token token" style="color: rgb(137, 221, 255);">:</span><span>
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">56</span><span>            </span><span class="token token" style="color: rgb(199, 146, 234); font-style: italic;">with</span><span> input_dataset</span><span class="token token" style="color: rgb(137, 221, 255);">.</span><span>filesystem</span><span class="token token" style="color: rgb(137, 221, 255);">(</span><span class="token token" style="color: rgb(137, 221, 255);">)</span><span class="token token" style="color: rgb(137, 221, 255);">.</span><span class="token token" style="color: rgb(255, 203, 107);">open</span><span class="token token" style="color: rgb(137, 221, 255);">(</span><span>row</span><span class="token token" style="color: rgb(137, 221, 255);">.</span><span>path</span><span class="token token" style="color: rgb(137, 221, 255);">,</span><span> </span><span class="token token" style="color: rgb(195, 232, 141);">"rb"</span><span class="token token" style="color: rgb(137, 221, 255);">)</span><span> </span><span class="token token" style="color: rgb(199, 146, 234); font-style: italic;">as</span><span> in_f</span><span class="token token" style="color: rgb(137, 221, 255);">:</span><span>
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">57</span><span>                s3_key </span><span class="token token" style="color: rgb(137, 221, 255);">=</span><span> s3_dataset_key </span><span class="token token" style="color: rgb(137, 221, 255);">+</span><span> row</span><span class="token token" style="color: rgb(137, 221, 255);">.</span><span>path
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">58</span><span>                s3_client</span><span class="token token" style="color: rgb(137, 221, 255);">.</span><span>upload_fileobj</span><span class="token token" style="color: rgb(137, 221, 255);">(</span><span>in_f</span><span class="token token" style="color: rgb(137, 221, 255);">,</span><span> S3_BUCKET_NAME</span><span class="token token" style="color: rgb(137, 221, 255);">,</span><span> s3_key</span><span class="token token" style="color: rgb(137, 221, 255);">)</span><span>
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">59</span>
+</span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">60</span><span>        </span><span class="token token" style="color: rgb(199, 146, 234); font-style: italic;">except</span><span> Exception </span><span class="token token" style="color: rgb(199, 146, 234); font-style: italic;">as</span><span> e</span><span class="token token" style="color: rgb(137, 221, 255);">:</span><span>
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">61</span><span>            log</span><span class="token token" style="color: rgb(137, 221, 255);">.</span><span>error</span><span class="token token" style="color: rgb(137, 221, 255);">(</span><span class="token token string-interpolation" style="color: rgb(195, 232, 141);">f"Exception when uploading </span><span class="token token string-interpolation interpolation" style="color: rgb(137, 221, 255);">{</span><span class="token token string-interpolation interpolation">DATASET_RID</span><span class="token token string-interpolation interpolation" style="color: rgb(137, 221, 255);">}</span><span class="token token string-interpolation" style="color: rgb(195, 232, 141);"> to S3: </span><span class="token token string-interpolation interpolation" style="color: rgb(137, 221, 255);">{</span><span class="token token string-interpolation interpolation">e</span><span class="token token string-interpolation interpolation" style="color: rgb(137, 221, 255);">}</span><span class="token token string-interpolation" style="color: rgb(195, 232, 141);">"</span><span class="token token" style="color: rgb(137, 221, 255);">)</span><span>
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">62</span><span>            </span><span class="token token" style="color: rgb(199, 146, 234); font-style: italic;">raise</span><span>
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">63</span>
+</span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">64</span><span>    </span><span class="token token" style="color: rgb(84, 110, 122);"># 4. Write dataset files to S3</span><span>
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">65</span><span>    result </span><span class="token token" style="color: rgb(137, 221, 255);">=</span><span> input_dataset</span><span class="token token" style="color: rgb(137, 221, 255);">.</span><span>filesystem</span><span class="token token" style="color: rgb(137, 221, 255);">(</span><span class="token token" style="color: rgb(137, 221, 255);">)</span><span class="token token" style="color: rgb(137, 221, 255);">.</span><span>files</span><span class="token token" style="color: rgb(137, 221, 255);">(</span><span class="token token" style="color: rgb(137, 221, 255);">)</span><span>
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">66</span><span>    result</span><span class="token token" style="color: rgb(137, 221, 255);">.</span><span>foreach</span><span class="token token" style="color: rgb(137, 221, 255);">(</span><span>write_file</span><span class="token token" style="color: rgb(137, 221, 255);">)</span><span>
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">67</span>
+</span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">68</span><span>    </span><span class="token token" style="color: rgb(84, 110, 122);"># 5. Define output export log schema</span><span>
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">69</span><span>    schema </span><span class="token token" style="color: rgb(137, 221, 255);">=</span><span> T</span><span class="token token" style="color: rgb(137, 221, 255);">.</span><span>StructType</span><span class="token token" style="color: rgb(137, 221, 255);">(</span><span class="token token" style="color: rgb(137, 221, 255);">[</span><span>
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">70</span><span>        T</span><span class="token token" style="color: rgb(137, 221, 255);">.</span><span>StructField</span><span class="token token" style="color: rgb(137, 221, 255);">(</span><span class="token token" style="color: rgb(195, 232, 141);">"dataset_rid"</span><span class="token token" style="color: rgb(137, 221, 255);">,</span><span> T</span><span class="token token" style="color: rgb(137, 221, 255);">.</span><span>StringType</span><span class="token token" style="color: rgb(137, 221, 255);">(</span><span class="token token" style="color: rgb(137, 221, 255);">)</span><span class="token token" style="color: rgb(137, 221, 255);">,</span><span> </span><span class="token token" style="color: rgb(199, 146, 234);">False</span><span class="token token" style="color: rgb(137, 221, 255);">)</span><span class="token token" style="color: rgb(137, 221, 255);">,</span><span>
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">71</span><span>        T</span><span class="token token" style="color: rgb(137, 221, 255);">.</span><span>StructField</span><span class="token token" style="color: rgb(137, 221, 255);">(</span><span class="token token" style="color: rgb(195, 232, 141);">"export_timestamp"</span><span class="token token" style="color: rgb(137, 221, 255);">,</span><span> T</span><span class="token token" style="color: rgb(137, 221, 255);">.</span><span>TimestampType</span><span class="token token" style="color: rgb(137, 221, 255);">(</span><span class="token token" style="color: rgb(137, 221, 255);">)</span><span class="token token" style="color: rgb(137, 221, 255);">,</span><span> </span><span class="token token" style="color: rgb(199, 146, 234);">False</span><span class="token token" style="color: rgb(137, 221, 255);">)</span><span class="token token" style="color: rgb(137, 221, 255);">,</span><span>
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">72</span><span>        T</span><span class="token token" style="color: rgb(137, 221, 255);">.</span><span>StructField</span><span class="token token" style="color: rgb(137, 221, 255);">(</span><span class="token token" style="color: rgb(195, 232, 141);">"files_uploaded"</span><span class="token token" style="color: rgb(137, 221, 255);">,</span><span> T</span><span class="token token" style="color: rgb(137, 221, 255);">.</span><span>IntegerType</span><span class="token token" style="color: rgb(137, 221, 255);">(</span><span class="token token" style="color: rgb(137, 221, 255);">)</span><span class="token token" style="color: rgb(137, 221, 255);">,</span><span> </span><span class="token token" style="color: rgb(199, 146, 234);">False</span><span class="token token" style="color: rgb(137, 221, 255);">)</span><span class="token token" style="color: rgb(137, 221, 255);">,</span><span>
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">73</span><span>        T</span><span class="token token" style="color: rgb(137, 221, 255);">.</span><span>StructField</span><span class="token token" style="color: rgb(137, 221, 255);">(</span><span class="token token" style="color: rgb(195, 232, 141);">"s3_dest_path"</span><span class="token token" style="color: rgb(137, 221, 255);">,</span><span> T</span><span class="token token" style="color: rgb(137, 221, 255);">.</span><span>StringType</span><span class="token token" style="color: rgb(137, 221, 255);">(</span><span class="token token" style="color: rgb(137, 221, 255);">)</span><span class="token token" style="color: rgb(137, 221, 255);">,</span><span> </span><span class="token token" style="color: rgb(199, 146, 234);">False</span><span class="token token" style="color: rgb(137, 221, 255);">)</span><span>
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">74</span><span>    </span><span class="token token" style="color: rgb(137, 221, 255);">]</span><span class="token token" style="color: rgb(137, 221, 255);">)</span><span>
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">75</span><span>    file_count </span><span class="token token" style="color: rgb(137, 221, 255);">=</span><span> result</span><span class="token token" style="color: rgb(137, 221, 255);">.</span><span>count</span><span class="token token" style="color: rgb(137, 221, 255);">(</span><span class="token token" style="color: rgb(137, 221, 255);">)</span><span>
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">76</span><span>    output_df </span><span class="token token" style="color: rgb(137, 221, 255);">=</span><span> ctx</span><span class="token token" style="color: rgb(137, 221, 255);">.</span><span>spark_session</span><span class="token token" style="color: rgb(137, 221, 255);">.</span><span>createDataFrame</span><span class="token token" style="color: rgb(137, 221, 255);">(</span><span class="token token" style="color: rgb(137, 221, 255);">[</span><span class="token token" style="color: rgb(137, 221, 255);">(</span><span>DATASET_RID</span><span class="token token" style="color: rgb(137, 221, 255);">,</span><span> datetime</span><span class="token token" style="color: rgb(137, 221, 255);">.</span><span>now</span><span class="token token" style="color: rgb(137, 221, 255);">(</span><span class="token token" style="color: rgb(137, 221, 255);">)</span><span class="token token" style="color: rgb(137, 221, 255);">,</span><span> file_count</span><span class="token token" style="color: rgb(137, 221, 255);">,</span><span> s3_dataset_key</span><span class="token token" style="color: rgb(137, 221, 255);">)</span><span class="token token" style="color: rgb(137, 221, 255);">]</span><span class="token token" style="color: rgb(137, 221, 255);">,</span><span> schema</span><span class="token token" style="color: rgb(137, 221, 255);">)</span><span>
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 2.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">77</span><span>    export_log</span><span class="token token" style="color: rgb(137, 221, 255);">.</span><span>write_dataframe</span><span class="token token" style="color: rgb(137, 221, 255);">(</span><span>output_df</span><span class="token token" style="color: rgb(137, 221, 255);">)</span></span></code></div></div></pre>
+</article>
+</body>
+</html>

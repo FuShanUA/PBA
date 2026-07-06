@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Exports</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-exports" level="1" node="[object Object]" data-pagefind-weight="7"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#exports"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>导出</h1>
+<p>数据连接支持将数据集和流从 Foundry 导出到外部系统。这在多种场景下非常实用：</p>
+<ul>
+<li>通过数据管道在 Foundry 中清洗和转换后的数据，可以同步至数据仓库或数据湖等系统。这一模式在《Palantir Foundry 如何为您的数据平台赋能》中进行了详细阐述。</li>
+<li>利用批量部署创建的机器学习模型所输出的推理结果，可以导出到其他系统，从而在整个组织范围内推动机器学习项目的落地应用。</li>
+<li>在本体中从最终用户处采集的运营数据，可以写入其他系统，以便在 Foundry 之外进行分析。</li>
+</ul>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>数据连接导出功能目前尚未支持所有源类型。请查阅源类型概述文档中列出的各个源类型页面，以确认其可用性。如果具备导出能力，每个源页面都会标明支持文件导出、流式导出、表导出还是旧版导出任务。例如，Amazon S3 源类型支持文件导出，而 BigQuery 源则需要使用导出任务。<br>
+部分暂不支持文件、流式或表导出功能的源，可能仍支持旧版导出任务配置。对于已实现最新导出功能的源类型，不再推荐使用导出任务。</p></div>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><div class="ptcom-design__title__19o1cwu">更新的导出行为</div><p>在 2025 年 6 月之前，如果构建期间没有新的文件或行需要导出，导出状态会被标记为<code>failed</code>。自 2025 年 6 月起，若无新的文件或行需要导出，导出状态将标记为<code>success</code>。此项变更可能会影响依赖原有失败行为的工作流；用户需要相应地调整受影响的工作流。</p></div>
+<h2 id="user-content-export-types" level="2" node="[object Object]" data-pagefind-weight="6.3"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#export-types"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>导出类型</h2>
+<p>导出行为取决于目标系统所能接受的数据类型。</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>导出类型</th><th>摘要</th></tr></thead><tbody><tr><td><a href="#file-exports">文件导出</a></td><td>用于向无模式的系统导出。数据集中的原始文件将按计划复制并写入目标系统。</td></tr><tr><td><a href="#streaming-exports">流式导出</a></td><td>用于持续向支持事件流的系统导出。来自 Foundry 流的记录将被持续推送到目标系统。</td></tr><tr><td><a href="#table-exports">表导出</a></td><td>用于向具备模式的系统导出。数据集的行将按计划并根据所选的导出模式插入到目标系统中。</td></tr></tbody></table></div>
+<h3 id="user-content-file-exports" level="3" node="[object Object]" data-pagefind-weight="5.6"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#file-exports"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>文件导出</h3>
+<p>支持文件导出的系统示例之一是 S3。</p>
+<p>文件导出会将所选 Foundry 数据集中的文件写入配置好的目标位置。默认情况下，系统只会写入上游数据集中自上次成功导出事务以来发生过修改的文件。这意味着，如果某个文件在特定事务中未更新，那么在后续任何计划内或手动触发的下游导出中，该文件都不会被重新导出。</p>
+<p>如果必须重新导出整个数据集，请在同一源上新建一个导出任务，或者确保上游转换逻辑会覆盖所有需要导出的文件。</p>
+<p>默认情况下，如果目标位置已存在同名文件，导出作业会用导出的数据覆盖该文件。此行为可能因源类型而异。为了避免意外覆盖目标系统中的已有数据，建议您创建一个专用子文件夹，专门用于存放从 Foundry 导出的数据。</p>
+<h3 id="user-content-streaming-exports" level="3" node="[object Object]" data-pagefind-weight="5.6"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#streaming-exports"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>流式导出</h3>
+<p>只要导出作业在 Foundry 中持续运行，向流式目标位置的导出操作就会不断将记录流式传输至目标端。如果作业停止并重新启动，它将从上次中断的位置继续流式传输记录。</p>
+<p>以下源类型支持流式导出：</p>
+<ul>
+<li>Amazon Kinesis</li>
+<li>Amazon SQS</li>
+<li>Google Pub/Sub</li>
+<li>Kafka</li>
+<li>PostgreSQL</li>
+<li>Solace</li>
+</ul>
+<h4 id="user-content-streaming-export-replay-behavior"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#streaming-export-replay-behavior"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>流式导出重放行为</h4>
+<p>
+
+在配置导出到流式传输目标端时，必须指定在 Foundry 中重放数据流时的预期行为。通常，在修改了破坏性处理逻辑后，系统会<a href="/docs/foundry/pipeline-builder/outputs-deliver-pipeline/#additional-options-for-streaming-pipelines">重放</a>数据流。在这种情况下，之前处理过的记录必须使用新逻辑，通过以下方式之一重新处理：</p>
+<ul>
+<li>
+<p><strong>导出重放的记录：</strong>重放数据流时重新导出所有记录。请注意，之前导出的任何记录都将再次被导出，因此必须将外部系统配置为能够处理重复数据。</p>
+</li>
+<li>
+<p><strong>不导出重放的记录：</strong>暂停导出操作，直到重放的偏移量与导出作业中的最新偏移量匹配为止。由于重放的数据流之间无法保证偏移量一致，此选项通常会导致部分记录丢失，永远不会被导出。</p>
+</li>
+</ul>
+<h3 id="user-content-table-exports" level="3" node="[object Object]" data-pagefind-weight="5.6"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#table-exports"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>表导出</h3>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>截至 2024 年 6 月，表导出功能已正式发布，但可能并非适用于所有源类型。如果可用，建议使用表导出功能而非<a href="/docs/foundry/data-connection/export-tasks/">导出任务</a>。要检查源类型是否支持表导出，请访问数据连接中的新源页面并查找 <code>表导出</code> 标签，或访问相关源类型的文档页面。</p></div>
+<p>表导出允许将数据导出到包含已知模式表数据的系统中，且外部目标模式与希望导出的 Foundry 数据集模式相匹配。表导出将执行特定于系统的 <code>INSERT</code> 语句或等效的 API 调用，按照下文所述的选定表导出模式将行写入目标表。</p>
+<h4 id="user-content-table-export-modes"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#table-export-modes"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>表导出模式</h4>
+<p>所选的<strong>导出模式</strong>指定了表导出期间数据导出的方式。以下导出模式适用于所有表导出，并且在数据连接的导出设置页面上也有相关说明。</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>表导出模式</th><th>描述</th></tr></thead><tbody><tr><td>高效地将数据集镜像到外部表（<em>推荐</em>）</td><td>外部表将始终与 Foundry 数据集中所见内容保持一致。<br><br>实现方式是始终从当前数据集视图增量导出所有未导出的事务，并在 Foundry 数据集上执行 <code>SNAPSHOT</code> 事务时清空外部表。<br><br>此模式不支持正在导出的数据集中的 <code>UPDATE</code> 和 <code>DELETE</code> 事务。</td></tr><tr><td>导出完整数据集而不清空</td><td>始终导出 Foundry 数据集完整视图的快照，而不先清空外部表。<br><br>注意：此选项几乎总是会导致外部表中出现重复数据。如果外部系统在每次运行后会读取并删除行，或者希望重新导出已导出的行，此选项将非常有用。</td></tr><tr><td>导出完整数据集并清空</td><td>此选项将截断（删除）目标表，然后导出当前完整数据集视图的快照。<br><br>这将使外部表始终镜像 Foundry 数据集，但效率低于“高效地镜像到外部表”这一增量选项。<br><br>如果导出期间对外部表进行了编辑，并且希望始终覆盖这些编辑，此选项可能会非常有用。</td></tr><tr><td>增量导出</td><td>仅从当前视图中导出未导出的事务，而不清空目标表。<br><br>此模式不支持正在导出的数据集中的 <code>UPDATE</code> 和 <code>DELETE</code> 事务。此选项仅通过 <code>APPEND</code> 事务镜像数据集，以避免再次导出相同数据。如果上游数据集存在 <code>SNAPSHOT</code> 事务，此模式可能会在目标表中产生重复记录。</td></tr><tr><td>增量导出并清空</td><td>此选项会截断（删除）目标表，然后仅从当前视图中导出之前未导出的事务。<br><br>当将目标表视为消息队列时（例如，当另一个任务从表中提取行并将其写入其他位置时），此模式非常有用。<br><br>注意：此模式不支持上游数据集中的 <code>UPDATE</code> 和 <code>DELETE</code> 事务。</td></tr><tr><td>增量导出，非 APPEND 则失败</td><td>仅从当前视图中导出未导出的事务，如果存在 <code>SNAPSHOT</code>、<code>UPDATE</code> 或 <code>DELETE</code> 事务（在首次运行之后），则导出失败。<br><br>只要 Foundry 数据集仅包含 <code>APPEND</code> 事务，此选项就会对其进行镜像。它可以防止在 Foundry 数据集出现快照的情况下重新导出所有数据，并确保导出到目标表中的数据永远不会出现重复。</td></tr></tbody></table></div>
+<p>传统导出任务不支持导出模式。</p>
+<p><img alt="在配置页面上，用户会看到一个表单，允许他们输入目标表、模式和数据集的名称" height="600" src="/docs/resources/foundry/data-connection/table-exports-full-screen.png" style="aspect-ratio:1506 / 915" width="987.5409836065573" node="[object Object]"></p>
+<h4 id="user-content-special-considerations-for-table-exports">
+
+<a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#special-considerations-for-table-exports"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>表导出的特殊注意事项</h4>
+<ul>
+<li>从 Foundry 导出的数据集必须与外部源保持 1:1 的匹配关系，包括准确的列名（区分大小写）和数据类型。例如，将 <code>LONG</code> 类型的 <code>COLUMN_ABC</code> 导出到目标端中 <code>COLUMN_ABC</code> 为 <code>STRING</code> 类型的位置，会在运行时失败。</li>
+<li>设置表导出时，如果源端有要求，必须填写 <code>DATABASE</code>、<code>SCHEMA</code> 和 <code>TABLE</code> 字段。遗漏其中任何字段都会导致运行时导出失败。同理，包含不必要的字段也可能导致失败。为获得最高可靠性，建议使用“探索源”和“自动填充”功能来选择源端的目标位置。</li>
+<li>在表导出中使用 <a href="/docs/foundry/data-connection/set-up-agent/">agent worker</a> 时，智能体必须运行在 Linux 主机上。不支持使用 Windows 智能体运行表导出。</li>
+<li>导出到表格目标端的数据集，其底层文件必须为 Parquet 格式。CSV 和其他支持 schema 的文件类型将无法导出。</li>
+<li>目标表必须已存在于源系统中；Foundry 不会自动创建该表。</li>
+<li>使用包含截断操作的导出模式时，在 Foundry 源配置中输入的凭据必须具有在外部系统中截断该表的权限。</li>
+<li>不支持导出 <code>Array</code>、<code>Map</code> 和 <code>Struct</code> 类型。如果要导出的数据集包含 <code>Array</code>、<code>Map</code> 或 <code>Struct</code> 类型的列，导出将会失败。</li>
+</ul>
+<h4 id="user-content-sql-dialects-in-table-exports"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#sql-dialects-in-table-exports"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>表导出中的 SQL 方言</h4>
+<p>目前，自定义 JDBC 源类型支持表导出功能。尽管 Foundry 为 Oracle 等特定系统提供了专用连接器，但除非通过 <a href="/docs/foundry/available-connectors/custom-jdbc-sources/#custom-jdbc-sources">自定义 JDBC 连接</a> 建立连接，否则表导出源功能不会作为选项出现。</p>
+<p>在向自定义 JDBC 源执行表导出时，如果你提供了自己的驱动 JAR 文件，必须确认 Palantir 用于导出数据的 INSERT 语句语法与你系统所接受的 SQL 方言兼容。</p>
+<p>下方示例展示了 Palantir 导出到 <a href="/docs/foundry/available-connectors/custom-jdbc-sources/#custom-jdbc-sources">自定义 JDBC 源</a> 时使用的 INSERT 语句。目前无法自定义这些语句。如果你的系统在运行导出时不接受所使用的语句，你可以退而使用基于代码的连接选项将数据写入你的系统。</p>
+<p>此外，你还需要确保数据库中使用的类型与下方列出的支持类型兼容。</p>
+<h5 id="user-content-supported-jdbc-types"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#supported-jdbc-types"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>受支持的 JDBC 类型</h5>
+<p>受支持的 JDBC 源类型包括：</p>
+<ul>
+<li><code>DECIMAL</code></li>
+<li><code>BIGINT</code></li>
+<li><code>BINARY</code></li>
+<li><code>BOOLEAN</code></li>
+<li><code>SMALLINT</code></li>
+<li><code>DATE</code></li>
+<li><code>DOUBLE</code></li>
+<li><code>FLOAT</code></li>
+<li><code>INTEGER</code></li>
+<li><code>VARCHAR</code></li>
+<li><code>TIMESTAMP</code></li>
+</ul>
+<h5 id="user-content-unsupported-jdbc-types"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#unsupported-jdbc-types"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>不支持的 JDBC 类型</h5>
+<p>不支持的 JDBC 源类型包括：</p>
+<ul>
+<li><code>ARRAY</code></li>
+<li><code>MAP</code></li>
+<li><code>STRUCT</code></li>
+<li>上方未列为受支持的其他类型（例如 <code>GEOGRAPHY</code> 等罕见类型）</li>
+</ul>
+<p>如果数据集包含不受支持的类型列（如 <code>ARRAY</code>、<code>MAP</code> 或 <code>STRUCT</code>），导出将会失败。</p>
+<h5 id="user-content-insert-statement-examples"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#insert-statement-examples"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>INSERT 语句示例</h5>
+<p>以下示例提供了关于表导出所用语法的更多信息。如果你的源系统不支持此格式的 INSERT 语句，这些 INSERT 语句在运行时将会失败。</p>
+<p>假设源系统中存在一个 <code>target_table</code>，其 schema 与 Foundry 中的对应数据集相同。外部源和 Foundry 之间的列名和数据类型必须匹配。以下是 Foundry 中数据集的模拟示例：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>column1</th><th>column2</th><th>column3</th></tr></thead><tbody><tr><td>value1</td><td>value2</td><td>value3</td></tr><tr><td>value4</td><td>value5</td><td>value6</td></tr><tr><td>value7</td><td>value8</td><td>value9</td></tr></tbody></table></div>
+<p>单行的 <code>INSERT</code> 语句遵循以下通用格式：</p>
+<pre><code>INSERT INTO target_table (column1, column2, column3) VALUES ('value1', 'value2', 'value3');
+</code></pre>
+<p>根据源类型的不同，insert 语句将应用于一行或多行数据。例如，Snowflake 平台 支持 <code>batch inserts</code>，因此允许一次写入多行。</p>
+<pre><code>INSERT INTO target_table (column1, column2, column3) VALUES ('value1', 'value2', 'value3'), ('value4', 'value5', 'value6'), ('value7', 'value8', 'value9');
+</code></pre>
+<p>相比之下，Apache Hive 等源对 <code>batch inserts</code> 的支持有限，将通过连续三条 insert 语句完成导出。</p>
+<pre>
+
+<code>INSERT INTO target_table (column1, column2, column3) VALUES ('value1', 'value2', 'value3');
+INSERT INTO target_table (column1, column2, column3) VALUES ('value4', 'value5', 'value6');
+INSERT INTO target_table (column1, column2, column3) VALUES ('value7', 'value8', 'value9');
+</code></pre>
+<h5 id="user-content-truncate-table-statement-example"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#truncate-table-statement-example"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>TRUNCATE TABLE 语句示例</h5>
+<p>选择 <code>Full dataset with truncation</code>（截断后导出全量数据集）这类导出选项时，系统会先在外部源端截断目标表，然后再执行插入语句。实现该操作的实际代码如下例所示：</p>
+<pre><code>TRUNCATE TABLE table_name;
+INSERT INTO target_table (column1, column2, column3) VALUES ('value1', 'value2', 'value3');
+</code></pre>
+<p>如需使用更特定的方言，我们推荐使用 Foundry 的《基于代码的连接选项》之一，例如《外部转换》。</p>
+<h4 id="user-content-multi-threaded-table-exports"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#multi-threaded-table-exports"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>多线程表导出</h4>
+<p>部分源类型支持多线程表导出，从而提升导出性能。采用多线程导出时，Foundry 会在目标系统中创建一个临时暂存表以保障原子性。数据会并行写入该暂存表，待导出完成后再复制到最终目标表。导出结束后，系统会自动删除此暂存表。</p>
+<p>使用多线程导出时，凭据必须对目标系统中的表拥有 <code>CREATE</code>、<code>READ</code>、<code>UPDATE</code> 和 <code>DELETE</code> 权限。</p>
+<h2 id="user-content-prepare-data-for-export" level="2" node="[object Object]" data-pagefind-weight="6.3"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#prepare-data-for-export"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>准备导出数据</h2>
+<p>通常情况下，导出操作不支持将数据转换作为导出作业的一部分来执行。这意味着，选定的导出数据集或流应已处于目标格式，包括已完成过滤、文件重命名或重新分区以及其他任何数据转换操作。</p>
+<p>《Pipeline Builder》和《Code Repositories》是 Foundry 用于构建数据转换流水线的工具；这两款应用均可提供准备导出数据所需的完整工具链，涵盖作业可扩展性、监控、版本控制，以及按需编写任意逻辑的灵活性。</p>
+<h3 id="user-content-controlling-output-file-structure" level="3" node="[object Object]" data-pagefind-weight="5.6"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#controlling-output-file-structure"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>控制输出文件结构</h3>
+<p>默认情况下，包含结构化数据的 Foundry 数据集会将其底层文件存储在 <code>spark/</code> 目录下。如果要求导出的文件落入特定的目录结构中（例如按日期分区组织），可以在导出前使用《Python 转换》以所需布局写入数据集。</p>
+<p>以下 Python 转换示例利用《文件系统 API》将文件直接复制到基于日期的路径下：</p>
+<pre>
+
+```python
+from transforms.api import transform, Input, Output
+import datetime
+import shutil
+
+@transform(
+    output_dataset=Output("/path/to/output/dataset"),
+    input_dataset=Input("/path/to/input/dataset"),
+)
+def compute(input_dataset, output_dataset):
+    dt = datetime.date.today().strftime("%Y%m%d")
+    for file_status in input_dataset.filesystem().ls():
+        relative_path = file_status.path[len("spark/"):] if file_status.path.startswith("spark/") else file_status.path
+        with input_dataset.filesystem().open(file_status.path, "rb") as in_f:
+            with output_dataset.filesystem().open(f"data_dt={dt}/{relative_path}", "wb") as out_f:
+                shutil.copyfileobj(in_f, out_f)
+```
+
+<p>经过此转换，导出的数据集将包含路径如 <code>data_dt=20240101/part-00000-xxx.parquet</code> 的文件，而非 <code>spark/part-00000-xxx.parquet</code>。将文件导出配置为使用该转换后的数据集作为导出对象。首次构建后，在该数据集上选择 <strong>应用表结构</strong>，即可在 Foundry 中将其作为表格数据查看。</p>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>在导出至 Kafka 时，可以允许对流记录进行 Base64 解码。有关 Kafka 导出的更多信息，请查阅完整的 《<a href="/docs/foundry/available-connectors/kafka/#export-data-to-kafka">Kafka 连接器文档</a>》。</p></div>
+<h2 id="user-content-set-up-an-export" level="2" node="[object Object]" data-pagefind-weight="6.3"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#set-up-an-export"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>设置导出</h2>
+<h3 id="user-content-enable-exports-for-source" level="3" node="[object Object]" data-pagefind-weight="5.6"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#enable-exports-for-source"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>为数据源启用导出</h3>
+<p>要导出数据，必须在目标数据源的 <strong>连接设置</strong> 部分启用导出功能。支持导出功能的源类型将在屏幕左侧显示 <strong>导出配置</strong> 选项卡。具有 <code>信息安全官</code> 角色的 Foundry 用户应导航至该选项卡，并开启 <strong>启用导出至此数据源</strong> 选项。</p>
+<p><code>信息安全官</code> 是 Foundry 中的默认角色；可以在 <a href="/docs/foundry/administration/enrollments-and-organizations-permissions/">控制面板</a> 的 <strong>注册权限</strong> 下为用户授予该角色。</p>
+<p>启用导出后，必须提供可导出至此数据源的一组 <a href="/docs/foundry/security/markings/">标识</a>。如果未在导出配置中添加标识和组织，带有这些标识或组织的数据将无法导出至此数据源。要添加可导出标识，用户必须同时具备 <code>信息安全官</code> 角色，并对希望允许导出至此数据源的标识或组织拥有去除标识的权限。</p>
+<p>举例来说，你可能有一个在 <code>Palantir</code> 组织下带有 <code>敏感</code> 标识的数据集。要导出此数据集，必须将 <code>敏感</code> 标识和 <code>Palantir</code> 组织同时添加到该数据源的 <strong>可导出标识</strong> 集合中。</p>
+<p>可导出标识还控制哪些资源元数据可以出现在 <a href="/docs/foundry/monitoring-views/external-systems/#configure-exportable-markings-for-resource-name-visibility">来自监控视图的 Slack 通知</a> 中。</p>
+<p><img alt="enable exports for source" height="600" src="/docs/resources/foundry/data-connection/exports-enable-and-configure-exportable-markings.png" style="aspect-ratio:1391 / 745" width="1120.268456375839" node="[object Object]"></p>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>在数据连接源配置中输入的凭据，必须具有对外部系统中表的写入权限。例如，<a href="/docs/foundry/available-connectors/amazon-s3/">S3</a> 需要 <code>"s3:PutObject"</code> 权限。如果目标路径尚不存在，其他 <a href="#file-exports">文件导出</a> 可能需要特定权限来创建目录。<a href="#table-exports">表导出</a> 在 <a href="#special-considerations-for-table-exports">使用执行截断操作的导出模式时</a> 可能需要额外权限。</p><p>请查阅 <a href="/docs/foundry/data-integration/source-type-overview/">源类型概述</a> 文档中列出的各个数据源页面，了解针对特定数据源的注意事项。</p></div>
+<h3 id="user-content-create-a-new-export" level="3" node="[object Object]" data-pagefind-weight="5.6"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#create-a-new-export"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>创建新导出</h3>
+<p>要创建导出，请首先导航至要导出至的数据源的 <strong>概览</strong> 页面。</p>
+<p>如果是首次为给定数据源设置导出，你会看到一个空表格和一个创建导出的按钮。</p>
+<p><img alt="An empty table on a source export page with a blue Create Export button." height="600" src="/docs/resources/foundry/data-connection/exports-overview-no-exports-created.png" style="aspect-ratio:1642 / 650" width="1515.6923076923078" node="[object Object]"></p>
+<p>选择 <strong>创建导出</strong>，接着选择要导出的数据集或流，以及任何特定于源的导出配置选项。这些选项因源连接器而异，我们在文档相应的 <a href="/docs/foundry/data-integration/source-type-overview/">源类型</a> 页面中进行了说明。如果导出的数据集上存在多个分支，则仅导出主分支上的数据。</p>
+<p>以下示例展示了 <a href="/docs/foundry/available-connectors/amazon-s3/">S3</a> 连接器的导出配置界面：</p>
+<p><img alt="The S3 source export configuration page. Available configurations include the dataset and destination for export, the export name, and source-specific settings." height="600" src="/docs/resources/foundry/data-connection/exports-new-s3.png" style="aspect-ratio:2880 / 1594" width="1084.065244667503" node="[object Object]"></p>
+<p>保存导出后，你将进入导出管理页面，可以在该页面执行以下操作：</p>
+<ul>
+<li>手动运行导出。</li>
+<li>为导出设置计划。</li>
+<li>查看导出历史。</li>
+<li>修改配置选项。</li>
+</ul>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>流式导出使用 <strong>启动/停止</strong> 按钮而非 <strong>运行</strong> 按钮。如果为流式导出配置了计划，其行为将与其他流的计划类似；如果在计划触发时流已停止，系统将自动重启该流。如果在计划触发时流未停止，它将继续运行。</p></div>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu">
+
+<svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>某些源导出选项在初始设置完成后可能无法编辑。如果必须更改不可变选项，您必须删除并重新创建导出。</p></div>
+<h2 id="user-content-scheduling-exports" level="2" node="[object Object]" data-pagefind-weight="6.3"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#scheduling-exports"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>调度导出</h2>
+<p>应定期调度导出任务，将最新数据导出至外部目标。流式导出无需调度，只需直接启动或停止即可。</p>
+<p>要调度导出，请导航至该导出的<strong>概览</strong>页面。然后，选择<strong>添加调度</strong>，以在《数据血缘关系》中打开该导出。接着，在屏幕右侧选择<strong>创建新调度</strong>，并像配置其他任何作业一样进行配置。详细了解《可用的调度选项》。</p>
+<p>在特定导出的<strong>概览</strong>页面上，查看触发该导出的所有调度，如下所示：</p>
+<p><img alt="预览设置为在欧洲/伦敦时间凌晨 12:30 构建导出作业的调度。" height="500" src="/docs/resources/foundry/data-connection/exports-existing-schedule.png" style="aspect-ratio:1296 / 500" width="1296" node="[object Object]"></p>
+<h2 id="user-content-export-history" level="2" node="[object Object]" data-pagefind-weight="6.3"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#export-history"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>导出历史</h2>
+<p>与《同步》类似，导出通过 Foundry 的《构建系统》以作业形式运行。导出的<strong>历史记录</strong>视图展示了与其关联的作业历史。在<strong>作业详情</strong>部分的右上角选择<strong>查看构建报告</strong>，即可在<strong>构建</strong>应用程序中打开并查看每个作业。</p>
+<p>对于流式导出，导出历史还会显示流式导出作业当前是处于运行还是停止状态。</p>
+<h2 id="user-content-exports-vs-export-tasks" level="2" node="[object Object]" data-pagefind-weight="6.3"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#exports-vs-export-tasks"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>导出与导出任务</h2>
+<p>表导出旨在完全取代现已停用的《导出任务》，后者将根据已发布的《产品生命周期》最终被弃用。尽管导出任务提供的大部分功能已可通过新的导出选项实现，但在功能和配置方面仍存在一些差异。</p>
+<h3 id="user-content-migrating-from-export-tasks-to-table-exports" level="3" node="[object Object]" data-pagefind-weight="5.6"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#migrating-from-export-tasks-to-table-exports"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>从导出任务迁移至表导出</h3>
+<p>从导出任务迁移至新导出选项必须手动执行。请使用下文记录的选项配置导出；一旦新的导出流程按预期正常运行，请手动删除之前使用的导出任务。</p>
+<p>如果导出任务中的某项功能在新导出选项中没有对等项，建议的迁移方案是改用《外部转换》。外部转换为执行与外部系统交互的自定义逻辑提供了一种灵活的替代方案，当源功能的用户界面配置选项无法满足所需功能时，建议使用此方案。</p>
+<h3 id="user-content-feature-comparison-between-exports-and-export-tasks" level="3" node="[object Object]" data-pagefind-weight="5.6"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#feature-comparison-between-exports-and-export-tasks"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>导出与导出任务的功能对比</h3>
+
+<table><thead><tr><th>导出任务选项</th><th>新导出中是否支持？</th><th>详情</th></tr></thead><tbody><tr><td><code>parallelize: &lt;boolean&gt;</code></td><td>取决于源类型</td><td>这可能因具体数据源而异；如果支持，相关说明会在特定数据源的导出设置文档中提供。</td></tr><tr><td><code>preSql: &lt;sql statements&gt;</code></td><td>不支持</td><td>如果您的使用场景需要此功能，请使用<a href="/docs/foundry/data-connection/external-transforms/">外部转换</a>。</td></tr><tr><td><code>stagingSql: &lt;sql statements&gt;</code></td><td>不支持</td><td>如果您的使用场景需要此功能，请使用<a href="/docs/foundry/data-connection/external-transforms/">外部转换</a>。</td></tr><tr><td><code>afterSql: &lt;sql statements&gt;</code></td><td>不支持</td><td>如果您的使用场景需要此功能，请使用<a href="/docs/foundry/data-connection/external-transforms/">外部转换</a>。</td></tr><tr><td><code>manualTransactionManagement: &lt;boolean&gt;</code></td><td>不支持</td><td>如果您的使用场景需要此功能，请使用<a href="/docs/foundry/data-connection/external-transforms/">外部转换</a>。</td></tr><tr><td><code>transactionIsolation: READ_COMMITTED</code></td><td>不可配置</td><td>这可能作为数据源配置选项提供，并在执行导出时应用。请查阅特定数据源的文档，确认是否提供此配置选项。</td></tr><tr><td><code>datasetRid: &lt;dataset rid&gt;</code></td><td>支持</td><td>您希望导出的数据集或数据流。</td></tr><tr><td><code>branchId: &lt;branch-id&gt;</code></td><td>不可配置</td><td>数据始终从 <code>master</code> 分支导出。</td></tr><tr><td><code>table:</code><br>&nbsp;&nbsp;&nbsp;&nbsp;<code>database: mydb # Optional</code><br>&nbsp;&nbsp;&nbsp;&nbsp;<code>schema: public # Optional</code><br>&nbsp;&nbsp;&nbsp;&nbsp;<code>table: mytable</code></td><td>支持</td><td>这些选项专用于 <a href="#table-exports">表导出</a> 中的 <a href="/docs/foundry/available-connectors/custom-jdbc-sources/#export-data-to-jdbc-sources">JDBC 源</a>。</td></tr><tr><td><code>writeDirectly: &lt;boolean&gt;</code></td><td>不可配置</td><td>新导出功能始终采用等同于 <code>writeDirectly: true</code> 的设置。</td></tr><tr><td><code>copyMode: &lt;insert|directCopy&gt;</code></td><td>不可配置</td><td>新导出功能始终采用等同于 <code>copyMode: insert</code> 的设置。</td></tr><tr><td><code>batchSize: &lt;integer&gt;</code></td><td>取决于源类型</td><td><a href="/docs/foundry/available-connectors/custom-jdbc-sources/#export-configuration-options-for-jdbc-sources">JDBC 源</a>的导出支持批量大小设置，但其他数据源类型可能不支持。</td></tr><tr><td><code>writeMode: &lt;ErrorIfExists|Append|Overwrite|AppendIfPossible&gt;</code><br><br><code>incrementalType: &lt;snapshot|incremental&gt;</code></td><td>支持</td><td>这些选项组合起来，类似于上文<a href="#table-export-modes">表导出模式</a>文档中的说明。并非所有组合对导出任务都有效，这些组合已被<a href="https://en.wikipedia.org/wiki/Database_normalization">规范化 ↗</a>为表导出所提供的六种模式。</td></tr><tr><td><code>exporterThreads: &lt;integer&gt;</code></td><td>不支持</td><td>如果需要精细控制导出线程，请使用<a href="/docs/foundry/data-connection/external-transforms/">外部转换</a>。</td></tr><tr><td><code>quoteIdentifiers: &lt;boolean&gt;</code></td><td>不支持</td><td>此选项仅在目标系统中创建表时相关，而新导出功能不支持建表。在配置导出前，目标表必须已存在。</td></tr><tr><td><code>exportTransactionIsolation: READ_UNCOMMITTED</code></td><td>不可配置</td><td>与 <code>transactionIsolation: READ_COMMITTED</code> 一样，如果已进行配置，事务隔离级别将从数据源配置中获取。</td></tr></tbody></table></div>
+</article>
+</body>
+</html>

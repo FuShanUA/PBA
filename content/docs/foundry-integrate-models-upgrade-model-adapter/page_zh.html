@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Upgrade model adapter without retraining</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-upgrade-model-adapter-without-retraining" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#upgrade-model-adapter-without-retraining"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>无需重新训练升级模型适配器</h1>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>本功能仅适用于在代码仓库中训练的模型。</p></div>
+<p>回顾一下，模型由<strong>模型产出物</strong>和<strong>模型适配器</strong>组合而成：</p>
+<ul>
+<li><strong>模型产出物：</strong>保存已训练模型的模型文件、参数、权重、容器或凭证。</li>
+<li><strong>模型适配器：</strong>Foundry 与<strong>模型产出物</strong>交互所需的逻辑和环境依赖项，用于加载、初始化模型并执行推理。</li>
+</ul>
+<p>有时，在不更改或重新生成<strong>模型产出物</strong>的情况下更新模型适配器会非常实用。例如：</p>
+<ul>
+<li>修复模型适配器中的 Bug，而无需重新训练已保存的模型。</li>
+<li>更新模型的 <code>load</code>、<code>api</code>、<code>predict</code> 或 <code>run_inference</code> 方法。</li>
+<li>在发现 Python 依赖项存在漏洞或 Bug 时，更新模型的 Python 环境。</li>
+</ul>
+<p>然而，更新模型适配器也可能会给模型的推理环境引入破坏性变更。更改模型适配器时必须牢记以下几点：</p>
+<ul>
+<li>环境中对任何 Python 依赖项的更改都必须与现有的模型产出物兼容。</li>
+<li><code>load</code>、<code>api</code>、<code>predict</code> 或 <code>run_inference</code> 的新实现必须与现有的产出物兼容。</li>
+<li>更新后的模型适配器必须位于同一个 Python 模块中，且类名与原始模型适配器保持一致。</li>
+</ul>
+<p>强烈建议在更新模型适配器时务必谨慎操作，并先在新的分支上测试更改。</p>
+<h2 id="user-content-upgrade-model-adapter-from-models-app" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#upgrade-model-adapter-from-models-app"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>从模型应用升级模型适配器</h2>
+<p>Foundry 支持在保留已发布模型权重的同时，将模型版本的适配器升级到最新的提交或标签。</p>
+<p>要升级模型适配器，首先需在其定义所在的代码仓库中实现并发布对模型适配器类的更改。在代码仓库的模型训练模板中，每次提交后都会发布更改。在模型适配器模板中，创建新标签后才会发布更改。</p>
+<p>接下来，在模型应用中，滚动至<strong>推理配置</strong>卡片。点击<strong>升级模型适配器</strong>。</p>
+<p><img alt="Model Adapter Upgrade Button" height="600" src="/docs/resources/foundry/integrate-models/adapter-upgrade-button.png" style="aspect-ratio:2800 / 1770" width="949.1525423728813" node="[object Object]">
+<img alt="Model Adapter Upgrade Dialog" height="600" src="/docs/resources/foundry/integrate-models/adapter-upgrade-dialog.png" style="aspect-ratio:1038 / 750" width="830.4000000000001" node="[object Object]"></p>
+<p>点击<strong>创建模型版本</strong>，系统将使用更新后的模型适配器和之前发布的模型产出物创建一个新的模型版本。</p>
+<p>如果先前的模型版本已提交至建模目标，更新后的模型版本不会自动提交，必须重新提交。</p>
+</article>
+</body>
+</html>

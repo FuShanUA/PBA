@@ -195,8 +195,6 @@ def translate_one(slug):
         if not content or len(content) < 50:
             return slug, "error:short"
         # Skip very large pages for now (process later)
-        if len(content) > 50000:
-            return slug, "error:toobig"
 
         # Translate
         chunks = chunk_content(content) if len(content.split()) > MAX_WORDS_PER_CHUNK else [content]

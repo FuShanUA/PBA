@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Protecting sensitive data</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-protecting-sensitive-data" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#protecting-sensitive-data"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></a>保护敏感数据</h1>
+<p>正如你在《巩固数据基础》中所见，各个项目内的数据访问权限可由项目数据主人管理。这就是所谓的自主访问控制 ↗。然而，面对敏感数据时，我们需要一种更强有力、更集中的访问控制模型。</p>
+<p>在我们的示例中，有一个包含乘客出生日期 (DOBs) 的模拟数据集，这属于个人身份信息 (PII)。我们可能希望严格控制此类 PII，并确保只有接受过 PII 培训的人员才能访问这些数据。我们可以通过标记来解决这一问题。</p>
+<p>标记是 Foundry 对强制访问控制 ↗ 的实现。标记代表一种特定类型的数据（如 PII），只有指定列表中的用户或用户组才能访问。对数据集应用标记后，未拥有该标记访问权限的用户绝对无法访问该数据，即使项目数据主人试图与其共享也无济于事。重要的是，这种限制会传播至平台任何位置基于该数据集<em>派生</em>出的任何数据。</p>
+<p>此功能对数据治理至关重要，它使数据保护官能够集中管理并精确审计特定类别数据的访问者。</p>
+<p>在向最终用户推出应用之前，我们要确保已对敏感数据加以保护。再次强调，在我们的示例中，我们希望锁定数据管道中的乘客出生日期 (DOBs)。</p>
+<h2 id="user-content-create-a-marking" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#create-a-marking"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></a>创建标记</h2>
+<p>我们需要创建一个标记类别，作为一组标记的名称。在本例中，请创建一个名为“信息”的标记类别，因为未来可能还需要其他与信息相关的标记（例如个人健康信息，即 PHI）。创建类别后，你可以创建 PII 标记。接着，你可以将有权限查看 PII 数据的人员添加为该标记的成员，并将管理员团队添加为该标记的管理者。</p>
+<p><img alt="在平台设置中创建标记" height="600" src="/docs/resources/foundry/security/protect-sensitive-data0.png" style="aspect-ratio:1148 / 723" width="952.6970954356847" node="[object Object]"></p>
+<h2 id="user-content-simulate-our-marking-change" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#simulate-our-marking-change"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></a>模拟标记变更</h2>
+<p>标记具有沿数据血缘关系传播的强大特性。因此，对现有管道应用新标记可能会导致下游用户意外失去访问权限。最佳实践是始终先对管道应用标记进行模拟，以观察其传播范围。为此，请打开管道的数据血缘视图并开启模拟模式。你可以编辑 <em>raw/passengers</em> 数据集上的标记，并应用你创建的 PII 标记。随后，你会看到应用 PII 标记后将受影响的所有下游数据集。</p>
+<p>我们不希望所有数据消费者都必须拥有 PII 访问权限，因此需要在管道的某个环节移除敏感的 DOB 列。为此，我们应依次查看管道，评估在何处移除 PII 标记最为合适。通常的做法是，选中数据集后在底部打开预览视图，以便查看数据和列。</p>
+<p><img alt="数据血缘视图" height="521" src="/docs/resources/foundry/security/protect-sensitive-data1.png" style="aspect-ratio:1148 / 521" width="1148" node="[object Object]"></p>
+<p>在我们的示例中，可以看到 PII 标记一直传播到了本体数据集，这会锁定所有不具备 PII 访问权限的最终用户。因此，我们决定最好让敏感数据在管道中保留尽可能长的时间，但移除乘客数据在本体版本（即 <em>/Sky Industries/Customer Metrics [Ontology]/passengers</em>）中的 “dob” 列。</p>
+<h2 id="user-content-remove-soon-to-be-inherited-marking" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#remove-soon-to-be-inherited-marking"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></a>移除即将继承的标记</h2>
+<p>在数据血缘视图中，点击 <em>Customer Metrics [Ontology]/passengers</em> 数据集，点击代码，然后点击<strong>在代码仓库中查看</strong>。这将打开用于创建该模拟数据集的代码仓库。在代码仓库中，你需要：1) 创建分支，2) 移除敏感列（即删除 <code>dob</code> 列），3) 从输入数据集中移除即将继承的 PII 标记，然后 4) 创建拉取请求。我们建议查阅有关如何移除继承的标记和组织的文档。</p>
+<p>
+
+<img alt="移除继承的标记" height="600" src="/docs/resources/foundry/security/protect-sensitive-data2.png" style="aspect-ratio:1148 / 707" width="974.2574257425742" node="[object Object]"></p>
+<p>同事批准了停止传播 PII 标记的拉取请求后，我们需要构建此数据集及其下游的所有内容，确保最新数据集事务全部“停止传播”即将添加的标记。此外，对于 APPEND 或 UPDATE 事务类型，还需特别注意一些事项。不过在我们的示例中，所有内容均以 SNAPSHOT 方式构建，这也是 Foundry 中的默认事务类型。</p>
+<h2 id="user-content-apply-the-marking" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="复制链接到章节" href="#apply-the-marking"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>应用标记</h2>
+<p>应用标记前，我们要再次确认它只会传播到预期的数据集，而不会影响其他数据集。为此，请再次打开管道的数据血缘关系视图，开启模拟模式，在 <em>raw/passenger</em> 数据集上应用该标记，并确认 <em>ontology/passenger</em> 数据集未受影响。这表明上一节中的 stop_propagating 逻辑已正确应用。</p>
+<p><img alt="在数据血缘关系中确认传播逻辑" height="600" src="/docs/resources/foundry/security/protect-sensitive-data3.png" style="aspect-ratio:1148 / 614" width="1121.8241042345276" node="[object Object]"></p>
+<p>现在可以应用标记了，如下方示例数据截图所示。为此，请转到 <em>raw/passenger</em> 数据集，打开安全助手并应用标记。点击保存后，PII 标记会立即应用并向下传播。通过查看数据血缘关系，可以在现已带有标记的数据集上看到标记徽章，这表明您已成功保护了敏感的 PII 数据。</p>
+<p><img alt="将标记应用于数据集" height="600" src="/docs/resources/foundry/security/protect-sensitive-data4.png" style="aspect-ratio:1865 / 889" width="1258.7176602924635" node="[object Object]"></p>
+</article>
+</body>
+</html>

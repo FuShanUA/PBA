@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Publish a model from pre-trained files</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-publish-a-model-from-pre-trained-files" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#publish-a-model-from-pre-trained-files"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>从预训练文件发布模型</h1>
+<p>Palantir 支持创建包装在平台外部生成的权重的模型。这些文件可以包括开源模型权重、在本地开发环境中训练的模型、在《代码工作区》应用程序中训练的模型，以及来自旧系统的模型权重。</p>
+<p>创建 Palantir 模型后，Palantir 会提供以下功能：</p>
+<ul>
+<li>与批处理管道集成以及实时模型托管。</li>
+<li>完整的版本控制、细粒度权限控制以及受治理的模型血缘关系。</li>
+<li>通过《建模目标》进行模型管理和实时部署。</li>
+<li>与本体绑定，允许通过《模型上的函数》进行业务化运营和假设情景分析。</li>
+</ul>
+<h2 id="user-content-create-a-model-from-model-files" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#create-a-model-from-model-files"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>从模型文件创建模型</h2>
+<p>要从模型文件创建模型，您需要准备以下内容：</p>
+<ul>
+<li>可上传至 Palantir 的模型文件</li>
+<li>一个<a href="#2-create-a-model-training-repository-to-define-model-adapter-logic">模型适配器</a>，用于告知 Palantir 如何加载模型并执行推理</li>
+</ul>
+<h3 id="user-content-1-upload-model-files-to-an-unstructured-dataset" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#1-upload-model-files-to-an-unstructured-dataset"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>1. 将模型文件上传至非结构化数据集</h3>
+<p>首先，将您的模型文件上传至 Palantir 平台中的非结构化数据集。在项目中选择 <strong>+ 新建 > 数据集</strong> 以创建新数据集。</p>
+<p><img alt="Create a new unstructured dataset from a Project. " height="600" src="/docs/resources/foundry/integrate-models/model-files-new-dataset.png" style="aspect-ratio:3340 / 1922" width="1042.6638917793964" node="[object Object]"></p>
+<p>接着，选择 <strong>导入新数据</strong>，并从您的计算机中选择要上传至模型的文件。</p>
+<p><img alt="Select Import new data from the center of the screen." height="600" src="/docs/resources/foundry/integrate-models/model-files-empty-dataset.png" style="aspect-ratio:3346 / 1924" width="1043.4511434511435" node="[object Object]"></p>
+<p><img alt="Choose files from your computer for a new unstructured dataset." height="600" src="/docs/resources/foundry/integrate-models/model-files-upload-files.png" style="aspect-ratio:3346 / 1920" width="1045.625" node="[object Object]"></p>
+<p>如有需要，您可以将多个不同的文件上传至同一数据集。该数据集将是非结构化的，这意味着它没有表格化的模式。</p>
+<p><img alt="Model files were successfully uploaded to an unstructured dataset. " height="600" src="/docs/resources/foundry/integrate-models/model-files-uploaded-files.png" style="aspect-ratio:3346 / 1924" width="1043.4511434511435" node="[object Object]"></p>
+<h3 id="user-content-2-create-a-model-training-repository-to-define-model-adapter-logic" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#2-create-a-model-training-repository-to-define-model-adapter-logic"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>2. 创建模型训练代码库以定义模型适配器逻辑</h3>
+<p>创建一个新的代码仓库，用于管理从非结构化数据集中读取模型文件的逻辑。该逻辑会将这些文件包装在模型适配器中，并将其作为模型发布。在《代码仓库》应用程序中，选择使用 <strong>模型训练</strong> 语言模板初始化 <strong>模型集成</strong> 仓库。</p>
+<p>请查阅《模型训练模板》和《模型适配器 API》的完整文档以供参考。</p>
+<p><img alt="The Initialize Repository page in the Code Repositories application." height="600" src="/docs/resources/foundry/integrate-models/model-files-repo-setup.png" style="aspect-ratio:3342 / 1920" width="1044.375" node="[object Object]"></p>
+<h3 id="user-content-3-publish-weights-to-a-model" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#3-publish-weights-to-a-model"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>3. 将权重发布至模型</h3>
+<p>要将非结构化数据集中的模型文件发布为 Palantir 模型，您必须编写一个转换，完成以下操作：</p>
+<ol>
+<li>从非结构化数据集中将已保存的模型文件加载至合适的 Python 对象中</li>
+<li>使用该已加载的 Python 对象实例化模型适配器</li>
+<li>将模型适配器作为模型资源发布</li>
+</ol>
+<p>您可以将加载和发布模型的逻辑放置在仓库中的 <code>model_training</code> 文件夹内。</p>
+<p>如需了解更多信息，我们建议您查阅以下文档：</p>
+<ul>
+<li>完整的《模型适配器 API 定义》</li>
+<li>如何《从非结构化数据集中读取文件》</li>
+<li>如何《使用模型训练模板创建并发布模型适配器》</li>
+<li>《本地训练模型包装示例》</li>
+</ul>
+<p>定义好模型训练逻辑后，选择 <strong>构建</strong> 以执行该逻辑，从而读取模型文件并发布模型。</p>
+
+```python
+from transforms.api import transform, Input
+from palantir_models.transforms import ModelOutput, copy_model_to_driver
+
+import palantir_models as pm
+
+import os
+import pickle
+
+@transform(
+    model_files=Input("<Model Files Dataset>"),
+    model_output=ModelOutput("<Your Model Path>")
+)
+def compute(model_files, model_output):
+    # 将数据集中的所有文件复制到驱动程序
+    model_files_path = copy_model_to_driver(model_files.filesystem())
+
+    # 例如，如果您有一个保存为 pickle 文件的模型，您可以使用 pickle 加载它
+    with open(os.path.join(model_files_path, "model.pkl"), 'rb') as file:
+        model = pickle.load(file)
+
+    wrapped_model = ExampleModelAdapter(model)
+    model_output.publish(
+        model_adapter=wrapped_model
+    )
+
+class ExampleModelAdapter(pm.ModelAdapter):
+
+    @pm.auto_serialize
+    def __init__(self, model):
+        self.model = model
+
+    @classmethod
+    def api(cls):
+        pass  # 实现此模型的 API
+
+    def predict(self, df_in):
+        pass # 实现推理逻辑
+```
+
+<p>同样的文件加载逻辑也适用于大多数其他场景，各类库（如 PyTorch 或 Tensorflow）通常会提供相应的方法，将序列化文件读取为 Python 对象。</p>
+<p><img alt="代码仓库中已准备好构建的模型训练逻辑。" height="600" src="/docs/resources/foundry/integrate-models/model-from-files-with-publishing-logic.png" style="aspect-ratio:3346 / 1926" width="1042.3676012461058" node="[object Object]"></p>
+<h3 id="user-content-4-consume-the-published-model" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#4-consume-the-published-model"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>4. 调用已发布的模型</h3>
+<p>模型成功发布后，即可调用该模型进行推理。请参考以下文档获取操作指引：</p>
+<ul>
+<li>《在建模目标中部署模型以进行实时推理》</li>
+<li>《在建模目标的批处理管道中使用已上传的模型》</li>
+<li>《配置执行模型推理的 Python 转换》</li>
+</ul>
+</article>
+</body>
+</html>
