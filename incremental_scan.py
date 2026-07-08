@@ -5,7 +5,9 @@ Usage:
   python3 incremental_scan.py              # scan all sources
   python3 incremental_scan.py --source blog    # scan only blog
   python3 incremental_scan.py --source website # scan only website
+  python3 incremental_scan.py --source docs    # scan only docs
   python3 incremental_scan.py --dry-run    # report new content without downloading
+  python3 incremental_scan.py --push       # auto git add, commit, push after update
 """
 
 import json, re, os, sys, time, hashlib, urllib.request, argparse, subprocess
@@ -173,6 +175,60 @@ def scan_website(dry_run=False):
     return new_urls
 
 
+
+# === DOCS SCANNER ===
+
+def scan_docs(dry_run=False):
+    """Check palantir.com/docs sitemap for new documentation pages."""
+    log('--- Scanning Docs (sitemap) ---')
+    docs_json_path = os.path.join(ROOT, 'data', 'sources', 'docs.json')
+    if not os.path.exists(docs_json_path):
+        log('  docs.json not found, skipping docs scan')
+        return []
+    with open(docs_json_path) as f:
+        docs_data = json.load(f)
+    existing_slugs = {a['s'] for a in docs_data['articles']}
+
+    # Fetch sitemap
+    sitemap_url = 'https://www.palantir.com/docs/sitemap.xml'
+    try:
+        req = urllib.request.Request(sitemap_url, headers={
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36'
+        })
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            sitemap = resp.read().decode('utf-8')
+    except Exception as e:
+        log(f'  Failed to fetch docs sitemap: {e}')
+        return []
+
+    # Parse zh URLs and convert to English
+    urls = re.findall(r'<loc>(https?://[^<]+)</loc>', sitemap)
+    new_pages = []
+    for u in urls:
+        u = u.replace('https://palantir.com', 'https://www.palantir.com')
+        path = urlparse(u).path
+        if '/docs/zh/' not in path:
+            continue
+        en_path = path.replace('/docs/zh/', '/docs/')
+        en_url = f'https://www.palantir.com{en_path}'
+        slug = en_path.strip('/').replace('docs/', '').replace('/', '-')
+        if not slug or slug == 'docs' or slug in existing_slugs:
+            continue
+        new_pages.append((slug, en_url))
+
+    if not new_pages:
+        log('  No new docs pages found.')
+    elif dry_run:
+        log(f'  Found {len(new_pages)} new docs pages (dry run):')
+        for slug, url in new_pages[:20]:
+            log(f'    {slug} -> {url}')
+    else:
+        log(f'  Found {len(new_pages)} new docs pages. Use scrape_docs.py to download them.')
+        log('  (Docs scraping requires Playwright. Run: python3 scrapers/scrape_docs.py --scrape)')
+
+    return new_pages
+
+
 # === TRANSLATION ===
 
 def translate_new_articles():
@@ -209,6 +265,25 @@ def translate_new_articles():
                     a['tt'] = translate_title(a['t'], client)
     with open(blog_json, 'w', encoding='utf-8') as f:
         json.dump(blog_data, f, ensure_ascii=False, indent=2)
+
+    # Check docs articles
+    docs_json = os.path.join(ROOT, 'data', 'sources', 'docs.json')
+    if os.path.exists(docs_json):
+        with open(docs_json) as f:
+            docs_data = json.load(f)
+        for a in docs_data['articles']:
+            zh_path = a.get('hp', '').replace('page.html', 'page_zh.html')
+            if not zh_path:
+                continue
+            full_zh = os.path.join(ROOT, zh_path)
+            if not os.path.exists(full_zh):
+                en_path = a.get('hp', '').replace('page_zh.html', 'page.html')
+                full_en = os.path.join(ROOT, en_path)
+                if os.path.exists(full_en):
+                    log(f'  Translating docs: {a["s"]}')
+                    translate_article_file(full_en, full_zh, client, translator_agent, md_lib)
+        with open(docs_json, 'w', encoding='utf-8') as f:
+            json.dump(docs_data, f, ensure_ascii=False, indent=2)
 
     # Check website articles
     ws_json = os.path.join(ROOT, 'data', 'sources', 'website.json')
@@ -303,7 +378,8 @@ def translate_article_file(en_path, zh_path, client, translator_agent, md_lib):
 
 def main():
     parser = argparse.ArgumentParser(description='Incremental scan for new Palantir content')
-    parser.add_argument('--source', choices=['blog', 'website', 'all'], default='all')
+    parser.add_argument('--source', choices=['blog', 'website', 'docs', 'all'], default='all')
+    parser.add_argument('--push', action='store_true', help='Auto git add, commit, push after update')
     parser.add_argument('--dry-run', action='store_true', help='Report new content without downloading')
     parser.add_argument('--no-translate', action='store_true', help='Skip translation step')
     args = parser.parse_args()
@@ -316,8 +392,11 @@ def main():
         new_blog = scan_blog(dry_run=args.dry_run)
     if args.source in ('website', 'all'):
         new_website = scan_website(dry_run=args.dry_run)
+    new_docs = []
+    if args.source in ('docs', 'all'):
+        new_docs = scan_docs(dry_run=args.dry_run)
 
-    total_new = len(new_blog) + len(new_website)
+    total_new = len(new_blog) + len(new_website) + len(new_docs)
     if total_new > 0 and not args.dry_run and not args.no_translate:
         translate_new_articles()
 
@@ -326,10 +405,21 @@ def main():
         log('--- Rebuilding index ---')
         subprocess.run([sys.executable, os.path.join(ROOT, 'build.py')], cwd=ROOT)
 
-    log(f'\nScan complete. New content: {total_new} ({len(new_blog)} blog, {len(new_website)} website)')
+    log(f'\nScan complete. New content: {total_new} ({len(new_blog)} blog, {len(new_website)} website, {len(new_docs)} docs)')
 
     if not args.dry_run and total_new > 0:
-        log('To push to GitHub: git add -A && git commit -m "Add new content" && git push')
+        if args.push:
+            log('--- Pushing to GitHub ---')
+            subprocess.run(['git', 'add', '-A'], cwd=ROOT)
+            subprocess.run(['git', 'commit', '-m', f'Incremental update: {total_new} new articles ({len(new_blog)} blog, {len(new_website)} website, {len(new_docs)} docs)'], cwd=ROOT)
+            result = subprocess.run(['git', 'push', 'origin', 'main'], cwd=ROOT, capture_output=True, text=True)
+            if result.returncode == 0:
+                log('  Pushed to GitHub successfully')
+            else:
+                log(f'  Push failed: {result.stderr[:100]}')
+        else:
+            log('To push to GitHub: git add -A && git commit -m "Add new content" && git push')
+            log('Or re-run with --push to auto-push')
 
 
 if __name__ == '__main__':

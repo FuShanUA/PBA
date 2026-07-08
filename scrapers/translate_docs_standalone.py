@@ -199,7 +199,8 @@ def extract_nav_tree():
 
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
-        page = browser.new_page(viewport={"width": 1280, "height": 900})
+        context = browser.new_context(ignore_https_errors=True, viewport={"width": 1280, "height": 900})
+        page = context.new_page()
         for product, section_url in all_sections:
             full_url = f"https://www.palantir.com{section_url}"
             try:
@@ -263,7 +264,8 @@ def scrape_phase(pages):
         try:
             with sync_playwright() as p:
                 browser = p.chromium.launch(headless=True)
-                page = browser.new_page(viewport={"width": 1280, "height": 900})
+                context = browser.new_context(ignore_https_errors=True, viewport={"width": 1280, "height": 900})
+                page = context.new_page()
                 for slug, url in batch:
                     page_dir = os.path.join(CONTENT_DIR, slug)
                     os.makedirs(page_dir, exist_ok=True)

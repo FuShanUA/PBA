@@ -19,6 +19,7 @@ def load_sources():
 def build_index(sources):
     """Merge all sources into a unified index."""
     all_articles = []
+    all_pending = []
     bc_counts = {}
     sc_counts = {}
     dt = {}
@@ -29,21 +30,27 @@ def build_index(sources):
 
     for source_name, source_data in sources.items():
         articles = source_data.get("articles", [])
-        articles = [a for a in articles if not a.get("hidden", False)]
+        visible = [a for a in articles if not a.get("hidden", False) and not a.get("pending", False)]
+        pending = [a for a in articles if a.get("pending", False) and not a.get("hidden", False)]
         source_meta[source_name] = {
             "source_name": source_data.get("source_name", source_name),
             "source_name_zh": source_data.get("source_name_zh", source_name),
-            "count": len(articles),
+            "count": len(visible),
+            "pending": len(pending),
             "last_scan": source_data.get("last_scan", ""),
         }
 
-        for a in articles:
+        for a in visible:
             a["source"] = source_name
             # Map doc_url to short key "du" for the UI
             if a.get("doc_url"):
                 a["du"] = a["doc_url"]
 
-        all_articles.extend(articles)
+        all_articles.extend(visible)
+        all_pending.extend([{"s": a["s"], "t": a.get("t",""), "tt": a.get("tt",""), "u": a.get("u",""),
+                             "th": a.get("th",""), "ds": a.get("ds",""), "d": a.get("d",""),
+                             "bc": a.get("bc",[]), "source": source_name,
+                             "hp": a.get("hp","")} for a in pending])
 
         for cat, count in source_data.get("bc", {}).items():
             bc_counts[cat] = bc_counts.get(cat, 0) + count
@@ -77,6 +84,7 @@ def build_index(sources):
         "total": len(all_articles),
         "sources": source_meta,
         "articles": all_articles,
+        "pending": all_pending,
         "bc": bc_counts,
         "sc": sc_counts,
         "dt": dt,
