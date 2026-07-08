@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ODBC & JDBC drivers for Foundry datasets</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-odbc--jdbc-drivers-for-foundry-datasets" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#odbc--jdbc-drivers-for-foundry-datasets"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Foundry 数据集的 ODBC 和 JDBC 驱动</h1>
+<p>Foundry 数据集的 ODBC 和 JDBC 驱动提供了一个基于 SQL 的只读接口，供客户端应用程序（如 BI 工具和 ETL 工具）访问数据集。用户可以在 Foundry 中浏览项目和数据集，并执行 SQL 查询以访问表格数据。这些驱动在服务器端利用 Foundry SQL 服务器来处理和执行 SQL 查询。</p>
+<h3 id="user-content-jdbc-or-odbc" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#jdbc-or-odbc"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>选 JDBC 还是 ODBC？</h3>
+<p>如果客户端应用程序同时支持这两种协议，我们建议使用 JDBC 而非 ODBC。JDBC 驱动不仅安装和配置更简单，数据加载性能也更为出色。</p>
+<h3 id="user-content-foundry-sql-server" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#foundry-sql-server"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Foundry SQL 服务器</h3>
+<p>这些驱动程序依赖 Foundry SQL 服务器来处理并执行针对 Foundry 数据集的 SQL 查询。请查阅 Foundry SQL 服务器架构文档，详细了解其架构设计及查询性能优化方法。</p>
+<h2 id="user-content-system-requirements" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#system-requirements"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>系统要求</h2>
+<h3 id="user-content-odbc" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#odbc"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>ODBC</h3>
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>操作系统</th><th>要求</th></tr></thead><tbody><tr><td>Windows</td><td>
+            <ul>
+                <li>64 位</li>
+                <li>管理员权限</li>
+                <li>已安装最新的 Microsoft Visual C++ Redistributable</li>
+            </ul>
+        </td></tr></tbody></table></div>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>ODBC 驱动目前仅兼容 Windows 系统。</p></div>
+<h3 id="user-content-jdbc" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#jdbc"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>JDBC</h3>
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>操作系统</th><th>要求</th></tr></thead><tbody><tr><td>Windows</td><td rowspan="3">
+            <ul>
+                <li>最低 Java 版本：Java 11</li>
+                <li>最高 Java 版本：Java 15</li>
+            </ul>
+        </td></tr><tr><td>macOS</td></tr><tr><td>Linux</td></tr></tbody></table></div>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>Java 16 及以上版本需要额外配置才能支持。详情请参阅下方的指南。</p></div>
+<h2 id="user-content-setup-guide" level="2" node="[object Object]" data-pagefind-weight="0.9">
+
+<a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#setup-guide"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>安装指南</h2>
+<h3 id="user-content-odbc-1" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#odbc-1"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>ODBC</h3>
+<h4 id="user-content-part-1-install-the-odbc-driver"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#part-1-install-the-odbc-driver"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>第 1 部分：安装 ODBC 驱动程序</h4>
+<p>请按照《下载：ODBC 驱动程序》中的说明运行 ODBC 驱动程序安装程序。</p>
+<h4 id="user-content-part-2-configure-a-data-source-name-dsn-configuration"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#part-2-configure-a-data-source-name-dsn-configuration"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>第 2 部分：配置数据源名称（DSN）</h4>
+<p>要在客户端应用程序中使用该驱动程序，请先为您的 Foundry 环境配置数据源名称（DSN）：</p>
+<ol>
+<li>在<strong>开始</strong>菜单中搜索<strong>ODBC</strong>，然后打开<strong>ODBC 数据源</strong>工具。请选择 64 位版本。</li>
+<li>在<strong>用户 DSN</strong>或<strong>系统 DSN</strong>选项卡中，点击<strong>添加...</strong>。</li>
+<li>从驱动程序列表中选择<strong>FoundrySqlDriver</strong>。</li>
+<li>输入以下必填参数：
+<ol>
+<li><strong>数据源名称：</strong>您的计算机上该数据源的名称。</li>
+<li><strong>服务器：</strong>您的 Foundry 环境 URL；例如 <code>https://&lt;SUBDOMAIN&gt;.palantirfoundry.com</code>。</li>
+<li><strong>令牌：</strong>在 Foundry 内部的<strong>设置</strong>页面生成的安全令牌。有关如何获取令牌的说明，请参阅《用户生成的令牌》文档。如需了解其他身份验证选项，请查看《使用 OAuth 进行身份验证》指南。</li>
+</ol>
+</li>
+<li>点击<strong>测试...</strong>以验证连接是否成功，然后点击<strong>确定</strong>保存 DSN 配置。</li>
+</ol>
+<p>有关其他配置参数以及构建连接 URL 的说明，请参阅《配置参数》。</p>
+<h4 id="user-content-part-3-configure-the-dsn-within-client-applications"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#part-3-configure-the-dsn-within-client-applications"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>第 3 部分：在客户端应用程序中配置 DSN</h4>
+<p>创建 DSN 后，您就可以在支持 ODBC 数据源的客户端应用程序中引用它。有关 ODBC 数据源的详细信息，请参阅客户端应用程序文档。以下是与 Foundry 配合使用的常见应用程序设置指南：</p>
+<ul>
+<li>Excel</li>
+<li>Power BI</li>
+<li>Microsoft 报表生成器</li>
+</ul>
+<h4 id="user-content-optional-part-4-execute-a-sql-query"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#optional-part-4-execute-a-sql-query"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>（可选）第 4 部分：执行 SQL 查询</h4>
+<p>
+
+如果客户端应用程序支持，请测试执行一条从 Foundry 数据集返回数据行的 SQL 查询：</p>
+<pre><div class="ptcom-design__wrapper__12wpwnx" data-pagefind-weight="0.5"><span class="ptcom-design__clipboard__1l1gb20 ptcom-design__clipboard__12wpwnx"><span data-pagefind-ignore="true" class="ptcom-design__confirmation__1l1gb20">Copied!</span><svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1" width="16" data-view-component="true" aria-label="clipboard"><path fill-rule="evenodd" fill="currentColor" d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z"></path><path fill-rule="evenodd" fill="currentColor" d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z"></path></svg></span><div style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;overflow:auto;position:relative;margin:0;padding:0.75em"><code class="language-sql" style="white-space: pre; text-align: left; word-spacing: normal; word-break: normal; overflow-wrap: normal; color: rgb(195, 206, 227); background: rgb(38, 50, 56); font-family: &quot;SF Mono&quot;, Menlo, Consolas, Monaco, Inconsolata, &quot;Fira Mono&quot;, &quot;Droid Sans Mono&quot;, &quot;Source Code Pro&quot;, monospace; font-size: 14px; line-height: 1.5em; tab-size: 4; hyphens: none;"><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 1.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">1</span><span class="token token" style="color: rgb(199, 146, 234); font-style: italic;">SELECT</span><span> </span><span class="token token" style="color: rgb(137, 221, 255);">*</span><span> </span><span class="token token" style="color: rgb(199, 146, 234); font-style: italic;">FROM</span><span> </span><span class="token token" style="color: rgb(195, 232, 141);">"/Path/To/Dataset"</span><span> </span><span class="token token" style="color: rgb(199, 146, 234); font-style: italic;">LIMIT</span><span> </span><span class="token token" style="color: rgb(253, 145, 112);">10</span></span></code></div></div></pre>
+<p>客户端应用程序也可能允许你浏览项目并选择要访问的数据集。</p>
+<h3 id="user-content-jdbc-1" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#jdbc-1"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>JDBC</h3>
+<h4 id="user-content-part-1-install-the-jdbc-driver"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#part-1-install-the-jdbc-driver"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>第 1 部分：安装 JDBC 驱动程序</h4>
+<p>请前往《下载：JDBC 驱动程序》页面下载 JDBC 驱动程序（.jar 文件）。下载完成后，请将该文件放置在客户端应用程序文档中指定的、用于配置 JDBC 连接的相应位置。</p>
+<h4 id="user-content-part-2-construct-the-jdbc-connection-string"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#part-2-construct-the-jdbc-connection-string"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>第 2 部分：构建 JDBC 连接字符串</h4>
+<p>JDBC 连接字符串的格式如下：</p>
+<pre><code>jdbc:foundrysql://&lt;FOUNDRY_HOSTNAME&gt;?Password=&lt;TOKEN&gt;
+</code></pre>
+<ul>
+<li><code>FOUNDRY_HOSTNAME</code> 是你的 Foundry 环境的主机名（例如 <code>subdomain.palantirfoundry.com</code>）。</li>
+<li>
+
+<code>TOKEN</code> 是从 Foundry 内部的<strong>设置</strong>页面生成的安全令牌。有关如何获取令牌的说明，请参阅《用户生成的令牌》文档。如需了解其他身份验证选项，请查阅《使用 OAuth 进行身份验证》指南。</li>
+</ul>
+<p>可以通过在连接字符串后追加 <code>&amp;OptionalParam=&lt;VALUE&gt;</code> 来指定可选参数。有关可用参数的完整列表，请参阅《配置参数》。</p>
+<p>如果 JDBC 客户端要求显式指定驱动程序类，请指定 <code>com.palantir.foundry.sql.jdbc.FoundryJdbcDriver</code>。</p>
+<h4 id="user-content-optional-part-3-execute-a-sql-query"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#optional-part-3-execute-a-sql-query"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>（可选）第 3 部分：执行 SQL 查询</h4>
+<p>如果客户端应用程序支持，可以测试一条从 Foundry 数据集中返回行的 SQL 查询：</p>
+<pre><div class="ptcom-design__wrapper__12wpwnx" data-pagefind-weight="0.5"><span class="ptcom-design__clipboard__1l1gb20 ptcom-design__clipboard__12wpwnx"><span data-pagefind-ignore="true" class="ptcom-design__confirmation__1l1gb20">已复制！</span><svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1" width="16" data-view-component="true" aria-label="clipboard"><path fill-rule="evenodd" fill="currentColor" d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z"></path><path fill-rule="evenodd" fill="currentColor" d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z"></path></svg></span><div style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;overflow:auto;position:relative;margin:0;padding:0.75em"><code class="language-sql" style="white-space: pre; text-align: left; word-spacing: normal; word-break: normal; overflow-wrap: normal; color: rgb(195, 206, 227); background: rgb(38, 50, 56); font-family: &quot;SF Mono&quot;, Menlo, Consolas, Monaco, Inconsolata, &quot;Fira Mono&quot;, &quot;Droid Sans Mono&quot;, &quot;Source Code Pro&quot;, monospace; font-size: 14px; line-height: 1.5em; tab-size: 4; hyphens: none;"><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 1.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">1</span><span class="token token" style="color: rgb(199, 146, 234); font-style: italic;">SELECT</span><span> </span><span class="token token" style="color: rgb(137, 221, 255);">*</span><span> </span><span class="token token" style="color: rgb(199, 146, 234); font-style: italic;">FROM</span><span> </span><span class="token token" style="color: rgb(195, 232, 141);">"/Path/To/Dataset"</span><span> </span><span class="token token" style="color: rgb(199, 146, 234); font-style: italic;">LIMIT</span><span> </span><span class="token token" style="color: rgb(253, 145, 112);">10</span></span></code></div></div></pre>
+<p>客户端应用程序也可能允许您浏览项目并选择数据集来访问数据。</p>
+<h2 id="user-content-reference" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#reference"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>参考</h2>
+<h3 id="user-content-configuration-parameters" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#configuration-parameters"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>配置参数</h3>
+<p>
+
+ODBC 和 JDBC 的可用配置参数相同。每个驱动程序可以通过以下两种方式之一进行配置：在客户端应用程序内使用连接字符串，或者在客户端应用程序外部进行配置：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th></th><th>使用连接字符串</th><th>在客户端应用程序外部</th></tr></thead><tbody><tr><td>ODBC</td><td><code>Driver=FoundrySqlDriver;BaseUrl=&lt;FOUNDRY_HOSTNAME&gt;;Pwd=&lt;TOKEN&gt;;OptionalParamOne=ABC;OptionalParamTwo=XYZ</code></td><td>使用 Windows ODBC 数据源工具配置 DSN。参见 <a href="#part-2-configure-a-data-source-name-dsn-configuration">第 2 部分。配置数据源名称 (DSN)</a>。</td></tr><tr><td>JDBC</td><td><code>jdbc:foundrysql://&lt;FOUNDRY_HOSTNAME&gt;?Password=&lt;TOKEN&gt;&amp;OptionalParamOne=ABC&amp;OptionalParamTwo=XYZ</code></td><td>使用 <code>foundry.ini config</code> 文件。参见 <a href="#configure-the-jdbc-driver-using-a-foundryini-config-file">使用 foundry.ini 配置文件配置 JDBC 驱动程序</a>。</td></tr></tbody></table></div>
+<h4 id="user-content-parameter-reference"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#parameter-reference"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>参数参考</h4>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5">
+
+<table><thead><tr><th>参数</th><th>连接字符串键</th><th>是否必填</th><th>描述</th></tr></thead><tbody><tr><td>Foundry URL</td><td>ODBC <code>BaseUrl</code> / JDBC N/A</td><td>是</td><td>Foundry URL，例如 <code>https://&lt;SUBDOMAIN&gt;.palantirfoundry.com</code></td></tr><tr><td>身份验证令牌</td><td>ODBC <code>Pwd</code> / JDBC <code>Password</code></td><td>是</td><td><a href="/docs/foundry/platform-security-third-party/user-generated-tokens/">通过 Foundry UI 生成</a>或通过<a href="#use-oauth-to-authenticate">OAuth 认证流程</a>获取的身份验证令牌。</td></tr><tr><td>数据集分支</td><td><code>Branch</code></td><td>否</td><td>查询数据集所在分支。若未设置，默认为 <code>master</code>。</td></tr><tr><td>项目/数据目录</td><td><code>Catalog</code></td><td>否</td><td>将驱动程序显示的表限制为单个项目。设置为完整项目路径，例如 <code>/MyOrg/MyProject</code>。设置此属性可解决某些应用程序中的表浏览问题。</td></tr><tr><td>认证方式</td><td><code>AuthMethod</code></td><td>否</td><td>连接使用的认证方式。允许值：<code>Token</code>（默认）、<code>OauthFlow</code> 或 <code>ClientCredentials</code>。有关使用基于 OAuth 认证方式的指导，请参阅<a href="#use-oauth-to-authenticate">使用 OAuth 进行认证</a>。</td></tr><tr><td>OAuth 客户端 ID</td><td><code>OauthClientId</code></td><td>否</td><td>在 Foundry 中注册并启用的第三方应用程序客户端 ID。若 <code>AuthMethod</code> 设为 <code>OauthFlow</code> 或 <code>ClientCredentials</code> 则为必填项。或者，也可在应用程序的用户名字段中设置。</td></tr><tr><td>OAuth 客户端密钥</td><td><code>OauthClientSecret</code></td><td>否</td><td>在 Foundry 中注册并启用的第三方应用程序客户端密钥。若 <code>AuthMethod</code> 设为 <code>ClientCredentials</code> 则为必填项。或者，也可在应用程序的密码字段中设置。</td></tr><tr><td>代理主机</td><td><code>ProxyHost</code></td><td>否</td><td>若需访问 Foundry 则填写代理主机。应指定为 <code>myproxy.example.com</code>，无需添加前导 <code>http</code>。在 Windows 系统中，若已设为默认 Windows 代理，驱动程序会自动使用该代理，因此可能无需使用此参数。</td></tr><tr><td>代理端口</td><td><code>ProxyPort</code></td><td>否</td><td>代理端口。设置了代理主机则必填。</td></tr><tr><td>代理用户名</td><td><code>ProxyUsername</code></td><td>否</td><td>若代理需要认证则填写代理用户名。仅支持 HTTP 基本认证。</td></tr><tr><td>代理密码</td><td><code>ProxyPassword</code></td><td>否</td><td>代理密码。设置了代理用户名则必填。</td></tr><tr><td>自动检测代理</td><td><code>EnableProxyAutoDetect</code></td><td>否</td><td>驱动程序是否应自动加载配置的操作系统代理（若已设置）。允许值：<code>true</code>（默认）或 <code>false</code>。若需凭证，仍需手动指定。设为 <code>false</code> 可禁用并使用直接连接。</td></tr><tr><td>SSL 信任库路径</td><td><code>TrustStorePath</code></td><td>否</td><td><code>.pem</code> 文件格式的自定义 SSL 证书信任库路径。仅在默认操作系统信任库中不存在 Foundry 证书时才需填写。</td></tr><tr><td>SQL 方言</td><td><code>Dialect</code></td><td>否</td><td>连接使用的<a href="#sql-dialects">SQL 方言</a>。允许值：<code>ODBC</code>（默认）、<code>ANSI</code> 或 <code>SPARK</code>。</td></tr><tr><td>UTC 时间戳</td><td>ODBC <code>UtcTimestamps</code> / JDBC N/A</td><td>否</td><td>时间戳返回值为 UTC 还是本地时区。允许值：<code>true</code> 或 <code>false</code>（默认）。使用 BI 工具并发布报告时，此设置仅适用于本地 DSN，发布后可能会有所不同。此设置仅适用于 ODBC 时间戳，因为 JDBC 时间戳始终以 UTC 格式返回。</td></tr></tbody></table></div>
+<h3 id="user-content-type-handling" level="3" node="[object Object]" data-pagefind-weight="0.8">
+
+<a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#type-handling"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>类型处理</h3>
+<p>下表展示了 Foundry 类型如何映射到 ODBC 和 JDBC 类型。</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>Foundry 类型</th><th>ODBC 类型</th><th>JDBC 类型</th></tr></thead><tbody><tr><td>Array</td><td>编码为 JSON 并作为字符串返回 (<code>SQL_WVARCHAR</code>)。</td><td>同 ODBC</td></tr><tr><td>Binary</td><td>编码为十六进制字符串 (<code>SQL_WVARCHAR</code>)，以 <code>0x</code> 为前缀。</td><td><code>byte[]</code></td></tr><tr><td>Boolean</td><td><code>SQL_BIT</code></td><td><code>boolean</code></td></tr><tr><td>Byte</td><td><code>SQL_TINYINT</code></td><td><code>byte</code></td></tr><tr><td>Date</td><td><code>SQL_DATE</code></td><td><code>java.sql.Date</code></td></tr><tr><td>Decimal</td><td><code>SQL_DECIMAL</code></td><td><code>java.math.BigDecimal</code></td></tr><tr><td>Double</td><td><code>SQL_DOUBLE</code></td><td><code>double</code></td></tr><tr><td>Float</td><td><code>SQL_DOUBLE</code></td><td><code>float</code></td></tr><tr><td>Integer</td><td><code>SQL_INTEGER</code></td><td><code>int</code></td></tr><tr><td>Long</td><td><code>SQL_BIGINT</code></td><td><code>long</code></td></tr><tr><td>Map</td><td>编码为 JSON 并作为字符串返回 (<code>SQL_WVARCHAR</code>)。</td><td>同 ODBC</td></tr><tr><td>Short</td><td><code>SQL_SMALLINT</code></td><td><code>short</code></td></tr><tr><td>String</td><td><code>SQL_WVARCHAR</code>。可通过 <code>StringColumnLength</code> 属性设置最大字符串列长度参数。</td><td><code>java.lang.String</code></td></tr><tr><td>Struct</td><td>编码为 JSON 并作为字符串返回 (<code>SQL_WVARCHAR</code>)。</td><td>同 ODBC</td></tr><tr><td>Timestamp</td><td><code>SQL_TIMESTAMP</code>。默认情况下，时间会转换为系统的本地时区。可通过 <code>UtcTimestamps</code> 属性更改此设置。</td><td>采用 UTC 时区的 <code>java.sql.Timestamp</code>。<code>UtcTimestamps</code> 属性无效。</td></tr></tbody></table></div>
+<h3 id="user-content-sql-dialects" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#sql-dialects"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>SQL 方言</h3>
+<p>下表概述了可用 SQL 方言的部分 SQL 语法和特性（参见配置参数中的 <code>Dialect</code> 参数）。</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th></th><th>Spark（推荐）</th><th>ANSI、ODBC</th></tr></thead><tbody><tr><td>引用标识符（列名、表名）</td><td>反引号：<br> <code>SELECT * FROM `/Space/Project/...` </code></td><td>双引号：<br> <code>SELECT * FROM "/Space/Project/..."</code></td></tr><tr><td>引用字符串字面量</td><td>单引号或双引号：<br> <code>WHERE column = 'value' OR column = "value"</code></td><td>单引号：<br> <code>WHERE column = 'value'</code></td></tr><tr><td>日期字面量</td><td><code>SELECT DATE 'yyyy-mm-dd'</code></td><td>同 Spark</td></tr><tr><td>当前日期</td><td><code>SELECT CURRENT_DATE</code></td><td>同 Spark</td></tr><tr><td><strong>补充参考</strong></td><td>《Spark SQL 指南：SQL 参考 ↗》</td><td>支持的函数：《ODBC 参考 ↗》</td></tr></tbody></table></div>
+<h2 id="user-content-usage-guides" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#usage-guides"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>使用指南</h2>
+<h3 id="user-content-use-sql-to-query-foundry-datasets" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#use-sql-to-query-foundry-datasets"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>使用 SQL 查询 Foundry 数据集</h3>
+<p>在 SQL 查询中，可以通过路径或 RID 引用数据集。SQL 语法取决于为连接设置的方言（参见配置参数）。</p>
+<h4 id="user-content-spark-dialect"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#spark-dialect"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>SPARK 方言</h4>
+<pre><code>-- 基本 SELECT
+SELECT * FROM `/Path/To/Dataset`
+
+-- 使用 WHERE 子句过滤
+SELECT * FROM `/Path/To/Dataset`
+WHERE years &lt; 13 AND category = 'Z';
+
+-- 使用 JOIN
+SELECT *
+FROM `/Path/To/Dataset_A` a
+JOIN `/Path/To/Dataset_B` b
+    ON a.id = b.fk_id;
+</code></pre>
+<h4 id="user-content-odbc--ansi-dialect">
+
+<a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#odbc--ansi-dialect"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>ODBC 与 ANSI 方言</h4>
+<pre><code>-- 基本 SELECT 语句
+SELECT * FROM "/Path/To/Dataset";
+
+-- 使用 WHERE 子句进行过滤
+SELECT * FROM "/Path/To/Dataset"
+WHERE years &lt; 13 AND category = 'Z';
+
+-- 使用 JOIN
+SELECT *
+FROM "/Path/To/Dataset_A" a
+JOIN "/Path/To/Dataset_B" b
+    ON a.id = b.fk_id;
+</code></pre>
+<p>有关使用数据集标识符的详细说明，请参阅《指南：识别数据集的 RID 或文件路径》。</p>
+<h3 id="user-content-use-oauth-to-authenticate" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#use-oauth-to-authenticate"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>使用 OAuth 进行身份验证</h3>
+<p>ODBC 和 JDBC 驱动程序支持 OAuth 2.0 流程，提供了更多的身份验证选项，无需手动生成绑定到单个 Foundry 账户的身份验证令牌：</p>
+<ul>
+<li><strong><a href="#individual-users-odbc-on-windows-only">个人用户</a>：</strong>驱动程序会在浏览器中打开登录提示，供您向 Foundry 进行身份验证。</li>
+<li><a href="#service-users"><strong>服务用户</strong></a>：驱动程序以服务用户身份连接到 Foundry，该服务用户与在 Foundry 中注册的第三方应用程序相关联。</li>
+<li><a href="#external-applications-for-developers"><strong>外部应用程序（面向开发者）</strong></a>：第三方应用程序与 Foundry 的 OAuth 系统集成，代表其用户获取令牌。</li>
+</ul>
+<p>在条件允许的情况下，我们建议优先使用这些基于 OAuth 的选项，而非生成令牌。因为这些方式安全性更高，并且允许共享内嵌的连接字符串，无需共享个人用户的令牌。</p>
+<h4 id="user-content-individual-users-odbc-on-windows-only"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#individual-users-odbc-on-windows-only"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>个人用户（仅限 Windows 上的 ODBC）</h4>
+<p>在 Windows 上运行时，ODBC 驱动程序支持自动的 OAuth 登录和授权流程。此流程仅支持安装在您计算机上的桌面应用程序，不适用于通过 Web 浏览器访问的应用程序。</p>
+<p>请按照以下步骤设置此流程：</p>
+<ol>
+<li><em>（由 Foundry 管理员完成）</em>在 Foundry 中注册<a href="/docs/foundry/platform-security-third-party/register-3pa/">第三方应用程序</a>，并指定以下配置选项：
+<ol>
+<li><strong>客户端类型：</strong>在大多数情况下，建议选择<strong>公共客户端</strong>；如果您的使用场景有需求，也支持<strong>机密客户端</strong>。</li>
+<li><strong>授权许可类型：</strong>启用<strong>授权码许可</strong>，并将重定向 URL 设置为 <code>http://127.0.0.1/foundrydriver/oauthredirect</code>。</li>
+<li>确保该应用程序已<strong>注册</strong>并<strong>启用</strong>。</li>
+<li>从应用程序详情页面复制该应用程序的<strong>客户端 ID</strong>，并与任何要在其计算机上设置 ODBC 连接的用户共享。</li>
+</ol>
+</li>
+<li>
+
+从 Foundry 管理员处获取<strong>客户端 ID</strong>后，请设置以下 ODBC 连接参数：
+<ol>
+<li><code>AuthMethod</code> = <code>OauthFlow</code></li>
+<li><code>OauthClientId</code> = <code>&lt;YOUR_CLIENT_ID&gt;</code><br>
+或者，也可以将<strong>客户端 ID</strong>填入应用程序的用户名字段中，替代 <code>OauthClientId</code>，以便在应用内完成凭据配置。但仍需设置 <code>AuthMethod</code>。</li>
+</ol>
+</li>
+<li>（可选）如果在 Windows ODBC 数据源管理器中配置这些设置，可以选择<strong>测试</strong>选项来触发登录提示，验证登录是否正常。</li>
+</ol>
+<p>下次在客户端应用程序中使用该驱动时，系统会提示你在浏览器中登录 Foundry。此后，无需每次使用驱动时都进行登录，但偶尔可能会再次提示你登录。</p>
+<h4 id="user-content-service-users"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#service-users"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>服务用户</h4>
+<p>对于不与特定用户绑定的操作流程（例如按计划刷新仪表板数据），我们建议使用基于 OAuth 的服务用户，并借助采用 OAuth 客户端凭据授权类型的<a href="/docs/foundry/platform-security-third-party/register-3pa/">第三方应用</a>来实现。驱动程序将使用长效的客户端 ID/密钥对向 Foundry 进行身份验证，这种方式比手动创建服务账户并生成令牌更易于管理。</p>
+<p>请按照以下步骤为服务用户配置 OAuth：</p>
+<ol>
+<li><em>（由 Foundry 管理员完成。）</em> 在 Foundry 中注册<a href="/docs/foundry/platform-security-third-party/register-3pa/">第三方应用</a>：
+<ol>
+<li><strong>客户端类型：</strong>选择<strong>机密客户端</strong>。</li>
+<li><strong>授权许可类型：</strong>启用<strong>客户端凭据授权</strong>，并务必将<strong>客户端 ID</strong>和<strong>客户端密钥</strong>对保存在安全位置。</li>
+<li>确保应用已<strong>注册</strong>且<strong>启用</strong>。</li>
+<li>确保为生成的服务用户授予了通过 ODBC 或 JDBC 驱动访问所需数据集的权限。为该应用生成的服务用户显示在<strong>客户端凭据授权</strong>详情面板中。</li>
+</ol>
+</li>
+<li>配置驱动时，请设置以下配置参数：
+<ol>
+<li><code>AuthMethod</code> = <code>ClientCredentials</code></li>
+<li><code>OauthClientId</code> = <code>&lt;YOUR_CLIENT_ID&gt;</code></li>
+<li><code>OauthClientSecret</code> = <code>&lt;YOUR_CLIENT_SECRET&gt;</code><br>
+或者，也可以将<strong>客户端 ID</strong>和<strong>客户端密钥</strong>填入应用程序的用户名和密码字段中，替代 <code>OauthClientId</code> 和 <code>OauthClientSecret</code>，以便在应用内完成凭据配置。但仍需设置 <code>AuthMethod</code>。</li>
+</ol>
+</li>
+</ol>
+<p>现在，驱动程序将以该 OAuth 应用的服务用户身份连接到 Foundry。</p>
+<h4 id="user-content-external-applications-for-developers">
+
+<a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#external-applications-for-developers"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>外部应用（面向开发者）</h4>
+<p>应用开发者可将 ODBC 和 JDBC 驱动集成到应用中，由该应用运行自身的 OAuth 客户端来管理与第三方应用之间的 OAuth 登录流程。此选项支持对登录流程的完全掌控，包括将用户重定向至 Foundry 进行身份验证，以及处理用户完成认证和授权后的授权响应。请参阅《为 Foundry 编写 OAuth2 客户端》文档，了解如何代表 Foundry 用户获取访问令牌。</p>
+<p>一旦应用代表用户获取了访问令牌，即可通过标准的密码属性将其传递给驱动程序：</p>
+<ul>
+<li>ODBC <code>Pwd</code> / JDBC <code>Password</code> = <code>&lt;从令牌端点获取的访问令牌&gt;</code></li>
+</ul>
+<h3 id="user-content-enable-logging-in-the-odbc-driver" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#enable-logging-in-the-odbc-driver"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>在 ODBC 驱动中启用日志记录</h3>
+<p>若需启用驱动程序日志记录以排查问题，请按照以下步骤操作。请注意，这些步骤可能需要管理员权限。</p>
+<ol>
+<li>创建一个用于保存日志的文件夹，例如 <code>My Documents\Foundry Driver logs</code>。</li>
+<li>打开 Windows 的 <strong>ODBC 数据源</strong> 工具。可以在 Windows 搜索栏中搜索“ODBC”来找到该工具。请选择 64 位版本。</li>
+<li>打开 <strong>系统 DSN</strong> 选项卡。选择 <strong>FoundrySql</strong> 数据源，然后选择 <strong>配置</strong>。请注意，选择哪个 Foundry 数据源并不影响结果，因为日志记录设置将应用于所有使用 Foundry 驱动的数据源。</li>
+<li>在配置窗口中选择 <strong>日志记录选项</strong>。</li>
+<li>将日志级别设置为 <strong>DEBUG</strong>。将日志路径设置为您先前创建的文件夹。</li>
+<li>选择 <strong>确定</strong> 以保存设置。</li>
+</ol>
+<p>重启客户端应用程序并执行需要排查的操作。日志应当会出现在您所选的文件夹中。如果需要 Palantir 或其他支持团队提供协助，可以将该文件夹压缩为 zip 文件进行共享。</p>
+<p>排查完成后，请返回 <strong>ODBC 数据源</strong> 工具，将日志级别设置为 <code>OFF</code> 以禁用日志记录。建议执行此步骤以提升性能。</p>
+<h3 id="user-content-enable-logging-in-the-jdbc-driver" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#enable-logging-in-the-jdbc-driver"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>在 JDBC 驱动中启用日志记录</h3>
+<p>
+
+JDBC 驱动会自动发现 Java 应用程序在 classpath 上提供的任何 SLF4J 记录器。具体而言，应用程序需提供 <code>org.slf4j.impl.StaticLoggerBinder</code> 和 <code>org.slf4j.impl.StaticMDCBinder</code> 类的实现。通过将 <code>slf4j-simple</code>（1.X 版本）添加为项目依赖，即可使用默认实现。</p>
+<p>若未配置 SLF4J 记录器，驱动首次加载时将输出以下提示信息：</p>
+<pre><code>SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".
+SLF4J: Defaulting to no-operation (NOP) logger implementation
+SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further details.
+SLF4J: Failed to load class "org.slf4j.impl.StaticMDCBinder".
+SLF4J: Defaulting to no-operation MDCAdapter implementation.
+SLF4J: See http://www.slf4j.org/codes.html#no_static_mdc_binder for further details.
+</code></pre>
+<h3 id="user-content-configure-the-jdbc-driver-using-a-foundryini-config-file" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#configure-the-jdbc-driver-using-a-foundryini-config-file"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></a>使用 <code>foundry.ini</code> 配置文件配置 JDBC 驱动</h3>
+<p>除了使用连接字符串外，还可以通过配置文件来配置 JDBC 驱动。为此，需在 JDBC .jar 文件所在目录下创建一个名为 <code>foundry.ini</code> 的文件。</p>
+<p>该 .ini 文件分为两个部分：<code>low-priority</code> 和 <code>high-priority</code>。在 <code>low-priority</code> 部分指定的属性，其优先级低于连接字符串中的属性。这意味着，若同一属性同时在 <code>low-priority</code> 部分和连接字符串中指定，将以连接字符串中的值为准。相反，<code>high-priority</code> 部分指定的属性优先级高于连接字符串中的属性。这在将报表从开发机发布到服务器的场景中非常实用，可确保服务器上的属性配置优先于开发机上的配置。</p>
+<p><code>foundry.ini</code> 文件示例：</p>
+<pre><code>[high-priority]
+proxyHost=myproxy.abc
+proxyPort=1234
+
+[low-priority]
+branch=production-branch
+</code></pre>
+<h3 id="user-content-use-the-jdbc-driver-with-java-16-and-above" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#use-the-jdbc-driver-with-java-16-and-above"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>在 Java 16 及以上版本中使用 JDBC 驱动</h3>
+<p>JDBC 驱动默认支持的最高 Java 版本为 Java 15。若要在 Java 16 及以上版本中使用该驱动，需在应用程序中将 <code>--add-opens</code> Java 运行时选项设置为 <code>java.base/java.nio=org.apache.arrow.memory.core,ALL-UNNAMED</code>。</p>
+<h4 id="user-content-example-java-command"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#example-java-command"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>示例：Java 命令</h4>
+<pre>
+
+<div class="ptcom-design__wrapper__12wpwnx" data-pagefind-weight="0.5"><span class="ptcom-design__clipboard__1l1gb20 ptcom-design__clipboard__12wpwnx"><span data-pagefind-ignore="true" class="ptcom-design__confirmation__1l1gb20">已复制！</span><svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1" width="16" data-view-component="true" aria-label="clipboard"><path fill-rule="evenodd" fill="currentColor" d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z"></path><path fill-rule="evenodd" fill="currentColor" d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z"></path></svg></span><div style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;overflow:auto;position:relative;margin:0;padding:0.75em"><code class="language-java" style="white-space: pre; text-align: left; word-spacing: normal; word-break: normal; overflow-wrap: normal; color: rgb(195, 206, 227); background: rgb(38, 50, 56); font-family: &quot;SF Mono&quot;, Menlo, Consolas, Monaco, Inconsolata, &quot;Fira Mono&quot;, &quot;Droid Sans Mono&quot;, &quot;Source Code Pro&quot;, monospace; font-size: 14px; line-height: 1.5em; tab-size: 4; hyphens: none;"><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 1.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">1</span><span>java </span><span class="token token" style="color: rgb(137, 221, 255);">--</span><span>add</span><span class="token token" style="color: rgb(137, 221, 255);">-</span><span class="token token" style="color: rgb(199, 146, 234); font-style: italic;">opens</span><span class="token token" style="color: rgb(137, 221, 255);">=</span><span>java</span><span class="token token" style="color: rgb(137, 221, 255);">.</span><span>base</span><span class="token token" style="color: rgb(137, 221, 255);">/</span><span>java</span><span class="token token" style="color: rgb(137, 221, 255);">.</span><span>nio</span><span class="token token" style="color: rgb(137, 221, 255);">=</span><span>org</span><span class="token token" style="color: rgb(137, 221, 255);">.</span><span>apache</span><span class="token token" style="color: rgb(137, 221, 255);">.</span><span>arrow</span><span class="token token" style="color: rgb(137, 221, 255);">.</span><span>memory</span><span class="token token" style="color: rgb(137, 221, 255);">.</span><span>core</span><span class="token token" style="color: rgb(137, 221, 255);">,</span><span>ALL</span><span class="token token" style="color: rgb(137, 221, 255);">-</span><span>UNNAMED </span><span class="token token" style="color: rgb(137, 221, 255);">-</span><span>jar your_application</span><span class="token token" style="color: rgb(137, 221, 255);">.</span><span>jar</span></span></code></div></div></pre>
+<h4 id="user-content-example-environment-variable"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#example-environment-variable"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>示例：环境变量</h4>
+<p>在某些情况下，将选项指定在 <code>_JAVA_OPTIONS</code> 环境变量中会更加便捷，部分 Java 环境会自动检测并应用该变量。在基于 Unix 的系统上，可以使用 <code>export</code> 命令进行配置：</p>
+<pre><code>export _JAVA_OPTIONS="--add-opens=java.base/java.nio=org.apache.arrow.memory.core,ALL-UNNAMED"
+</code></pre>
+</article>
+</body>
+</html>

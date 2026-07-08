@@ -24,7 +24,7 @@ SITEMAP_PATH = os.path.join(ROOT, "data", "docs_sitemap.xml")
 client = get_client()
 MODEL = "glm-5.2"
 PROVIDER = LLMProvider.DASHSCOPE
-MAX_WORDS_PER_CHUNK = 800
+MAX_WORDS_PER_CHUNK = 400
 CONTENT_SELECTOR = "div.ptcom-design__markdownDoc__1uarhel"
 TRANSLATE_WORKERS = 1
 TRANSLATE_TIMEOUT = 90  # seconds per GLM call
@@ -194,6 +194,8 @@ def translate_one(slug):
         content = extract_article_content(html)
         if not content or len(content) < 50:
             return slug, "error:short"
+        if len(content) > 200000:
+            return slug, "error:toobig200k"
         # Skip very large pages for now (process later)
 
         # Translate
