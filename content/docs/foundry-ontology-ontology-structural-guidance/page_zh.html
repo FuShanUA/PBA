@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ontology design: Structural guidance</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-ontology-design-structural-guidance" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#ontology-design-structural-guidance"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Ontology design: Structural guidance</h1>
+<p>The following sections provide guidance on how to structure properties, relationships, and access control within the Ontology.</p>
+<h2 id="user-content-normalization-and-derived-properties" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#normalization-and-derived-properties"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Normalization and derived properties</h2>
+<p><strong>Store each fact once. Use derived properties for convenience.</strong></p>
+<p>Denormalized data (copying values from linked objects onto a parent object) can be risky. When the data source changes, every copy must be updated. Normalization keeps data consistent, and derived properties give you the convenience of denormalized access without the upkeep.</p>
+<p>Not all computed values are the same. The right approach depends on whether a value can be safely pre-computed from stable inputs or whether it needs to stay in sync with dynamic Ontology changes.</p>
+<h3 id="user-content-pre-computed-vs-dynamically-derived-values" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#pre-computed-vs-dynamically-derived-values"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Pre-computed vs. dynamically derived values</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5">
+
+<table><thead><tr><th>Type</th><th>Characteristics</th><th>Recommended tool</th><th>Example</th></tr></thead><tbody><tr><td>Pre-computed</td><td>Computed from properties on the same object; inputs rarely change or only change due to pipeline ingestion.</td><td>Pipeline transform</td><td><code>fullName</code> = <code>firstName</code> + " " + <code>lastName</code> <br><br> Inputs are stable and updated in the same pipeline, so pre-computing is safe and adds zero runtime overhead.</td></tr><tr><td>Dynamically derived</td><td>Depends on linked objects or values that change via actions, automations, or other Ontology-level operations.</td><td>Derived property</td><td><code>directReportCount</code> <br><br> Employees are reassigned, onboarded, and offboarded through actions. A derived property that counts linked <code>Employee</code> objects stays correct automatically.</td></tr></tbody></table></div>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>When a value depends on changes made through actions, every action that could affect the value must also update the value. If any action fails to do so, the value will remain incorrect until the discrepancy is identified.</p></div>
+<h3 id="user-content-anti-patterns" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#anti-patterns"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Anti-patterns</h3>
+<ul>
+<li>The same value is stored as a property on multiple object types</li>
+<li>Properties go stale because they are copies of values maintained elsewhere</li>
+<li>Updating a single real-world fact requires writes to multiple objects</li>
+<li>
+
+Integer or count properties are manually maintained rather than computed from links</li>
+</ul>
+<h3 id="user-content-example" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#example"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Example</h3>
+<p>A <code>Manager</code> object type needs to display a count of direct reports:</p>
+<pre><code>✗ Avoid                                    ✓ Prefer
+────────────────────────────────────────   ────────────────────────────────────────
+Manager                                    Manager
+  - directReportCount: 5                     - directReportCount (derived):
+  (manually maintained integer;                counts linked Employee objects
+   must be updated every time          →       at query time
+   an employee joins or leaves)
+                                           Employee
+Employee                                     - manager (link to Manager)
+  - managerName: "Alice"
+  (copied from the linked Manager;
+   breaks if the manager's name
+   changes)
+</code></pre>
+<h3 id="user-content-performance-considerations" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#performance-considerations"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Performance considerations</h3>
+<p>Derived properties are evaluated at runtime. The performance characteristics vary by scale:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>Scale</th><th>Recommendation</th></tr></thead><tbody><tr><td>Low to moderate (&lt;~10k objects per query)</td><td>Use derived properties freely. Runtime evaluation is sufficiently performant for most workflows.</td></tr><tr><td>High (&gt;~10k objects per query)</td><td>Derived properties may introduce latency due to higher-overhead query paths. Denormalization may be an appropriate tradeoff, but it should be a conscious, documented decision and not the default.</td></tr></tbody></table></div>
+
+
+<h3 id="user-content-best-practices" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#best-practices"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Best practices</h3>
+<ol>
+<li><strong>Store each fact in one place</strong>, on the object where it semantically belongs.</li>
+<li><strong>Use derived properties</strong> to compute or aggregate values from linked objects at query time.</li>
+<li><strong>Monitor performance</strong> as scale grows. If derived properties introduce unacceptable latency at high scale, consider selective denormalization.</li>
+<li><strong>Document any denormalization</strong> with the rationale, the source of truth, and the update strategy for keeping copies in sync.</li>
+</ol>
+<h2 id="user-content-structs" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#structs"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Structs</h2>
+<p><strong>Group semantically related fields into structs.</strong></p>
+<p>When a property is naturally multi-field (for example, an address with street, city, state, and postal code), use a struct rather than flattening into separate properties. Structs preserve semantic grouping and enable richer metadata capture.</p>
+<h3 id="user-content-when-to-use-structs" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#when-to-use-structs"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>When to use structs</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5">
+
+<table><thead><tr><th>Scenario</th><th>Example</th></tr></thead><tbody><tr><td>Multi-field values</td><td>Address (street, city, state, postal code), coordinates (geopoint, altitude)</td></tr><tr><td>Values with metadata</td><td>AI-generated outputs with confidence scores, source references, and reasoning</td></tr><tr><td>Multi-valued properties with selection logic</td><td>Multiple phone numbers where a reducer surfaces the primary one</td></tr></tbody></table></div>
+<h3 id="user-content-example-1" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#example-1"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Example</h3>
+<p>Modeling an address on a <code>Facility</code> object type:</p>
+<pre><code>✗ Avoid                                    ✓ Prefer
+────────────────────────────────────────   ────────────────────────────────────────
+Facility                                   Facility
+  - addressStreet                            - address (struct array)
+  - addressCity                                  - street (Main field)
+  - addressState                     →           - city (Main field)
+  - addressPostalCode                            - state (Main field)
+  - addressCountry                               - postalCode (Main field)
+  - addressGeopoint                              - country (Main field)
+  - addressLastOccupied                          - geopoint
+  - addressDatasource                            - lastOccupied (used for reducer sorting)
+  - addressLlmConfidence                         - datasource
+  - addressLlmReasoning                          - llmConfidence
+                                                 - llmReasoning
+
+(Ten unrelated properties with a
+ naming convention as the only link         (One semantic concept with main
+ between them)                               fields and structured sub-fields)
+</code></pre>
+<h3 id="user-content-key-benefits" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#key-benefits"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Key benefits</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5">
+
+<table><thead><tr><th>Benefit</th><th>Details</th></tr></thead><tbody><tr><td>Semantic grouping</td><td>An address is one concept, not ten unrelated properties. The Ontology reflects this.</td></tr><tr><td>Metadata capture</td><td>Structs can carry source, confidence, and timestamp information alongside the primary value.</td></tr><tr><td>Reducer support</td><td>In multi-valued scenarios, reducers can surface the most relevant value (for example, the address with the most recent <code>lastOccupied</code> field).</td></tr><tr><td>Main field behavior</td><td>A struct can designate one or more main fields so it behaves like a simple property or as a struct with a subset of the fields in interfaces and queries.</td></tr></tbody></table></div>
+<p>Structs are especially valuable in AI-first workflows where large language model (LLM) outputs have both a primary result and associated metadata (reasoning, source references, confidence scores). Capture these together rather than scattering them across unrelated properties.</p>
+<h3 id="user-content-best-practices-1" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#best-practices-1"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Best practices</h3>
+<ol>
+<li><strong>Identify multi-field properties</strong> where the fields are semantically related and always used together.</li>
+<li><strong>Define the struct</strong> with clear field names and types.</li>
+<li><strong>Designate a main field</strong> so the struct behaves like a simple property in most contexts.</li>
+<li><strong>Use reducers</strong> for multi-valued struct properties to surface the most relevant value.</li>
+<li>
+
+<strong>Capture metadata</strong> (source, confidence, timestamps) in the struct alongside the primary value, especially for AI-generated outputs.</li>
+</ol>
+<h2 id="user-content-interfaces" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#interfaces"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Interfaces</h2>
+<p><strong>Use interfaces to build reusable, future-proof abstractions.</strong></p>
+<p>Interfaces are the primary tool for achieving the <a href="/docs/foundry/ontology/ontology-best-practices/#2-dont-repeat-yourself-rule-of-three">"Don't repeat yourself" design principle</a> and <a href="/docs/foundry/ontology/ontology-best-practices/#3-open-for-extension-closed-for-modification">open/closed extensibility</a>. They define a shared shape (properties, links, actions) that multiple object types can implement, enabling workflows to target the interface rather than individual types.</p>
+<h3 id="user-content-when-to-use-interfaces" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#when-to-use-interfaces"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>When to use interfaces</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>Scenario</th><th>Example</th></tr></thead><tbody><tr><td>Common properties across types</td><td><code>Inspectable</code> interface with <code>lastInspectionDate</code> and <code>inspectionStatus</code>, implemented by <code>Vehicle</code>, <code>Equipment</code>, <code>Facility</code></td></tr><tr><td>Shared workflows</td><td>A scheduling workflow targeting <code>SchedulableResource</code> works for arenas, conference rooms, and vehicles without modification</td></tr><tr><td>Taxonomic grouping</td><td>A <code>MilitaryAsset</code> interface implemented by <code>Aircraft</code>, <code>Vessel</code>, <code>GroundVehicle</code> for drilldown aggregation workflows</td></tr><tr><td>Multi-level abstraction</td><td><code>SchedulableResource</code> extends <code>Trackable</code>, adding scheduling-specific properties to a broader tracking abstraction</td></tr></tbody></table></div>
+<h3 id="user-content-example-2" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#example-2"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Example</h3>
+<p>
+
+Multiple object types need inspection tracking:</p>
+<pre><code>✗ Avoid                                    ✓ Prefer
+────────────────────────────────────────   ────────────────────────────────────────
+Vehicle                                    Interface: Inspectable
+  - lastInspectionDate                       - lastInspectionDate
+  - inspectionStatus                         - inspectionStatus
+  - (duplicate action: Schedule              - (shared action: Schedule Inspection)
+     Vehicle Inspection)
+                                     →     Vehicle implements Inspectable
+Equipment                                    - make, model, mileage, ...
+  - lastInspectionDate
+  - inspectionStatus                       Equipment implements Inspectable
+  - (duplicate action: Schedule              - serialNumber, warrantyExpiry, ...
+     Equipment Inspection)
+                                           Facility implements Inspectable
+Facility                                     - address, capacity, ...
+  - lastInspectionDate
+  - inspectionStatus                       (One interface, one shared action,
+  - (duplicate action: Schedule             three implementing types)
+     Facility Inspection)
+
+(Three copies of the same properties
+ and logic, maintained independently)
+</code></pre>
+<h3 id="user-content-platform-considerations" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#platform-considerations"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Platform considerations</h3>
+<p>Even where current platform tooling does not fully support interface-backed workflows, designing with interfaces establishes a foundation that pays off as support expands.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5">
+
+<table><thead><tr><th>Situation</th><th>Guidance</th></tr></thead><tbody><tr><td>The interface is fully supported in your workflow</td><td>Target the interface directly. A single workflow covers all implementing types.</td></tr><tr><td>The interface is not yet supported in a specific context</td><td>Define the interface now and duplicate the workflow per type as a temporary measure. This approach is no less efficient than working without an interface, and it establishes a clear path to consolidation once support is available.</td></tr></tbody></table></div>
+<p>Review our <a href="/docs/foundry/interfaces/interface-overview/">interface documentation</a> for current support details.</p>
+<h3 id="user-content-best-practices-2" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#best-practices-2"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Best practices</h3>
+<ol>
+<li><strong>Identify common shapes:</strong> If multiple object types share properties, links, or actions, define an interface that captures the shared shape.</li>
+<li><strong>Design interfaces around capabilities or taxonomy:</strong> Capability interfaces may include <code>Inspectable</code>, <code>Schedulable</code>, or <code>Billable</code>. Taxonomic interfaces may include <code>MilitaryAsset</code> or <code>MedicalDevice</code>.</li>
+<li><strong>Target interfaces in workflows:</strong> Build actions, functions, and applications against interfaces where possible.</li>
+<li><strong>Extend interfaces for multi-level abstraction:</strong> Interfaces can extend other interfaces to build layered abstractions.</li>
+<li><strong>Scaffold now, consolidate later:</strong> Define interfaces even if some workflows must temporarily be duplicated per-type due to current platform support gaps.</li>
+</ol>
+
+
+<h2 id="user-content-links-and-object-backed-link-types" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#links-and-object-backed-link-types"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Links and object-backed link types</h2>
+<p><strong>Links should represent semantically meaningful relationships.</strong></p>
+<p>Every link type should answer a clear domain question, such as:</p>
+<ul>
+<li>Which facility did this patient visit?</li>
+<li>Which team does this employee belong to?</li>
+<li>Which equipment was used in this work order?</li>
+</ul>
+<h3 id="user-content-when-to-use-link-types" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#when-to-use-link-types"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>When to use link types</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>Link type</th><th>Use when</th><th>Example</th></tr></thead><tbody><tr><td>Direct link</td><td>The relationship is meaningful but carries no metadata of its own.</td><td><code>Employee</code> → <code>Department</code></td></tr><tr><td>Object-backed link</td><td>The relationship carries its own metadata (dates, roles, status, allocation).</td><td><code>Employee</code> → <code>VentureStaffing</code> → <code>Venture</code> (with <code>role</code>, <code>startDate</code>, <code>allocation</code>)</td></tr></tbody></table></div>
+<p>Not every linking object needs to be visible in every context. Some workflows care about the join metadata, others just want the direct connection. Object-backed links let you expose either view depending on the workflow.</p>
+<h3 id="user-content-example-3" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#example-3"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Example</h3>
+<p>
+
+Modeling the relationship between employees and ventures, where each assignment has a role and start date:</p>
+<pre><code>✗ Avoid                                    ✓ Prefer
+────────────────────────────────────────   ────────────────────────────────────────
+Employee → Venture (direct link)           Employee → Venture Staffing → Venture
+  (no way to capture role,
+   start date, or allocation         →     Venture Staffing
+   per assignment)                           - role
+                                             - startDate
+— OR —                                       - allocationPercentage
+                                             - status
+Employee
+  - ventureRole                            Workflows can expose either:
+  - ventureStartDate                         - Direct: Employee → Venture
+  (ambiguous if employee has                 - Detailed: Employee → Staffing → Venture
+   multiple venture assignments)
+</code></pre>
+<h3 id="user-content-impact-of-incorrect-link-design" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#impact-of-incorrect-link-design"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Impact of incorrect link design</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>Problem</th><th>Impact</th></tr></thead><tbody><tr><td>Lost metadata</td><td>Direct links cannot capture when, why, or in what capacity a relationship exists.</td></tr><tr><td>Ambiguous multi-links</td><td>Properties like <code>ventureRole</code> on the source object become ambiguous when an entity participates in multiple relationships.</td></tr><tr><td>Meaningless links</td><td>Links that exist only because two datasets share a foreign key add noise to the Ontology and confuse navigation.</td></tr></tbody></table></div>
+<h3 id="user-content-best-practices-3" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#best-practices-3"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Best practices</h3>
+<ol>
+
+
+<li><strong>Validate semantic meaning:</strong> Avoid links that exist only because two datasets share a foreign key. Ask if the relationship is meaningful in the domain.</li>
+<li><strong>Evaluate whether the relationship carries metadata:</strong> If it does (dates, roles, status), use an object-backed link type to capture that metadata.</li>
+<li><strong>Expose the right level of detail:</strong> Design workflows to use either the direct relationship or the detailed relationship through the linking object, depending on the context.</li>
+<li><strong>Name links for clarity:</strong> Link names should describe the relationship from each direction. Review the section on <a href="#naming-conventions">naming conventions</a> for more information.</li>
+</ol>
+<h2 id="user-content-naming-conventions" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#naming-conventions"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Naming conventions</h2>
+<p><strong>Optimize for human readability and agent navigability.</strong></p>
+<p>Consistent, descriptive naming is one of the most impactful investments you can make in Ontology quality. Clear names make the Ontology easier for both humans and AI agents to navigate, and they are far harder to correct once the Ontology is in use.</p>
+<h3 id="user-content-naming-rules" level="3" node="[object Object]" data-pagefind-weight="0.8">
+
+<a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#naming-rules"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Naming rules</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>Element</th><th>Convention</th><th>Good examples</th><th>Bad examples</th></tr></thead><tbody><tr><td>Object types</td><td>Singular, concrete nouns a domain expert would recognize</td><td><code>Patient</code>, <code>WorkOrder</code>, <code>FlightSegment</code></td><td><code>Data</code>, <code>Item</code>, <code>Record</code></td></tr><tr><td>Properties</td><td>Concise, self-evident; no encoded type info or implementation details</td><td><code>age</code>, <code>status</code>, <code>lastInspectionDate</code></td><td><code>dtLastInspMod</code>, <code>nVAL01</code>, <code>fieldX</code></td></tr><tr><td>Links</td><td>Read naturally from each direction</td><td><code>department</code> (Employee → Dept), <code>employees</code> (Dept → Employee)</td><td><code>relatedItems</code>, <code>link1</code></td></tr><tr><td>Dates</td><td>Follow a single convention consistently across the Ontology</td><td><code>createdDate</code>, <code>updatedDate</code>, <code>effectiveDate</code></td><td>Mixing <code>createdDate</code> and <code>dateOfCreation</code></td></tr><tr><td>Ambiguous terms</td><td>Qualify with specific meaning</td><td><code>monetaryValue</code>, <code>quantityOnHand</code>, <code>riskScore</code></td><td><code>value</code>, <code>quantity</code>, <code>score</code></td></tr></tbody></table></div>
+<h3 id="user-content-example-4" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#example-4"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Example</h3>
+<pre><code>✗ Avoid                                    ✓ Prefer
+────────────────────────────────────────   ────────────────────────────────────────
+Object type: Item                    →     Object type: Product
+
+Property: dtLastInspMod              →     Property: lastInspectionDate
+
+Property: value                      →     Property: monetaryValue
+                                           Property: quantityOnHand
+
+Link: Item → Related Item            →     Link: Product → Supplier
+                                           Link: Employee → Supervisor
+</code></pre>
+<h3 id="user-content-best-practices-4" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#best-practices-4"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Best practices</h3>
+<ol>
+<li><strong>Establish naming conventions before building:</strong> Agree on patterns for dates, statuses, identifiers, and links up front.</li>
+<li>
+
+<strong>Follow the Ontology's established conventions:</strong> If the Ontology already uses <code>createdDate</code>, do not introduce <code>dateOfCreation</code>.</li>
+<li><strong>Qualify ambiguous properties:</strong> Use <code>monetaryValue</code>, <code>quantityOnHand</code>, and <code>riskScore</code>. Do not use <code>value</code>, <code>quantity</code>, and <code>score</code>.</li>
+<li><strong>Name links by relationship:</strong> A link from <code>Employee</code> to <code>Department</code> should be <code>department</code> (from the employee's perspective) and <code>employees</code> (from the department's perspective).</li>
+<li><strong>Review names with end users:</strong> Names that seem clear to the builder may be ambiguous to consumers. Validate with the people who will use the Ontology every day.</li>
+</ol>
+<h2 id="user-content-security-design" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#security-design"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Security design</h2>
+<p><strong>Design security semantically, following the principle of least privilege.</strong></p>
+<p>Security in the Ontology should be expressed in terms that make sense in the domain, not in terms of data infrastructure. Users should be able to look at a security configuration and understand what is protected and why.</p>
+<h3 id="user-content-security-model" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#security-model"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Security model</h3>
+<p>Combine row-level and column-level security for fine-grained cell-level access control:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5">
+
+<table><thead><tr><th>Security layer</th><th>Controls</th><th>Example</th></tr></thead><tbody><tr><td>Row-level</td><td>The objects a user can view</td><td>VIP patients are restricted to senior staff</td></tr><tr><td>Column-level</td><td>The properties a user can view on visible objects</td><td>Clinical notes are restricted to the care team</td></tr><tr><td>Cell-level (combined)</td><td>The intersection of row and column restrictions</td><td>VIP patients' clinical notes are visible only to the senior care team</td></tr></tbody></table></div>
+<h3 id="user-content-example-5" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#example-5"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Example</h3>
+<p>Controlling access to sensitive patient data:</p>
+<pre><code>✗ Avoid                                    ✓ Prefer
+────────────────────────────────────────   ────────────────────────────────────────
+PublicPatient (object type)                Patient (single object type)
+  - name                                     - name
+  - dob                                      - dob
+  - diagnosis                                - diagnosis (column-restricted:
+                                                 care team only)
+RestrictedPatient (object type)      →       - clinicalNotes (column-restricted:
+  - name                                         care team only)
+  - dob                                      - mentalHealthRecords (column-
+  - diagnosis                                    restricted: psychiatry team only)
+  - clinicalNotes
+  - mentalHealthRecords                    Row-level security:
+                                             - VIP patients: senior staff only
+(Duplicated schemas; security
+ achieved by splitting types.              Column-level security:
+ Properties added to one type are            - clinicalNotes: care team only
+ easily forgotten on the other.)             - mentalHealthRecords: psychiatry only
+
+                                           (One type; security achieved by policy.
+                                            Domain boundaries drive access rules.)
+</code></pre>
+<h3 id="user-content-impact-of-incorrect-security-design" level="3" node="[object Object]" data-pagefind-weight="0.8">
+
+<a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#impact-of-incorrect-security-design"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Impact of incorrect security design</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>Problem</th><th>Impact</th></tr></thead><tbody><tr><td>Duplicated types for security</td><td>Schemas drift out of sync; properties added to one type are easily forgotten on the other. Violates the <a href="/docs/foundry/ontology/ontology-best-practices/#2-dont-repeat-yourself-rule-of-three">"Don't repeat yourself" design principle</a>.</td></tr><tr><td>Over-permissive defaults</td><td>Starting with broad access and restricting later risks exposing sensitive data before lockdown is complete.</td></tr><tr><td>Ad-hoc filtering instead of policy</td><td>Security logic scattered through application code rather than enforced at the Ontology layer is fragile and difficult to audit.</td></tr><tr><td>Misaligned boundaries</td><td>Security boundaries that do not follow domain boundaries are harder to reason about and more likely to have gaps.</td></tr></tbody></table></div>
+<h3 id="user-content-best-practices-5" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#best-practices-5"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Best practices</h3>
+<ol>
+<li><strong>Start restrictive, open up deliberately:</strong> Default to minimal access and widen as needed, rather than starting open and restricting later.</li>
+<li><strong>Use row-level and column-level security together</strong> for fine-grained cell-level access control.</li>
+<li>
+
+<strong>Align security with domain boundaries:</strong> If your domain has natural access boundaries (a regional manager sees their region's data; a care team sees their patients), model those boundaries using Ontology relationships and security policies rather than ad-hoc data filtering.</li>
+<li><strong>Avoid duplicating object types for security:</strong> A single type with well-designed security policies is better than multiple types with duplicated schemas.</li>
+<li><strong>Review new ontology paths for access-control consistency:</strong> Ensure added links, types, or properties preserve the intended protections around restricted data.</li>
+</ol>
+<p>Use the guidance on this page to ensure security boundaries align with domain boundaries, then refer to our <a href="/docs/foundry/security/overview/">security and governance documentation</a> for configuration details.</p>
+</article>
+</body>
+</html>

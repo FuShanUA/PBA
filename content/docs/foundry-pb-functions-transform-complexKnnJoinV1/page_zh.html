@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>KNN join</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-knn-join" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#knn-join"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>KNN join</h1>
+<blockquote>
+<p>Supported in: Batch</p>
+</blockquote>
+<p>Return the 'k' nearest rows from the right dataset for each row in the left dataset, based on the distance measure.</p>
+<p><strong>Transform categories</strong>: Join</p>
+<h2 id="user-content-declared-arguments" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#declared-arguments"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Declared arguments</h2>
+<ul>
+<li><strong>Condition for columns to select on the left:</strong> All columns in the left input schema will be tested to see if they match this condition. If they match, the column will be selected in the output.<br><em>ColumnPredicate</em></li>
+<li><strong>Condition for columns to select on the right:</strong> All columns in the right input schema will be tested to see if they match this condition. If they match, the column will be selected in the output.<br><em>ColumnPredicate</em></li>
+<li><strong>Distance measure expression:</strong> Distance measure expression between columns in the left and right datasets. E.g. Levenshtein distance.<br><em>Expression&lt;Numeric&gt;</em></li>
+<li>
+
+<strong>K最近:</strong> 要返回的最近行数，即如果k=2，则输出行数将至少翻倍，并从右侧连接最近的2行。在出现平局的情况下，可能会返回更多行。<br><em>字面量&lt;整数&gt;</em></li>
+<li><strong>左数据集:</strong> 用于连接的左数据集。<br><em>表</em></li>
+<li><strong>排名列名:</strong> 存储距离排名的列的名称。<br><em>字面量&lt;字符串&gt;</em></li>
+<li><strong>右数据集:</strong> 用于连接的右数据集。<br><em>表</em></li>
+<li><em>可选</em> <strong>右列的前缀:</strong> 要添加到右侧所有列的前缀。<br><em>字面量&lt;字符串&gt;</em></li>
+</ul>
+<h2 id="user-content-examples" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#examples"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>示例</h2>
+<h3 id="user-content-example-1-base-case" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#example-1-base-case"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>示例 1：基本用例</h3>
+<p><strong>参数值:</strong></p>
+<ul>
+<li><strong>要选择的左侧列的条件:</strong> <br>columnNameIsIn(<br> columnNames: [tail_number, airline],<br>)</li>
+<li><strong>要选择的右侧列的条件:</strong> <br>columnNameIsIn(<br> columnNames: [fuzzy_airline, home_airport],<br>)</li>
+<li><strong>距离度量表达式:</strong> <br>alias(<br> alias: distance,<br> expression: <br>levenshteinDistance(<br> ignoreCase: true,<br> left: <code>airline</code>,<br> right: <code>fuzzy_airline</code>,<br>),<br>)</li>
+<li><strong>K最近:</strong> 2</li>
+<li><strong>左数据集:</strong> ri.foundry.main.dataset.left</li>
+<li>
+
+<strong>Rank column name:</strong> rank</li>
+<li><strong>Right dataset:</strong> ri.foundry.main.dataset.right</li>
+<li><strong>Prefix for columns from right:</strong> <em>null</em></li>
+</ul>
+<p><strong>Inputs:</strong></p>
+<p>ri.foundry.main.dataset.left</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>tail_number</th><th>airline</th><th>miles</th><th>factor</th></tr></thead><tbody><tr><td>XB-123</td><td>foundry air</td><td>124</td><td>2</td></tr><tr><td>MT-222</td><td>new airline</td><td>1123</td><td>5</td></tr><tr><td>PA-452</td><td>new air</td><td>212</td><td>2</td></tr></tbody></table></div>
+<p>ri.foundry.main.dataset.right</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>fuzzy_airline</th><th>home_airport</th></tr></thead><tbody><tr><td>air</td><td>LHR</td></tr><tr><td>new airline</td><td>CPH</td></tr><tr><td>new plane</td><td>JFK</td></tr><tr><td>old air</td><td>IAD</td></tr></tbody></table></div>
+<p><strong>Output:</strong></p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>rank</th><th>distance</th><th>tail_number</th><th>airline</th><th>fuzzy_airline</th><th>home_airport</th></tr></thead><tbody><tr><td>1</td><td>3</td><td>PA-452</td><td>new air</td><td>old air</td><td>IAD</td></tr><tr><td>2</td><td>4</td><td>PA-452</td><td>new air</td><td>air</td><td>LHR</td></tr><tr><td>2</td><td>4</td><td>PA-452</td><td>new air</td><td>new airline</td><td>CPH</td></tr><tr><td>2</td><td>4</td><td>PA-452</td><td>new air</td><td>new plane</td><td>JFK</td></tr><tr><td>1</td><td>0</td><td>MT-222</td><td>new airline</td><td>new airline</td><td>CPH</td></tr><tr><td>2</td><td>4</td><td>MT-222</td><td>new airline</td><td>new plane</td><td>JFK</td></tr><tr><td>1</td><td>5</td><td>XB-123</td><td>foundry air</td><td>old air</td><td>IAD</td></tr><tr><td>2</td><td>8</td><td>XB-123</td><td>foundry air</td><td>air</td><td>LHR</td></tr></tbody></table></div>
+<hr>
+<h3 id="user-content-example-2-base-case" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#example-2-base-case"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Example 2: Base case</h3>
+<p><strong>Argument values:</strong></p>
+<ul>
+<li><strong>Condition for columns to select on the left:</strong> <br>columnNameIsIn(<br> columnNames: [tail_number, airline],<br>)</li>
+<li><strong>Condition for columns to select on the right:</strong> <br>columnNameIsIn(<br> columnNames: [home_airport],<br>)</li>
+<li><strong>Distance measure expression:</strong> <br>alias(<br> alias: distance,<br> expression: <br>levenshteinDistance(<br> ignoreCase: true,<br> left: <code>airline</code>,<br> right: <code>airline</code>,<br>),<br>)</li>
+<li><strong>K nearest:</strong> 2</li>
+<li><strong>Left dataset:</strong> ri.foundry.main.dataset.left</li>
+<li><strong>Rank column name:</strong> rank</li>
+<li><strong>Right dataset:</strong> ri.foundry.main.dataset.right</li>
+<li><strong>Prefix for columns from right:</strong> <em>null</em></li>
+</ul>
+<p><strong>Inputs:</strong></p>
+<p>ri.foundry.main.dataset.left</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>tail_number</th><th>airline</th><th>miles</th><th>factor</th></tr></thead><tbody><tr><td>XB-123</td><td>foundry air</td><td>124</td><td>2</td></tr><tr><td>MT-222</td><td>new airline</td><td>1123</td><td>5</td></tr><tr><td>PA-452</td><td>new air</td><td>212</td><td>2</td></tr></tbody></table></div>
+<p>ri.foundry.main.dataset.right</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>airline</th><th>home_airport</th></tr></thead><tbody><tr><td>air</td><td>LHR</td></tr><tr><td>new airline</td><td>CPH</td></tr><tr><td>new plane</td><td>JFK</td></tr><tr><td>old air</td><td>IAD</td></tr></tbody></table></div>
+<p><strong>Output:</strong></p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>rank</th><th>distance</th><th>tail_number</th><th>airline</th><th>home_airport</th></tr></thead><tbody><tr><td>1</td><td>3</td><td>PA-452</td><td>new air</td><td>IAD</td></tr><tr><td>2</td><td>4</td><td>PA-452</td><td>new air</td><td>LHR</td></tr><tr><td>2</td><td>4</td><td>PA-452</td><td>new air</td><td>CPH</td></tr><tr><td>2</td><td>4</td><td>PA-452</td><td>new air</td><td>JFK</td></tr><tr><td>1</td><td>0</td><td>MT-222</td><td>new airline</td><td>CPH</td></tr><tr><td>2</td><td>4</td><td>MT-222</td><td>new airline</td><td>JFK</td></tr><tr><td>1</td><td>5</td><td>XB-123</td><td>foundry air</td><td>IAD</td></tr><tr><td>2</td><td>8</td><td>XB-123</td><td>foundry air</td><td>LHR</td></tr></tbody></table></div>
+<hr>
+<h3 id="user-content-example-3-base-case" level="3" node="[object Object]" data-pagefind-weight="0.8">
+
+<a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#example-3-base-case"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Example 3: Base case</h3>
+<p><strong>Description:</strong> If the distance measure returns null, this is considered the furthest distance.</p>
+<p><strong>Argument values:</strong></p>
+<ul>
+<li><strong>Condition for columns to select on the left:</strong> <br>columnNameIsIn(<br> columnNames: [tail_number, airline],<br>)</li>
+<li><strong>Condition for columns to select on the right:</strong> <br>columnNameIsIn(<br> columnNames: [fuzzy_airline, home_airport],<br>)</li>
+<li><strong>Distance measure expression:</strong> <br>alias(<br> alias: distance,<br> expression: <br>levenshteinDistance(<br> ignoreCase: true,<br> left: <code>airline</code>,<br> right: <code>fuzzy_airline</code>,<br>),<br>)</li>
+<li><strong>K nearest:</strong> 2</li>
+<li><strong>Left dataset:</strong> ri.foundry.main.dataset.left</li>
+<li><strong>Rank column name:</strong> rank</li>
+<li><strong>Right dataset:</strong> ri.foundry.main.dataset.right</li>
+<li><strong>Prefix for columns from right:</strong> <em>null</em></li>
+</ul>
+<p><strong>Inputs:</strong></p>
+<p>ri.foundry.main.dataset.left</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>tail_number</th><th>airline</th><th>miles</th><th>factor</th></tr></thead><tbody><tr><td>XB-123</td><td>foundry air</td><td>124</td><td>2</td></tr><tr><td>MT-222</td><td>new airline</td><td>1123</td><td>5</td></tr><tr><td>PA-452</td><td>new air</td><td>212</td><td>2</td></tr></tbody></table></div>
+<p>ri.foundry.main.dataset.right</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>fuzzy_airline</th><th>home_airport</th></tr></thead><tbody><tr><td>air</td><td>LHR</td></tr><tr><td><em>null</em></td><td>CPH</td></tr><tr><td>new plane</td><td>JFK</td></tr><tr><td>old air</td><td>IAD</td></tr></tbody></table></div>
+<p><strong>Output:</strong></p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>rank</th><th>distance</th><th>tail_number</th><th>airline</th><th>fuzzy_airline</th><th>home_airport</th></tr></thead><tbody><tr><td>1</td><td>3</td><td>PA-452</td><td>new air</td><td>old air</td><td>IAD</td></tr><tr><td>2</td><td>4</td><td>PA-452</td><td>new air</td><td>air</td><td>LHR</td></tr><tr><td>2</td><td>4</td><td>PA-452</td><td>new air</td><td>new plane</td><td>JFK</td></tr><tr><td>1</td><td>4</td><td>MT-222</td><td>new airline</td><td>new plane</td><td>JFK</td></tr><tr><td>2</td><td>7</td><td>MT-222</td><td>new airline</td><td>old air</td><td>IAD</td></tr><tr><td>1</td><td>5</td><td>XB-123</td><td>foundry air</td><td>old air</td><td>IAD</td></tr><tr><td>2</td><td>8</td><td>XB-123</td><td>foundry air</td><td>air</td><td>LHR</td></tr></tbody></table></div>
+<hr>
+<h3 id="user-content-example-4-base-case" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#example-4-base-case"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Example 4: Base case</h3>
+<p><strong>Argument values:</strong></p>
+<ul>
+<li><strong>Condition for columns to select on the left:</strong> <br>columnNameIsIn(<br> columnNames: [tail_number, airline],<br>)</li>
+<li><strong>Condition for columns to select on the right:</strong> <br>columnNameIsIn(<br> columnNames: [fuzzy_airline, home_airport],<br>)</li>
+<li>
+
+<strong>Distance measure expression:</strong> <br>alias(<br> alias: distance,<br> expression: <br>levenshteinDistance(<br> ignoreCase: true,<br> left: <code>airline</code>,<br> right: <code>fuzzy_airline</code>,<br>),<br>)</li>
+<li><strong>K nearest:</strong> 2</li>
+<li><strong>Left dataset:</strong> ri.foundry.main.dataset.left</li>
+<li><strong>Rank column name:</strong> rank</li>
+<li><strong>Right dataset:</strong> ri.foundry.main.dataset.right</li>
+<li><strong>Prefix for columns from right:</strong> right_</li>
+</ul>
+<p><strong>Inputs:</strong></p>
+<p>ri.foundry.main.dataset.left</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>tail_number</th><th>airline</th><th>miles</th><th>factor</th></tr></thead><tbody><tr><td>XB-123</td><td>foundry air</td><td>124</td><td>2</td></tr><tr><td>MT-222</td><td>new airline</td><td>1123</td><td>5</td></tr><tr><td>PA-452</td><td>new air</td><td>212</td><td>2</td></tr></tbody></table></div>
+<p>ri.foundry.main.dataset.right</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>fuzzy_airline</th><th>home_airport</th></tr></thead><tbody><tr><td>air</td><td>LHR</td></tr><tr><td>new airline</td><td>CPH</td></tr><tr><td>new plane</td><td>JFK</td></tr><tr><td>old air</td><td>IAD</td></tr></tbody></table></div>
+<p><strong>Output:</strong></p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>rank</th><th>distance</th><th>tail_number</th><th>airline</th><th>right_fuzzy_airline</th><th>right_home_airport</th></tr></thead><tbody><tr><td>1</td><td>3</td><td>PA-452</td><td>new air</td><td>old air</td><td>IAD</td></tr><tr><td>2</td><td>4</td><td>PA-452</td><td>new air</td><td>air</td><td>LHR</td></tr><tr><td>2</td><td>4</td><td>PA-452</td><td>new air</td><td>new airline</td><td>CPH</td></tr><tr><td>2</td><td>4</td><td>PA-452</td><td>new air</td><td>new plane</td><td>JFK</td></tr><tr><td>1</td><td>0</td><td>MT-222</td><td>new airline</td><td>new airline</td><td>CPH</td></tr><tr><td>2</td><td>4</td><td>MT-222</td><td>new airline</td><td>new plane</td><td>JFK</td></tr><tr><td>1</td><td>5</td><td>XB-123</td><td>foundry air</td><td>old air</td><td>IAD</td></tr><tr><td>2</td><td>8</td><td>XB-123</td><td>foundry air</td><td>air</td><td>LHR</td></tr></tbody></table></div>
+<hr>
+</article>
+</body>
+</html>

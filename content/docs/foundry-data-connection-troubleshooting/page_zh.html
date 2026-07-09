@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Troubleshooting</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-troubleshooting" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#troubleshooting"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>故障排除</h1>
+<p>当数据源行为不符合预期时，使用此页面进行诊断和解决。它描述了在数据连接中可用的故障排除工具，在连接无法正常工作时应首先查看的位置以及如何解决常见的连接和证书问题。</p>
+<p>有关同步或代理特定的问题，请参阅 <a href="#capability-specific-issues">功能相关问题</a>。</p>
+<h2 id="user-content-where-to-start" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#where-to-start"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>从哪里开始</h2>
+<p>当数据源或连接无法正常工作时，可先使用此列表进行初步排查。</p>
+<ol>
+<li><strong>确认数据源可以访问。</strong> 在数据源页面上，选择 <strong>预览</strong> 以确认连接已建立。如果失败，请打开 <a href="#source-terminal">数据源终端</a> 并对数据源的主机名和端口运行 <code>dig</code>、<code>curl</code> 和 <code>openssl s_client</code>。</li>
+<li>
+
+<strong>检查出站配置。</strong> 对于 <a href="/docs/foundry/data-connection/core-concepts/#foundry-worker">Foundry worker</a> 数据源，请确认已附加正确的 <a href="/docs/foundry/administration/configure-egress/">出站策略</a>，并且它们允许的地址、端口和协议与数据源连接的匹配。查看 <a href="#network-egress-logs-and-metrics">网络出站日志</a>。</li>
+<li><strong>检查凭据。</strong> 如果您怀疑凭据已过期，请重新输入，尤其是在迁移之后。</li>
+<li><strong>检查证书。</strong> <code>PKIX</code> 或 <code>SSLHandshakeException</code> 错误表示数据源未正确配置证书。参见 <a href="#certificates-and-tls">证书和 TLS</a>。</li>
+<li><strong>检查 OAuth 授权。</strong> 如果您的数据源使用了 <a href="/docs/foundry/administration/configure-outbound-applications/">出站应用程序</a>，<code>HTTP 401: 未授权</code> 和类似错误通常表明调用用户尚未完成交互式授权流程，或出站应用程序被禁用，或者配置的作用域不足。参见 <a href="#oauth-and-outbound-applications">OAuth 和出站应用程序</a>。</li>
+<li><strong>转交 AI FDE。</strong> 对于 Foundry worker 数据源，请使用 <a href="#debug-with-ai-fde">使用 AI FDE 进行调试</a>，让 AI FDE 完成这些检查并显示具体的修复方法。</li>
+</ol>
+<p>如果您的数据源使用了 <a href="/docs/foundry/data-connection/core-concepts/#agent-worker">代理工作程序</a>，请确认代理在数据连接中显示为 <strong>在线</strong>，并查看 <a href="/docs/foundry/data-connection/agents-troubleshooting/">代理故障排除参考</a> 以获取特定状态的指导。</p>
+<h2 id="user-content-troubleshooting-tools" level="2" node="[object Object]" data-pagefind-weight="0.9">
+
+<a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#troubleshooting-tools"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>故障排除工具</h2>
+<p>Data Connection 提供了多种内置工具，帮助您在不离开平台的情况下调查连接、身份验证和数据传输问题。</p>
+<h3 id="user-content-debug-with-ai-fde" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#debug-with-ai-fde"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>通过 AI FDE 进行调试</h3>
+<p>对于 <a href="/docs/foundry/data-connection/core-concepts/#foundry-worker">Foundry worker</a> 源，您可以将调试工作交给 <a href="/docs/foundry/ai-fde/overview/">AI FDE</a>，这是 Palantir 的人工智能驱动的前线部署工程师。AI FDE 会将您的源及其相关的 <a href="/docs/foundry/administration/configure-egress/">出口策略</a> 加载到上下文中，并使用本页描述的相同的出口日志和源调试工具，代表您调查连接失败问题。</p>
+<p>从源开始 AI FDE 调试会话：</p>
+<ol>
+<li>在 <strong>Data Connection</strong> 应用程序中打开您想要调试的源。</li>
+<li>在 <strong>连接详细信息</strong> 面板中，选择 <strong>Debug</strong> 下拉箭头，然后选择 <strong>Debug with AI FDE</strong>。</li>
+<li>
+
+  Foundry -> Foundry
+  Apollo -> Apollo
+  Gotham -> Gotham
+  AIP -> AIP
+  Ontology -> 本体论
+  ontology -> 本体论
+  Pipeline -> 管道
+  pipeline -> 管道
+  Transform -> 转换
+  transform -> 转换
+  Workshop -> Workshop
+  workshop -> Workshop
+  Code Repositories -> 代码仓库
+  Code Workspaces -> 代码工作区
+  Data Integration -> 数据集成
+  Model Integration -> 模型集成
+  Object -> 对象
+  object -> 对象
+  Dataset -> 数据集
+  dataset -> 数据集
+  Tenant -> 租户
+  tenant -> 租户
+  Marking -> 标记
+  marking -> 标记
+  Permission -> 权限
+  permission -> 权限
+  Role -> 角色
+  role -> 角色
+  Function -> 函数
+  function -> 函数
+  Action -> 操作
+  action -> 操作
+  Property -> 属性
+  property -> 属性
+  Interface -> 接口
+  interface -> 接口
+
+内容:
+AI FDE 在新标签页中打开，源及其出站策略已预加载为上下文，并提出一个调试计划，包括检查源配置、审查每个出站策略、检索网络出站日志以及运行实时连接测试。</li>
+</ol>
+<p>AI FDE 将总结哪些部分正常工作，哪些部分失败，并建议具体的修复方法（例如：缺少出站策略、错误的地址或端口、TLS 配置问题或凭证问题）。</p>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p><strong>使用 AI FDE 进行调试</strong> 仅适用于使用 <a href="/docs/foundry/data-connection/core-concepts/#foundry-worker">Foundry worker</a> 运行时的源。AI FDE 要求在您的注册中 <a href="/docs/foundry/aip/enable-aip-features/">启用 AIP</a>。要了解更多关于 AI FDE 的工作原理、它能做什么以及如何管理上下文和权限的信息，请参阅 <a href="/docs/foundry/ai-fde/overview/">AI FDE 概述</a>。</p></div>
+<h3 id="user-content-source-terminal" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#source-terminal"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>源终端</h3>
+<p>您可以使用与源相同的连接设置的终端，通过 <code>dig</code>、<code>curl</code>、<code>netcat</code> 和 <code>openssl</code> 等命令来测试与外部系统的网络连接。</p>
+<p>
+
+To open the terminal, select <strong>Debug</strong> in the <strong>Network connectivity</strong> panel under <strong>Connection details</strong> on the source page.</p>
+<p><img alt="The source terminal is accessible by selecting Debug in the Network connectivity panel under Connection details on the source page." height="600" src="/docs/resources/foundry/data-connection/source-terminal.png" style="aspect-ratio:2436 / 1872" width="780.7692307692308" node="[object Object]"></p>
+<h4 id="user-content-dig"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#dig"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a><code>dig</code></h4>
+<p>The <code>dig</code> command tests DNS resolution and can be used to check whether the hostname of your source resolves correctly. For example, to test whether DNS resolves <code>palantir.com</code>, run <code>dig palantir.com</code>. If you see an <code>ANSWER SECTION</code> in the response, DNS resolution succeeded.</p>
+<p>The following is an example of a successful <code>dig</code> command:</p>
+<pre>
+
+<code>appuser@localhost:/root$ dig palantir.com
+
+; &lt;&lt;&gt;&gt; DiG 9.18.30-0ubuntu0.20.04.2-Ubuntu &lt;&lt;&gt;&gt; palantir.com
+;; global options: +cmd
+;; Got answer:
+;; -&gt;&gt;HEADER&lt;&lt;- opcode: QUERY, status: NOERROR, id: 13561
+;; flags: qr rd ra; QUERY: 1, ANSWER: 4, AUTHORITY: 0, ADDITIONAL: 0
+
+;; QUESTION SECTION:
+;palantir.com.                  IN      A
+
+;; ANSWER SECTION:
+palantir.com.           300     IN      A       151.101.129.170
+palantir.com.           300     IN      A       151.101.1.170
+palantir.com.           300     IN      A       151.101.193.170
+palantir.com.           300     IN      A       151.101.65.170
+
+;; Query time: 99 msec
+;; SERVER: 10.100.0.53#53(10.100.0.53) (UDP)
+;; WHEN: Fri Oct 31 14:56:58 UTC 2025
+;; MSG SIZE  rcvd: 142
+</code></pre>
+<h4 id="user-content-curl"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#curl"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66Z"></path></svg></a><code>curl</code></h4>
+<p><code>curl</code> 命令用于测试对外部系统特定主机和端口的 HTTP 连接性。如果未指定端口，则根据协议推断（例如，HTTP 的 80 或 HTTPS 的 443）。例如，要测试是否可以连接到 <code>https://palantir.com</code>，请运行 <code>curl https://palantir.com</code>。</p>
+<p>以下是一个成功的 <code>curl</code> 命令示例：</p>
+<pre><code>appuser@localhost:/root$ curl https://palantir.com
+&lt;HTML&gt;&lt;HEAD&gt;&lt;meta http-equiv="content-type" content="text/html;charset=utf-8"&gt;
+&lt;TITLE&gt;301 Moved&lt;/TITLE&gt;&lt;/HEAD&gt;&lt;BODY&gt;
+&lt;H1&gt;301 Moved&lt;/H1&gt;
+文档已移动
+&lt;A HREF="https://www.palantir.com/"&gt;这里&lt;/A&gt;。
+&lt;/BODY&gt;&lt;/HTML&gt;
+</code></pre>
+<p>
+
+If the <code>curl</code> command is hanging, set a timeout (in seconds) using the <code>--connect-timeout</code> flag:</p>
+<pre><div class="ptcom-design__wrapper__12wpwnx" data-pagefind-weight="0.5"><span class="ptcom-design__clipboard__1l1gb20 ptcom-design__clipboard__12wpwnx"><span data-pagefind-ignore="true" class="ptcom-design__confirmation__1l1gb20">Copied!</span><svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1" width="16" data-view-component="true" aria-label="clipboard"><path fill-rule="evenodd" fill="currentColor" d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z"></path><path fill-rule="evenodd" fill="currentColor" d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z"></path></svg></span><div style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;overflow:auto;position:relative;margin:0;padding:0.75em"><code class="language-text" style="white-space: pre; text-align: left; word-spacing: normal; word-break: normal; overflow-wrap: normal; color: rgb(195, 206, 227); background: rgb(38, 50, 56); font-family: &quot;SF Mono&quot;, Menlo, Consolas, Monaco, Inconsolata, &quot;Fira Mono&quot;, &quot;Droid Sans Mono&quot;, &quot;Source Code Pro&quot;, monospace; font-size: 14px; line-height: 1.5em; tab-size: 4; hyphens: none;"><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 1.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">1</span><span>curl --connect-timeout 10 https://palantir.com</span></span></code></div></div></pre>
+<h4 id="user-content-openssl"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#openssl"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a><code>openssl</code></h4>
+<p>
+
+The <code>openssl</code> command tests SSL/TLS connectivity and verifies certificates for HTTPS connections. For example, to test whether an SSL/TLS connection can be established to <code>palantir.com</code> on port <code>443</code>, run <code>openssl s_client -connect palantir.com:443 -servername palantir.com</code>.</p>
+<p>The following is an example of a successful <code>openssl</code> command:</p>
+<pre><code>appuser@localhost:/root$ openssl s_client -connect palantir.com:443 -servername palantir.com
+CONNECTED(00000003)
+depth=2 C = BE, O = GlobalSign nv-sa, OU = Root CA, CN = GlobalSign Root CA
+verify return:1
+depth=1 C = BE, O = GlobalSign nv-sa, CN = GlobalSign Atlas R3 DV TLS CA 2024 Q2
+verify return:1
+depth=0 CN = *.palantir.com
+verify return:1
+---
+Certificate chain
+ 0 s:CN = *.palantir.com
+   i:C = BE, O = GlobalSign nv-sa, CN = GlobalSign Atlas R3 DV TLS CA 2024 Q2
+   a:PKEY: rsaEncryption, 2048 (bit); sigalg: RSA-SHA256
+   v:NotBefore: Jun 17 16:50:15 2024 GMT; NotAfter: Jul 19 16:50:14 2025 GMT
+---
+SSL handshake has read 3654 bytes and written 442 bytes
+---
+</code></pre>
+<p>If the connection is successful, you will see certificate details and a message indicating the SSL handshake completed. If the command hangs or shows certificate verification errors, there may be network or certificate configuration issues.</p>
+<p>
+
+Certificates configured in the UI are not automatically included in the terminal environment. To use them in the terminal, add them manually, either inline or with <code>nano</code>/<code>vim</code>:</p>
+<pre>
+
+<div class="ptcom-design__wrapper__12wpwnx" data-pagefind-weight="0.5"><span class="ptcom-design__clipboard__1l1gb20 ptcom-design__clipboard__12wpwnx"><span data-pagefind-ignore="true" class="ptcom-design__confirmation__1l1gb20">Copied!</span><svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1" width="16" data-view-component="true" aria-label="clipboard"><path fill-rule="evenodd" fill="currentColor" d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z"></path><path fill-rule="evenodd" fill="currentColor" d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z"></path></svg></span><div style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;overflow:auto;position:relative;margin:0;padding:0.75em"><code class="language-text" style="white-space: pre; text-align: left; word-spacing: normal; word-break: normal; overflow-wrap: normal; color: rgb(195, 206, 227); background: rgb(38, 50, 56); font-family: &quot;SF Mono&quot;, Menlo, Consolas, Monaco, Inconsolata, &quot;Fira Mono&quot;, &quot;Droid Sans Mono&quot;, &quot;Source Code Pro&quot;, monospace; font-size: 14px; line-height: 1.5em; tab-size: 4; hyphens: none;"><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 1.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">1</span><span>echo "-----BEGIN CERTIFICATE-----
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 1.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">2</span>MIIGXjCCBUagAwIBAgIQASByQ6gv8Z6X7wEqsyBb1DANBgkqhkiG9w0BAQsFADBY
+</span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 1.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">3</span>...
+</span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 1.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">4</span>9lc=
+</span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 1.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">5</span>-----END CERTIFICATE-----" &gt; server-cert.pem</span></code></div></div></pre>
+
+
+<p>To test with custom certificates, such as self-signed certificates or mTLS, specify the certificate files:</p>
+<pre>
+
+<div class="ptcom-design__wrapper__12wpwnx" data-pagefind-weight="0.5"><span class="ptcom-design__clipboard__1l1gb20 ptcom-design__clipboard__12wpwnx"><span data-pagefind-ignore="true" class="ptcom-design__confirmation__1l1gb20">Copied!</span><svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1" width="16" data-view-component="true" aria-label="clipboard"><path fill-rule="evenodd" fill="currentColor" d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z"></path><path fill-rule="evenodd" fill="currentColor" d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z"></path></svg></span><div style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;overflow:auto;position:relative;margin:0;padding:0.75em"><code class="language-text" style="white-space: pre; text-align: left; word-spacing: normal; word-break: normal; overflow-wrap: normal; color: rgb(195, 206, 227); background: rgb(38, 50, 56); font-family: &quot;SF Mono&quot;, Menlo, Consolas, Monaco, Inconsolata, &quot;Fira Mono&quot;, &quot;Droid Sans Mono&quot;, &quot;Source Code Pro&quot;, monospace; font-size: 14px; line-height: 1.5em; tab-size: 4; hyphens: none;"><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 1.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">1</span><span>openssl s_client -connect my-server.example.com:443 \
+</span></span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 1.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">2</span>  -servername my-server.example.com \
+</span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 1.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">3</span>  -CAfile server-cert.pem \
+</span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 1.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">4</span>  -cert client-cert.pem \
+</span><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 1.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">5</span>  -key client-key.pem</span></code></div></div></pre>
+
+
+<p>If these commands succeed but your connection still does not work, some certificates or source credentials are likely configured incorrectly.</p>
+<h3 id="user-content-network-egress-logs-and-metrics" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#network-egress-logs-and-metrics"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Network egress logs and metrics</h3>
+<p>For <a href="/docs/foundry/data-connection/core-concepts/#foundry-worker">Foundry worker</a> sources, network egress logs and metrics provide visibility into the actual network calls your source is making. These tools can help identify networking issues that may not be apparent from terminal-based debugging alone.</p>
+<ul>
+<li><strong>Build logs:</strong> From a build page, select <strong>Logs</strong> and apply the <strong>Network egress logs</strong> filter to see the network egress activity for that build.</li>
+<li><strong>Control Panel:</strong> Navigate to <strong>Control Panel &gt; Network egress</strong>, select a policy, and open the <strong>Observability</strong> tab to view aggregated logs per source and usage metrics for the policy.</li>
+</ul>
+<h3 id="user-content-source-preview-and-exploration" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#source-preview-and-exploration"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Source preview and exploration</h3>
+<p>Before debugging deeper, confirm whether the source is fundamentally reachable and configured correctly:</p>
+<ul>
+
+
+<li><strong>Preview:</strong> On the source page, select <strong>Preview</strong> in the right panel to confirm that the connection has been successfully established.</li>
+<li><strong>Explore:</strong> Use the <a href="/docs/foundry/data-connection/source-exploration/">source exploration</a> view to inspect tables, files, and previews from the source. If exploration succeeds but a specific sync fails, the issue is more likely with the sync configuration than with the source.</li>
+</ul>
+<h3 id="user-content-job-tracker" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#job-tracker"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Job tracker</h3>
+<p>To investigate the status of a running or recently completed sync, open the <strong>Job tracker</strong> application and select the sync. From there, you can inspect status, stages, and logs, including the <code>_data-ingestion.log</code> for JDBC syncs.</p>
+<h2 id="user-content-connectivity-and-egress" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#connectivity-and-egress"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Connectivity and egress</h2>
+<p>
+
+For a connection to succeed, Foundry must be allowed to reach your external system over the network. <a href="/docs/foundry/data-connection/core-concepts/#foundry-worker">Foundry worker</a> sources control this through <a href="/docs/foundry/administration/configure-egress/">egress policies</a>, which allowlist the specific hosts, ports, and protocols a source is permitted to connect to. A connection that fails before authentication is usually an egress problem.</p>
+<p>To debug a suspected egress issue:</p>
+<ol>
+<li>Confirm that the correct egress policies are attached to the source, and that the host, port, and protocol they allow match the system you are connecting to.</li>
+<li>Use the <a href="#source-terminal">source terminal</a> to test whether the host is reachable at all, using <code>dig</code>, <code>curl</code>, and <code>openssl s_client</code>.</li>
+<li>Review the <a href="#network-egress-logs-and-metrics">network egress logs</a> to see the actual outbound calls your source is making and identify which are being blocked.</li>
+</ol>
+<p>To create or request an egress policy, see <a href="/docs/foundry/administration/configure-egress/">Configure egress policies</a>.</p>
+<h2 id="user-content-certificates-and-tls" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#certificates-and-tls"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Certificates and TLS</h2>
+<p>
+
+This section assumes that Foundry acts as the client establishing a connection to an external system that acts as the server. For background on the underlying concepts, see <a href="https://www.cloudflare.com/learning/ssl/transport-layer-security-tls/">TLS ↗</a>, <a href="https://www.cloudflare.com/learning/access-management/what-is-mutual-tls/">mTLS ↗</a>, and <a href="https://www.cloudflare.com/learning/ssl/what-is-ssl/">SSL ↗</a>.</p>
+<h3 id="user-content-pkix-and-ssl-exceptions" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#pkix-and-ssl-exceptions"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>PKIX and SSL exceptions</h3>
+<p><code>PKIX</code> exceptions and other <code>SSLHandshakeException</code>s occur when Foundry does not have the certificates needed to authenticate with the source. Install the correct certificates:</p>
+<ul>
+<li><strong><a href="/docs/foundry/data-connection/core-concepts/#foundry-worker">Foundry worker</a> sources:</strong> configure certificates in the source's settings. See <a href="/docs/foundry/data-connection/set-up-source/#optional-add-certificates">Add certificates</a>.</li>
+<li><strong><a href="/docs/foundry/data-connection/core-concepts/#agent-worker">Agent worker</a> sources:</strong> see <a href="/docs/foundry/data-connection/agent-configuration-reference/#certificates">Data Connection and certificates</a>.</li>
+</ul>
+<p>For sources that only support the deprecated TLSv1.0 or TLSv1.1 protocols, see <a href="/docs/foundry/data-connection/agents-troubleshooting/#connect-to-data-sources-using-the-insecure-tlsv10-and-tlsv11-protocols">Connect to data sources using the insecure TLSv1.0 and TLSv1.1 protocols</a>. Palantir discourages the use of deprecated TLS versions.</p>
+<h3 id="user-content-server-and-client-certificates" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#server-and-client-certificates"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Server and client certificates</h3>
+<p>It is important to understand the difference between a server certificate and a client certificate.</p>
+<p>
+
+<strong>Server certificates (TLS):</strong> When the Foundry client establishes a TLS connection with the external system, the external system presents a certificate to prove its identity and to provide the public key needed to establish an encrypted connection. The Foundry client then verifies the external system's identity by validating the certificate chain up to a trusted root Certificate Authority (CA). Most systems trust a well-known list of public CAs by default. You only need to add a server certificate to your source configuration (Foundry's <code>truststore</code>) if the external system presents a certificate that is not signed by one of these public CAs, such as a self-signed certificate or one issued by a private or internal CA. Server certificates are provided as the certificate only, never the private key.</p>
+<p><strong>Client certificates (mTLS):</strong> A client certificate is used by the Foundry client to prove its own identity to the external system. With mTLS, the external system and Foundry each verify the other's identity. Client certificates are provided as a certificate and private key pair.</p>
+<p>To configure certificates, see <a href="/docs/foundry/data-connection/set-up-source/#optional-add-certificates">Add certificates</a>.</p>
+<h3 id="user-content-common-certificate-errors" level="3" node="[object Object]" data-pagefind-weight="0.8">
+
+<a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#common-certificate-errors"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Common certificate errors</h3>
+<p><strong><code>[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: self signed certificate in certificate chain</code></strong></p>
+<p>This error indicates that server certificates are missing from the source configuration. In Python environments, the entire <a href="https://en.wikipedia.org/wiki/Chain_of_trust">certificate chain ↗</a> is validated by the underlying OpenSSL library when establishing secure connections.</p>
+<p>To retrieve the entire certificate chain for an external system, run the following command:</p>
+<pre>
+
+<div class="ptcom-design__wrapper__12wpwnx" data-pagefind-weight="0.5"><span class="ptcom-design__clipboard__1l1gb20 ptcom-design__clipboard__12wpwnx"><span data-pagefind-ignore="true" class="ptcom-design__confirmation__1l1gb20">Copied!</span><svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1" width="16" data-view-component="true" aria-label="clipboard"><path fill-rule="evenodd" fill="currentColor" d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z"></path><path fill-rule="evenodd" fill="currentColor" d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z"></path></svg></span><div style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;overflow:auto;position:relative;margin:0;padding:0.75em"><code class="language-bash" style="white-space: pre; text-align: left; word-spacing: normal; word-break: normal; overflow-wrap: normal; color: rgb(195, 206, 227); background: rgb(38, 50, 56); font-family: &quot;SF Mono&quot;, Menlo, Consolas, Monaco, Inconsolata, &quot;Fira Mono&quot;, &quot;Droid Sans Mono&quot;, &quot;Source Code Pro&quot;, monospace; font-size: 14px; line-height: 1.5em; tab-size: 4; hyphens: none;"><span><span class="linenumber react-syntax-highlighter-line-number" style="display: inline-block; min-width: 1.25em; padding-right: 1em; text-align: right; user-select: none; color: rgb(84, 110, 122);">1</span><span>openssl s_client -connect </span><span class="token token" style="color: rgb(137, 221, 255);">&lt;</span><span>external_systems_hostname</span><span class="token token" style="color: rgb(137, 221, 255);">&gt;</span><span>:</span><span class="token token" style="color: rgb(137, 221, 255);">&lt;</span><span>desired_port</span><span class="token token" style="color: rgb(137, 221, 255);">&gt;</span><span> -showcerts </span><span class="token token" style="color: rgb(137, 221, 255);">&lt;</span><span> /dev/null</span></span></code></div></div></pre>
+<div class="ptcom-design__callout__19o1cwu">
+
+<svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>This command must be run from a host with network access to the external system. For <a href="/docs/foundry/data-connection/core-concepts/#foundry-worker">Foundry worker</a> sources, run it from the <a href="#source-terminal">source terminal</a>. For <a href="/docs/foundry/data-connection/core-concepts/#agent-worker">agent worker</a> sources, run it from the agent host or another system with access to the agent's network.</p></div>
+<h2 id="user-content-oauth-and-outbound-applications" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#oauth-and-outbound-applications"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>OAuth and outbound applications</h2>
+<p>When a source is configured with an <a href="/docs/foundry/administration/configure-outbound-applications/">outbound application</a>, authentication is delegated to an external OAuth 2.0 provider on behalf of the calling user. The user must complete the <a href="/docs/foundry/administration/configure-outbound-applications/#use-outbound-applications-in-data-connection">interactive authorization flow</a> at least once before the source can be used from non-interactive contexts, such as scheduled functions or <a href="/docs/foundry/automate/overview/">an automation</a>.</p>
+<h3 id="user-content-common-oauth-errors" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#common-oauth-errors"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Common OAuth errors</h3>
+<h4 id="user-content-http-401-unauthorized"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#http-401-unauthorized"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a><code>HTTP 401: Unauthorized</code></h4>
+<p>
+
+If a function or workflow returns <code>HTTP 401: Unauthorized</code> despite the source being configured with an outbound application, verify that:</p>
+<ul>
+<li>The user invoking the function has completed the <a href="/docs/foundry/administration/configure-outbound-applications/#use-outbound-applications-in-data-connection">interactive authorization flow</a> at least once.</li>
+<li>The outbound application is <strong>Enabled</strong> in Control Panel.</li>
+<li>The <a href="/docs/foundry/administration/configure-outbound-applications/#configuration-options">scopes</a> configured on the outbound application include the permissions required to access the requested API resource.</li>
+</ul>
+<h4 id="user-content-credentials-expired-and-no-refresh-handler-provided"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#credentials-expired-and-no-refresh-handler-provided"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a><code>Credentials expired and no refresh handler provided</code></h4>
+<p>This error is surfaced when calling a source from a Python or TypeScript function. The cached refresh token has expired or was revoked by the external OAuth 2.0 server. The user must invoke the function (or another workflow backed by the same outbound application) from an interactive interface to complete the authorization flow again.</p>
+<h4 id="user-content-resolved-source-credentials-are-not-present-on-the-source"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#resolved-source-credentials-are-not-present-on-the-source"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a><code>Resolved source credentials are not present on the Source</code></h4>
+<p>
+
+This error is surfaced when calling a source from a Python or TypeScript function. It indicates that the source does not have an outbound application configured, or that the calling identity could not be resolved to an authorized user. Confirm that the source's domain is configured with <strong>OAuth 2.0</strong> authentication and that the function is invoked on behalf of an authenticated end user rather than a service account.</p>
+<h2 id="user-content-capability-specific-issues" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#capability-specific-issues"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Capability-specific issues</h2>
+<p>The guidance above applies to any source. For problems specific to a particular capability, see the dedicated references:</p>
+<ul>
+<li><strong>Syncs:</strong> Incremental JDBC behavior, intermittent failures and hangs, <code>REQUEST_ENTITY_TOO_LARGE</code>, <code>BadPaddingException</code>, and unexpected data types: see the <a href="/docs/foundry/data-connection/syncs-troubleshooting/">syncs troubleshooting reference</a>.</li>
+<li><strong>Agent workers:</strong> Agent status, Agent Manager and Bootstrapper startup errors, out-of-memory conditions, download issues, and permissions: see the <a href="/docs/foundry/data-connection/agents-troubleshooting/">agents troubleshooting reference</a>.</li>
+<li><strong>Other common questions:</strong> Scheduling, duplicate rows, schema mismatches, and JDBC data types: see the <a href="/docs/foundry/data-connection/faq/">Data Connection FAQ</a>.</li>
+</ul>
+</article>
+</body>
+</html>

@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Manage object security</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-manage-object-security" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#manage-object-security"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66Z"></path></svg></a>管理对象安全</h1>
+<p>本体论数据可以使用 <a href="#object-and-property-security-policies">对象和属性策略</a> 或 <a href="#data-source-policies">数据源策略</a> 进行保护。这两种方法都支持 <em>单元格级安全</em>，这是行级和列级安全的组合。</p>
+<p>例如，考虑一个航空管理平台中的 <code>Passenger</code> 对象类型，其属性包括 <code>User ID</code>、<code>Flight Number</code>、<code>Seat Assignment</code>、<code>Name</code>、<code>Address</code> 和 <code>Phone Number</code>。</p>
+<ul>
+<li><strong>行级安全：</strong> 某些用户是VIP，他们的对象实例（对应于基础数据集中的行）只能在用户具有 <code>VIP</code> 标记时才能看到。</li>
+<li><strong>列级安全：</strong> 属性 <code>Name</code>、<code>Address</code> 和 <code>Phone number</code> 包含用户数据，只有拥有 <code>PII</code> 标记的用户才能访问。</li>
+</ul>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>侧边栏中的 <strong>检查访问权限</strong> 面板可用于检查某人对 Workshop 或 Slate 应用程序的访问权限，包括对依赖对象类型的访问、其数据源和细粒度访问控制的访问。有关更多信息，请参阅 <a href="/docs/foundry/security/checking-permissions/">检查访问权限面板文档</a>。</p></div>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu">
+
+<svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>某些属性值引用了本体论之外的其他资源中的数据。本节中描述的访问控制机制仅控制属性值的可见性，而不限制这些其他资源的可见性。例如，一个媒体引用属性可以引用存储在媒体集中的媒体项。如果媒体集与对象类型的权限不同，那么用户可能无法访问该媒体引用属性，但仍可以直接从媒体集中获取该媒体项。因此，在本体论中使用这些附加资源时，确保它们配置了适当的权限非常重要。</p></div>
+<h2 id="user-content-object-and-property-security-policies" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#object-and-property-security-policies"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>对象和属性安全策略</h2>
+<p>
+
+<font face="Microsoft YaHei, sans-serif">对象和属性安全策略允许您对对象实例及其属性设置查看权限，以实现单元级权限。这些可以直接在对象类型的本体论管理器视图中进行管理，并且独立于后端数据源的权限。</p>
+<p>对象实例的可见性由其对象安全策略控制，而属性值的可见性则由其属性安全策略控制。可以将强制性和分类基于的访问控制以及细粒度的访问控制应用于对象和属性安全策略。它们共同实现了本体论中的单元级安全。</p>
+<p><a href="/docs/foundry/object-permissioning/object-security-policies/">了解有关设置对象和属性安全策略的更多信息。</a></p>
+<h2 id="user-content-data-source-policies" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#data-source-policies"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>数据源策略</h2>
+<p>对象类型的权限由该对象类型输入数据源上应用的权限隐式控制。</p>
+<h3 id="user-content-object-and-property-policies-vs-data-source-policies" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#object-and-property-policies-vs-data-source-policies"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>对象和属性策略与数据源策略</h3>
+<p>
+
+  Foundry -> Foundry
+  Apollo -> Apollo
+  Gotham -> Gotham
+  AIP -> AIP
+  Ontology -> 本体论
+  ontology -> 本体论
+  Pipeline -> 管道
+  pipeline -> 管道
+  Transform -> 转换
+  transform -> 转换
+  Workshop -> Workshop
+  workshop -> Workshop
+  Code Repositories -> 代码仓库
+  Code Workspaces -> 代码工作区
+  Data Integration -> 数据集成
+  Model Integration -> 模型集成
+  Object -> 对象
+  object -> 对象
+  Dataset -> 数据集
+  dataset -> 数据集
+  Tenant -> 租户
+  tenant -> 租户
+  Marking -> 标记
+  marking -> 标记
+  Permission -> 权限
+  permission -> 权限
+  Role -> 角色
+  role -> 角色
+  Function -> 函数
+  function -> 函数
+  Action -> 操作
+  action -> 操作
+  Property -> 属性
+  property -> 属性
+  Interface -> 接口
+  interface -> 接口
+
+内容:
+对象和属性安全策略在大多数情况下推荐用于管理对象安全。它们提供了一种统一的方法，直接在对象类型上实现单元格级安全（行、列和单元格级权限）。这比数据源策略更易于配置和维护。</p>
+<h4 id="user-content-benefits-of-object-and-property-security-policies"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#benefits-of-object-and-property-security-policies"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>对象和属性安全策略的优势</h4>
+<p>对象和属性安全策略解决了使用数据源策略时出现的几个挑战：</p>
+<ul>
+<li><strong>统一的单元格级安全：</strong>一个功能提供了行级（对象安全策略）、列级（属性安全策略）和单元格级权限，而不是需要结合受限视图（RVs）和多数据源对象类型（MDOs）。</li>
+<li><strong>简化配置：</strong>安全策略在本体论管理器中直接针对对象类型进行管理，与支持的数据源无关。这减少了复杂性并降低了维护负担。</li>
+<li><strong>几乎即时的策略更新：</strong>对象和属性安全策略的更改几乎立即生效。而使用 RVs 时，策略更改需要重新构建管道后读取操作才能应用新策略。请注意，Multipass 中的组成员或其他用户属性的更改仍会缓存一段时间。</li>
+<li>
+
+<strong>流支持：</strong>对象安全策略可以应用于由流支持的对象类型，从而为流数据启用行级和列级权限。</li>
+<li><strong>分支兼容性：</strong>对象安全策略与<a href="/docs/foundry/global-branching/overview/">全局分支</a>集成，支持在合并之前需要在分支上测试安全配置的开发工作流程。</li>
+</ul>
+<h4 id="user-content-when-to-use-data-source-policies"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#when-to-use-data-source-policies"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>何时使用数据源策略</h4>
+<p>数据源策略依赖于RV和MDO，以下情况下适用：</p>
+<ol>
+<li><strong>在本体论之外的细粒度访问控制：</strong>如果后备数据集在本体论之外使用，并且在这些上下文中需要细粒度的访问控制，RV仍然是合适的选择。例如，RV可以对在<a href="/docs/foundry/code-workspaces/overview/">代码工作区</a>中具有不同访问级别的用户进行后备数据集的读取保护。对象和属性安全策略的作用范围是本体论，并不控制非本体论上下文中的原始数据集的访问。</li>
+<li><strong>具有特定要求的MDO：</strong>如果您的对象类型需要MDO，因为不同的解析策略或每个数据源的不同构建计划，可能需要数据源策略。<a href="/docs/foundry/object-edits/how-edits-applied/#configuration">了解此配置的更多信息</a>。</li>
+</ol>
+
+<h3 id="user-content-object-input-data-sources" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#object-input-data-sources"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>对象输入数据源</h3>
+<p>数据集和流是作为 <a href="/docs/foundry/object-link-types/object-types-overview/">对象类型</a> 的输入数据源最常用资源。这些数据源的数据权限确定如下：</p>
+<ul>
+<li><strong><a href="/docs/foundry/data-integration/datasets/">数据集</a>:</strong> 数据集中的每一行对应本体论中的一个对象实例，任何对数据集及其事务具有至少 <code>Viewer</code> 权限的用户都将可以访问从该数据集创建的所有对象实例。</li>
+<li><strong><a href="/docs/foundry/data-integration/streams/">流</a>:</strong> 流是用于本体论中低延迟流数据的输入数据源。任何对流数据源具有至少 <code>Viewer</code> 权限的用户都可以访问从该流数据源创建的所有对象实例。</li>
+</ul>
+<p>如果您需要使用数据源策略进行行级或列级权限设置，可以使用 <a href="#restricted-views">受限视图（RV）</a> 和 <a href="#multi-data-source-object-types">多数据源对象类型（MDO）</a>。</p>
+<h3 id="user-content-configure-data-source-policies-with-rvs-and-mdos" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#configure-data-source-policies-with-rvs-and-mdos"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>使用 RV 和 MDO 配置数据源策略</h3>
+<h4 id="user-content-restricted-views">
+
+<a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#restricted-views"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Restricted views</h4>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>Restricted views can only be built on top of datasets. No other data source types are supported.</p></div>
+<p>Restricted views enable <em>row-level access control</em> to certain rows in a dataset and the corresponding object instances created from those rows. Access to an object instance with a specific primary key is governed by who can access that specific row in the restricted view's input data source.</p>
+<p>For example, a healthcare employee may be allowed to view dataset rows and object instances for patients that visit their care center, but they may be restricted from viewing data for patients that only visit other care centers, even if both types of data exist in the same dataset and object type.</p>
+<p>If a given dataset, <code>care_event_info</code>, has <code>patient_id</code>, <code>doctor_id</code>, and <code>care_center</code> columns, a restricted view can be built on top of it with the policy <code>user.userAttribute('care_center') == care_center</code>. The restricted view will only allow access to rows in <code>care_event_info</code> that have the same care center as the user.</p>
+<p>
+
+Using Ontology Manager, restricted views can be selected as the input data source of an object type in the same way as a dataset.</p>
+<p><a href="/docs/foundry/object-permissioning/configuring-rv-access-controls/">Learn more about setting up restricted views and governing row-level permission for objects.</a></p>
+<h4 id="user-content-multi-data-source-object-types"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#multi-data-source-object-types"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Multi-data source object types</h4>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>Multi-data source object types are only available in object storage v2.</p></div>
+<p>The Ontology offers support for mapping multiple input data sources to a single object type. Such object types are referred to as multi-data source object types (MDOs).</p>
+<p>MDOs enable you to map columns from different data sources to the various properties of an object type. This enables you to apply multiple access controls corresponding to separate input data sources, to a single object type. These input data sources can be any combination of datasets or restricted views.</p>
+<p>
+
+For example, for a given care event object type, some healthcare employees may require access to object properties containing personal health information (<code>PHI</code>), while other employees should not have access. This access control can be supported by backing the <code>Care Event</code> object type with two separate input data sources and applying different access controls and permissions on each input data source. The <code>Care Event</code> object type has <code>Patient ID</code> as its primary key and is backed by data sources <code>patient_info</code> and <code>care_event_info</code>.</p>
+<ul>
+<li><code>patient_info</code> has the columns <code>patient_id</code>, <code>name</code>, <code>address</code>, <code>contact_number</code>, and <code>age</code>. This dataset has the <code>PHI</code> marking. Only users with access to the <code>PHI</code> marking will have access to the property values from <code>patient_info</code>.</li>
+<li><code>care_event_info</code> has columns <code>patient_id</code>, <code>doctor_id</code>, and <code>care_center</code>. This dataset is unmarked. Users do not need access to any markings to access the property values from this dataset.</li>
+</ul>
+<p>These different permissions will be respected and applied to the object instance. A user will not have access to the properties mapped from <code>patient_info</code>, such as <code>name</code>, <code>address</code>, <code>contact_number</code>, and <code>age</code>, unless they have the <code>PHI</code> marking.</p>
+<p><a href="/docs/foundry/object-permissioning/multi-datasource-objects/">Learn more about setting up MDOs and governing column-level permissions for objects.</a></p>
+</article>
+</body>
+</html>

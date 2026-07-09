@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pipeline Builder tips and tricks</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-pipeline-builder-tips-and-tricks" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#pipeline-builder-tips-and-tricks"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Pipeline Builder 使用技巧和窍门</h1>
+<p>无论您是构建第一个 Pipeline 还是优化生产工作流，以下提示将帮助您更快地工作、保持条理清晰，并充分利用 Pipeline Builder。如果您已经设置好了一个 Pipeline，可以跳到 <a href="#improve-pipelines">改进 Pipeline</a> 部分，了解如何提高性能和可靠性的技巧。</p>
+<ul>
+<li>
+<p><a href="#build-faster">更快地构建</a></p>
+<ul>
+<li><a href="#configure-user-preferences">配置用户偏好</a></li>
+<li><a href="#hotkeys-auto-layout-zoom-hide-and-more">快捷键（自动布局、缩放、隐藏等）</a></li>
+<li><a href="#copy-and-paste-nodes">复制和粘贴节点</a></li>
+<li><a href="#click-and-drag-to-connect-nodes">点击并拖动以连接节点</a></li>
+<li><a href="#view-unsaved-changes">查看未保存的更改</a></li>
+<li><a href="#decide-how-many-transforms-to-put-per-node">决定每个节点应包含多少转换</a></li>
+<li><a href="#generate-notional-data-with-llms">使用 LLM 生成示例数据</a></li>
+<li><a href="#ai-tools-for-building-and-understanding">用于构建和理解的 AI 工具</a></li>
+</ul>
+</li>
+<li>
+<p><a href="#improve-pipelines">改进 Pipeline</a></p>
+<ul>
+<li><a href="#faster-pipeline-mode">更快的 Pipeline 模式</a></li>
+<li><a href="#compute-profiles-to-reduce-build-times">计算配置文件以减少构建时间</a></li>
+<li><a href="#filter-preview-data">过滤预览数据</a></li>
+<li><a href="#unit-tests-for-pipeline-reliability">用于 Pipeline 可靠性的单元测试</a></li>
+</ul>
+</li>
+<li>
+<p><a href="#organize-clearly">清晰地组织</a></p>
+<ul>
+<li><a href="#folders-and-color-groups-for-organization">文件夹和颜色组用于组织</a></li>
+<li><a href="#text-nodes-for-documentation">文本节点用于文档记录</a></li>
+<li><a href="#find-and-replace-column-names">查找并替换列名</a></li>
+
+
+<li><a href="#auto-layout-nodes-and-grid-snapping">Auto-layout nodes and grid snapping</a></li>
+</ul>
+</li>
+</ul>
+<h2 id="user-content-build-faster" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#build-faster"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Build faster</h2>
+<h3 id="user-content-configure-user-preferences" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#configure-user-preferences"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Configure user preferences</h3>
+<ol>
+<li>Navigate to the settings menu in the top right of the Pipeline Builder view and select <strong>User preferences</strong>, then configure and save your settings. <br><br>
+<img alt="Select User preferences from the dropdown menu." height="268" src="/docs/resources/foundry/pipeline-builder/user-preference-menu.png" style="aspect-ratio:639 / 268" width="639" node="[object Object]"> <br><br>
+<img alt="The User preferences menu." height="600" src="/docs/resources/foundry/pipeline-builder/user-preference-selection.png" style="aspect-ratio:660 / 790" width="501.26582278481015" node="[object Object]"> <br><br></li>
+</ol>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>Two of the most commonly used settings are <strong>Collapsed transform style</strong> and <strong>Name transform paths automatically</strong>. Within the <strong>Collapsed transform style</strong> selector in <strong>User preferences</strong>, toggling the setting to <strong>Pseudocode</strong> renders your transforms in a format that resembles programming code. Pseudocode does not follow the syntax of any specific programming language.</p></div>
+<p><img alt="An example of pseudocode rendering." height="600" src="/docs/resources/foundry/pipeline-builder/pseudo-code-example.png" style="aspect-ratio:2938 / 606" width="2908.910891089109" node="[object Object]"></p>
+
+<h3 id="user-content-hotkeys-auto-layout-zoom-hide-and-more" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#hotkeys-auto-layout-zoom-hide-and-more"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>快捷键（自动布局、缩放、隐藏等）</h3>
+<ol>
+<li>在Pipeline Builder 的左上角打开 <strong>帮助</strong> 下拉菜单。 <br><br>
+<img alt="从帮助下拉菜单中选择查看快捷键。" height="248" src="/docs/resources/foundry/pipeline-builder/view-hotkeys-menu.png" style="aspect-ratio:654 / 248" width="654" node="[object Object]"> <br><br></li>
+<li>选择 <strong>查看快捷键</strong> 以打开Pipeline Builder 的完整快捷键参考。 <br><br>
+<img alt="完整的快捷键参考面板。" height="600" src="/docs/resources/foundry/pipeline-builder/hotkeys-guide.png" style="aspect-ratio:506 / 807" width="376.20817843866166" node="[object Object]"> <br><br></li>
+</ol>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>一些最常用的快捷键包括：</p><ul>
+<li><code>上箭头</code> 用于缩放并使所有管道节点适应屏幕</li>
+<li><code> Cmd+H </code>（macOS）或 <code> Ctrl+H </code>（Windows）用于隐藏选定的节点</li>
+<li><code> Cmd+K </code>（macOS）或 <code> Ctrl+K </code>（Windows）用于显示所有隐藏的节点</li>
+<li><code> Cmd+D </code>（macOS）或 <code> Ctrl+D </code>（Windows）用于选择节点的子节点</li>
+<li><code> Cmd+E </code>（macOS）或 <code> Ctrl+E </code>（Windows）用于选择节点的父节点</li>
+<li><code> Cmd+C </code>（macOS）或 <code> Ctrl+C </code>（Windows）用于将节点复制到剪贴板</li>
+</ul></div>
+<h3 id="user-content-copy-and-paste-nodes" level="3" node="[object Object]" data-pagefind-weight="0.8">
+
+<a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#copy-and-paste-nodes"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Copy and paste nodes</h3>
+<ol>
+<li>Select the nodes you want to copy. Use the <strong>Select</strong> button in the top right, or use <code>Cmd+A</code> (macOS) or <code>Ctrl+A</code> (Windows) to select all nodes in the current pipeline. If required, you can also select individual nodes, or select groups of nodes by selecting and dragging around them.</li>
+<li>Copy your selection by right-clicking and choosing <strong>Copy</strong>, or use <code>Cmd+C</code> (macOS) or <code>Ctrl+C</code> (Windows). <br><br>
+<img alt="Copy the selected nodes." height="600" src="/docs/resources/foundry/pipeline-builder/copy-nodes.png" style="aspect-ratio:1762 / 896" width="1179.9107142857142" node="[object Object]"> <br><br></li>
+<li>Navigate to the destination pipeline and paste by right-clicking and choosing <strong>Paste</strong>, or use <code>Cmd+V</code> (macOS) or <code>Ctrl+V</code> (Windows).</li>
+</ol>
+<h3 id="user-content-click-and-drag-to-connect-nodes" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#click-and-drag-to-connect-nodes"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Click and drag to connect nodes</h3>
+<ol>
+<li>Select the <strong>output circle</strong> of the node to use as input. <br><br>
+<img alt="A node output circle." height="600" src="/docs/resources/foundry/pipeline-builder/node-output.png" style="aspect-ratio:2268 / 928" width="1466.3793103448277" node="[object Object]"> <br><br></li>
+<li>
+
+Drag that output to the <strong>input circles</strong> of the nodes that should receive its output. <br><br>
+<img alt="A node input circle." height="600" src="/docs/resources/foundry/pipeline-builder/node-input.png" style="aspect-ratio:2346 / 910" width="1546.8131868131868" node="[object Object]"></li>
+</ol>
+<h3 id="user-content-view-unsaved-changes" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#view-unsaved-changes"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>View unsaved changes</h3>
+<ol>
+<li>Navigate to the sidebar menu on the right-hand side of your screen and select <strong>View changes</strong>. From here, you can view unsaved changes in your current branch and compare them with other Pipeline Builder branches. <br><br>
+<img alt="Select View changes from the sidebar." height="453" src="/docs/resources/foundry/pipeline-builder/select-view-changes.png" style="aspect-ratio:385 / 453" width="385" node="[object Object]"></li>
+</ol>
+<h3 id="user-content-decide-how-many-transforms-to-put-per-node" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#decide-how-many-transforms-to-put-per-node"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Decide how many transforms to put per node</h3>
+<ul>
+<li>There is no fixed limit on the number of transforms per node. As a general best practice, string larger transform functions together across multiple nodes rather than grouping everything into a single node. This makes your pipeline easier to maintain, troubleshoot, and update.</li>
+<li>
+
+Pipeline Builder also supports <a href="/docs/foundry/pipeline-builder/management-create-custom-functions/">custom functions</a>, which allow you to package a series of transform boards into a single reusable transform and reuse it throughout the pipeline. Select the <strong>+</strong> icon when in a transform node to configure a custom transform path. <br><br>
+<img alt="Create a custom transform." height="600" src="/docs/resources/foundry/pipeline-builder/create-custom-transform.png" style="aspect-ratio:1766 / 959" width="1104.900938477581" node="[object Object]"></li>
+</ul>
+<h3 id="user-content-generate-notional-data-with-llms" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#generate-notional-data-with-llms"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Generate notional data with LLMs</h3>
+<ol>
+<li>After you add columns to your manually entered table, select <a href="/docs/foundry/pipeline-builder/datasets-generated/">Generate data</a> from the top right.</li>
+<li>For each column, use the <strong>Auto-populate with</strong> dropdown to choose a data type, or select <strong>Generate with LLM</strong> to enter a custom prompt.</li>
+<li>Once your prompts are configured, select <strong>Generate table</strong> in the bottom right to populate the table. <br><br>
+<img alt="Generate notional data inputs." height="600" src="/docs/resources/foundry/pipeline-builder/generate-notional-data.png" style="aspect-ratio:1740 / 1133" width="921.4474845542808" node="[object Object]"></li>
+</ol>
+<h3 id="user-content-ai-tools-for-building-and-understanding" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#ai-tools-for-building-and-understanding"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>AI tools for building and understanding</h3>
+<div class="ptcom-design__callout__19o1cwu">
+
+<svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>To use large language models (LLMs) directly in your pipeline, see <a href="/docs/foundry/pipeline-builder/pipeline-builder-llm/">Use LLMs in Pipeline Builder</a>.</p></div>
+<h4 id="user-content-use-ai-generate-to-build-new-transform-nodes"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#use-ai-generate-to-build-new-transform-nodes"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Use AI generate to build new transform nodes</h4>
+<ol>
+<li>Select the node you want to build from and select <strong>Generate</strong> from the menu. <br><br>
+<img alt="Select a node for AI generate." height="600" src="/docs/resources/foundry/pipeline-builder/select-ai-generate.png" style="aspect-ratio:1804 / 974" width="1111.29363449692" node="[object Object]"> <br><br></li>
+<li>Next, enter your prompt in the text box and select <strong>Generate</strong>. <br><br>
+<img alt="Enter a prompt for AI generate." height="600" src="/docs/resources/foundry/pipeline-builder/ai-generate-prompt.png" style="aspect-ratio:1806 / 916" width="1182.9694323144104" node="[object Object]"> <br><br></li>
+<li>Pipeline Builder generates the new node after the selected node, and you can rename it like any other node in your pipeline.</li>
+</ol>
+<h4 id="user-content-use-ai-explain-to-generate-a-summary-of-your-pipeline-logic"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#use-ai-explain-to-generate-a-summary-of-your-pipeline-logic"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Use AI explain to generate a summary of your pipeline logic</h4>
+<ol>
+
+
+<li>Select the nodes you want to explain and select the purple light bulb icon in the top center of the graph view. Pipeline Builder generates a written summary of the selected nodes' logic in the text box. <br><br>
+<img alt="The AI explain output panel." height="600" src="/docs/resources/foundry/pipeline-builder/ai-explain.png" style="aspect-ratio:2740 / 1568" width="1048.469387755102" node="[object Object]"> <br><br></li>
+<li>You can also use explain directly in the node by selecting the purple light bulb in the top right of a transform board. <br><br>
+<img alt="The AI explain icon on a transform board." height="540" src="/docs/resources/foundry/pipeline-builder/ai-explain-transform.png" style="aspect-ratio:1546 / 540" width="1546" node="[object Object]"></li>
+</ol>
+<h4 id="user-content-use-the-aip-regex-helper-to-generate-regex-patterns-with-an-llm"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#use-the-aip-regex-helper-to-generate-regex-patterns-with-an-llm"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Use the AIP regex helper to generate regex patterns with an LLM</h4>
+<ol>
+<li>Select the dataset you want to run a regex function on, then open the <strong>Transforms</strong> panel.</li>
+<li>In the <strong>Transforms</strong> window, select the regex function you need and the target column.</li>
+<li>Select the purple star icon to the right of the pattern input box and enter your prompt. <br><br>
+<img alt="The AIP regex helper in a transform." height="511" src="/docs/resources/foundry/pipeline-builder/aip-regex-helper-tips.png" style="aspect-ratio:1743 / 511" width="1743" node="[object Object]"> <br><br></li>
+<li>
+
+Select <strong>Generate</strong>, then verify the output by selecting <strong>Apply</strong>. Return to the graph view and preview the transform's output to confirm the result.</li>
+</ol>
+<h4 id="user-content-use-ai-fde-to-support-pipeline-creation-and-building"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#use-ai-fde-to-support-pipeline-creation-and-building"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Use AI FDE to support pipeline creation and building</h4>
+<ol>
+<li>Navigate to the <strong>Applications</strong> menu on the left of your screen and search for AI FDE.</li>
+<li>Once you open the AI FDE application, you can add your existing pipeline as a resource by copying and pasting the link into the chat box.</li>
+<li>From there, you can prompt AI FDE to build additional nodes in your pipeline. <br><br>
+<img alt="The AI FDE console." height="600" src="/docs/resources/foundry/pipeline-builder/ai-fde-console.png" style="aspect-ratio:3296 / 1722" width="1148.432055749129" node="[object Object]"></li>
+</ol>
+<h2 id="user-content-improve-pipelines" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#improve-pipelines"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Improve pipelines</h2>
+<h3 id="user-content-faster-pipeline-mode" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#faster-pipeline-mode"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Faster pipeline mode</h3>
+<ol>
+<li>When creating a new batch pipeline, select <strong>Faster</strong> from the <strong>Select batch compute</strong> menu.</li>
+<li>
+
+You can also convert an existing standard batch pipeline to a faster pipeline. Select the <strong>Convert to faster pipeline</strong> option from the <strong>Settings</strong> menu in your standard pipeline. <br><br>
+<img alt="The Convert to faster pipeline option." height="359" src="/docs/resources/foundry/pipeline-builder/convert-to-faster.png" style="aspect-ratio:819 / 359" width="819" node="[object Object]"> <br><br></li>
+<li>Once you have selected the <strong>Convert to faster pipeline</strong> option, select the <strong>Convert pipeline</strong> button to confirm the conversion.</li>
+</ol>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>If your pipeline contains functionality that is not compatible with faster pipelines, you will receive an error message indicating what to remove or change before converting. You can also turn on conversion checks to view these warnings in your pipeline using the bottom panel.</p></div>
+<p><img alt="A warning shown during conversion to a faster pipeline." height="600" src="/docs/resources/foundry/pipeline-builder/faster-warning-conversion.png" style="aspect-ratio:1144 / 820" width="837.0731707317073" node="[object Object]"></p>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><div class="ptcom-design__title__19o1cwu">Faster pipelines feature support</div><p>Faster pipelines support a subset of the functionality available in standard batch pipelines. Learn more about <a href="/docs/foundry/building-pipelines/create-faster-pipeline-pb/">faster pipelines with Pipeline Builder</a>.</p></div>
+<h3 id="user-content-compute-profiles-to-reduce-build-times" level="3" node="[object Object]" data-pagefind-weight="0.8">
+
+<a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#compute-profiles-to-reduce-build-times"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Compute profiles to reduce build times</h3>
+<ol>
+<li>Once your pipeline is created, navigate to the <strong>Build settings</strong> menu on the far right of your screen to further adjust compute settings.</li>
+<li>In the <strong>Build settings</strong> menu, go to <strong>Default compute profile</strong> and select the dropdown showing your current compute profile size.</li>
+<li>Select the <strong>Profile management strategy</strong> dropdown. Three options are available. Select the one that best fits your needs:
+<ul>
+<li><strong>Standard:</strong> The default compute profile setting with no additional optimizations. Best for production-scale pipelines with predictable data volumes.</li>
+<li><strong>Warm pool:</strong> Continuously runs virtual machines to reduce pipeline startup time. Best for small-scale, iterative pipelines and low-latency development tasks.</li>
+<li><strong>Managed profile:</strong> Automatically adjusts compute resource allocation based on the last five runs of your pipeline. Best for pipelines with fluctuating data sizes or a need for compute cost management. <br><br>
+<img alt="Configure compute profiles in Build settings." height="600" src="/docs/resources/foundry/pipeline-builder/use-compute-profiles.png" style="aspect-ratio:2125 / 798" width="1597.7443609022555" node="[object Object]"></li>
+</ul>
+</li>
+</ol>
+
+
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><div class="ptcom-design__title__19o1cwu">Compute profiles support in faster pipelines</div><p>Faster pipelines only support the <strong>Standard</strong> profile management strategy.</p></div>
+<h3 id="user-content-filter-preview-data" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#filter-preview-data"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Filter preview data</h3>
+<ol>
+<li>Right-click the input dataset to sample from and select <strong>Sampling strategies</strong> from the dropdown menu. The sampling strategy you configure applies to every node that follows the sampled input. <br><br>
+<img alt="Select Sampling strategies from the dropdown menu." height="600" src="/docs/resources/foundry/pipeline-builder/select-sampling-strategies.png" style="aspect-ratio:1246 / 908" width="823.3480176211455" node="[object Object]"> <br><br></li>
+<li>Select which dataset in your pipeline to configure your sampling strategy on. <strong>Filtered preview</strong> allows you to filter rows based on any expression. In the following example, only rows where <code>original_language</code> is <code>en</code> are kept. <br><br>
+<img alt="Configure a sampling strategy." height="600" src="/docs/resources/foundry/pipeline-builder/configure-sampling-strategies.png" style="aspect-ratio:1956 / 1274" width="921.193092621664" node="[object Object]"></li>
+</ol>
+<h3 id="user-content-unit-tests-for-pipeline-reliability" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#unit-tests-for-pipeline-reliability"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Unit tests for pipeline reliability</h3>
+<ol>
+
+
+<li>Create a new unit test by selecting the icon on the right-hand side menu, selecting the <strong>+ New test</strong> button, and selecting the transform you want to test. <br><br>
+<img alt="Create a new unit test." height="600" src="/docs/resources/foundry/pipeline-builder/new-unit-test.png" style="aspect-ratio:2794 / 1534" width="1092.8292046936115" node="[object Object]"> <br><br></li>
+<li>Next, configure your test by choosing a schema (manually or from an existing dataset), entering a line of test data in your <strong>Unit test input node</strong>, and entering the expected output in the <strong>Unit test output node</strong>. <br><br>
+<img alt="Configure a unit test." height="600" src="/docs/resources/foundry/pipeline-builder/configure-unit-test.png" style="aspect-ratio:2782 / 1594" width="1047.176913425345" node="[object Object]"> <br><br></li>
+<li>Once your test is configured, select <strong>Run test</strong> and view the results. For more information, see <a href="/docs/foundry/pipeline-builder/dataexpectations-unit-tests/">Unit testing in Pipeline Builder</a>.</li>
+</ol>
+<h2 id="user-content-organize-clearly" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#organize-clearly"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Organize clearly</h2>
+<h3 id="user-content-folders-and-color-groups-for-organization" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#folders-and-color-groups-for-organization"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Folders and color groups for organization</h3>
+<ol>
+
+
+<li>To <a href="/docs/foundry/pipeline-builder/management-file-tree/">set up folders for your nodes</a> in Pipeline Builder, select the file icon on the far right of the screen. In the <strong>Pipeline file tree</strong> panel, you can create new folders, place nodes into folders, and show or hide nodes in specific folders. <br><br>
+<img alt="Set up folders in the Pipeline file tree panel." height="600" src="/docs/resources/foundry/pipeline-builder/set-up-folders.png" style="aspect-ratio:2130 / 795" width="1607.5471698113208" node="[object Object]"> <br><br></li>
+<li>You can also color nodes and collapse multiple nodes into a single node based on the coloring. <br><br>
+<img alt="Color nodes and collapse them based on color." height="600" src="/docs/resources/foundry/pipeline-builder/color-nodes-collapse.png" style="aspect-ratio:1760 / 912" width="1157.8947368421054" node="[object Object]"></li>
+</ol>
+<h3 id="user-content-text-nodes-for-documentation" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#text-nodes-for-documentation"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Text nodes for documentation</h3>
+<ol>
+<li>Select <strong>Add new text node</strong> from the graph view toolbar. Text nodes support Markdown and are positioned behind any nodes in your graph. Learn more about <a href="/docs/foundry/pipeline-builder/management-text-nodes/">text nodes</a>. <br><br>
+<img alt="A text node in the pipeline graph view." height="600" src="/docs/resources/foundry/pipeline-builder/text-nodes.png" style="aspect-ratio:2204 / 1292" width="1023.5294117647059" node="[object Object]"></li>
+</ol>
+
+
+<h3 id="user-content-find-and-replace-column-names" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#find-and-replace-column-names"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Find and replace column names</h3>
+<ol>
+<li>Navigate to the search panel on the right-hand side of your screen. From there, you can search for and replace column names in your pipeline. <br><br>
+<img alt="Find and replace column names." height="600" src="/docs/resources/foundry/pipeline-builder/find-replace.png" style="aspect-ratio:1004 / 980" width="614.6938775510205" node="[object Object]"></li>
+</ol>
+<h3 id="user-content-auto-layout-nodes-and-grid-snapping" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#auto-layout-nodes-and-grid-snapping"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Auto-layout nodes and grid snapping</h3>
+<p>Use the automatic layout and grid snapping options from the graph view toolbar to align your nodes and improve readability.</p>
+<p><img alt="Automatic node layout and grid snapping options." height="253" src="/docs/resources/foundry/pipeline-builder/layout-grid-snapping.png" style="aspect-ratio:1766 / 253" width="1766" node="[object Object]"></p>
+</article>
+</body>
+</html>

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Container transforms</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-container-transforms" level="1" node="[object Object]" data-pagefind-weight="7"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#container-transforms"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>容器转换</h1>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><div class="ptcom-design__title__19o1cwu">前提条件</div><p>以下文档假定您具备容器化基础设施和容器镜像等概念的知识。如果您不熟悉这些主题，我们建议您查阅 <a href="https://docs.docker.com/get-started/">Docker 概述文档 ↗</a>。</p></div>
+<p>Foundry 以两种方式与推送到平台的容器进行交互：</p>
+<ol>
+<li>使用 <a href="/docs/foundry/transforms-container/transforms-sidecar/">transforms sidecar 装饰器</a>。</li>
+<li>构建并使用 <a href="/docs/foundry/integrate-models/upload-image-container-model/">基于容器的模型资产</a>。</li>
+</ol>
+<p>在这两种用例中，第一步是按照下面列出的图像要求将图像推送到 Foundry 内置的 Docker 注册表中。</p>
+<h2 id="user-content-image-requirements" level="2" node="[object Object]" data-pagefind-weight="6.3"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#image-requirements"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>镜像要求</h2>
+<ol>
+<li>该镜像具有数字 <code>userID</code>。</li>
+</ol>
+<ul>
+<li>
+
+The <code>userID</code> defined within the Dockerfile must be numeric and not '0'. Foundry does not allow commands to run within the container as the root user; '0' gets interpreted in some systems as zero, and non-numeric IDs can be set to function as root.</li>
+<li>For <a href="/docs/foundry/transforms-python/bring-container/">bring your own container transforms</a>, the <code>userID</code> must be specifically '5001'.</li>
+</ul>
+<ol start="2">
+<li>The image is built for <code>linux/amd64</code> platform.</li>
+</ol>
+<ul>
+<li>Foundry supports the execution of containers built for this platform only. The default platform for Docker is <code>linux</code>, so add <code>--platform linux/amd64</code> for the <a href="https://docs.docker.com/engine/reference/commandline/build/">Docker build command ↗</a> to set the platform specifically.</li>
+</ul>
+<ol start="3">
+<li>The image is pushed with <code>digest</code> or any tag other than <code>latest</code>.</li>
+</ol>
+<ul>
+<li>The executed Docker push command should specify the digest of the image or use a tag that is not <code>latest</code>. Foundry will not execute images tagged as <code>latest</code> since there is no mechanism to ensure any given image is actually the latest one.</li>
+</ul>
+<ol start="4">
+<li>The maximum image layer size is less than ~10 GB.</li>
+</ol>
+<ul>
+<li>
+
+It is strongly recommended that each layer is smaller than ~10 GB. If your use case requires a larger layer size, contact your Palantir representative.</li>
+</ul>
+<ol start="5">
+<li>任何暴露的端口都在 1024 到 65535 之间。</li>
+</ol>
+<ul>
+<li>0 到 1023 的端口是众所周知的端口，因此被保留给 root 用户。Foundry 不允许在容器中以 root 用户身份运行命令；因此，当镜像在 Foundry 中启动时，此范围内的任何端口将不可用。</li>
+</ul>
+<ol start="6">
+<li>[可选] 该镜像已启用遥测功能。</li>
+</ol>
+<ul>
+<li>要从您的容器启用遥测日志：
+<ul>
+<li>镜像必须在 <code>/bin/sh</code> 中包含一个 shell 可执行文件。</li>
+<li>镜像必须支持 shell 命令 <code>set</code> 和 <code>tee</code>。</li>
+</ul>
+</li>
+</ul>
+</article>
+</body>
+</html>

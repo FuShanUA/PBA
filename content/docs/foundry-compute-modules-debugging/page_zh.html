@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Debug using the replica status</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-debug-using-the-replica-status" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#debug-using-the-replica-status"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>使用副本状态进行调试</h1>
+<p>调试您的计算模块时，第一步应是检查<strong>概述</strong>选项卡上的<strong>副本状态</strong>部分。 <strong>副本状态</strong>部分显示每个副本及其当前状态，可以为您提供对部署的高层次理解。选择一个单独的副本以查看它包含的镜像，并通过选择<strong>副本诊断</strong>提示框查看更详细的诊断信息。如果您无法进行调试并认为计算模块的基础架构可能存在问题，请通过提交问题联系Palantir支持。</p>
+<h2 id="user-content-replica-status" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#replica-status"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>副本状态</h2>
+<p><strong>副本状态</strong>部分显示哪些副本当前处于活动状态并属于您的部署，以及归档的副本。归档的副本不再运行，但仍可用于调试过去发生的故障。每个副本都有其自己的生命周期，可以处于下面列出的各种状态之一：</p>
+<p>
+
+<img alt="您在部署中可能看到的各种副本状态可能性。" height="600" src="/docs/resources/foundry/compute-modules/replica-status.png" style="aspect-ratio:2480 / 886" width="1679.4582392776524" node="[object Object]"></p>
+<ul>
+<li><strong>启动中：</strong>副本的初始阶段。我们可能正在获取主机、拉取您的镜像、启动您的容器等。如果副本在此状态下花费了很长时间，您可能有一个较大的镜像（>5GB）、较大的资源请求，或者您配置了一个需要较长时间才能报告为就绪的就绪探针。如果日志正在出现，我们至少能够启动您的容器并调查您的代码。如果在您认为应该生成日志时没有生成日志，可能是基础设施出现了问题。</li>
+<li><strong>已启动：</strong>在此阶段，副本已经启动。这意味着它已经获取了主机、拉取了镜像并启动了容器。在此阶段，副本可能会变得响应或不响应。这被认为是正常操作；但是，如果在此阶段停留过长时间，则可能表示存在基础设施问题。</li>
+<li>
+
+<strong>响应式：</strong> 在此阶段，我们确定您的副本是响应式的，能够对查询做出响应。这被视为正常操作。如果您在此阶段遇到副本问题，应首先查看日志以进行调试。</li>
+<li><strong>非响应式：</strong> 如果您的副本无法响应请求或未能报告其就绪状态，它将被标记为非响应式。这意味着我们将不会将请求路由到该副本，如果它长时间保持非响应式，我们可能会终止它。副本可能会暂时变为非响应式，并且有时会在此状态中闪烁。如果您遇到非响应式副本的问题，请在副本删除后检查日志或诊断面板。</li>
+<li><strong>退役：</strong> 当副本被删除时，它们可能会经历一个两阶段的删除过程，其中首先被退役，然后最终被删除。我们这样做是为了给副本时间以完成任何正在进行的请求。这可能是正常操作，因为单个副本有最大TTL，小于24小时。</li>
+<li>
+
+<strong>启动错误：</strong>副本可能会因各种原因无法启动。这可能表明存在基础设施问题、您的镜像有问题，或者配置存在问题。您应选择该副本并检查其诊断信息，因为在这一阶段日志尚不存在。</li>
+<li><strong>已删除：</strong>所有副本最终都会被删除。这可能是副本生命周期正常的一部分，也可能是异常情况。如果您发现部署存在问题，可以将副本状态部分切换为<strong>已归档</strong>，并查看特定已删除副本的诊断信息。已删除副本的诊断信息仅归档一小时。</li>
+</ul>
+<h2 id="user-content-replica-diagnostics" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#replica-diagnostics"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>副本诊断</h2>
+<p>副本诊断可以更深入地了解降级的部署。我们从底层基础设施和/或计算模块服务直接提供状态和原因。在副本诊断面板中，您还可以选择一个单独的镜像以进行进一步调试。</p>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu">
+
+<svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>要查看特定副本的诊断信息，您必须首先选择该副本方块。某些副本可能已被归档，您可能需要切换到归档视图。</p></div>
+<p>以下是部署无法正常启动时诊断面板的示例：</p>
+<p><img alt="显示&quot;无响应&quot;错误的副本诊断。" height="600" src="/docs/resources/foundry/compute-modules/replica-diagnostics.png" style="aspect-ratio:1718 / 802" width="1285.286783042394" node="[object Object]"></p>
+<p><img alt="在副本诊断面板中显示的CrashLoopBackOff错误。" height="600" src="/docs/resources/foundry/compute-modules/crashloopbackoff-status.png" style="aspect-ratio:1718 / 802" width="1285.286783042394" node="[object Object]"></p>
+<p>在上图中，容器正在经历 <code>CrashLoopBackoff</code>。我们可以查看日志和提供的代码以尝试进一步调试。</p>
+<h1 id="user-content-debug-upgrades" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#debug-upgrades"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>调试升级</h1>
+<p>
+
+Compute模块将在可能的情况下尝试安全升级。这意味着当您在有活动部署的情况下升级配置时，将启动一个新的部署，并在新部署变得响应时切换到新部署。新任务将被路由到已更新的部署，而现有任务则在旧部署上完成。</p>
+<h2 id="user-content-upgrade-process" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#upgrade-process"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>升级过程</h2>
+<p>计算模块的升级将通过以下步骤进行：</p>
+<ol>
+<li>正在运行的计算模块的配置发生变化。例如，您可能更改了配置镜像的版本。某些配置设置可能需要停机时间才能应用，您在保存之前将被要求确认这些内容。</li>
+<li>计算模块服务会创建一个带有您更改的第二个部署。</li>
+<li>计算模块服务会等待您的新部署中出现响应的副本。</li>
+<li>
+
+  Foundry -> Foundry
+  Apollo -> Apollo
+  Gotham -> Gotham
+  AIP -> AIP
+  Ontology -> 本体论
+  ontology -> 本体论
+  Pipeline -> 管道
+  pipeline -> 管道
+  Transform -> 转换
+  transform -> 转换
+  Workshop -> Workshop
+  workshop -> Workshop
+  Code Repositories -> 代码仓库
+  Code Workspaces -> 代码工作区
+  Data Integration -> 数据集成
+  Model Integration -> 模型集成
+  Object -> 对象
+  object -> 对象
+  Dataset -> 数据集
+  dataset -> 数据集
+  Tenant -> 租户
+  tenant -> 租户
+  Marking -> 标记
+  marking -> 标记
+  Permission -> 权限
+  permission -> 权限
+  Role -> 角色
+  role -> 角色
+  Function -> 函数
+  function -> 函数
+  Action -> 操作
+  action -> 操作
+  Property -> 属性
+  property -> 属性
+  Interface -> 接口
+  interface -> 接口
+
+内容:
+您的新部署具有响应式副本，新的请求将路由到新部署。旧的部署正在被停用，并有一个宽限期以完成现有请求，然后再被完全删除。</li>
+</ol>
+<p>如果您的新部署从未变得响应，您的当前部署不会改变。如果升级失败，您不会经历停机时间。要结束无响应的升级，您可以恢复配置更改或进行前向更改，使副本可以变得响应。</p>
+<h3 id="user-content-my-upgrade-is-unresponsive" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#my-upgrade-is-unresponsive"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>我的升级无响应</h3>
+<p>与“活跃的<strong>副本状态</strong>”部分类似，在<strong>概览</strong>选项卡中，升级后的部署的副本状态将在一个部分中显示。</p>
+<p>展开该部分以查看升级后部署中的镜像，并选择副本方块以查看更多的副本诊断信息。</p>
+<p><img alt="显示升级部署状态的部分，展示升级后部署的副本状态。" height="148" src="/docs/resources/foundry/compute-modules/upgrade-deployment.png" style="aspect-ratio:1632 / 148" width="1632" node="[object Object]"></p>
+</article>
+</body>
+</html>

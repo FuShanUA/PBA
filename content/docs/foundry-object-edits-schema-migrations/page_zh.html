@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Manage schema changes</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-manage-schema-changes" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#manage-schema-changes"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>管理模式变更</h1>
+<h2 id="user-content-changing-object-type-schema" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#changing-object-type-schema"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>更改对象类型模式</h2>
+<p>基于Foundry本体论构建的工作流和应用程序应随着组织需求的变化而演变；在某些情况下，这种演变可能涉及以需要其他更改的方式更新对象类型的模式（“破坏性更改”）。模式的破坏性更改示例包括更改现有属性的数据类型、更改对象类型的后端数据源，或更改对象类型的主键。请参见下面的<a href="#list-of-breaking-schema-changes">破坏性模式更改的完整列表</a>。</p>
+<p>在对象存储V1（Phonograph）中，用户界面会阻止此类模式更改，特别是当对象类型已收到用户编辑时。这是因为这些用户编辑无法在OSv1中迁移；相反，破坏性更改将导致现有用户编辑的丢失，除非可以进行耗时且复杂的手动干预。</p>
+<p>
+
+Object Storage V2 移除了对模式更改的此限制，以促进灵活和迭代的工作流程构建。为此，OSv2 提供了一个模式迁移框架，其中包含一组预定义的迁移，可以在发生破坏性模式更改后应用于现有的用户编辑。本体论管理器会自动检测破坏性模式更改，并引导用户从预定义的列表中选择一个迁移选项。有关完整支持的迁移列表，请参见下文。</p>
+<h3 id="user-content-example-workflow" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#example-workflow"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>示例工作流程</h3>
+<p>在此示例工作流程中，用户从一个具有现有用户编辑的对象类型中删除了 <code>Description</code> 属性。本体论管理器会自动将此识别为破坏性模式更改，并显示需要迁移的警告，如下图所示。</p>
+<p><img alt="破坏性更改警告" height="600" src="/docs/resources/foundry/object-edits/breaking_changes.png" style="aspect-ratio:1792 / 618" width="1739.8058252427186" node="[object Object]"></p>
+<p>
+
+  Foundry -> Foundry
+  Apollo -> Apollo
+  Gotham -> Gotham
+  AIP -> AIP
+  Ontology -> 本体论
+  ontology -> 本体论
+  Pipeline -> 管道
+  pipeline -> 管道
+  Transform -> 转换
+  transform -> 转换
+  Workshop -> Workshop
+  workshop -> Workshop
+  Code Repositories -> 代码仓库
+  Code Workspaces -> 代码工作区
+  Data Integration -> 数据集成
+  Model Integration -> 模型集成
+  Object -> 对象
+  object -> 对象
+  Dataset -> 数据集
+  dataset -> 数据集
+  Tenant -> 租户
+  tenant -> 租户
+  Marking -> 标记
+  marking -> 标记
+  Permission -> 权限
+  permission -> 权限
+  Role -> 角色
+  role -> 角色
+  Function -> 函数
+  function -> 函数
+  Action -> 操作
+  action -> 操作
+  Property -> 属性
+  property -> 属性
+  Interface -> 接口
+  interface -> 接口
+
+内容：
+除了显示警告之外，当用户想要将更改保存到本体论时，本体论管理器将在“审查更改”界面中显示一个<strong>Migrations</strong>（迁移）选项卡。本体论管理器将阻止用户保存更改，直到他们为破坏性更改定义了迁移。这可以防止更改破坏其他工作流程。</p>
+<p>当用户导航到<strong>Migrations</strong>（迁移）选项卡时，本体论管理器会根据破坏性更改的类型显示可用的迁移选项，如下所示。</p>
+<p><img alt="审查编辑" height="600" src="/docs/resources/foundry/object-edits/edits_review.png" style="aspect-ratio:1794 / 680" width="1582.9411764705883" node="[object Object]"></p>
+<p>一旦用户在本体论管理器中指定了并保存了模式更改，后端将为对象类型创建一个新的模式版本，并协调一个相应的 <a href="/docs/foundry/object-indexing/funnel-batch-pipelines/#funnel-batch-pipelines">替换 Funnel 批处理管道</a> 来更新对象类型的索引。一旦替换管道完成并且新版本被对象数据库声明为完全 <a href="/docs/foundry/object-indexing/funnel-batch-pipelines/#hydration">填充</a>，新的对象类型版本就可以通过对象集服务（OSS）和其他本体论 API 的使用者进行查询。</p>
+<h2 id="user-content-list-of-breaking-schema-changes" level="2" node="[object Object]" data-pagefind-weight="0.9">
+
+<a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#list-of-breaking-schema-changes"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>破坏性模式变更列表</h2>
+<p>以下在本体论中的更改被认为是破坏性模式变更：</p>
+<ul>
+<li>更改对象类型的输入数据源</li>
+<li>更改对象类型的主键</li>
+<li>更改属性的数据类型</li>
+<li>更改已接收用户编辑的属性的ID</li>
+<li>删除已接收用户编辑的属性</li>
+<li>删除已接收用户编辑的结构字段</li>
+<li>更改结构字段的数据类型</li>
+</ul>
+<h2 id="user-content-list-of-non-breaking-schema-changes" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#list-of-non-breaking-schema-changes"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>非破坏性模式变更列表</h2>
+<p>以下在本体论中的更改< strong >不</strong>被视为破坏性模式变更：</p>
+<ul>
+<li>更改已接收用户编辑的属性的显示名称、标题键、渲染提示、类型类或可见性</li>
+<li>删除属性或对从未接收过用户编辑的属性进行模式更改</li>
+<li>删除结构字段或对从未接收过用户编辑的结构字段进行模式更改</li>
+</ul>
+
+</ul>
+<h2 id="user-content-list-of-supported-schema-migrations-in-osv2" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#list-of-supported-schema-migrations-in-osv2"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>OSv2 中支持的模式迁移列表</h2>
+<p>以下是 Object Storage V2 当前支持的所有模式迁移列表。</p>
+<ul>
+<li>
+<p><strong>删除所有属性编辑：</strong>此迁移指令会删除对象类型上特定属性的所有现有用户编辑。该对象类型的其他属性上的用户编辑不受影响。当从对象类型中删除一个属性且没有新的属性作为替代时，通常使用此指令。</p>
+</li>
+<li>
+<p><strong>删除所有结构字段编辑：</strong>此迁移指令会删除对象类型中结构属性内的特定结构字段的所有现有用户编辑。同一结构属性上的其他结构字段的用户编辑不受影响。当从结构属性中删除一个结构字段且没有新的结构字段作为替代时，通常使用此指令。</p>
+</li>
+<li>
+<p>
+
+<strong>Drop all edits:</strong> This migration instruction drops all existing user edits on all properties of an object type. When this migration runs, the state of all objects of an object type is reset to data in the input datasources. To execute this migration, navigate to the  <strong>Datasources</strong> tab of the object type and select <strong>Delete edits</strong>, located in the <strong>Edits</strong> section.</p>
+</li>
+<li>
+<p><strong>Move edits:</strong> This migration instruction moves all existing user edits on a specific property or on the entire object type. This instruction is generally used in two cases:</p>
+<ul>
+<li>When an existing property is renamed or deleted and being replaced by a new property, or</li>
+<li>When the input datasource of an object type is being replaced by another datasource.</li>
+</ul>
+</li>
+<li>
+<p><strong>Move struct field edits:</strong> This migration instruction moves all existing user edits on a specific struct field to another struct field. This instruction is generally used when an existing struct field is deleted and being replaced by a new struct field.</p>
+</li>
+<li>
+<p>
+
+<strong>Cast property to new type:</strong> This migration instruction casts the data type of existing user edits on a specific property to the new data type of the property. The list of supported data type casts are:</p>
+<ul>
+<li>Attachment → String</li>
+<li>Boolean → String</li>
+<li>Date → String</li>
+<li>Double → Integer</li>
+<li>Double → Long</li>
+<li>Double → String</li>
+<li>Geopoint → String</li>
+<li>Geoshape → String</li>
+<li>Integer → Long</li>
+<li>Integer → Double</li>
+<li>Integer → String</li>
+<li>Long → Integer</li>
+<li>Long → Double</li>
+<li>Long → String</li>
+<li>Mandatory marking → String</li>
+<li>String → Integer</li>
+<li>String → Long</li>
+<li>String → Double</li>
+<li>String → Boolean</li>
+<li>String → Date</li>
+<li>String → Timestamp</li>
+<li>String → Geopoint</li>
+<li>String → Geoshape</li>
+<li>Timestamp → String</li>
+</ul>
+</li>
+<li>
+<p><strong>Cast struct field to new type:</strong> This migration instruction casts the data type of existing user edits on a specific struct field to the new data type of the struct field. The list of supported data type casts are:</p>
+<ul>
+<li>Boolean → String</li>
+<li>Date → String</li>
+<li>Double → Integer</li>
+<li>Double → Long</li>
+<li>Double → String</li>
+<li>Geopoint → String</li>
+<li>
+
+Integer → Long</li>
+<li>Integer → Double</li>
+<li>Integer → String</li>
+<li>Long → Integer</li>
+<li>Long → Double</li>
+<li>Long → String</li>
+<li>String → Integer</li>
+<li>String → Long</li>
+<li>String → Double</li>
+<li>String → Boolean</li>
+<li>String → Date</li>
+<li>String → Timestamp</li>
+<li>String → Geopoint</li>
+<li>Timestamp → String</li>
+</ul>
+</li>
+<li>
+<p><strong>Revert migration:</strong> This migration instruction reverts a previously-applied schema migration. This instruction is generally used when a saved Ontology change is being reverted through the <strong>History</strong> section in the Ontology Manager.</p>
+<ul>
+<li>To revert a migration, navigate to the <strong>History</strong> section in the Ontology Manager for the desired ontology, expand the <strong>Migrations</strong> section within the history event, open the <strong>...</strong> menu on the migration event, and select <strong>Revert</strong>. Once the migrations have been reverted, save the modifications within the Ontology Manager.</li>
+</ul>
+</li>
+</ul>
+<p><img alt="Revert migration" height="600" src="/docs/resources/foundry/object-edits/revert_migration.png" style="aspect-ratio:1964 / 1232" width="956.4935064935065" node="[object Object]"></p>
+<div class="ptcom-design__callout__19o1cwu">
+
+<svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>You can only apply up to 500 schema migrations at a single time. If the number of schema changes exceeds this limit, the migration must be performed in batches. <br><br>
+The current schema migration framework does not support applying migration instructions on the primary key property of object types.</p></div>
+</article>
+</body>
+</html>

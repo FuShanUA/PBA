@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Transactions</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-transactions" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#transactions"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>事务</h1>
+<p>Foundry 的 Iceberg 目录在标准 Iceberg 基础上增加了 <strong>全部或无事务语义</strong>。当作业通过 Foundry 的构建系统执行多个写入时，所有写入要么全部成功，要么被完全丢弃，这与 Foundry 目录数据集的现有保证相匹配。此页面解释了 Foundry 的 Iceberg 事务语义的工作原理，以及它与默认 Iceberg 行为的比较，以及它对编写管道意味着什么。</p>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>本页描述的事务保证仅适用于通过 Foundry 的构建系统运行作业的情况。当从外部客户端写入 Foundry 的 Iceberg 目录时，您将获得标准的 Iceberg 事务行为。有关在此上下文中事务如何工作的详细信息，请参阅 <a href="https://py.iceberg.apache.org/api/#write-to-a-table">PyIceberg API 文档 ↗</a>。</p></div>
+<h2 id="user-content-foundry-iceberg-transaction-semantics" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#foundry-iceberg-transaction-semantics"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Foundry Iceberg 事务语义</h2>
+<p>
+
+当在Foundry中运行<a href="/docs/foundry/data-integration/builds/">构建</a>时，Foundry提供<strong>全部或无更新</strong>。Foundry会将所有Iceberg表的读取和写入自动包装在一个事务中。用户无需采取任何操作来配置此功能；这是使用Foundry的构建系统向Iceberg表写入的默认行为。</p>
+<p>相比之下，标准的Iceberg缺乏多更新事务保证。相反，它提供<strong>原子更新</strong>：每个更新都会单独应用。这是一个有意设计的选择，使乐观并发成为可能，意味着多个写入者可以同时对同一张表进行操作。虽然这种模型对于单次写入事务表现良好，但对于执行单个事务中多次写入的管道来说，可能会出现正确性问题，无论这些更新是应用于一张表还是多张表。Foundry的全部或无事务模型通过协调作业中所有写入的提交来解决这一问题，因此永远不会显示部分更新。</p>
+<p>特别是，Foundry的事务模型提供了以下保证：</p>
+<ul>
+<li><strong>全部或无提交</strong>: 作业中的所有表更新都会一起提交。如果作业在任何时刻失败，则下游消费者或其他作业都不会看到部分写入。这与<a href="/docs/foundry/data-integration/datasets/#transactions">目录数据集事务</a>的行为一致。</li>
+<li>
+
+<strong>可重复读取:</strong> 如果在作业中多次读取同一张表，两次都会返回相同的数据，即使在两次读取之间该表被外部更新了。在作业的整个过程中，您的管道会看到其输入的稳定、一致的视图。</li>
+<li><strong>作业可以看到自己的写入:</strong> 在作业中进行的写入操作在同作业中的后续读取中立即可见。这些写入对其他作业和外部读者来说，在事务提交之前是不可见的。</li>
+<li><strong>多表快照隔离:</strong> Foundry 在事务开始时捕获所有输入表的一致性快照。这确保了在作业过程中无法部分读取输入的外部部分更新，并且数据溯源——哪个版本的输入产生了哪个版本的输出——会被正确记录。</li>
+</ul>
+<h3 id="user-content-example-incremental-join-pipeline" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#example-incremental-join-pipeline"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>示例：增量连接管道</h3>
+<p>为了说明这一点，我们举一个例子：</p>
+<p>
+
+  Foundry -> Foundry
+  Apollo -> Apollo
+  Gotham -> Gotham
+  AIP -> AIP
+  Ontology -> 本体论
+  ontology -> 本体论
+  Pipeline -> 管道
+  pipeline -> 管道
+  Transform -> 转换
+  transform -> 转换
+  Workshop -> Workshop
+  workshop -> Workshop
+  Code Repositories -> 代码仓库
+  Code Workspaces -> 代码工作区
+  Data Integration -> 数据集成
+  Model Integration -> 模型集成
+  Object -> 对象
+  object -> 对象
+  Dataset -> 数据集
+  dataset -> 数据集
+  Tenant -> 租户
+  tenant -> 租户
+  Marking -> 标记
+  marking -> 标记
+  Permission -> 权限
+  permission -> 权限
+  Role -> 角色
+  role -> 角色
+  Function -> 函数
+  function -> 函数
+  Action -> 操作
+  action -> 操作
+  Property -> 属性
+  property -> 属性
+  Interface -> 接口
+  interface -> 接口
+
+内容：
+假设你有一个任务，它从名为<code>orders</code>和<code>customers</code>的两个表中增量读取新行，进行连接，并将结果追加到两个表：<code>order_summary</code>和<code>customer_metrics</code>。有一天，该任务在运行过程中失败，处理完第一个表<code>order_summary</code>的写入后，但在写入第二个表<code>customer_metrics</code>之前。</p>
+<p><strong>使用标准的Iceberg事务语义：</strong>第一个写入操作会被提交。此时<code>order_summary</code>表将反映新的数据批次，而<code>customer_metrics</code>表不会。这两个输出处于不一致的状态。当任务重新运行时，它会重新读取相同的输入行，并再次将它们写入<code>order_summary</code>，从而导致前一次部分运行的数据重复。</p>
+<p><strong>使用Foundry的Iceberg事务语义：</strong>第一个写入操作不会被提交。此时<code>order_summary</code>表将< strong >不会</strong>反映新的数据批次。两个表都保持不变，处于一致的状态。当任务重新运行时，它会正确地将新数据写入两个表，而不会出现重复。</p>
+<img alt="示例部分事务。" src="/docs/resources/foundry/iceberg/transaction-example.png?width=600" style="aspect-ratio:2036 / 1773" width="600" node="[object Object]">
+<h3 id="user-content-job-queuing-and-optimistic-concurrency" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#job-queuing-and-optimistic-concurrency"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>作业队列和乐观并发</h3>
+<p>
+
+  Foundry -> Foundry
+  Apollo -> Apollo
+  Gotham -> Gotham
+  AIP -> AIP
+  Ontology -> 本体论
+  ontology -> 本体论
+  Pipeline -> 管道
+  pipeline -> 管道
+  Transform -> 转换
+  transform -> 转换
+  Workshop -> Workshop
+  workshop -> Workshop
+  Code Repositories -> 代码仓库
+  Code Workspaces -> 代码工作区
+  Data Integration -> 数据集成
+  Model Integration -> 模型集成
+  Object -> 对象
+  object -> 对象
+  Dataset -> 数据集
+  dataset -> 数据集
+  Tenant -> 租户
+  tenant -> 租户
+  Marking -> 标记
+  marking -> 标记
+  Permission -> 权限
+  permission -> 权限
+  Role -> 角色
+  role -> 角色
+  Function -> 函数
+  function -> 函数
+  Action -> 操作
+  action -> 操作
+  Property -> 属性
+  property -> 属性
+  Interface -> 接口
+  interface -> 接口
+
+内容：
+Foundry 的构建系统确保在任何时间点，针对给定输出最多只有一个作业在运行。写入同一输出的作业将被排队并按顺序运行，而不是同时运行。这意味着实际上，常规管道作业不会出现写入冲突，但管道作业和 Iceberg 维护作业之间可能会出现冲突。</p>
+<p>相比之下，标准的 Iceberg 使用乐观并发，允许多个写入者同时对同一张表进行操作，并在提交时检测和解决冲突。Foundry 的事务模型为了更严格的更新和正确性，放弃了乐观并发。如果事务遇到冲突的并发更新，提交将失败，构建系统会重试该作业。正确性始终得到保证，代价是发生冲突更新时需要重新计算该作业。</p>
+<p>冲突的一个常见原因是 <strong>维护任务</strong>，例如压缩，目前这些任务与常规管道作业同时运行。如果压缩任务在作业运行期间更新了表，该作业的事务将无法提交，构建系统会重试该作业。对于频繁进行压缩的表，这可能导致偶尔的重试。</p>
+<h2 id="user-content-iceberg-snapshot-types-and-foundry-dataset-transactions" level="2" node="[object Object]" data-pagefind-weight="0.9">
+
+<a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#iceberg-snapshot-types-and-foundry-dataset-transactions"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Iceberg 快照类型和 Foundry 数据集事务</h2>
+<p>如果您熟悉 Foundry 数据集，您所知道的事务类型与 Iceberg 快照类型之间的对应关系如下：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>Iceberg 快照类型</th><th>Foundry 数据集事务</th><th>描述</th></tr></thead><tbody><tr><td>追加快照</td><td>APPEND</td><td>添加新的数据文件；现有文件保持不变。</td></tr><tr><td>覆盖快照</td><td>UPDATE, SNAPSHOT</td><td>添加和删除数据文件，改变逻辑记录集（包括部分和完全覆盖）。</td></tr><tr><td>删除快照</td><td>DELETE</td><td>删除数据文件或添加删除文件以逻辑上删除行。</td></tr><tr><td>替换快照</td><td><em>(无对应项)</em></td><td>重写数据文件而不改变逻辑内容（例如，压缩）。</td></tr></tbody></table></div>
+<div class="ptcom-design__callout__19o1cwu">
+
+<svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><div class="ptcom-design__title__19o1cwu">Why does a first write appear as an append snapshot?</div><p>A common point of confusion: the <strong>first write to a new Iceberg table</strong> is recorded as an <strong>append snapshot</strong>, even when the intent is to fully replace the table contents. This is expected. When a table is empty, appending data and replacing data are logically equivalent, as there is nothing to overwrite. Iceberg records the operation as an "append" because files were only added and none were removed. The practical implication is that if you see an append snapshot in a table's history for what you expected to be a full load, check whether it was the table's first write. On subsequent full rewrites to a non-empty table, the operation will correctly appear as an overwrite snapshot.</p></div>
+</article>
+</body>
+</html>

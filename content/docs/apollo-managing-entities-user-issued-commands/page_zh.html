@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Issuing commands</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-issuing-commands" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#issuing-commands"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>发出命令</h1>
+<p>Apollo 只有在满足所有 <a href="/docs/apollo/core/entities/">实体</a> 的 <a href="/docs/apollo/core/plans-and-constraints/#constraints">约束条件</a>（如维护窗口和产品依赖）时，才会对它们执行操作。然而，在稳定性事件等紧急情况下，您可以覆盖 Apollo 和/或 Apollo 计划优先级队列施加的约束，尽快执行计划。这是通过 <strong>命令</strong> 实现的。</p>
+<p>当您发出命令时，Apollo 会在该实体上没有其他活动的计划或命令时立即执行请求的操作。如果需要立即执行此操作，您可以为该实体创建一个抑制窗口以中止当前的计划，并且可以按照 <a href="#cancelling-and-aborting-commands">本节稍后所述</a> 中的方法中止当前的命令。</p>
+<p>
+
+执行命令后，Apollo 将继续对实体评估潜在的计划。需要考虑可以与命令一起使用的其他操作，例如 <a href="/docs/apollo/recalling-releases/overview/">召回一个发布</a> 和创建一个抑制窗口。如果没有这些操作，使用命令所做的更改可能会被撤销。例如，如果您在没有召回当前发布或创建实体级别的抑制窗口的情况下执行降级实体的命令，Apollo 可能会在满足所有相关约束条件时重新发出升级该实体的计划。</p>
+<h2 id="user-content-issue-a-command" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#issue-a-command"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>发出命令</h2>
+<p><a href="/docs/apollo/core/authorization/">实体或环境操作员</a> 可以通过导航到实体的主页并从 <strong>操作</strong> 下拉菜单中选择 <strong>执行命令...</strong> 来发出命令。</p>
+<p><img alt="要发出命令，请从操作下拉菜单中选择执行命令选项，然后选择适当的命令类型。" height="295" src="/docs/resources/apollo/managing-entities/execute-command.png" style="aspect-ratio:433 / 295" width="433" node="[object Object]"></p>
+<p>
+
+Apollo 支持三种类型的命令： <strong>安装</strong>、<strong>强制配置</strong> 和 <strong>强制配置并版本化</strong>。选择一个命令将打开一个对话框，您可以在其中提供发出该命令的理由。一旦命令被发出，Apollo 将在所有 <a href="#command-constraints-and-prioritization">必要条件</a> 满足后尽快执行它。您可以在 <strong>实体</strong> 页面的 <strong>命令</strong> 选项卡下监控命令的进度，并查看之前执行过的所有命令。</p>
+<p>每个实体只能有一个挂起或正在执行的命令。在上一个命令终止之前，您不能为该实体发出新命令。</p>
+<h2 id="user-content-command-types" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#command-types"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>命令类型</h2>
+<h3 id="user-content-install" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#install"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>安装</h3>
+<p>此命令适用于显示 <strong>安装待处理</strong> 状态的实体。它将在环境中安装所选的 <strong>目标版本</strong> 的产品。</p>
+<img alt="通过发出安装命令来安装实体的 **目标版本** 。" src="/docs/resources/apollo/managing-entities/install-command.png?width=400" style="aspect-ratio:1014 / 827" width="400" node="[object Object]">
+
+<h3 id="user-content-uninstall" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#uninstall"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>卸载</h3>
+<p>该命令适用于显示<strong>待卸载</strong>状态的已安装实体。它将从环境中卸载实体。</p>
+<p>当您尝试<a href="/docs/apollo/managing-entities/uninstalling-and-unmanaging-entities/#uninstalling-an-entity">卸载一个实体</a>但卸载被约束所阻止时，请使用此命令。发出命令后，Apollo 将覆盖这些约束并强制卸载实体。</p>
+<img alt="通过发出卸载命令从环境中卸载实体。" src="/docs/resources/apollo/managing-entities/uninstall-command.png?width=400" style="aspect-ratio:1030 / 666" width="400" node="[object Object]">
+<h3 id="user-content-enforce-config" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#enforce-config"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>强制配置</h3>
+<p>此命令类型会根据当前运行的版本，将最新的<a href="/docs/apollo/managing-entities/set-config-overrides/">配置覆盖</a>应用到实体。</p>
+<img alt="通过发出**强制配置**命令将最新的配置覆盖应用到实体。" src="/docs/resources/apollo/managing-entities/enforce-config.png?width=400" style="aspect-ratio:1012 / 702" width="400" node="[object Object]">
+<h3 id="user-content-enforce-config-and-version" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#enforce-config-and-version"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>强制配置和版本</h3>
+<p>该命令将根据当前运行的版本，将最新的<a href="/docs/apollo/managing-entities/set-config-overrides/">配置覆盖</a>应用到实体，并更新其版本。</p>
+
+此命令类型会将实体的当前版本更改为所选的<strong>目标版本</strong>，并应用适用于该版本的最新<a href="/docs/apollo/managing-entities/set-config-overrides/">配置覆盖</a>。</p>
+<img alt="通过发出强制配置和版本命令，将实体的版本更改为所选的**目标版本**，并将最新的配置覆盖应用到实体上。" src="/docs/resources/apollo/managing-entities/enforce-config-and-version.png?width=400" style="aspect-ratio:1012 / 882" width="400" node="[object Object]">
+<h3 id="user-content-helm-chart-resource-restart" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#helm-chart-resource-restart"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Helm-Chart：资源重启</h3>
+<p>此命令会对 Helm 图表实体中由 Deployment 或 StatefulSet 控制器管理的所有 Kubernetes ReplicaSets 和 Pods 执行重启操作。此命令类似于 <code>kubectl rollout restart</code>，但通过 Apollo 执行。一旦执行，Kubernetes 将使用定义的滚动更新策略或默认的滚动更新（如果未指定）对控制器管理的所有 Pod 进行更新。</p>
+<p>要重启资源：</p>
+<ol>
+<li>导航到你的 Helm 图表实体的 Kubernetes <strong>资源</strong>视图。</li>
+<li>选择所需的 Deployment 或 StatefulSet 资源，或者点击资源右上角的按钮。</li>
+<li>
+
+选择可用选项中的<strong>重启</strong>操作。</li>
+<li>Apollo 将创建并推荐一个新计划以重新启动资源。</li>
+<li>一旦计划执行，可在<strong>活动</strong>选项卡中监控进度，并在资源视图中观察新 Pod 的创建。</li>
+</ol>
+<p><img alt="Helm 图表资源重启" height="600" src="/docs/resources/apollo/managing-entities/helm-chart-resource-restart.png" style="aspect-ratio:3218 / 1300" width="1485.2307692307693" node="[object Object]"></p>
+<h2 id="user-content-secrets" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#secrets"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Secrets</h2>
+<p>当为支持<a href="/docs/apollo/managing-secrets/overview/">密钥</a>的实体发出命令时，任何待处理的密钥操作都会包含在命令中并在命令规范中可见。这意味着，例如，如果您发出安装产品新版本的命令，并且该实体有待处理的密钥操作，那么该命令也将包括密钥操作。</p>
+<h2 id="user-content-command-execution" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#command-execution"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>命令执行</h2>
+<p>
+
+一旦发出命令，其状态将变为“待处理”，这意味着 Apollo 正在等待满足必要的条件后再执行该命令。通常情况下，命令会短暂地处于“待处理”状态，并会在尽可能早的时机被推荐给代理程序。然而，如果 Apollo 正在进行与该命令冲突的其他工作，则该命令可能无法运行。例如，Apollo 永远不会在一个正处于活动计划目标的实体上运行命令。</p>
+<p>如果您发出的命令被阻止，可以通过悬停在状态中的信息图标上来查看原因。如果您需要紧急执行该命令，可以在相关实体上创建抑制窗口以取消任何冲突的计划。</p>
+<h3 id="user-content-command-constraints-and-prioritization" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#command-constraints-and-prioritization"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>命令约束和优先级</h3>
+<p>
+
+Apollo所做的大部分工作，例如升级和配置更改，都受到一些约束的限制。例如，Apollo只会在维护窗口期间对实体执行升级，并且只会升级处于非错误状态的服务。命令在两个方面具有独特性：</p>
+<ul>
+<li>只要命令不与其他活动计划冲突，Apollo将始终尝试执行它。命令不受适用于计划的任何约束的限制。即使实体有活动的抑制窗口，或者实体不在维护窗口中，Apollo也会执行命令。Apollo还会在不健康的实体和运行已召回版本的实体上执行命令。</li>
+<li>Apollo会优先处理命令而不是计划。如果一个实体既有待处理的命令，又有待处理的升级，Apollo将阻止升级计划并执行该命令。一旦命令完成，计划将被执行。</li>
+</ul>
+<h3 id="user-content-exploring-issued-and-executed-commands" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#exploring-issued-and-executed-commands"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>探索已发出和执行的命令</h3>
+<p>
+
+从实体页面，您可以访问<strong>命令</strong>选项卡，查看过去六个月对此实体执行的所有命令。</p>
+<p><img alt="命令选项卡显示了对此实体执行的所有命令。" height="586" src="/docs/resources/apollo/managing-entities/commands-list.png" style="aspect-ratio:1604 / 586" width="1604" node="[object Object]"></p>
+<p>对于每个命令，将显示以下内容：</p>
+<ul>
+<li>命令的状态。选择该命令将提供额外信息，例如命令失败的原因。</li>
+<li>执行的命令类型。对于“强制配置和版本”命令，还将显示所选的目标版本。</li>
+<li>谁发出了该命令以及发出时间。您可以在问号上悬停以查看该命令发出者提供的理由。</li>
+</ul>
+<h2 id="user-content-cancelling-and-aborting-commands" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#cancelling-and-aborting-commands"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>取消和中止命令</h2>
+<p>任何已发出或正在执行的实体命令都会显示在<strong>命令</strong>选项卡的顶部。</p>
+<p><img alt="当前正在执行的实体命令显示在命令选项卡的顶部。" height="534" src="/docs/resources/apollo/managing-entities/current-command.png" style="aspect-ratio:1856 / 534" width="1856" node="[object Object]"></p>
+<p>
+
+如果你已经发出一个命令，但不再希望它执行，或者它已经开始执行但你想要停止它，你可以取消或中止该命令。如果你在命令开始执行前取消它，该命令将永远不会被推荐给代理。如果你在命令执行过程中中止它，代理将停止执行该命令。Apollo无法保证在你中止一个命令后实体会处于健康状态。然而，Apollo会自动尝试启动任何仍然处于停止状态的节点。</p>
+<p>取消一个计划可能不会立即生效，因为Apollo在没有代理同意的情况下无法终止一个计划。Apollo会通知代理该计划应该被中止，但在代理关闭或无响应的情况下，这可能需要很长时间甚至永远不会发生。</p>
+</article>
+</body>
+</html>

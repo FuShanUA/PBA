@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Time bounded drop duplicates</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-time-bounded-drop-duplicates" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#time-bounded-drop-duplicates"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>时间范围去重</h1>
+<blockquote>
+<p>支持：流处理</p>
+</blockquote>
+<p>从输入中删除给定列子集的重复行，看到的行将在配置的事件时间后过期。比配置的事件时间晚到达的行将始终被删除。按指定的键进行分区。每个去重操作将针对不同的键列值单独计算。</p>
+<p><strong>转换类别</strong>: 其他</p>
+<h2 id="user-content-declared-arguments" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#declared-arguments"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>声明的参数</h2>
+<ul>
+<li><strong>数据集:</strong> 需要去重行的数据集。<br><em>表</em></li>
+<li><strong>键过期时间单位:</strong> 用于等待数据去重的时间量的单位。<br><em>枚举&lt;天, 小时, 毫秒, 分钟, 秒&gt;</em></li>
+<li><strong>键过期时间值:</strong> 用于等待数据去重的时间量的值。<br><em>字面量&lt;长整型&gt;</em></li>
+<li><em>可选</em> <strong>列子集:</strong> 如果指定了任何列，则仅使用这些列来确定唯一性，否则将隐式使用流所基于的键子集来确定唯一性。<br><em>集合&lt;列&lt;任意类型&gt;&gt;</em></li>
+<li>
+
+<em>可选</em> <strong>驱逐窗口滑动:</strong> 驱逐的滚动窗口的值，表示过期状态将被驱逐的频率。当事件时间超过指定的超时时间时，状态被视为过期。在（key_expiry : key_expiry + eviction_slide] 之间将删除重复项，因为最后一次看到重复项。更改此值被认为是状态中断，并需要重新播放。<br><em>Tuple&lt;Literal&lt;Long&gt;, Enum&lt;Days, Hours, Milliseconds, Minutes, Seconds, Weeks&gt;&gt;</em></li>
+<li><em>可选</em> <strong>按列分组:</strong> 用于按键对输入进行分区的列。每个键值的重复项将分别并行计算。<br><em>Set&lt;Column&lt;Binary | Boolean | Byte | Double | Float | Integer | Long | Short | String | Timestamp&gt;&gt;</em></li>
+</ul>
+<h2 id="user-content-examples" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#examples"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>示例</h2>
+<h3 id="user-content-example-1-base-case" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#example-1-base-case"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>示例 1：基本用法</h3>
+<p>
+
+<strong>描述:</strong> 在 00:00:00 的第一条记录被发出，其状态在由驱逐窗口滑动（默认为 1 分钟）确定的下一个滚动窗口边界处安排驱逐。尽管配置的超时时间为 10 秒，但 00:00:09、00:00:18 和 00:00:28 的后续记录都被作为重复项丢弃，因为水印没有前进到足以触发驱逐计时器的程度。在键过期和键过期加上驱逐窗口滑动之间丢弃重复项。</p>
+<p><strong>参数值：</strong></p>
+<ul>
+<li><strong>数据集：</strong> ri.foundry.main.dataset.test</li>
+<li><strong>键过期时间单位：</strong> <code>SECONDS</code></li>
+<li><strong>键过期时间值：</strong> 10</li>
+<li><strong>列子集：</strong> <em>null</em></li>
+<li><strong>驱逐窗口滑动：</strong> <em>null</em></li>
+<li><strong>按列分组：</strong> <em>null</em></li>
+</ul>
+<p><strong>输入：</strong></p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>row_order</th><th>day</th><th>temperature</th><th>measurement_timestamp</th></tr></thead><tbody><tr><td>4</td><td>Monday</td><td>10.4</td><td>2024-09-30T00:00:28</td></tr><tr><td>3</td><td>Monday</td><td>10.3</td><td>2024-09-30T00:00:18</td></tr><tr><td>2</td><td>Monday</td><td>10.2</td><td>2024-09-30T00:00:09</td></tr><tr><td>1</td><td>Monday</td><td>10.1</td><td>2024-09-30T00:00:00</td></tr></tbody></table></div>
+<p><strong>输出：</strong></p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>day</th><th>temperature</th><th>measurement_timestamp</th></tr></thead><tbody><tr><td>Monday</td><td>10.1</td><td>2024-09-30T00:00:00</td></tr></tbody></table></div>
+<hr>
+<h3 id="user-content-example-2-base-case" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#example-2-base-case"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>示例 2：基本情况</h3>
+<p>
+
+<strong>描述:</strong> 通过按天列进行去重，每个键保持独立状态。周一00:00:20的第一条记录被发出并推进水位线。周二00:00:05的记录被丢弃，因为它到达太晚：其事件时间加上10秒超时（00:00:15）落后于水位线（约00:00:20）。即使周二没有之前的记录也会发生这种情况。周三00:00:25的记录不晚，并作为该键的第一条记录发出。</p>
+<p><strong>参数值：</strong></p>
+<ul>
+<li><strong>数据集：</strong> ri.foundry.main.dataset.test</li>
+<li><strong>键过期时间单位：</strong> <code>SECONDS</code></li>
+<li><strong>键过期时间值：</strong> 10</li>
+<li><strong>列子集：</strong> <em>null</em></li>
+<li><strong>驱逐窗口滑动：</strong> <em>null</em></li>
+<li><strong>按列分组：</strong> {<code>day</code>}</li>
+</ul>
+<p><strong>输入：</strong></p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>row_order</th><th>day</th><th>temperature</th><th>measurement_timestamp</th></tr></thead><tbody><tr><td>3</td><td>Wednesday</td><td>22.1</td><td>2024-09-30T00:00:25</td></tr><tr><td>2</td><td>Tuesday</td><td>18.3</td><td>2024-09-30T00:00:05</td></tr><tr><td>1</td><td>Monday</td><td>20.5</td><td>2024-09-30T00:00:20</td></tr></tbody></table></div>
+<p><strong>输出：</strong></p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>day</th><th>temperature</th><th>measurement_timestamp</th></tr></thead><tbody><tr><td>Monday</td><td>20.5</td><td>2024-09-30T00:00:20</td></tr><tr><td>Wednesday</td><td>22.1</td><td>2024-09-30T00:00:25</td></tr></tbody></table></div>
+<hr>
+</article>
+</body>
+</html>

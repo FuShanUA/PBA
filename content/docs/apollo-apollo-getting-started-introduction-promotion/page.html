@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Create a Release promotion pipeline</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-create-a-release-promotion-pipeline" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#create-a-release-promotion-pipeline"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Create a Release promotion pipeline</h1>
+<p>Software promotion is a common DevOps concept. In Apollo, <a href="/docs/apollo/core/authorization/">Release Channel contributors</a> add Product Releases to Environments using <a href="/docs/apollo/core/release-channels/">Release Channels</a>. Products can be automatically or manually promoted to these channels once defined criteria are met. Environment editors then subscribe their Environment to a Release Channel to receive Product Releases according to their risk tolerance and feature appetite.</p>
+<p>In Apollo, a Release promotion pipeline defines how Releases of your Product should be promoted from one Release Channel to another and the criteria that must be satisfied at each promotion stage. This enables automated, stable rollout of new Releases across your Environments.</p>
+<p>In this task you will create a two-stage <code>RELEASE → STABLE</code> pipeline and define basic promotion criteria. You will then subscribe your Environments to receive Product Release upgrades from one of these channels.</p>
+<p>For information on Apollo's default Release Channels and how it uses Product version strings to determine a Release's default channel, read the following documentation entries:</p>
+<ul>
+<li><a href="/docs/apollo/core/release-channels/#default-release-channels">Default Release Channels</a></li>
+<li><a href="/docs/apollo/apollo-product-specification/product-versions/">Product version specification</a></li>
+</ul>
+<h2 id="user-content-create-a-new-stable-release-channel" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#create-a-new-stable-release-channel"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Create a new STABLE Release Channel</h2>
+<ol>
+<li>Select <strong>Settings</strong> from the left sidebar.</li>
+<li>Navigate to the <strong>Release channels</strong> tab and then select <strong>Create release channel</strong>.</li>
+<li>In the <strong>Details</strong> tab, name the Release Channel <code>STABLE</code> and enter a description, for example "Releases ready for production". Then select <strong>Next</strong>.</li>
+<li>In the <strong>Requirements</strong> tab, you can set label requirements for your Release Channel. You will not set any label requirements in this task, but you can learn more about labels in the <a href="/docs/apollo/managing-labels/overview/">Apollo documentation</a>. Some examples of label requirements include ensuring security scans pass, verifying that container images exist, and confirming a certain telemetry value is true.</li>
+<li>In the <strong>Permissions</strong> tab, you can specify which teams can use or administer the channel. You can leave the defaults for now and select <strong>Create channel</strong>.</li>
+</ol>
+<h2 id="user-content-set-up-your-pipeline" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#set-up-your-pipeline"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Set up your pipeline</h2>
+<ol>
+<li>Navigate to the Product page for either your Helm chart or Nginx. Note the <code>Not configured</code> status in the <strong>Promotion pipeline</strong> block.</li>
+<li>Select <strong>Edit</strong> in the <strong>Promotion pipeline</strong> block.</li>
+<li>Select <strong>Add stage</strong> to add a promotion stage. Enter <code>RELEASE</code> for the source channel and <code>STABLE</code> for the target channel. Then enter the following settings. You can hover over the field labels to learn more.
+<ul>
+<li><strong>Test environments</strong>: Leave blank</li>
+<li><strong>Soak time</strong>: 1 hour</li>
+<li><strong>Promotion threshold</strong>: 1</li>
+<li><strong>Recall threshold</strong>: 1</li>
+<li><strong>Soak ratio</strong>: 0.95</li>
+</ul>
+</li>
+<li>Select <strong>Confirm</strong> when you are finished.</li>
+</ol>
+<h2 id="user-content-test-your-promotion-pipeline" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#test-your-promotion-pipeline"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Test your promotion pipeline</h2>
+<p>If you have connected more than one Environment, you can set one to receive Releases of a Product on <code>RELEASE</code> and another to receive them on <code>STABLE</code>. Before Apollo promotes the Release from <code>RELEASE</code> to <code>STABLE</code>, it will evaluate a Release according to the promotion evaluation requirements that you defined in the previous section.</p>
+<p>If you connected a single Spoke Environment, use the directions below to subscribe it to the <code>RELEASE</code> channel.</p>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>It is rare that an Apollo Hub will have only a single connected Environment. In these cases, there may not be a need for Release promotion pipeline because there would be no test environments for promotion evaluation.</p></div>
+<p>Before continuing, note that you can set and change the default Release Channel for your Environment by:</p>
+<ol>
+<li>Opening one of your connected Environments.</li>
+<li>Selecting <strong>Set default release channel...</strong> from the <strong>Actions</strong> dropdown.</li>
+<li>Selecting a default Release Channel from the dropdown.</li>
+</ol>
+<p>All of the installations of Products in your Environment, called "Entities", will now receive Release upgrades from the default Release Channel. You can specify a different channel for and Entity is a Product is not available on the default channel or you want to encode a different risk tolerance for the installation.</p>
+<p>If you have connected more than one Environment, you can follow the below steps to test your pipeline.</p>
+<ol>
+<li>Navigate to the Environment page for one of your Environments, which we will refer to as <code>Environment 1</code>.</li>
+<li>Find either your Product or Nginx in the <strong>Entities</strong> tab.</li>
+<li>The value in the <strong>CHANNEL</strong> column should be <code>RELEASE</code>; <code>Environment 1</code> is already subscribed to receive Releases from the <code>RELEASE</code> channel.</li>
+<li>Navigate to the Environment page for a different Environment,  which we will refer to as <code>Environment 2</code>. Locate your Product or Nginx in the <strong>Entities</strong> tab. The value in the <strong>CHANNEL</strong> column is likely to be <code>RELEASE</code>, because that is the default channel for this Environment.
+We will change the Release Channel for this Entity to <code>STABLE</code>.</li>
+<li>Select the Product, yours or Nginx, in the <strong>Entities</strong> table to open the <strong>Nginx on ${environmentName}</strong> Entity page.</li>
+<li>Select <strong>Set default release channel...</strong> from the <strong>Actions</strong> dropdown.</li>
+<li>Change the value from <code>RELEASE</code> to <code>STABLE</code> and select <strong>Change channel</strong>.</li>
+<li>Return to the <strong>Entities</strong> tab for <code>Environment 2</code>. You may need to refresh your browser. Confirm that the value in the <strong>CHANNEL</strong> column for your Product or Nginx is now <code>STABLE</code>.</li>
+</ol>
+<p>Now you can watch your promotion pipeline in action. Create a new Release of the your Product or the Nginx Product using the steps you followed previously. Be sure to use lowercase for the Product and Helm chart names in the config.</p>
+<p>You should also increment the version appropriately. For example, if your latest Release was <code>13.1.5</code>, set the new version to <code>13.1.6</code>. You can consult <a href="https://artifacthub.io/packages/helm/bitnami/nginx">Artifact Hub ↗</a> for available Nginx Helm chart versions.</p>
+<p>Apollo will automatically install the new Release on <code>Environment 1</code>, because the Environment is subscribed to receive new versions of your Product on the <code>RELEASE</code> channel. Apollo will promote the Release to the <code>STABLE</code> channel and install the new version <code>Environment 2</code> only after the Release has been evaluated on <code>Environment 1</code>.</p>
+<p>You can monitor promotion progress by opening the page for your new Release.</p>
+<p><img alt="Promotion pipeline during the adjudication process" height="600" src="/docs/resources/apollo/apollo-getting-started/intro_promotion.png" style="aspect-ratio:2108 / 1336" width="946.7065868263472" node="[object Object]"></p>
+<p>Note that each release stage indicates <code>1 total entity</code>, meaning one Environment is subscribed to each channel. After the configured one hour of successful soak time, the Release will automatically promote to <code>STABLE</code> and only then will Apollo install the Release on <code>Environment 2</code>.</p>
+<p>You can repeat this process for any other Helm charts you may have added to the Product catalog.</p>
+<p><strong>Next → <a href="/docs/apollo/apollo-getting-started/introduction-maintenance/">Set Product and Environment maintenance windows</a></strong></p>
+</article>
+</body>
+</html>

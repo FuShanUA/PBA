@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ontology design: Anti-patterns</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-ontology-design-anti-patterns" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#ontology-design-anti-patterns"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>本体论设计：反模式</h1>
+<p>即使是经验丰富的本体论设计师，也可能陷入一些常见的设计陷阱，这些陷阱在最初似乎合理，但随着本体论的增长会带来严重的问题。本节将识别常见的反模式，解释它们为何出现，并提供具体的指导建议以避免或解决这些问题。</p>
+<p>避免这些反模式将有助于您构建一个准确反映您业务领域的本体论，减少维护开销，并实现强大的跨功能工作流。</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5">
+
+<table><thead><tr><th>反模式</th><th>描述</th><th>解决方案</th></tr></thead><tbody><tr><td><a href="#anti-pattern-system-silos">系统孤岛</a></td><td>为每个源系统创建单独的对象类型。</td><td>在管道中合并数据；创建统一的对象类型。</td></tr><tr><td><a href="#anti-pattern-the-kitchen-sink">厨房水槽</a></td><td>包括不必要的技术列作为属性。</td><td>有意识地整理属性；排除ETL元数据。</td></tr><tr><td><a href="#anti-pattern-department-silos">部门孤岛</a></td><td>每个部门都创建共享实体的自己版本。</td><td>创建共享的对象类型；使用属性和链接来处理部门特定的数据。</td></tr><tr><td><a href="#anti-pattern-the-god-object">上帝对象</a></td><td>一个对象类型代表多个不同的实体。</td><td>创建不同的对象类型；使用接口表示共享特征。</td></tr><tr><td><a href="#anti-pattern-the-golden-hammer">黄金锤子</a></td><td>过于依赖单一工具（例如操作类型、管道或函数）解决所有问题，而不是选择合适的功能。</td><td>根据任务匹配工具：批量或流式管道用于数据处理，操作用于人工决策，自动化用于事件驱动的反应，函数用于复杂的实时逻辑。</td></tr><tr><td><a href="#anti-pattern-action-sprawl">操作泛滥</a></td><td>创建许多单属性操作，而不是连贯的业务操作。</td><td>围绕业务操作设计操作，将相关更改打包成有意义的工作流程。</td></tr><tr><td><a href="#anti-pattern-the-time-machine">时间机器</a></td><td>将历史版本建模为单独的对象或对象类型。</td><td>对每个实体使用一个对象，通过链接的历史/修订对象和时间序列属性进行管理。</td></tr><tr><td><a href="#anti-pattern-the-misnomer">误称</a></td><td>对本体论元素使用模糊、通用或误导性的名称。</td><td>使用具体、描述性的名称；对含糊的属性进行限定；根据关系命名链接。</td></tr></tbody></table></div>
+<h2 id="user-content-anti-pattern-system-silos" level="2" node="[object Object]" data-pagefind-weight="0.9">
+
+<a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#anti-pattern-system-silos"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Anti-pattern: System Silos</h2>
+<p>System Silos occur when you create separate object types for the same real-world entity based on the source system the data originates from, rather than modeling the entity itself.</p>
+<h3 id="user-content-common-causes" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#common-causes"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Common causes</h3>
+<ul>
+<li>Different teams own different source systems and build independently</li>
+<li>Uncertainty about how to merge data from multiple sources</li>
+<li>Desire to preserve system-specific fields without deciding what's essential</li>
+</ul>
+<h3 id="user-content-example" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#example"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Example</h3>
+<p>Your organization has employee data in three systems: an HR system, a badge access system, and a project management tool. Instead of creating a single <code>Employee</code> object type, you create:</p>
+<ul>
+<li><code>HR System Employee</code></li>
+<li><code>Badge System Employee</code></li>
+<li><code>Project Management Employee</code></li>
+</ul>
+<h3 id="user-content-problems" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#problems"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Problems</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>Problem</th><th>Impact</th></tr></thead><tbody><tr><td>Fragmented view of reality</td><td>End users cannot see a unified view of an employee; they must navigate multiple object types to understand the full picture.</td></tr><tr><td>Duplicated effort</td><td>Action types, link types, and applications must be built multiple times for what is conceptually the same entity.</td></tr><tr><td>Inconsistent data</td><td>The same employee may have conflicting information across object types with no clear source of truth.</td></tr><tr><td>Complex maintenance</td><td>Changes to business logic must be replicated across all system-specific object types.</td></tr></tbody></table></div>
+<h3 id="user-content-solution" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#solution"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Solution</h3>
+<p>Create a single object type representing the real-world entity and use data pipelines to merge information from multiple source systems into a unified backing dataset.</p>
+<pre><code>✗ Avoid                          ✓ Prefer
+─────────────────────────────    ─────────────────────────────
+HR System Employee               Employee
+Badge System Employee         →  (backed by merged dataset
+Project Management Employee      from all three systems)
+</code></pre>
+<p>To implement this:</p>
+<ol>
+<li>Identify the primary key that uniquely identifies the entity across systems (for example, employee ID).</li>
+<li>Build a transform that joins data from all source systems.</li>
+<li>Define clear precedence rules for conflicting values (for example, HR system is authoritative for job title).</li>
+<li>
+
+Create a single object type backed by the merged dataset.</li>
+</ol>
+<hr>
+<h2 id="user-content-anti-pattern-the-kitchen-sink" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#anti-pattern-the-kitchen-sink"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Anti-pattern: The Kitchen Sink</h2>
+<p>This anti-pattern (also known as "everything but the kitchen sink") occurs when object types include unnecessary columns from external systems that have no business relevance in the Ontology context, cluttering the data model with technical artifacts.</p>
+<h3 id="user-content-common-causes-1" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#common-causes-1"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Common causes</h3>
+<ul>
+<li>"Just in case" mentality (keeping fields that might be useful later)</li>
+<li>Lack of clarity on what fields are meaningful</li>
+<li>Direct mapping from source systems without curation</li>
+<li>Fear of losing data by excluding columns</li>
+</ul>
+<h3 id="user-content-example-1" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#example-1"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Example</h3>
+<p>When creating a <code>Customer</code> object type from a CRM system integration, you include all available columns:</p>
+<ul>
+<li>customer_id ✓</li>
+<li>customer_name ✓</li>
+<li>email ✓</li>
+<li>_crm_extracted_at ✗</li>
+<li>_crm_received_at ✗</li>
+<li>_crm_batched_at ✗</li>
+
+
+<li>_crm_sequence ✗</li>
+<li>_crm_table_version ✗</li>
+<li>_crm_internal_record_id ✗</li>
+<li>last_etl_update_timestamp ✗</li>
+</ul>
+<h3 id="user-content-problems-1" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#problems-1"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Problems</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>Problem</th><th>Impact</th></tr></thead><tbody><tr><td>Confusion</td><td>End users see irrelevant technical fields alongside business data.</td></tr><tr><td>Performance degradation</td><td>Unnecessary properties increase data scale, compute, index size, and slow down searches.</td></tr><tr><td>Obscured insights</td><td>Important business properties are buried among system metadata.</td></tr></tbody></table></div>
+<h3 id="user-content-solution-1" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#solution-1"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Solution</h3>
+<p>Curate properties intentionally. Only include columns that have clear business meaning and will be useful for workflows.</p>
+<p>Use these guidelines when deciding which properties to include:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>Include</th><th>Exclude</th></tr></thead><tbody><tr><td>Business identifiers (customer ID, order number)</td><td>Pipeline metadata</td></tr><tr><td>Human-readable attributes (name, description)</td><td>Internal system IDs with no business meaning</td></tr><tr><td>Dates relevant to business processes</td><td>Timestamps only relevant to data engineering</td></tr><tr><td>Status fields needed for filtering or actions</td><td>Audit columns for pipeline debugging</td></tr></tbody></table></div>
+<p>To implement this:</p>
+<ol>
+<li>Review each column and ask: "Would someone ever need to see, search, or filter by this?"</li>
+<li>Keep technical metadata in the backing dataset for debugging, but do not expose it as properties.</li>
+<li>
+
+Use property visibility settings to hide any borderline properties that must exist but are rarely needed.</li>
+<li>Document why each property exists and who uses it.</li>
+</ol>
+<hr>
+<h2 id="user-content-anti-pattern-department-silos" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#anti-pattern-department-silos"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Anti-pattern: Department Silos</h2>
+<p>Department Silos occur when different departments create their own versions of the same object type, leading to a fragmented Ontology that mirrors organizational structure rather than business reality.</p>
+<h3 id="user-content-common-causes-2" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#common-causes-2"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Common causes</h3>
+<ul>
+<li>Departments work in isolation without cross-functional coordination</li>
+<li>Each team believes their view of the customer is unique</li>
+<li>Lack of governance or central Ontology design authority</li>
+<li>Teams want autonomy and control over "their" data</li>
+</ul>
+<h3 id="user-content-example-2" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#example-2"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Example</h3>
+<p>Multiple departments need to work with customer data, and each creates their own object type:</p>
+<ul>
+<li>Sales team creates <code>Sales Customer</code></li>
+<li>Support team creates <code>Support Customer</code></li>
+
+
+<li>Finance team creates <code>Billing Customer</code></li>
+<li>Marketing team creates <code>Marketing Contact</code></li>
+</ul>
+<p>All four object types represent the same real-world entity: a customer.</p>
+<h3 id="user-content-problems-2" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#problems-2"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Problems</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>Problem</th><th>Impact</th></tr></thead><tbody><tr><td>No single source of truth</td><td>Different departments have conflicting information about the same customer.</td></tr><tr><td>Impossible cross-functional workflows</td><td>Cannot easily answer questions like "Show me all interactions with this customer across sales, support, and billing".</td></tr><tr><td>Duplicated development</td><td>Each department builds redundant actions, links, and applications.</td></tr><tr><td>Governance nightmare</td><td>Data quality issues multiply; fixes in one object type do not propagate to others.</td></tr></tbody></table></div>
+<h3 id="user-content-solution-2" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#solution-2"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Solution</h3>
+<p>Create shared object types that serve multiple departments, using properties and links to capture department-specific information where needed.</p>
+<pre><code>✗ Avoid                          ✓ Prefer
+─────────────────────────────    ─────────────────────────────
+Sales Customer                   Customer
+Support Customer           →       ├── salesStatus (property)
+Billing Customer                   ├── supportTier (property)
+Marketing Contact                  ├── billingAccountId (property)
+                                   └── Links to:
+                                       ├── Sales Opportunities
+                                       ├── Support Tickets
+                                       └── Invoices
+</code></pre>
+<p>To implement this:</p>
+<ol>
+<li>Identify entities that exist across departmental boundaries.</li>
+<li>
+
+Establish a cross-functional working group to define shared object types.</li>
+<li>Use properties to capture department-specific attributes on shared objects.</li>
+<li>Use link types to connect shared objects to department-specific objects (such as <code>Customer</code> → <code>Support Ticket</code>).</li>
+<li>Leverage object views or curated Workshop and OSDK applications if departments need different "views" of the same underlying entity.</li>
+<li>Use restricted views if specific properties can only be accessible by a specific team.</li>
+</ol>
+<hr>
+<h2 id="user-content-anti-pattern-the-god-object" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#anti-pattern-the-god-object"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Anti-pattern: The God Object</h2>
+<p>The God Object anti-pattern occurs when a single object type is overloaded to represent multiple distinct real-world entities, resulting in a bloated, confusing, and unmaintainable object type.</p>
+<h3 id="user-content-common-causes-3" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#common-causes-3"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Common causes</h3>
+<ul>
+<li>Over-abstraction driven by superficial similarities ("they are all assets")</li>
+<li>Desire to minimize the number of object types</li>
+<li>Lack of clear entity definitions before building</li>
+<li>Scope creep as more use cases are added to an existing object type</li>
+</ul>
+
+
+<h3 id="user-content-indicators" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#indicators"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Indicators</h3>
+<ul>
+<li>An object type has many properties that are frequently null</li>
+<li>Property meanings change based on another property's value (such as type or category)</li>
+<li>You find yourself asking "What kind of <code>[Object]</code> is this?" when viewing an object</li>
+<li>Business rules and validations require extensive conditional logic based on object "type"</li>
+</ul>
+<h3 id="user-content-example-3" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#example-3"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Example</h3>
+<p>You create an <code>Asset</code> object type intended to represent "anything valuable," which ends up including:</p>
+<ul>
+<li>Physical equipment (trucks, machinery)</li>
+<li>Software licenses</li>
+<li>Real estate properties</li>
+<li>Financial instruments</li>
+<li>Employees (as "human assets")</li>
+</ul>
+<p>The object type has 150+ properties, most of which are null for any given object, and the meaning of properties like value, location, and status varies completely depending on what kind of "asset" the object represents.</p>
+<h3 id="user-content-problems-3" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#problems-3"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Problems</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>Problem</th><th>Impact</th></tr></thead><tbody><tr><td>Semantic confusion</td><td>End users cannot understand what an <code>Asset</code> actually represents.</td></tr><tr><td>Sparse data</td><td>Most properties are null for most objects, making the data hard to interpret.</td></tr><tr><td>Impossible validation</td><td>Cannot enforce business rules because rules differ by entity type.</td></tr><tr><td>Poor search experience</td><td>Searching for <code>Assets</code> returns a mix of unrelated things.</td></tr><tr><td>Action type complexity</td><td>Actions must handle wildly different entity types with complex conditional logic.</td></tr></tbody></table></div>
+<h3 id="user-content-solution-3" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#solution-3"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Solution</h3>
+<p>Create distinct object types for distinct real-world entities. Use interfaces to model shared characteristics when entities genuinely share common properties or behaviors.</p>
+<pre><code>✗ Avoid                          ✓ Prefer
+─────────────────────────────    ─────────────────────────────
+Asset                            Equipment
+  - assetType                    Vehicle
+  - assetSubtype                 Software License
+  - value                  →     Property (Real Estate)
+  - location                     Financial Instrument
+  - status
+  - 145 more properties...       Interface: Depreciable Asset
+                                   - purchaseDate
+                                   - purchaseValue
+                                   - depreciationSchedule
+</code></pre>
+<p>To implement this:</p>
+<ol>
+<li>List the distinct real-world entities currently represented by the object type.</li>
+<li>Create separate object types for each distinct entity.</li>
+<li>Identify genuinely shared properties and behaviors.</li>
+<li>Use interfaces to model shared characteristics across object types.</li>
+<li>Migrate existing objects to appropriate new object types.</li>
+</ol>
+
+
+<hr>
+<h2 id="user-content-anti-pattern-the-golden-hammer" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#anti-pattern-the-golden-hammer"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Anti-pattern: The Golden Hammer</h2>
+<p>The Golden Hammer anti-pattern occurs when you rely too heavily on a single tool to solve every problem, even when other approaches are more appropriate. The name comes from the saying: <a href="https://en.wikipedia.org/wiki/Law_of_the_instrument">"If all you have is a hammer, everything looks like a nail" ↗</a>.</p>
+<p>This anti-pattern manifests in the overuse of action types in work better suited for pipelines, building pipelines for logic that should be event-driven automations, or writing functions for calculations that are better pre-computed in a transform.</p>
+<h3 id="user-content-common-causes-4" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#common-causes-4"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Common causes</h3>
+<ul>
+<li>Overreliance on a tool due to familiarity and visibility within the team</li>
+<li>Desire to give end users "control" over when computations happen</li>
+<li>Lack of familiarity with the full platform (including pipelines, automations, functions, and scheduled builds)</li>
+<li>Thinking exclusively in one layer (Ontology-first, pipeline-first, or code-first) without considering the full toolkit</li>
+</ul>
+
+
+<h3 id="user-content-examples" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#examples"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Examples</h3>
+<p><strong>Overreliance on action types:</strong></p>
+<p>You need to calculate aggregate metrics for a dashboard showing total sales by region. Instead of using a data pipeline to pre-compute these metrics, you create an action type called <code>Calculate Regional Sales Totals</code> that end users must manually trigger. Results are written back to objects via the action.</p>
+<p><strong>Overreliance on pipelines:</strong></p>
+<p>An alert object is created by a pipeline when sensor readings exceed a threshold. You want to automatically assign that alert to the on-call engineer and send a notification. Instead of using an automation that reacts to the new object, you build additional pipeline logic that tries to resolve the assignee and write the assignment into the backing dataset, mixing operational workflow logic into data integration.</p>
+<p><strong>Overreliance on functions:</strong></p>
+<p>You implement a simple property derivation like <code>fullName</code> = <code>firstName</code> + <code>lastName</code> as a function-backed column, adding runtime overhead and a code repository to maintain, when a single pipeline <code>concat</code> expression would suffice.</p>
+<h3 id="user-content-problems-4" level="3" node="[object Object]" data-pagefind-weight="0.8">
+
+<a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#problems-4"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Problems</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>Problem</th><th>Impact</th></tr></thead><tbody><tr><td>Scalability limits</td><td>Each tool has different execution limits; using the wrong one hits ceilings early.</td></tr><tr><td>Unnecessary complexity</td><td>Maintaining logic in the wrong layer increases the number of moving parts.</td></tr><tr><td>User burden</td><td>End users must perform steps that the platform could handle automatically.</td></tr><tr><td>Performance issues</td><td>Real-time calculations via actions or functions are slower than pre-computed pipeline results. Conversely, scheduled pipelines are too slow for event-driven reactions.</td></tr><tr><td>Difficult debugging</td><td>When logic lives in the wrong layer, failures are harder to diagnose and resolve.</td></tr></tbody></table></div>
+<h3 id="user-content-solution-4" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#solution-4"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Solution</h3>
+<p>Choose the right tool for the job based on your use case:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5">
+
+<table><thead><tr><th>Tool</th><th>Best for</th><th>Not ideal for</th></tr></thead><tbody><tr><td>Action types</td><td>Human decisions, user-initiated edits to one or a few objects, input-driven changes that should apply immediately.</td><td>Batch calculations, scheduled updates, event-driven reactions with no human involvement.</td></tr><tr><td>Pipelines (batch)</td><td>Batch data processing, aggregations, cleansing, enrichment, pre-computing derived values on a schedule or on data arrival.</td><td>Real-time reactions to individual object changes, logic that requires human input.</td></tr><tr><td>Pipelines (streaming)</td><td>Continuous, low-latency data processing where results must stay current as source data arrives (real-time dashboards, live status tracking, continuous enrichment).</td><td>Infrequent updates where batch is sufficient, logic that requires human input, reacting to Ontology-level events (use automations).</td></tr><tr><td>Automations</td><td>Event-driven reactions to Ontology changes (object created, property updated, schedule triggered), orchestrating actions or notifications without user involvement.</td><td>Heavy data processing, complex multi-dataset joins, logic that requires human judgment.</td></tr><tr><td>Functions</td><td>Complex real-time computations across multiple objects, validation logic, derived values that depend on live Ontology state and cannot be pre-computed.</td><td>Simple derivations computable in a pipeline, batch processing of large datasets.</td></tr><tr><td>Schedules</td><td>Recurring pipeline builds, time-based or event-based orchestration of data refresh.</td><td>Reacting to individual object-level changes in real time.</td></tr></tbody></table></div>
+<p>Examples of applying this guidance:</p>
+<pre>
+
+<code>✗ Avoid                                          ✓ Prefer
+──────────────────────────────────────────────   ──────────────────────────────────────────────
+Action: "Calculate Regional Sales"          →    Pipeline that aggregates sales data daily
+                                                 into a "Regional Sales Summary" object type.
+
+Action: "Standardize Address Format"        →    Pipeline that cleanses addresses on ingestion.
+
+Action: "Update Inventory Status"           →    Pipeline that sets status based on quantity
+(based on quantity thresholds)                   thresholds during each sync.
+
+Action: "Assign Risk Score"                 →    Pipeline or model that calculates risk scores
+(using a formula)                                and writes to the backing dataset.
+
+Pipeline that assigns alerts to on-call     →    Automation that triggers an "Assign Alert"
+engineers by writing to the backing dataset      action when a new "Alert" object is created.
+
+Pipeline that sends a notification when     →    Automation that monitors for the condition
+an object meets a condition                      and sends a notification or triggers an action.
+
+Batch pipeline polling every minute for     →    Streaming pipeline that continuously processes
+new IoT sensor readings                          sensor data as it arrives.
+
+Function-backed column for                  →    Pipeline that computes fullName = firstName
+fullName = firstName + " " + lastName         + " " + lastName in the backing dataset.
+
+Scheduled pipeline running every minute     →    Automation that reacts to the specific object
+to check for objects needing follow-up           change and triggers the follow-up immediately.
+</code></pre>
+
+
+<p>To implement this:</p>
+<ol>
+<li><strong>Before creating an action type</strong>, ask: "Does this require human judgment or user input?" If not, it likely belongs in a pipeline or automation.</li>
+<li><strong>Before adding logic to a pipeline</strong>, ask: "Is this a data transformation, or is it an operational workflow?" Data cleansing, aggregation, and enrichment belong in pipelines. Assigning work, sending notifications, and reacting to individual changes belong in automations.</li>
+<li><strong>Before writing a function</strong>, ask: "Can this be pre-computed in the backing pipeline?" If the result only depends on source data columns and does not need live Ontology traversal, compute it upstream.</li>
+<li><strong>Before building a polling pipeline</strong> (running every N minutes to detect changes), ask: "Can an automation react to this event directly?" Automations respond to Ontology changes in near-real-time without the overhead of scheduled builds. If the need is for continuous data processing from a source system, consider a streaming pipeline instead.</li>
+<li><strong>Before defaulting to a batch pipeline</strong>, ask: "Does this data need to be continuously current?" If consumers depend on low-latency freshness, a streaming pipeline avoids the compromise of a batch schedule.</li>
+<li>
+
+<strong>Use automations</strong> to bridge the gap between "something changed" and "something should happen", without requiring a user to click a button or poll a pipeline.</li>
+</ol>
+<hr>
+<h2 id="user-content-anti-pattern-action-sprawl" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#anti-pattern-action-sprawl"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Anti-pattern: Action Sprawl</h2>
+<p>Action Sprawl occurs when you create many narrowly-scoped action types that each modify a single property, rather than designing cohesive actions that represent meaningful business operations.</p>
+<h3 id="user-content-common-causes-5" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#common-causes-5"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Common causes</h3>
+<ul>
+<li>Thinking of actions as database column updates rather than business operations</li>
+<li>Building actions incrementally without considering the overall user experience</li>
+<li>Lack of understanding of how actions can bundle multiple property changes</li>
+<li>Mimicking CRUD operations from traditional application development</li>
+</ul>
+<h3 id="user-content-indicators-1" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#indicators-1"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Indicators</h3>
+<ul>
+<li>More than 10 action types for a single object type</li>
+<li>Multiple actions that are always performed in sequence</li>
+<li>
+
+Action names that read like <code>Set [Property]</code> or <code>Update [Property]</code></li>
+<li>End users complaining about too many steps to complete a task</li>
+</ul>
+<h3 id="user-content-example-4" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#example-4"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Example</h3>
+<p>For an <code>Employee</code> object type, instead of creating meaningful business actions, you create:</p>
+<ul>
+<li><code>Update Employee First Name</code></li>
+<li><code>Update Employee Last Name</code></li>
+<li><code>Update Employee Email</code></li>
+<li><code>Update Employee Phone</code></li>
+<li><code>Update Employee Department</code></li>
+<li><code>Update Employee Manager</code></li>
+<li>...and 20 more single-property actions</li>
+</ul>
+<h3 id="user-content-problems-5" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#problems-5"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Problems</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>Problem</th><th>Impact</th></tr></thead><tbody><tr><td>Overwhelming experience</td><td>End users face a long, cluttered list of actions and struggle to find the right one.</td></tr><tr><td>Fragmented workflows</td><td>Simple updates require multiple action submissions to complete a single business task.</td></tr><tr><td>No cohesive business representation</td><td>Actions do not map to real-world processes, making the Ontology unintuitive.</td></tr><tr><td>Fragmented audit trails</td><td>History of changes is scattered across many small actions, making it difficult to understand what happened and why.</td></tr></tbody></table></div>
+<h3 id="user-content-solution-5" level="3" node="[object Object]" data-pagefind-weight="0.8">
+
+<a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#solution-5"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Solution</h3>
+<p>Design action types around business operations, not database updates. Create actions that bundle related changes into meaningful workflows.</p>
+<pre><code>✗ Avoid                                    ✓ Prefer
+────────────────────────────────────────   ────────────────────────────────────────
+Update Employee First Name                 Update Employee Contact Information
+Update Employee Last Name            →       - firstName
+Update Employee Email                        - lastName
+Update Employee Phone                        - email
+                                             - phone
+
+Update Employee Department                 Transfer Employee to New Department
+Update Employee Manager              →       - newDepartment
+Update Employee Location                     - newManager
+                                             - newLocation
+                                             - effectiveDate
+
+Create Employee Record                     Onboard New Employee
+Set Employee Start Date              →       - All required fields for a new hire
+Assign Employee Badge                        - Triggers downstream workflows
+Assign Employee Equipment                    (badge assignment, equipment request)
+</code></pre>
+<p>To implement this:</p>
+<ol>
+<li>Map out the real business processes that involve changing object data.</li>
+<li>Group related property changes into single actions that represent those processes.</li>
+<li>Use action parameters to allow optional fields within a cohesive action.</li>
+<li>Name actions after the business operation: <code>Transfer Employee</code>, <code>Approve Purchase Order</code>, <code>Escalate Support Ticket</code>.</li>
+<li>Use action rules and validation logic to enforce business constraints within the action.</li>
+</ol>
+<hr>
+
+
+<h2 id="user-content-anti-pattern-the-time-machine" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#anti-pattern-the-time-machine"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Anti-pattern: The Time Machine</h2>
+<p>The Time Machine anti-pattern occurs when you model historical versions of an entity as separate objects or object types rather than using time series data, snapshots, or proper versioning strategies.</p>
+<h3 id="user-content-common-causes-6" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#common-causes-6"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Common causes</h3>
+<ul>
+<li>Desire to preserve a complete history of every change</li>
+<li>Misunderstanding of how to model temporal data in the Ontology</li>
+<li>Applying file-versioning mental models (v1, v2, v3) to object design</li>
+<li>Lack of awareness of time series properties or linked history patterns</li>
+</ul>
+<h3 id="user-content-indicators-2" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#indicators-2"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Indicators</h3>
+<ul>
+<li>Object type contains multiple objects representing the same real-world entity at different points in time</li>
+<li>Properties like <code>version</code>, <code>revision</code>, or <code>isCurrent</code> exist to distinguish copies</li>
+<li>Object counts grow proportionally with the number of changes rather than the number of entities</li>
+<li>
+
+End users are confused about which object to reference or link to</li>
+</ul>
+<h3 id="user-content-example-5" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#example-5"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Example</h3>
+<p>To track changes to a <code>Contract</code>, you create:</p>
+<ul>
+<li><code>Contract v1</code>, <code>Contract v2</code>, <code>Contract v3</code> as separate objects within the same object type</li>
+<li>Or worse: <code>Contract 2023</code>, <code>Contract 2024</code>, <code>Contract 2025</code> as separate object types for each year</li>
+</ul>
+<p>Each "version" is a full copy of the contract with slightly different property values, and links to other objects (such as <code>Vendor</code> or <code>Department</code>) are duplicated across all versions.</p>
+<h3 id="user-content-problems-6" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#problems-6"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Problems</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>Problem</th><th>Impact</th></tr></thead><tbody><tr><td>Object count explosion</td><td>Every change creates a new object, rapidly inflating the Ontology with redundant data.</td></tr><tr><td>Ambiguous current state</td><td>It is difficult to identify which version is the "current" or authoritative version.</td></tr><tr><td>Ambiguous links</td><td>Links to contracts become unclear; which version should a <code>Vendor</code> or <code>Department</code> link to?</td></tr><tr><td>Complex reporting</td><td>Reporting across time periods requires filtering and deduplication logic that is error-prone.</td></tr></tbody></table></div>
+<h3 id="user-content-solution-6" level="3" node="[object Object]" data-pagefind-weight="0.8">
+
+<a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#solution-6"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Solution</h3>
+<p>Use a single object per entity with properties for current state. Store historical changes in a separate linked object type, enable edits history, or leverage time series properties.</p>
+<pre><code>✗ Avoid                                    ✓ Prefer
+────────────────────────────────────────   ────────────────────────────────────────
+Contract v1 (object)                       Contract (single object per contract)
+Contract v2 (object)                 →       - currentValue
+Contract v3 (object)                         - currentStatus
+                                             - effectiveDate
+— OR —                                       - Links to:
+                                               └── Contract Amendments
+Contract 2023 (object type)                        - amendmentDate
+Contract 2024 (object type)                        - previousValue
+Contract 2025 (object type)                        - newValue
+                                                   - changeReason
+</code></pre>
+<p>To implement this:</p>
+<ol>
+<li>Use a single object per real-world entity with properties reflecting the current state.</li>
+<li>Create a separate linked object type (such as <code>Contract Amendment</code> or <code>Contract History</code>) to capture historical changes.</li>
+<li>Leverage time series properties for values that change frequently and need temporal tracking.</li>
+<li>Use the backing dataset or edits history to maintain full historical records for audit trails if needed.</li>
+</ol>
+<hr>
+<h2 id="user-content-anti-pattern-the-misnomer" level="2" node="[object Object]" data-pagefind-weight="0.9">
+
+<a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#anti-pattern-the-misnomer"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Anti-pattern: The Misnomer</h2>
+<p>The Misnomer anti-pattern occurs when you use vague, generic, or misleading names for object types, properties, and link types that do not clearly communicate their meaning, leading to confusion and misinterpretation across the Ontology.</p>
+<h3 id="user-content-common-causes-7" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#common-causes-7"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Common causes</h3>
+<ul>
+<li>Using shorthand names that make sense to you but not to others</li>
+<li>Names are carried over directly from source system column names without translation</li>
+<li>Desire for brevity over clarity</li>
+<li>Lack of naming conventions or governance standards</li>
+<li>Assumption that context will make meaning obvious</li>
+</ul>
+<h3 id="user-content-indicators-3" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#indicators-3"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Indicators</h3>
+<ul>
+<li>End users frequently ask "What does this property mean?" or "What kind of <code>[Object]</code> is this?"</li>
+<li>The same name could reasonably refer to multiple different concepts</li>
+<li>Property names are single generic words like <code>value</code>, <code>type</code>, <code>status</code>, <code>date</code>, or <code>name</code> without qualification</li>
+<li>
+
+Link types use generic labels like "related to" without specifying the nature of the relationship</li>
+</ul>
+<h3 id="user-content-example-6" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#example-6"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Example</h3>
+<p>You create the following Ontology elements with ambiguous names:</p>
+<ul>
+<li>Object type: <code>Item</code> (What kind of item? Product? Line item? Inventory item?)</li>
+<li>Property: <code>value</code> (Monetary value? Quantity? Score? Rating?)</li>
+<li>Property: <code>type</code> (Type of what? What are valid values?)</li>
+<li>Property: <code>date</code> (Created date? Modified date? Due date? Effective date?)</li>
+<li>Link type: <code>Item</code> → <code>Related Item</code> (How are they related? Parent-child? Substitute? Accessory?)</li>
+</ul>
+<p>End users encountering these names must guess at their meaning or dig into documentation to understand what the data actually represents.</p>
+<h3 id="user-content-problems-7" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#problems-7"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Problems</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5">
+
+<table><thead><tr><th>Problem</th><th>Impact</th></tr></thead><tbody><tr><td>Misinterpretation</td><td>End users cannot understand the Ontology without additional context, leading to incorrect analysis and decisions.</td></tr><tr><td>Steep learning curve</td><td>New team members must spend significant time learning what vague names actually mean.</td></tr><tr><td>Documentation dependency</td><td>Documentation becomes essential rather than supplementary, and falls out of date quickly.</td></tr><tr><td>Cross-team confusion</td><td>Different teams interpret the same vague names differently, leading to inconsistent usage.</td></tr></tbody></table></div>
+<h3 id="user-content-solution-7" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#solution-7"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Solution</h3>
+<p>Use specific, descriptive names for all Ontology elements. Names should be self-documenting so that anyone can understand meaning without additional context.</p>
+<pre><code>✗ Avoid                                    ✓ Prefer
+────────────────────────────────────────   ────────────────────────────────────────
+Object type: Item                    →     Object type: Product
+                                           Object type: Sales Order Line Item
+                                           Object type: Warehouse Inventory Record
+
+Property: value                      →     Property: monetaryValue
+                                           Property: quantityOnHand
+                                           Property: riskScore
+
+Property: type                       →     Property: productCategory
+                                           Property: serviceTier
+
+Property: date                       →     Property: orderPlacedDate
+                                           Property: contractEffectiveDate
+
+Link: Item → Related Item            →     Link: Product → Purchasing Customer
+                                           Link: Employee → Supervisor
+                                           Link: Equipment → Manufacturing Facility
+</code></pre>
+<p>To implement this:</p>
+<ol>
+<li>Establish naming conventions before building and enforce them through governance reviews.</li>
+<li>Use specific, descriptive names: <code>Product</code>, <code>Sales Order Line Item</code>, <code>Warehouse Inventory Record</code>.</li>
+<li>
+
+Qualify ambiguous properties: <code>monetaryValue</code>, <code>quantityOnHand</code>, <code>riskScore</code>.</li>
+<li>Name links explaining the relationship: <code>Purchasing Customers</code>, <code>Manufacturing Facility</code>, <code>Supervisor</code>.</li>
+<li>Add descriptions to all Ontology elements explaining their meaning and valid values.</li>
+<li>Review names with end users to ensure they are intuitive and unambiguous.</li>
+</ol>
+<h2 id="user-content-building-a-successful-ontology" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#building-a-successful-ontology"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Building a successful Ontology</h2>
+<p>The anti-patterns described in this guide are common but avoidable. By focusing on the fundamental best practices (modeling reality rather than systems, curating properties intentionally, collaborating across teams, and choosing the right tools for each task), you can build an Ontology that scales with your organization's needs.</p>
+<p>Remember that effective Ontology design is iterative. Start with clear entity definitions, involve stakeholders early, and refine your model as you learn what works. When you encounter challenges, revisit the principles in this guide to identify whether an anti-pattern may be emerging and course-correct before it becomes difficult to change.</p>
+</article>
+</body>
+</html>

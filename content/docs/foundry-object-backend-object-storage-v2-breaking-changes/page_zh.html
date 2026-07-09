@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Breaking changes between Object Storage V1 and Object Storage V2</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-%E7%94%9F%E6%88%90%E5%8F%98%E5%8C%96%E4%BB%8E%E7%9B%AE%E5%BD%93%E5%81%9A%E5%AD%98%E5%82%A8-v1%E5%9B%9B%E7%9B%AE%E5%BD%93%E5%81%9A%E5%AD%98%E5%82%A8-v2" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#%E7%94%9F%E6%88%90%E5%8F%98%E5%8C%96%E4%BB%8E%E7%9B%AE%E5%BD%93%E5%81%9A%E5%AD%98%E5%82%A8-v1%E5%9B%9B%E7%9B%AE%E5%BD%93%E5%81%9A%E5%AD%98%E5%82%A8-v2"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>从对象存储V1到对象存储V2的变更</h1>
+<p>从对象存储V1（Phonograph）过渡到对象存储V2（OSv2）是一次重大的架构转变，需要进行一些破坏性变更。旧版的对象存储V1（Phonograph）具有庞大的API范围，直接暴露了大量低层数据库功能。相反，新的对象存储V2架构通过对象数据漏斗服务将对象同步到专用对象数据库，以实现规模、性能、灵活性和安全性的提升。这种架构转变导致了两种主要类型的破坏性变更：</p>
+<ul>
+<li>专用对象数据库是为特定用例设计的，可能无法提供与对象存储V1相同的功能。这可能需要在OSv2中以不同于OSv1的方式对工作流进行建模。</li>
+<li>分离在对象存储V1中已合并的关注点，需要对一些直接与OSv1 API交互的现有查询进行重构。</li>
+</ul>
+
+<p>这些重大更改可能会阻止某些基于OSv1的对象类型在不进行重构或修复的情况下迁移到OSv2。关于<a href="/docs/foundry/object-backend/osv1-osv2-migration/">迁移到OSv2</a>的文档包含更多有关这些问题如何呈现给用户的信息，以及如何从OSv1迁移到OSv2。</p>
+<h2 id="user-content-permanent-breaking-changes" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#permanent-breaking-changes"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>永久性重大更改</h2>
+<p>本节列出了对象存储V1（Phonograph）和对象存储V2（OSv2）之间的重大更改。在尝试将任何对象类型迁移到OSv2之前，应解决所有这些重大更改。OSv1和OSv2之间所有这些更改旨在提高进入本体论的数据质量，确保更确定的行为，并提升平台上的可读性。</p>
+<h3 id="user-content-actions-and-edits" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#actions-and-edits"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>操作与编辑</h3>
+<ul>
+<li>OSv2仅支持通过操作进行用户编辑。所有现有的直接查询OSv1编辑API必须在迁移到OSv2之前重构为使用操作。</li>
+<li>
+
+OSv2 将“writeback 数据集”重命名为“materializations”。在 OSv1 中，writeback 数据集是必需的；在 OSv2 中，materializations 是可选的。有关已生成数据集的更多信息，请参阅 <a href="/docs/foundry/object-edits/materializations/">Materializations</a>。</li>
+</ul>
+<h3 id="user-content-edit-history" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#edit-history"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>编辑历史</h3>
+<ul>
+<li>从 OSv1 迁移到 OSv2 可以选择保留对象上的编辑历史记录。
+<ul>
+<li>启用此选项将在迁移过程中包含编辑历史记录。请注意，这将产生额外的计算成本用于处理和存储。</li>
+<li>如果未启用此选项，OSv1 中的先前编辑仍将保留；但是，OSv2 中不会显示 OSv1 的完整编辑历史。一旦迁移完成，就无法恢复 OSv1 的完整编辑历史。用户必须确认当迁移到对象存储 V2 时，用户编辑（操作）的历史记录不会被保留，除非是操作日志。</li>
+</ul>
+</li>
+<li>
+
+<a href="/docs/foundry/object-edits/user-edit-history/"><strong>Track user edit history</strong></a> will need to be enabled for object types in OSv2 within the Ontology Manager and object views will need to be updated to add the <a href="/docs/foundry/object-views/widgets-properties-links/#edit-history">Edit History widget</a> to display user edit histories.</li>
+<li>Users may also configure <a href="/docs/foundry/action-types/action-log/">Action Log</a> object types to otherwise capture how Actions affect objects; also, see the <a href="/docs/foundry/action-types/action-log/#action-log-timeline">Action Log Timeline widget</a> to display a history of Actions across targeted objects.</li>
+</ul>
+<h3 id="user-content-data-restrictions" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#data-restrictions"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Data restrictions</h3>
+<p>OSv2 enforces data restrictions on primary keys and property types to ensure the quality of data going into the ontology. For the full list of restrictions, see the documentation on <a href="/docs/foundry/object-indexing/data-restrictions/">OSv2 data restrictions</a>.</p>
+<h3 id="user-content-changelog-and-incremental-updates" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#changelog-and-incremental-updates"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Changelog and incremental updates</h3>
+<ul>
+<li>For object types with a changelog datasource, OSv2 does not consider the "latest timestamp wins" semantic used by <a href="/docs/foundry/building-pipelines/maintaining-incremental-performance/#changelog-datasets">legacy changelog datasets</a>.
+<ul>
+
+
+<li>OSv2 indexes all pipelines incrementally by default; all relevant changelog calculations are automatically performed in the background by Funnel, rendering the "changelog python decorator" obsolete.</li>
+</ul>
+</li>
+<li>OSv2 has stricter validations on geopoint properties.</li>
+</ul>
+<h3 id="user-content-monitoring" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#monitoring"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Monitoring</h3>
+<ul>
+<li>OSv2 object types can only be monitored by <a href="/docs/foundry/monitoring-views/overview/">monitoring views</a>, which replaces the <a href="/docs/foundry/health-checks/checks-reference/#sync-status">Object Storage V1 (Phonograph) sync status health check</a>.</li>
+</ul>
+<h3 id="user-content-object-set-service-oss-changes" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#object-set-service-oss-changes"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Object Set Service (OSS) changes</h3>
+<ul>
+<li>OSS APIs do not have query string support; OSv1 does have query string support.</li>
+<li>OSS cardinality metrics are <strong>not</strong> supported on object sets that contain objects from both Object Storage V1 and Object Storage V2, such as multi-backend object sets.</li>
+</ul>
+<h2 id="user-content-temporary-breaking-changes" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#temporary-breaking-changes"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Temporary breaking changes</h2>
+<p>
+
+This section lists out the current feature gap between Object Storage V1 (Phonograph) and Object Storage V2 (OSv2). These features are in development and the list will be updated as the breaking changes are resolved.</p>
+<ul>
+<li>OSv2 currently does not support connecting schedules where the path between the upstream and downstream targets would go through a materialization.</li>
+<li>OSv2 currently does not support custom analyzers.</li>
+<li>Foundry Rules Archetypes currently does not support the full feature set of OSv2. For example, object types backed by multiple datasources and object types with multiple materializations are not supported. You can refer to the <a href="/docs/foundry/foundry-rules/rule-logic/#inputs">Foundry Rules documentation</a> for more details.</li>
+</ul>
+</article>
+</body>
+</html>

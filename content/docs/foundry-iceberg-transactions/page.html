@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Transactions</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-transactions" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#transactions"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Transactions</h1>
+<p>Foundry's Iceberg catalog extends standard Iceberg with <strong>all-or-nothing transaction semantics</strong>. When a job performs multiple writes through Foundry's build system, all writes either succeed together or are fully discarded, matching the existing guarantee for Foundry catalog datasets. This page explains how Foundry's Iceberg transaction semantics work, how this compares to default Iceberg behavior, and what it means for writing pipelines.</p>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>The transaction guarantees described on this page apply only when running jobs through Foundry's build system. When writing to Foundry's Iceberg catalog from an external client, you will get standard Iceberg transaction behavior. See <a href="https://py.iceberg.apache.org/api/#write-to-a-table">PyIceberg API documentation ↗</a> for details on how transactions work in that context.</p></div>
+<h2 id="user-content-foundry-iceberg-transaction-semantics" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#foundry-iceberg-transaction-semantics"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Foundry Iceberg transaction semantics</h2>
+<p>When running a <a href="/docs/foundry/data-integration/builds/">build</a> in Foundry, Foundry provides <strong>all-or-nothing updates</strong>. Foundry automatically wraps all Iceberg table reads and writes in a single transaction. Users do not need to take any action to configure this; it is the default behavior for writing to Iceberg tables using Foundry's build system.</p>
+<p>By comparison, standard Iceberg lacks multi-update transaction guarantees. Instead, it provides <strong>atomic updates</strong>: each update is applied individually. This is a deliberate design choice that enables optimistic concurrency, meaning multiple writers can work against the same table simultaneously. While this model works well for single-write transactions, it can pose correctness issues for pipelines that perform multiple writes in a single transaction, whether those updates are applied to one table or multiple. Foundry's all-or-nothing transaction model addresses this by coordinating commits across all writes in a job, so partial updates are never visible.</p>
+<p>In particular, Foundry's transaction model provides the following guarantees:</p>
+<ul>
+<li><strong>All-or-nothing commits</strong>: All table updates in a job are committed together. If the job fails at any point, no partial writes are visible to downstream consumers or other jobs. This matches the behavior of <a href="/docs/foundry/data-integration/datasets/#transactions">catalog dataset transactions</a>.</li>
+<li><strong>Repeatable reads:</strong> If a table is read more than once within a job, the same data is returned both times, even if the table was updated externally between reads. Your pipeline sees a stable, consistent view of its inputs for the duration of the job.</li>
+<li><strong>Jobs see their own writes:</strong> Writes made within a job are immediately visible to subsequent reads within the same job. They remain invisible to all other jobs and external readers until the transaction commits.</li>
+<li><strong>Multi-table snapshot isolation:</strong> Foundry captures a consistent snapshot of all input tables at the start of the transaction. This ensures that partial external updates to an input cannot be partially read mid-job, and that data provenance — which version of an input produced which version of an output — is recorded correctly.</li>
+</ul>
+<h3 id="user-content-example-incremental-join-pipeline" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#example-incremental-join-pipeline"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Example: incremental join pipeline</h3>
+<p>To illustrate the difference with an example:</p>
+<p>Assume you have a job that incrementally reads new rows from two tables called <code>orders</code> and <code>customers</code>, joins them, and appends results to two tables: <code>order_summary</code> and <code>customer_metrics</code>. One day the job fails mid-run, after processing the write to the first table (<code>order_summary</code>) but before writing to the second table (<code>customer_metrics</code>).</p>
+<p><strong>With standard Iceberg transaction semantics:</strong> the first write stands. The <code>order_summary</code> table would now reflect the new batch of data, while <code>customer_metrics</code> does not. The two outputs are in an inconsistent state. When the job is then retried, it re-reads the same input rows and writes them to <code>order_summary</code> again, duplicating data from the previous partial run.</p>
+<p><strong>With Foundry Iceberg transaction semantics:</strong> the first write is not committed. The <code>order_summary</code> table would <strong>not</strong> reflect the new batch of data. Both tables remain unchanged and in a consistent state. When the job is then retried, it writes the new data to both tables correctly without duplication.</p>
+<img alt="Example partial transaction." src="/docs/resources/foundry/iceberg/transaction-example.png?width=600" style="aspect-ratio:2036 / 1773" width="600" node="[object Object]">
+<h3 id="user-content-job-queuing-and-optimistic-concurrency" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#job-queuing-and-optimistic-concurrency"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Job queuing and optimistic concurrency</h3>
+<p>Foundry's build system ensures that at most one job runs against a given output at any point in time. Jobs writing to the same output are queued and run sequentially rather than concurrently. This means that in practice, write conflicts are not possible for regular pipeline jobs but can arise between pipeline jobs and Iceberg maintenance jobs.</p>
+<p>By comparison, standard Iceberg uses optimistic concurrency, where multiple writers can work against the same table simultaneously, with conflicts detected and resolved at commit time. Foundry's transaction model trades away optimistic concurrency for a stricter approach to updates and correctness. If a transaction does encounter a conflicting concurrent update, the commit fails and the build system retries the job. Correctness is always preserved, at the cost of recomputing the job in case of conflicting updates.</p>
+<p>A common source of conflicts is <strong>maintenance tasks</strong> such as compaction, which currently run concurrently to regular pipeline jobs. If a compaction task updates a table while a job is running, the job's transaction will fail to commit and the build system will retry the job. For tables that undergo frequent compaction, this can cause occasional retries.</p>
+<h2 id="user-content-iceberg-snapshot-types-and-foundry-dataset-transactions" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#iceberg-snapshot-types-and-foundry-dataset-transactions"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Iceberg snapshot types and Foundry dataset transactions</h2>
+<p>If you are familiar with Foundry datasets, the transaction types you know map onto Iceberg snapshot types as follows:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>Iceberg snapshot type</th><th>Foundry dataset transaction</th><th>Description</th></tr></thead><tbody><tr><td>Append snapshot</td><td>APPEND</td><td>Adds new data files; existing files are unchanged.</td></tr><tr><td>Overwrite snapshot</td><td>UPDATE, SNAPSHOT</td><td>Adds and removes data files, changing the logical set of records (including both partial and full overwrites).</td></tr><tr><td>Delete snapshot</td><td>DELETE</td><td>Removes data files or adds delete files to logically delete rows.</td></tr><tr><td>Replace snapshot</td><td><em>(no equivalent)</em></td><td>Rewrites data files without changing logical contents (e.g. compaction).</td></tr></tbody></table></div>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><div class="ptcom-design__title__19o1cwu">Why does a first write appear as an append snapshot?</div><p>A common point of confusion: the <strong>first write to a new Iceberg table</strong> is recorded as an <strong>append snapshot</strong>, even when the intent is to fully replace the table contents. This is expected. When a table is empty, appending data and replacing data are logically equivalent, as there is nothing to overwrite. Iceberg records the operation as an "append" because files were only added and none were removed. The practical implication is that if you see an append snapshot in a table's history for what you expected to be a full load, check whether it was the table's first write. On subsequent full rewrites to a non-empty table, the operation will correctly appear as an overwrite snapshot.</p></div>
+</article>
+</body>
+</html>

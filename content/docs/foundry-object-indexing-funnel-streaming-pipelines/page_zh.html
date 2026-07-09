@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Funnel streaming pipelines</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-funnel-streaming-pipelines" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#funnel-streaming-pipelines"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>漏斗流式管道</h1>
+<p>除了 <a href="/docs/foundry/object-indexing/funnel-batch-pipelines/">批量本体论数据索引</a>，对象存储 V2 支持通过使用 <a href="/docs/foundry/data-integration/streams/">Foundry 流</a> 作为 <a href="/docs/foundry/object-permissioning/managing-object-security/#object-input-data-sources">输入数据源</a>，将低延迟流数据索引到本体论中。与用于非流式 Foundry 数据集的批处理基础设施不同，流式处理允许在数秒或数分钟内将数据索引到 Foundry 本体论中，以支持对延迟敏感的操作工作流程。</p>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>如果您有关于本体论流行为的更多问题，请参阅我们的 <a href="/docs/foundry/object-indexing/faq/#can-i-backfill-large-scale-historical-data-for-object-types-with-streaming-datasources">常见问题</a> 文档。</p><p>有关流式管道性能和延迟的指导信息，请参阅我们的 <a href="/docs/foundry/building-pipelines/streaming-performance-considerations/">流式性能注意事项</a> 文档。</p></div>
+<h2 id="user-content-current-product-limitations-of-streaming-object-types" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#current-product-limitations-of-streaming-object-types"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>流式对象类型的当前产品限制</h2>
+<p>
+
+  Foundry -> Foundry
+  Apollo -> Apollo
+  Gotham -> Gotham
+  AIP -> AIP
+  Ontology -> 本体论
+  ontology -> 本体论
+  Pipeline -> 管道
+  pipeline -> 管道
+  Transform -> 转换
+  transform -> 转换
+  Workshop -> Workshop
+  workshop -> Workshop
+  Code Repositories -> 代码仓库
+  Code Workspaces -> 代码工作区
+  Data Integration -> 数据集成
+  Model Integration -> 模型集成
+  Object -> 对象
+  object -> 对象
+  Dataset -> 数据集
+  dataset -> 数据集
+  Tenant -> 租户
+  tenant -> 租户
+  Marking -> 标记
+  marking -> 标记
+  Permission -> 权限
+  permission -> 权限
+  Role -> 角色
+  role -> 角色
+  Function -> 函数
+  function -> 函数
+  Action -> 操作
+  action -> 操作
+  Property -> 属性
+  property -> 属性
+  Interface -> 接口
+  interface -> 接口
+
+内容：
+对象存储V2中的流处理使用“最新更新胜出”的策略，其中每个流都被视为变更日志流。如果您的事件来自源的顺序不正确，您将在本体论中得到错误的数据。如果您可以保证输入流的顺序，对象存储V2流处理将按照相同顺序处理您的更新。</p>
+<p>本体论的流处理行为及其功能集仍在积极开发中；在使用本体论流处理之前，请考虑以下当前的产品限制：</p>
+<ul>
+<li>不支持对流式对象类型进行用户编辑。作为替代方案，您可以将用户编辑作为数据更改推送到输入流，或者配置一个额外的对象类型并使用非流式输入数据源，让用户在该辅助对象类型上进行编辑。或者，您可以通过将对象切换为使用<a href="/docs/foundry/object-indexing/direct-datasources/">直接数据源</a>来在流式支持的对象类型上启用编辑。</li>
+<li><a href="/docs/foundry/object-permissioning/multi-datasource-objects/">多数据源对象类型（MDO）</a>不支持流式对象类型。</li>
+<li>
+
+  Foundry -> Foundry
+  Apollo -> Apollo
+  Gotham -> Gotham
+  AIP -> AIP
+  Ontology -> 本体论
+  ontology -> 本体论
+  Pipeline -> 管道
+  pipeline -> 管道
+  Transform -> 转换
+  transform -> 转换
+  Workshop -> Workshop
+  workshop -> Workshop
+  Code Repositories -> 代码仓库
+  Code Workspaces -> 代码工作区
+  Data Integration -> 数据集成
+  Model Integration -> 模型集成
+  Object -> 对象
+  object -> 对象
+  Dataset -> 数据集
+  dataset -> 数据集
+  Tenant -> 租户
+  tenant -> 租户
+  Marking -> 标记
+  marking -> 标记
+  Permission -> 权限
+  permission -> 权限
+  Role -> 角色
+  role -> 角色
+  Function -> 函数
+  function -> 函数
+  Action -> 操作
+  action -> 操作
+  Property -> 属性
+  property -> 属性
+  Interface -> 接口
+  interface -> 接口
+
+内容:
+除了 <a href="/docs/foundry/workshop/overview/">Workshop</a> 外，没有其他 Foundry 前端应用程序支持实时数据刷新，因为历史上它们不期望流式更新。尽管用于流对象类型的底层本体论数据一直在不断变化，但您在 Workshop 之外需要刷新以获取新数据。</li>
+<li>在本体论管理器中对象类型的 <strong>数据源</strong> 选项卡中，用户可以配置 <a href="/docs/foundry/object-indexing/funnel-batch-pipelines/#monitor-funnel-pipelines">监控器</a> 以检测 Funnel 批处理管道故障和无效记录。目前，对于具有流数据源的对象类型（例如，管道延迟）尚不支持监控或指标。</li>
+<li>记录大小不得超过 1MB，且对象类型不能包含超过 250 个属性。如果您需要将更大的记录流式传输到您的本体论中，应考虑使用较小的对象类型的不同本体模型。</li>
+</ul>
+<h2 id="user-content-configuring-streaming-object-types" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#configuring-streaming-object-types"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>配置流对象类型</h2>
+<p>具有流输入数据源的对象类型直接在 <a href="/docs/foundry/pipeline-builder/outputs-add-ontology-output/">Pipeline Builder</a> 或 <a href="/docs/foundry/ontology-manager/overview/">Ontology Manager</a> 中进行配置，与任何其他 Foundry Ontology 对象类型类似。</p>
+<div class="ptcom-design__callout__19o1cwu">
+
+<svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>If you do not yet have an input stream configured, you can create one through <a href="/docs/foundry/data-connection/set-up-streaming-sync/">integrating with an existing stream in the Data Connection application</a> or by <a href="/docs/foundry/building-pipelines/create-stream-pipeline-pb/">building a stream pipeline in Pipeline Builder</a>.</p></div>
+<p>After creating a new object type (or using an existing object type), navigate to the <strong>Datasources</strong> tab in Ontology Manager, select a stream input datasource in the <strong>Backing datasource</strong> section as shown below, and save your changes into the Foundry Ontology.</p>
+<p><img alt="An Ontology streaming configuration" height="600" src="/docs/resources/foundry/object-indexing/stream_pipeline.png" style="aspect-ratio:720 / 786" width="549.6183206106871" node="[object Object]"></p>
+<p>For additional configurations over the input datasource stream, select the ellipses button for more options as shown below.</p>
+<p><img alt="Additional streaming configurations" height="294" src="/docs/resources/foundry/object-indexing/stream_config.png" style="aspect-ratio:624 / 294" width="624" node="[object Object]">
+<img alt="Additional streaming configurations" height="600" src="/docs/resources/foundry/object-indexing/stream_datasource_configuration.png" style="aspect-ratio:1552 / 1076" width="865.4275092936804" node="[object Object]"></p>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>Stream datasources can also be configured for <a href="/docs/foundry/object-link-types/create-link-type/">many-to-many link types</a>.</p></div>
+<p>The <strong>Stream configuration</strong> section provides options to optimize your object type's streaming job.</p>
+<ul>
+
+
+<li><strong>Stream compute profile:</strong> By default, an object type's streaming job uses a compute profile suitable for most input streams. However, object types backed by very high-throughput streams may require more resources to prevent the pipeline from lagging. Alternatively, object types backed by low-throughput streams can use a smaller profile to save on compute resource cost. If none of the available options are suitable, contact your Palantir representative.</li>
+<li><strong>Stream consistency guarantee:</strong> By default, an object type's streaming job uses the exactly-once consistency guarantee, which results in additional latency compared to at-least-once but ensures Foundry applications receive object set updates exactly once. Enabling the at-least-once consistency guarantee reduces latency; however, in rare cases, Foundry applications may receive duplicate updates when an object set changes. For example, an object set-based automation could trigger multiple times. Consider enabling at-least-once for latency-sensitive object types.</li>
+</ul>
+<p><img alt="The Stream configuration section." height="327" src="/docs/resources/foundry/object-indexing/stream-configuration.png" style="aspect-ratio:1059 / 327" width="1059" node="[object Object]"></p>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>Modifying an object type's stream configuration will restart its associated streaming job, causing a temporary delay for new streaming records to be processed.</p></div>
+<h2 id="user-content-debugging-streaming-pipelines" level="2" node="[object Object]" data-pagefind-weight="0.9">
+
+<a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#debugging-streaming-pipelines"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Debugging streaming pipelines</h2>
+<p>The interface between streams and the Ontology can be considered conceptually similar to <a href="/docs/foundry/object-indexing/funnel-batch-pipelines/#changelog">changelog datasets</a>. Each record in the input stream will contain the data for each property being written into the Ontology. Each record will update all of the properties for a given object, specified by primary key. Deletions can be specified on the input record by setting metadata on the input stream.</p>
+<p>Funnel will index records in the order that they are written to the datasource stream, so those streams should be partitioned by primary key and ordered by event timestamp which can be done in the upstream <a href="/docs/foundry/pipeline-builder/core-concepts/#pipeline-outputs">Pipeline Builder</a> pipeline.</p>
+<p>If you are having issues with your stream pipelines, review the <a href="/docs/foundry/optimizing-pipelines/debug-stream/">debug a failing stream</a> documentation.</p>
+<p>To view details and metrics for an object type's streaming job, select the <strong>Stream</strong> bubble in the pipeline diagram.</p>
+<p><img alt="Access streaming job details and metrics." height="476" src="/docs/resources/foundry/object-indexing/stream-details-metrics.gif" style="aspect-ratio:1150 / 476" width="1150" node="[object Object]"></p>
+</article>
+</body>
+</html>

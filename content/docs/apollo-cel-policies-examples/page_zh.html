@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Examples</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-examples" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#examples"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>示例</h1>
+<h2 id="user-content-auto-approve-based-on-author-team-membership" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#auto-approve-based-on-author-team-membership"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>基于作者团队成员身份自动批准</h2>
+<p>要自动批准特定团队成员所做的更改，请检查 <code>author.teams</code>。使用策略变量使团队名称可配置，而无需编辑表达式：</p>
+<pre><code>type == "UPDATE_ENTITY" &amp;&amp; {{ policyVariable.approvedTeam }} in author.teams
+  ? approve("由已批准团队的成员编写的更改。")
+  : no_op()
+</code></pre>
+<p>将 <code>approvedTeam</code> 定义为一个 <code>STRING</code> 变量，并将其值设为团队名称。这样，您可以通过策略配置更新已批准的团队，而不是直接编辑表达式本身。</p>
+<p>如果要根据作者已经在该资源上拥有角色而非团队成员身份来自动批准，请使用 <code>authorRoles</code> 从 <code>referencedResources</code> 中获取：</p>
+<pre><code>type == "UPDATE_ENTITY" &amp;&amp; "entity:operator" in referencedResources.installation.authorRoles
+  ? approve("作者是此安装的实体操作员。")
+  : no_op()
+</code></pre>
+<h2 id="user-content-require-a-specific-team-for-a-specific-entity-type" level="2" node="[object Object]" data-pagefind-weight="0.9">
+
+<a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#require-a-specific-team-for-a-specific-entity-type"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>为特定实体类型要求特定团队</h2>
+<p>要编写一个仅适用于特定实体类型的策略，请首先对<code>type</code>进行保护，然后对<code>request.apolloEntityType</code>进行保护：</p>
+<pre><code>type == "UPDATE_ENTITY" &amp;&amp; request.apolloEntityType == "network-security"
+  ? require_team("platform-security", "安全团队必须批准网络配置更改。")
+  : no_op()
+</code></pre>
+<p>此策略仅对<code>network-security</code>实体产生审查要求。对于所有其他更改类型和实体类型，它返回<code>no_op()</code>，Apollo将继续处理下一个策略。</p>
+<h2 id="user-content-combine-requirements-across-policies" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#combine-requirements-across-policies"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>跨策略组合要求</h2>
+<p>由于所有启用的策略都会被评估，并且它们的结果使用AND语义进行组合，因此添加新策略会增加一个必须与现有策略的任何要求同时满足的要求。</p>
+<p>例如，如果默认策略已经要求实体操作员批准<code>UPDATE_ENTITY</code>更改，那么启用此附加策略意味着每个<code>UPDATE_ENTITY</code>更改也必须得到安全团队的批准：</p>
+<pre>
+
+<code>type == "UPDATE_ENTITY"
+  ? require_team("platform-security", "Security team must approve all entity config updates.")
+  : no_op()
+</code></pre>
+<p>在应用更改之前，必须满足所有要求。单个策略不需要了解其他策略的上下文。</p>
+<h2 id="user-content-auto-approve-installing-a-specific-module" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#auto-approve-installing-a-specific-module"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>自动批准安装特定模块</h2>
+<p>模块安装会为模块中的每个对象生成单独的对象更改请求。所有启用的策略都会评估这些更改，因此添加一个返回 <code>approve()</code> 的新独立策略来信任某个模块是不够的。现有的对象策略仍会运行并产生它们自己的要求。</p>
+<p>要自动批准特定模块的安装，请将模块检查添加到每个现有对象策略的开头，这些策略原本需要批准。在其他分支之前添加此检查，以便在达到默认要求之前立即 <code>approve()</code>：</p>
+<pre><code>type == "UPDATE_ENTITY" &amp;&amp; request.apolloEntityType == "service" ? (
+  is_trusted_module_request(author, metadata, editors)
+    &amp;&amp; "module" in referencedResources
+    &amp;&amp; referencedResources.module.name == "my-trusted-module"
+    ? approve("Trusted installation of my-trusted-module.")
+    : require_operation(referencedResources.installation.rid, "entity:approve-config-update", "Entity operators must approve entity config updates.")
+) : no_op()
+</code></pre>
+<p>
+
+守卫 <code>"module" in referencedResources</code> 是必需的，因为 <code>module</code> 键仅在变更请求涉及单个模块安装时才存在。将相同的添加应用到覆盖模块中包含的实体类型的每个默认策略，通常是实体配置更新、实体设置更新和实体删除策略。</p>
+<h2 id="user-content-gate-on-a-module-release-version" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#gate-on-a-module-release-version"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>对模块发布版本的门控</h2>
+<p>对于属于模块安装的一部分的实体更改，<code>referencedResources</code> 包括 <code>module</code> 和 <code>moduleRelease</code> 键。使用 <code>referencedResources.module.name</code> 通过产品 ID 识别模块，并使用 <code>referencedResources.moduleRelease.name</code> 检查发布版本：</p>
+<pre><code>type == "UPDATE_ENTITY" && "module" in referencedResources
+  && referencedResources.module.name == "my-module"
+  && referencedResources.moduleRelease.name == "1.0.0"
+  ? approve("Approved installation of my-module version 1.0.0.")
+  : no_op()
+</code></pre>
+<p>此策略会自动批准特定版本的特定模块的安装。对于其他所有更改，它返回 <code>no_op()</code>，其他策略将继续正常评估。</p>
+<h2 id="user-content-auto-approve-egress-to-a-trusted-host" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#auto-approve-egress-to-a-trusted-host"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>自动批准到受信任主机的出站流量</h2>
+<p>
+
+使用 <code>request.data.all(...)</code> 来检查 <code>CREATE_EGRESS_POLICIES</code> 请求中的每条策略是否在自动批准前指向特定的主机和端口：</p>
+<pre><code>type == "CREATE_EGRESS_POLICIES" &amp;&amp; request.data.all(policy,
+    policy.address.type == "dns"
+      &amp;&amp; policy.address.dns == "example.com"
+      &amp;&amp; policy.port.port == 443)
+  ? approve("所有策略均指向 example.com 的 443 端口。")
+  : no_op()
+</code></pre>
+<p><code>all(...)</code> 宏确保只有当请求中的每条策略都匹配时才会触发批准。如果任何策略指向不同的主机或端口，该表达式将转到 <code>no_op()</code>，其他策略将继续正常评估。</p>
+</article>
+</body>
+</html>

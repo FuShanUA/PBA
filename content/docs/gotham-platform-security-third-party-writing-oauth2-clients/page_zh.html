@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Writing OAuth2 clients</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-writing-oauth2-clients" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#writing-oauth2-clients"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Writing OAuth2 clients</h1>
+<p>This documentation is intended for users or administrators who wish to write OAuth2 clients to connect to the platform. This page provides a description of OAuth2 and details about the implementation of OAuth2.</p>
+<h2 id="user-content-oauth2-overview" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#oauth2-overview"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>OAuth2 overview</h2>
+<p>The OAuth2 authorization framework enables third-party applications to obtain controlled access to a service. OAuth2 improves on the traditional client-server authorization model by providing a layer that enables clients (like a third-party application) to request access through the use of a specifically-issued access tokens and refresh tokens, rather than a user’s credentials or static bearer tokens. OAuth2 manages this access through the use of grants, which are methods of obtaining access tokens.</p>
+<h2 id="user-content-supporting-oauth2-integration" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#supporting-oauth2-integration"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Supporting OAuth2 integration</h2>
+<p>
+
+以下部分描述了如何在第三方应用程序中支持OAuth2。在本文档中，<strong>客户端</strong>指的是第三方应用程序，<strong>授权</strong><strong>服务器</strong>指的是Gotham的授权服务器，<strong>用户</strong>指的是第三方应用程序的最终用户。</p>
+<p>要使用Gotham的OAuth2，您必须按照<a href="/docs/gotham/platform-security-third-party/register-3pa/">注册第三方应用程序</a>的说明注册您的应用程序，并在下一小节中选择一种授权选项。</p>
+<h3 id="user-content-authorization-code-grant" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#authorization-code-grant"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>授权码授予</h3>
+<p>授权码授予允许客户端代表现有的Gotham用户进行操作。应用程序必须请求他们需要访问的平台权限集，然后Gotham用户必须明确授予客户端对其账户的这些权限的访问。Gotham允许将客户端限制为有限的一组资源，或者所有用户可以访问的资源。</p>
+<p>授权码授予的工作方式如下：</p>
+<ol>
+
+
+<li>The client creates a <code>code_verifier</code> and <code>code_challenge</code>. This is <strong>recommended</strong> but not required for <em><a href="https://tools.ietf.org/html/rfc6749#section-2.1">confidential clients ↗</a></em>, such as server-based applications, that can safely store a client secret. It is <strong>required</strong> for <a href="https://tools.ietf.org/html/rfc6749#section-2.1"><em>public clients</em> ↗</a>, such as native apps, that cannot safely store a client secret.
+<ul>
+<li>The <code>code_verifier</code> is a cryptographically random string that contains A-Z, a-z, 0-9, <code>-</code> (hyphen), <code>.</code> (period), <code>_</code> (underscore), and <code>~</code> (tilde), and is 43 to 128 characters long.</li>
+<li>The <code>code_challenge</code> is derived by performing the SHA256 of the <code>code_verifier</code> and then converting that to a Base64-URL-encoded value without padding.</li>
+</ul>
+</li>
+<li>The client application should open a browser and send the user to the <a href="#authorization-endpoint">authorization endpoint</a> URL with the following parameters added as query parameters:
+<ul>
+<li><code>response_type</code>: This should be set to <code>code</code>.</li>
+<li><code>client_id</code>: This should be set to the ID generated when the third-party application was registered in Gotham.</li>
+<li><code>redirect_uri</code>: This tells the authorization server where to redirect the user after the user approves the request. If not specified, it will default to the redirect URI value in the Third-Party application setting in Gotham.</li>
+<li>
+
+<code>scope</code>: This defines the permissions requested. Scopes for public APIs are in the <a href="/docs/gotham/api/">API documentation</a>. Add the <code>offline_access</code> scope to get a refresh token. If you want multiple scopes, concatenate the scopes using a space as a delimiter.</li>
+<li><code>state</code>: This is a random string generated by the application that will be passed back to the application as is. The application should check that the value returned matches the original string to prevent CSRF attacks.</li>
+<li><code>code_challenge</code>: If the client created a <code>code_challenge</code>, it should populate this parameter. The authorization server will internally associate the <code>code_challenge</code> parameter with the authorization code it generates.</li>
+<li><code>code_challenge_method</code>: This should be set to <code>S256</code>.</li>
+</ul>
+</li>
+<li>When the user visits the URL, the authorization server presents the user with a prompt similar to the following and the user then can choose to approves the app’s request.</li>
+</ol>
+<p><img alt="Authorization request" height="397" src="/docs/resources/gotham/platform-security-third-party/3PA-user-example-test-app_a.png" style="aspect-ratio:660 / 397" width="660" node="[object Object]"></p>
+<ol>
+<li>If the request is successful, the authorization server then redirects the user to the redirect URI that was specified along with the following parameters added as query parameters:
+<ul>
+<li><code>code</code>: This is the authorization code that the authorization server generates.</li>
+<li>
+
+<code>state</code>: This is the same parameter the client passed in the authorization request. The client should check that it matches the original <code>state</code> parameter that was sent in the request.</li>
+</ul>
+</li>
+<li>The client should then exchange the authorization code for an access token by calling the <a href="#token-endpoint">token endpoint</a>. The following parameters should be sent using the <code>application/x-www-form-urlencoded</code> format in the request body.
+<ul>
+<li><code>grant_type</code>: This should be set to <code>authorization_code</code>.</li>
+<li><code>code</code>: The code that was received from the authorization server.</li>
+<li><code>client_id</code>: This should be set to the ID generated when the third-party application was registered in Gotham.</li>
+<li><code>code_verifier</code>: If the client generated a <code>code_verifier</code>, it should send it in this request. The authorization server will verify that the <code>code_verifier</code> matches the <code>code_challenge</code> that was sent in the previous request.</li>
+</ul>
+</li>
+<li>The authorization server then responds with an access token which can then be used by the client to access the requested resources such as REST APIs. The response contains the following parameters:
+<ul>
+<li><code>access_token</code>: The token that can be used by the client to access the requested resources.</li>
+<li><code>token_type</code>: The type of the token that was issued.</li>
+<li>
+
+<code>expires_in</code>: The lifetime in seconds of the access token.</li>
+<li><code>refresh_token</code>: This is returned only if the requested scope included <code>offline_access</code>. This should be used if the client wants to refresh the access token without the user being present to authorize the request. For more information, see <a href="#refreshing-an-access-token">Refreshing an access token</a>.</li>
+</ul>
+</li>
+</ol>
+<h3 id="user-content-client-credentials-grant" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#client-credentials-grant"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Client credentials grant</h3>
+<p>The client credentials grant is designed for non-interactive service-user style workflows where actions the client makes are not associated to normal platform users. The client does not act on behalf of normal platform users.</p>
+<p><img alt="Client Credentials Grant" height="600" src="/docs/resources/gotham/platform-security-third-party/3PA-client-credentials-grant.png" style="aspect-ratio:2996 / 1448" width="1241.4364640883978" node="[object Object]"></p>
+<p>Instead, this grant type automatically creates a service user associated with the client that can then be granted permissions to access platform resources. The token obtained by this grant can be used to access resources on behalf of the created service user. The username of the service user account is the same as the client ID of the application.</p>
+<div class="ptcom-design__callout__19o1cwu">
+
+<svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>By default, the service account does not have access to any resources. A platform administrator must assign the desired roles and permissions to the service user account for the client to perform actions in Gotham.</p></div>
+<p>The client credentials grant works as follows:</p>
+<ol>
+<li>The client calls the <a href="#token-endpoint">token endpoint</a>. The following parameters should be sent using the <code>application/x-www-form-urlencoded</code> format in the request body:
+<ul>
+<li><code>grant_type</code>: This should be set to <code>client_credentials</code>.</li>
+<li><code>client_id</code>: This should be set to the ID generated when the third-party application was registered in Gotham.</li>
+<li><code>client_secret</code>: This should be set to the client secret that was generated when the third-party application was registered in Gotham.</li>
+</ul>
+</li>
+<li>The authorization server then responds back with the following:
+<ul>
+<li><code>access_token</code>: The token that can be used by the client to access the requested resources.</li>
+<li><code>token_type</code>: The type of the token that was issued.</li>
+<li><code>expires_in</code>: The lifetime in seconds of the access token.</li>
+</ul>
+</li>
+<li>The client can then use the access token to access the requested resources.</li>
+</ol>
+
+
+<h3 id="user-content-refreshing-an-access-token" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#refreshing-an-access-token"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Refreshing an access token</h3>
+<p>Access tokens expire after some time and will need to be obtained again. Any client that needs access to the Gotham API when the user is not present will need to refresh the token.</p>
+<p>This can be done by following these steps:</p>
+<ol>
+<li>The client should follow the steps outlined in <a href="#authorization-code-grant">Authorization Code Grant</a> and specify <code>offline_access</code> as part of the requested <code>scope</code> parameter.</li>
+<li>The client should save the returned <code>refresh_token</code> that was returned in the final step of <a href="#authorization-code-grant">Authorization Code Grant</a>.</li>
+<li>If the access token expires, the client can then refresh the token by calling the <a href="#token-endpoint">token endpoint</a> endpoint using the following parameters:
+<ul>
+<li><code>grant_type</code>: This should be set to <code>refresh_token</code>.</li>
+<li><code>refresh_token</code>: The access token that was obtained previously for the given user.</li>
+<li><code>client_id</code>: This should be set to the ID generated when the third-party application was registered in Gotham.</li>
+<li><code>client_secret</code>: This should be set to the client secret that was generated when the third-party application was registered in Gotham.</li>
+</ul>
+</li>
+
+
+<li>The authorization server will then respond with the following:
+<ul>
+<li><code>access_token</code> The token that can be used by the client to access the requested resources.</li>
+<li><code>token_type</code>: The type of the token that was issued.</li>
+<li><code>expires_in</code>: The lifetime in seconds of the access token.</li>
+<li><code>refresh_token</code>: The refresh token that can be used next time to refresh the access token again. Note that platform rotates <code>refresh_token</code> every time a <code>refresh_token</code> grant is called. Make sure you save both the <code>access_token</code> and the <code>refresh_token.</code></li>
+</ul>
+</li>
+</ol>
+<h2 id="user-content-oauth2-api-reference" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#oauth2-api-reference"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>OAuth2 API reference</h2>
+<p>The following endpoints can be used to obtain OAuth2 tokens.</p>
+<h3 id="user-content-authorization-endpoint" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#authorization-endpoint"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Authorization endpoint</h3>
+<p><code>GET /multipass/api/oauth2/authorize</code></p>
+<p>The authorization endpoint, used by the client to obtain an authorization code.</p>
+<h4 id="user-content-query-parameters"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#query-parameters"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Query parameters</h4>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5">
+
+<table><thead><tr><th>Parameter name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td>response_type</td><td>String</td><td>This must be set to <code>code</code>.</td></tr><tr><td>client_id</td><td>String</td><td>The unique identifier of the client.</td></tr><tr><td>redirect_uri</td><td>String</td><td>The absolute URI that the user agent will be redirected to. If not specified, it will default to the redirect URI value in the Third-Party application setting.</td></tr><tr><td>scope</td><td>String</td><td>The scope of the permissions to be requested. Scopes for public APIs are in the <a href="/docs/gotham/api/">API documentation</a> and should be listed as a space-separated string.</td></tr><tr><td>state</td><td>String (optional)</td><td>An arbitrary string passed to the server that gets passed back to the client as is. This helps prevent cross-site request forgery.</td></tr><tr><td>code_challenge</td><td>String (optional)</td><td>The code challenge generated by the client; used with <a href="#authorization-code-grant">Authorization Code Grant with Proof Key for Code Exchange (PKCE)</a></td></tr><tr><td>code_challenge_method</td><td>String (optional)</td><td>This should be set <code>S256</code> if <code>code_challenge</code> is used.</td></tr></tbody></table></div>
+<h4 id="user-content-redirect-query-parameters"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#redirect-query-parameters"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Redirect query parameters</h4>
+<p>If the request is successful, the user’s browser is redirected to the redirect URI specified in the Third-Party application settings or in the redirect URI passed in the request. The following query parameters will be present in the redirect request URI:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5">
+
+<table><thead><tr><th>Parameter name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td>code</td><td>String</td><td>The authorization code that was generated. This code will expire after 10 minutes.</td></tr><tr><td>state</td><td>String (optional)</td><td>If the <code>state</code> parameter was present in the authorization request, this will contain that exact value.</td></tr></tbody></table></div>
+<h3 id="user-content-token-endpoint" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#token-endpoint"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Token endpoint</h3>
+<p><code>POST /multipass/api/oauth2/token</code></p>
+<p>The token endpoint is used by the client to obtain an access token by presenting its authorization grant or refresh token.</p>
+<h4 id="user-content-header-parameters"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#header-parameters"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Header parameters</h4>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>Parameter name</th><th>Description</th></tr></thead><tbody><tr><td>Content-Type</td><td>Must be <code>application/x-www-form-urlencoded</code>.</td></tr></tbody></table></div>
+<h4 id="user-content-request-body-parameters"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#request-body-parameters"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Request body parameters</h4>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5">
+
+<table><thead><tr><th>Parameter name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td>grant_type</td><td>String</td><td>Value must be <code>authorization_code</code>, <code>refresh_token</code>, or <code>client_credentials</code></td></tr><tr><td>code</td><td>String (optional)</td><td>The authorization code received from the authorization endpoint. This is required if the grant type is <code>authorization_code</code></td></tr><tr><td>refresh_token</td><td>String (optional)</td><td>This is required when <code>grant_type</code> is <code>refresh_token</code>. The value should be the <code>refresh_token</code> that was obtained in the original request when the authorization code was obtained.</td></tr><tr><td>redirect_uri</td><td>String (optional)</td><td>The absolute URI that the user agent will be redirected to. If not specified, it will default to the redirect URI value in the Third-Party application setting.</td></tr><tr><td>scope</td><td>String (optional)</td><td>The scope of the permissions to be requested. Scopes for public APIs are in the <a href="/docs/gotham/api/">API documentation</a> and should be listed as a space-separated string.</td></tr><tr><td>client_id</td><td>String</td><td>The unique identifier of the client.</td></tr><tr><td>client_secret</td><td>String (optional)</td><td>The application's client secret that was issued during application registration. This is required when <code>grant_type</code> is <code>client_credentials</code>.</td></tr><tr><td>code_verifier</td><td>String (optional)</td><td>The code verifier used for the PKCE request that the application generated before the authorization request.</td></tr></tbody></table></div>
+<h4 id="user-content-response-body"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#response-body"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Response body</h4>
+<p>The response JSON has the following fields.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5">
+
+<table><thead><tr><th>Field name</th><th>type</th><th>Description</th></tr></thead><tbody><tr><td>access_token</td><td>String</td><td>The credentials used to access resources.</td></tr><tr><td>token_type</td><td>String</td><td>The type of the token issued.</td></tr><tr><td>expires_in</td><td>String</td><td>The lifetime in seconds of the access token.</td></tr><tr><td>refresh_token</td><td>String (optional)</td><td>The credentials used to obtain new access tokens. The Platform rotates <code>refresh_token</code> every time a <code>refresh_token</code> grant is called. Make sure you save both the <code>access_token</code> and the <code>refresh_token</code>.</td></tr></tbody></table></div>
+<h3 id="user-content-endpoint-errors" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#endpoint-errors"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Endpoint errors</h3>
+<h4 id="user-content-error-response-body"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#error-response-body"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Error response body</h4>
+<p>If the request fails, the user’s browser will only be redirected if the access request is denied. In all other cases, an HTML error page is returned which includes the fields below.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>Field name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td>error</td><td>String</td><td>The error code as defined in the next section.</td></tr><tr><td>error_description</td><td>String</td><td>The human-readable description of the error</td></tr></tbody></table></div>
+<h4 id="user-content-error-codes"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#error-codes"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Error codes</h4>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5">
+
+<table><thead><tr><th>Error code value</th><th>Description</th></tr></thead><tbody><tr><td><code>invalid_request</code></td><td>The request was invalid.</td></tr><tr><td><code>unauthorized_client</code></td><td>The client is not authorized to request an authorization code.</td></tr><tr><td><code>access_denied</code></td><td>The sever denied the request.</td></tr><tr><td><code>unsupported_response_type</code></td><td>The provided response type is not supported.</td></tr><tr><td><code>invalid_scope</code></td><td>The requested scope is invalid, unknown, or malformed</td></tr><tr><td><code>server_error</code></td><td>There was an unexpected server error.</td></tr></tbody></table></div>
+</article>
+</body>
+</html>

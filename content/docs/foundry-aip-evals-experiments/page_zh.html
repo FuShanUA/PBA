@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Run experiments</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-run-experiments" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#run-experiments"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>运行实验</h1>
+<p>系统地测试多个参数值的不同组合是评估和优化基于大语言模型的函数的重要部分。您可能希望确定在最小化成本的同时表现最佳的模型，或者哪些提示能产生最好的结果。</p>
+<p>实验可以帮助您优化所测试函数的性能和成本。您可以为 AIP 评估定义参数值，在单独的评估套件运行中使用网格搜索测试所有可能的组合。之后，您可以分析实验结果，以确定表现最佳的参数值。</p>
+<p><img alt="一个解释实验过程的图表。" height="600" src="/docs/resources/foundry/aip-evals/aip-evals-experiments-illustration.png" style="aspect-ratio:2703 / 1662" width="975.8122743682311" node="[object Object]"></p>
+<h2 id="user-content-set-up-experiments" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#set-up-experiments"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>设置实验</h2>
+<h3 id="user-content-prepare-your-function" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#prepare-your-function"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>准备您的函数</h3>
+<p>
+
+对于这个例子，我们有一个 <a href="/docs/foundry/logic/overview/">Logic 函数</a> 用于总结一篇文章，我们想要确定哪种模型和提示语组合表现最佳。请注意，实验不限于 Logic 函数。</p>
+<p>首先，我们需要对模型和提示语进行参数化。这意味着将它们作为输入添加，并在 Logic 函数的某个地方使用它们。在这种情况下，我们想通过尝试提示语措辞的细微差别来测试哪种能产生最好的摘要。我们将使用 <code>extraPromptContext</code> 来将原始提示语附加额外上下文。</p>
+<p><img alt="将模型作为可选输入和 extraPromptContext 作为必需输入添加到 Logic 函数中。" height="600" src="/docs/resources/foundry/aip-evals/aip-evals-logic-inputs-setup.png" style="aspect-ratio:4173 / 762" width="3285.8267716535433" node="[object Object]"></p>
+<p>对于模型，建议将变量从 <code>Required</code> 更改为 <code>Optional</code>。您还需要配置每个 <strong>Use LLM</strong> 块以使用模型变量。您可以通过选择 UseLLM 块中的模型选择器并导航到 <strong>Registered</strong> 选项卡下的模型变量来完成此操作。</p>
+<p><img alt="UseLLM 块中的模型选择器，在 &quot;Registered&quot; 选项卡下显示模型变量。" height="600" src="/docs/resources/foundry/aip-evals/aip-evals-model-block-setup.png" style="aspect-ratio:1985 / 1191" width="1000" node="[object Object]"></p>
+
+<h3 id="user-content-enable-experiments" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#enable-experiments"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>启用实验</h3>
+<p>在对您的 Logic 函数进行参数化之后，通过在 <strong>运行配置</strong> 对话框中打开切换开关来启用实验。</p>
+<p><img alt="在&quot;运行配置&quot;对话框中启用&quot;实验&quot;切换开关。" height="600" src="/docs/resources/foundry/aip-evals/aip-evals-enable-experiments.png" style="aspect-ratio:3951 / 954" width="2484.9056603773583" node="[object Object]"></p>
+<h3 id="user-content-define-your-experiment" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#define-your-experiment"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>定义您的实验</h3>
+<p>您可以为您的实验命名，以便日后轻松找到结果。接下来，添加 <strong>实验参数</strong>。这些是您希望使用不同值进行测试的参数。对于每个参数，您可以指定多个值选项以在您的实验中探索。这将覆盖评估套件中每个测试的现有配置值。</p>
+<p><img alt="包含实验名称和参数输入的&quot;运行配置&quot;对话框。 " height="600" src="/docs/resources/foundry/aip-evals/aip-evals-define-experiment.png" style="aspect-ratio:1398 / 1374" width="610.4803493449782" node="[object Object]"></p>
+
+在该部分的底部，你可以看到将进行多少次评估运行，并打开预览以查看使用网格搜索将在你的实验中测试的所有参数组合。</p>
+<p><img alt="总评估运行次数的预览。" height="508" src="/docs/resources/foundry/aip-evals/aip-evals-experiment-preview.png" style="aspect-ratio:1392 / 508" width="1392" node="[object Object]"></p>
+<h2 id="user-content-run-the-experiment" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#run-the-experiment"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>运行实验</h2>
+<p>要运行实验，请关闭对话框并选择<strong>运行实验</strong>选项。</p>
+<img alt="下方显示&quot;运行实验&quot;选项。" src="/docs/resources/foundry/aip-evals/aip-evals-run-experiment.png?width=500" style="aspect-ratio:845 / 1817" width="500" node="[object Object]">
+<h2 id="user-content-view-and-analyze-experiment-results" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#view-and-analyze-experiment-results"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>查看和分析实验结果</h2>
+<p>当实验完成后，在侧边栏的底部选择<strong>结果</strong>选项。这将带你进入AIP Evals应用程序，你可以在其中分析结果。</p>
+<div class="ptcom-design__callout__19o1cwu">
+
+<svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>在 AIP Logic 中的 <strong>最近一次运行</strong> 卡片中，仅显示该组中的最后一次评估运行结果（在此情况下为第 6 次运行）。为了全面查看您的结果，我们建议通过 AIP Evals 访问它们。</p></div>
+<img alt="“实验完成”通知，带有查看实验结果的链接。" src="/docs/resources/foundry/aip-evals/aip-evals-experiment-complete-callout.png?width=500" style="aspect-ratio:846 / 1819" width="500" node="[object Object]">
+<h3 id="user-content-compare-runs" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#compare-runs"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>比较运行</h3>
+<p>在 AIP Evals 中，单次评估运行和实验运行可以在 <strong>结果 &gt; 运行</strong> 选项卡下查看。当从 <strong>结果</strong> 页面进入 AIP Logic（如上所示）时，<strong>运行</strong> 表将自动过滤到刚刚运行的实验。</p>
+<p><img alt="Evals 中的“运行”表，已过滤到最新实验。" height="600" src="/docs/resources/foundry/aip-evals/aip-evals-runs-table-experiment.png" style="aspect-ratio:3357 / 1917" width="1050.7042253521126" node="[object Object]"></p>
+<p>
+
+< strong > 按组分组 </ strong > 选项允许您选择表格中的一列以按该列对运行进行分组，并查看每个组的汇总指标。例如，我们可以按模型进行分组，以便轻松比较各个模型在所有指标上的表现。</p>
+<p><img alt="按模型分组以查看汇总指标。" height="600" src="/docs/resources/foundry/aip-evals/aip-evals-runs-table-group-by.png" style="aspect-ratio:3309 / 749" width="2650.7343124165554" node="[object Object]"></p>
+<p>使用表格标题中最右侧的列图标来控制表格中显示哪些列。</p>
+<h3 id="user-content-compare-test-cases" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#compare-test-cases"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>比较测试用例</h3>
+<p>您可以从 < strong > 运行 </ strong > 表中选择最多 4 个运行进行比较，然后选择 < strong > 查看测试用例 </ strong > 选项或 < strong > 测试用例 </ strong > 子标签以继续深入分析您的结果。</p>
+<p><img alt=" &quot;查看测试用例&quot; 选项。" height="600" src="/docs/resources/foundry/aip-evals/aip-evals-view-test-cases.png" style="aspect-ratio:3357 / 855" width="2355.7894736842104" node="[object Object]"></p>
+<p>
+
+测试用例比较对于调试测试用例输出和指标在不同运行之间的对比非常有用，并且可以查看不同参数之间的可能性能和成本权衡。您可以将鼠标悬停在所选运行上，以查看使用的具体参数值，或者在表格中找到它们。</p>
+<p><img alt="当将鼠标悬停在模型提示实验标签上时看到的实验元数据。" height="600" src="/docs/resources/foundry/aip-evals/aip-evals-test-cases-table-metadata.png" style="aspect-ratio:3352 / 1780" width="1129.887640449438" node="[object Object]"></p>
+<p>您可以通过将相关测试用例和/或迭代组合在一起，来更改行的显示方式。</p>
+<ul>
+<li><strong>组合测试用例：</strong> 将同一测试用例在多个运行中的所有实例合并为一行，而不是在单独的行中显示每个实例。</li>
+<li><strong>组合迭代：</strong> 将所有迭代合并为一个选择器，而不是在单独的行中显示每个迭代。</li>
+</ul>
+<p>列选择器可用于以对您有意义的方式隐藏和显示列。例如，如果您想要一个数据密集型的指标视图，可以选择隐藏包含输入和函数输出的列。</p>
+<p><img alt="在测试用例表格中隐藏和显示列。" height="600" src="/docs/resources/foundry/aip-evals/aip-evals-test-cases-table-columns.png" style="aspect-ratio:3323 / 1135" width="1756.6519823788547" node="[object Object]"></p>
+<h3 id="user-content-debug-test-cases" level="3" node="[object Object]" data-pagefind-weight="0.8">
+
+<a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="复制链接到此部分" href="#debug-test-cases"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>调试测试用例</h3>
+<p>当鼠标悬停在某一行上时，会显示一个<strong>打开</strong>选项，允许你进一步深入以理解和调试测试用例的执行。</p>
+<p><img alt="当鼠标悬停时显示的&quot;打开&quot;选项。" height="600" src="/docs/resources/foundry/aip-evals/aip-evals-test-cases-table-hover.png" style="aspect-ratio:3325 / 639" width="3122.0657276995307" node="[object Object]"></p>
+<p>这将打开一个抽屉面板，显示该函数执行以及套件中任何评估器的输入、输出和日志。</p>
+<p>请注意，比较视图将取决于你如何对表格进行分组。当比较运行作为单独的行显示时，调试器仅会在所选行的运行上显示。</p>
+<p><img alt="测试用例调试器。" height="600" src="/docs/resources/foundry/aip-evals/aip-evals-debugger-drawer.png" style="aspect-ratio:1678 / 957" width="1052.037617554859" node="[object Object]"></p>
+</article>
+</body>
+</html>

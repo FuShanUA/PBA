@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CEL policies</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-cel-policies" level="1" node="[object Object]" data-pagefind-weight="7"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#cel-policies"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>CEL policies</h1>
+<p>Apollo uses <a href="https://cel.dev/">Common Expression Language (CEL)</a> policies to determine who must approve a change request before it can be applied.
+When a change request is opened, Apollo evaluates all enabled policies for the space and uses the results to set reviewer requirements.</p>
+<p>CEL is an open-source standard to write policies embedded within applications, used by many other platforms across the industry, including <a href="https://kubernetes.io/docs/reference/using-api/cel/">Kubernetes ↗</a> and Google Cloud. The CEL language has a straightforward syntax that is similar to the expressions in C, C++, Java, JavaScript, and Go. To get started with CEL, refer to their <a href="https://github.com/cel-expr/cel-spec/blob/master/doc/langdef.md">language definition ↗</a>.</p>
+<h2 id="user-content-evaluation-model" level="2" node="[object Object]" data-pagefind-weight="6.3"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#evaluation-model"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Evaluation model</h2>
+<p>Policies run at the level of individual Entity changes, not at the level of the change request as a whole. A change request that modifies two Entities produces two separate policy evaluations and can produce different reviewer requirements for each.</p>
+<p>All enabled policies are evaluated against each input. The reviewer requirements they produce are combined with AND semantics, meaning every requirement from every policy must be satisfied before a change can be approved.</p>
+<p>If a policy does not apply to a given change, it must return <code>no_op()</code>. This signals that the policy has no opinion on that change and its result is discarded. Other policies continue to be evaluated normally. If all enabled policies return <code>no_op()</code> for a given change, Apollo returns an error.</p>
+<h2 id="user-content-policy-structure" level="2" node="[object Object]" data-pagefind-weight="6.3"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#policy-structure"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Policy structure</h2>
+<p>A policy consists of:</p>
+<ul>
+<li>An <strong>expression string</strong> that must return a result such as <code>approve()</code>, <code>reject()</code>, <code>no_op()</code>, or <code>require_role()</code>. See <a href="/docs/apollo/cel-policies/cel-functions/">Response types</a> for the full list.</li>
+<li>Optional <strong>named variables</strong>, each defined with a name, type, and value. Variables are referenced in the expression using <code>{{ policyVariable.variableName }}</code> placeholders, which are replaced with the configured value before evaluation. This allows administrators to configure a policy without modifying its expression.</li>
+</ul>
+<h2 id="user-content-input-fields" level="2" node="[object Object]" data-pagefind-weight="6.3"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#input-fields"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Input fields</h2>
+<p>The following fields are available in every policy expression.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>type</code></td><td>string</td><td>The change type, such as <code>CREATE_ENTITY</code> or <code>UPDATE_ENTITY</code>. See <a href="/docs/apollo/cel-policies/input-types/">Change type API reference</a>.</td></tr><tr><td><code>author</code></td><td>object</td><td>The user who opened the change request. Has <code>username</code> (string) and <code>teams</code> (set of strings) fields.</td></tr><tr><td><code>onBehalfOf</code></td><td>object</td><td>Present when a service account opens the change request on behalf of another user. In this case, <code>author</code> contains the service account and <code>onBehalfOf</code> contains the actual requester. Same structure as <code>author</code>. Absent otherwise.</td></tr><tr><td><code>editors</code></td><td>set</td><td>The usernames of users who edited the change request after it was opened. Each entry is a string.</td></tr><tr><td><code>metadata</code></td><td>map</td><td>Internal change request metadata. Pass this directly to predicate functions such as <code>is_trusted_module_request</code> and <code>is_trusted_import_request</code>.</td></tr><tr><td><code>request</code></td><td>object</td><td>Type-specific request data. Available fields depend on the change type. See <a href="/docs/apollo/cel-policies/input-types/">Change type API reference</a>.</td></tr><tr><td><code>diff</code></td><td>map</td><td>A sparse map of fields that changed. Only changed fields are present; removed fields have value <code>"&lt;&lt;unset&gt;&gt;"</code>.</td></tr><tr><td><code>referencedResources</code></td><td>map</td><td>Resources associated with the change, keyed by resource name. Available keys depend on the change type. See <a href="/docs/apollo/cel-policies/input-types/">Change type API reference</a>.</td></tr><tr><td><code>createdAt</code></td><td>timestamp</td><td>The time at which the change request was opened.</td></tr><tr><td><code>now</code></td><td>timestamp</td><td>The current time at which the policy is being evaluated.</td></tr></tbody></table></div>
+<h2 id="user-content-example" level="2" node="[object Object]" data-pagefind-weight="6.3"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#example"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Example</h2>
+<p>The following expression auto-approves Entity config updates from a configurable list of trusted authors and requires operator approval for all other authors. The list is defined as a variable named <code>trustedAuthors</code> (type <code>STRING_LIST</code>) so it can be maintained without modifying the expression:</p>
+<pre><code>type == "UPDATE_ENTITY" ? (
+  author.username in {{ policyVariable.trustedAuthors }}
+    ? approve("Change authored by a trusted team member.")
+    : require_role(referencedResources.installation.rid, "entity:operator", "Operator approval required.")
+) : no_op()
+</code></pre>
+<p>For more examples, see <a href="/docs/apollo/cel-policies/examples/">Examples</a>.</p>
+</article>
+</body>
+</html>

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Roll-off strategies</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-roll-off-strategies" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#roll-off-strategies"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>下线策略</h1>
+<p>本页详细描述了召回的下线策略选项。</p>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>Apollo 只有在满足所有 <a href="/docs/apollo/core/plans-and-constraints/#constraints">约束</a> 的情况下，才会将被召回的发布版本中的实体下线，这可能不会在发出召回后立即发生。</p><p>如果您需要立即将某个实体从被召回的发布版本中下线，可以 <a href="/docs/apollo/managing-entities/user-issued-commands/#issue-a-command">发出一个命令</a>。</p></div>
+<h2 id="user-content-roll-forward" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#roll-forward"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>前进</h2>
+<p>默认情况下，Apollo 将尝试 <strong>前进</strong> 到较新的发布版本。对于特定实体在被召回的发布版本上，Apollo 会等待直到可用的满足所有条件的发布版本出现，然后建议将其下线到该版本。发布的条件是：</p>
+<ul>
+<li>不早于指定的最低发布版本</li>
+<li>在该实体所跟踪的发布通道上</li>
+<li>未被召回</li>
+</ul>
+
+<p>在满足上述条件之前，该实体将保持在召回的版本中。</p>
+<h2 id="user-content-allow-apollo-to-downgrade" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#allow-apollo-to-downgrade"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>允许 Apollo 降级</h2>
+<p>在某些情况下，Apollo 无法将实体向前推进到一个更新的版本。当您打开 <strong>允许 Apollo 降级</strong> 时，如果无法向前推进，则 Apollo 将会将实体回退到之前的版本。</p>
+<p>使用此策略，您可以指定一个比召回的版本更旧的最低版本。如果 Apollo 无法向前推进，则它会将实体回退到大于或等于最低版本的版本。</p>
+<img alt="已选中“允许 Apollo 降级”选项。" src="/docs/resources/apollo/recalling-releases/allow-apollo-to-downgrade.png?width=600" style="aspect-ratio:1422 / 762" width="600" node="[object Object]">
+<p>
+
+此策略中指定的版本通常是已知良好的最旧版本。请注意，Apollo 会尝试将实体升级到符合下架策略并满足所有相关约束的最新可能版本。例如，如果当前被召回的版本是 1.2.3，并且您允许 Apollo 降级至最低 1.2.1 版本，则任何高于或等于 1.2.1（包括 1.2.1）且未被召回的版本都将被考虑。如果 1.2.4 版本可用且未被召回，则该版本将被优先选择。</p>
+<p>一旦实体被回滚，Apollo 将继续正常管理该实体，并将继续建议升级到更新的、未被召回的版本。</p>
+<h3 id="user-content-when-to-allow-apollo-to-downgrade" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#when-to-allow-apollo-to-downgrade"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>允许 Apollo 降级的时机</h3>
+<p>允许 Apollo 降级到之前的版本是一种快速修复受影响实体的方法，尤其是如果您希望在发布新版本之前修复实体的话。然而，您应权衡修复问题与保持新功能对用户可用性之间的利弊。</p>
+<p>
+
+例如，您可能会发现一个影响您产品最近版本的问题，这些版本引入了用户现在依赖的功能。如果您发现的问题较小，您可以优先保持该功能可用。在这种情况下，您可以对这些版本进行召回，并不允许Apollo降级。受影响的实体将停留在被召回的版本上，直到您发布一个修复该问题的新版本。</p>
+<p>相反，如果您发现的问题比较严重，例如严重的性能下降或安全修复，您可能认为取消新功能是值得的，以便让Apollo快速将受影响的实体回滚。在这种情况下，您可以对这些版本进行召回，并允许Apollo降级到之前的版本。</p>
+<h2 id="user-content-freeze-all-version-changes" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#freeze-all-version-changes"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>冻结所有版本更改</h2>
+<p>
+
+使用此策略，您可指示 Apollo 保持在当前版本上，并且不建议将运行该召回版本中某一版本的实体升级。当您发现一个问题并希望阻止该版本部署到新位置时，但又不确定问题性质且尚未确定安全版本时，这非常有用。</p>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>如果您希望在到期日期之前将被召回版本冻结的实体释放，可以 <a href="/docs/apollo/recalling-releases/recall-release/#edit-a-recall">编辑召回</a> 并关闭 <strong>冻结所有版本更改</strong> 选项。</p></div>
+<img alt="“冻结所有版本更改”选项已被选中。" src="/docs/resources/apollo/recalling-releases/freeze-version-changes.png?width=600" style="aspect-ratio:1428 / 914" width="600" node="[object Object]">
+<p>当您想要冻结所有版本更改时，需要指定一个过期日期。在此日期之后，所有实体将从其当前版本中释放。</p>
+<h3 id="user-content-test-roll-off-on-specific-environments" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#test-roll-off-on-specific-environments"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>在特定环境中进行测试回滚</h3>
+<p>
+
+采用此策略，您可以指定一组环境，并指示Apollo仅在这些环境中进行实体回滚。对于未在此策略中指定的每个环境，Apollo会将它们保留在当前版本上，并不会推荐任何升级计划来升级这些实体。</p>
+<p>当您正在测试您的修复是否有效，或者测试回滚到特定版本是否安全时，此策略非常有用。该策略允许您仅对特定环境执行回滚操作，并观察回滚的效果，而不会影响整个系统。</p>
+<img alt="在特定环境中进行测试回滚选项被突出显示。" src="/docs/resources/apollo/recalling-releases/test-roll-off-on-specific-environments.png?width=600" style="aspect-ratio:1422 / 1242" width="600" node="[object Object]">
+<p>在这些环境上的测试完成后，您可以 <a href="/docs/apollo/recalling-releases/recall-release/#edit-a-recall">编辑回滚</a>，为所有版本指定适当的回滚策略。</p>
+</article>
+</body>
+</html>

@@ -270,14 +270,17 @@ def scrape_phase(pages):
                     page_dir = os.path.join(CONTENT_DIR, slug)
                     os.makedirs(page_dir, exist_ok=True)
                     try:
-                        resp = page.goto(url, wait_until="domcontentloaded", timeout=30000)
-                        if not resp or resp.status != 200:
-                            err += 1; continue
-                        page.wait_for_timeout(2000)
-                        content_html = page.evaluate(f"""() => {{
-                            const el = document.querySelector('{CONTENT_SELECTOR}');
-                            return el ? el.innerHTML : '';
-                        }}""")
+                       resp = page.goto(url, wait_until="domcontentloaded", timeout=30000)
+                       if not resp or resp.status != 200:
+                           err += 1; continue
+                        try:
+                            page.wait_for_selector(CONTENT_SELECTOR, timeout=10000)
+                        except Exception:
+                            page.wait_for_timeout(3000)
+                       content_html = page.evaluate(f"""() => {{
+                           const el = document.querySelector('{CONTENT_SELECTOR}');
+                           return el ? el.innerHTML : '';
+                       }}""")
                         if not content_html or len(content_html) < 50:
                             err += 1; continue
                         title = page.evaluate(f"""() => {{

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CEL policies</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<h1 id="user-content-cel-policies" level="1" node="[object Object]" data-pagefind-weight="7"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#cel-policies"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>CEL 策略</h1>
+<p>Apollo 使用 <a href="https://cel.dev/">通用表达语言 (CEL)</a> 策略来确定在更改请求被应用之前必须由谁进行批准。
+当更改请求打开时，Apollo 会评估该空间中所有已启用的策略，并利用结果设置审查者要求。</p>
+<p>CEL 是一种开源标准，用于在应用程序内嵌入策略，许多其他平台都使用它，包括 <a href="https://kubernetes.io/docs/reference/using-api/cel/">Kubernetes ↗</a> 和 Google Cloud。CEL 语言具有类似于 C、C++、Java、JavaScript 和 Go 中表达式的简单语法。要开始使用 CEL，请参考他们的 <a href="https://github.com/cel-expr/cel-spec/blob/master/doc/langdef.md">语言定义 ↗</a>。</p>
+<h2 id="user-content-evaluation-model" level="2" node="[object Object]" data-pagefind-weight="6.3"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#evaluation-model"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>评估模型</h2>
+<p>策略在单个实体更改级别上运行，而不是在整个更改请求级别上运行。一个修改两个实体的更改请求会产生两次独立的策略评估，并且可能为每个实体产生不同的审查者要求。</p>
+<p>
+
+所有启用的策略都会针对每个输入进行评估。它们产生的审查要求通过 AND 语义组合，这意味着在更改被批准之前，必须满足每个策略的每个要求。</p>
+<p>如果一个策略不适用于给定的更改，它必须返回 <code>no_op()</code>。这表示该策略对该更改没有意见，其结果将被丢弃。其他策略将继续正常评估。如果对于某个更改的所有启用策略都返回 <code>no_op()</code>，Apollo 将返回错误。</p>
+<h2 id="user-content-policy-structure" level="2" node="[object Object]" data-pagefind-weight="6.3"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#policy-structure"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>策略结构</h2>
+<p>策略包括：</p>
+<ul>
+<li>一个<strong>表达式字符串</strong>，必须返回如 <code>approve()</code>、<code>reject()</code>、<code>no_op()</code> 或 <code>require_role()</code> 的结果。有关完整列表，请参阅 <a href="/docs/apollo/cel-policies/cel-functions/">响应类型</a>。</li>
+<li>可选的<strong>命名变量</strong>，每个变量都有名称、类型和值。变量在表达式中使用 <code>{{ policyVariable.variableName }}</code> 占位符进行引用，在评估前会被配置的值替换。这使得管理员可以在不修改表达式的情况下配置策略。</li>
+</ul>
+
+<h2 id="user-content-input-fields" level="2" node="[对象 对象]" data-pagefind-weight="6.3"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="复制链接到此部分" href="#input-fields"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>输入字段</h2>
+<p>以下字段在每个策略表达式中都可用。</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>字段</th><th>类型</th><th>描述</th></tr></thead><tbody><tr><td><code>type</code></td><td>字符串</td><td>更改类型，例如 <code>CREATE_ENTITY</code> 或 <code>UPDATE_ENTITY</code>。参见 <a href="/docs/apollo/cel-policies/input-types/">更改类型 API 参考</a>。</td></tr><tr><td><code>author</code></td><td>对象</td><td>打开更改请求的用户。包含 <code>username</code>（字符串）和 <code>teams</code>（字符串集合）字段。</td></tr><tr><td><code>onBehalfOf</code></td><td>对象</td><td>当服务账户代表另一个用户打开更改请求时出现。此时，<code>author</code> 包含服务账户，<code>onBehalfOf</code> 包含实际请求者。结构与 <code>author</code> 相同。否则不存在。</td></tr><tr><td><code>editors</code></td><td>集合</td><td>在更改请求打开后编辑它的用户的用户名。每个条目是一个字符串。</td></tr><tr><td><code>metadata</code></td><td>映射</td><td>内部更改请求元数据。直接传递给如 <code>is_trusted_module_request</code> 和 <code>is_trusted_import_request</code> 的谓词函数。</td></tr><tr><td><code>request</code></td><td>对象</td><td>特定于类型的请求数据。可用字段取决于更改类型。参见 <a href="/docs/apollo/cel-policies/input-types/">更改类型 API 参考</a>。</td></tr><tr><td><code>diff</code></td><td>映射</td><td>更改的字段的稀疏映射。只有更改的字段存在；被删除的字段值为 <code>"&lt;&lt;unset&gt;&gt;"</code>。</td></tr><tr><td><code>referencedResources</code></td><td>映射</td><td>与更改相关的资源，按资源名称进行键控。可用键取决于更改类型。参见 <a href="/docs/apollo/cel-policies/input-types/">更改类型 API 参考</a>。</td></tr><tr><td><code>createdAt</code></td><td>时间戳</td><td>更改请求打开的时间。</td></tr><tr><td><code>now</code></td><td>时间戳</td><td>策略正在评估的当前时间。</td></tr></tbody></table></div>
+
+<h2 id="user-content-example" level="2" node="[object Object]" data-pagefind-weight="6.3"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#example"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>示例</h2>
+<p>以下表达式自动批准来自可配置的可信作者列表的实体配置更新，并要求所有其他作者的操作员批准。该列表定义为一个名为<code>trustedAuthors</code>（类型<code>STRING_LIST</code>）的变量，以便在不修改表达式的情况下进行维护：</p>
+<pre><code>type == "UPDATE_ENTITY" ? (
+  author.username in {{ policyVariable.trustedAuthors }}
+    ? approve("由可信团队成员撰写的更改。")
+    : require_role(referencedResources.installation.rid, "entity:operator", "需要操作员批准。")
+) : no_op()
+</code></pre>
+<p>有关更多示例，请参阅 <a href="/docs/apollo/cel-policies/examples/">示例</a>。</p>
+</article>
+</body>
+</html>
