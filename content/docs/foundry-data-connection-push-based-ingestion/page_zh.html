@@ -19,157 +19,31 @@ th,td{border:1px solid #ddd;padding:8px;text-align:left}
 </head>
 <body>
 <article>
-<h1 id="user-content-push-data-into-a-stream" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#push-data-into-a-stream"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>将数据推送到流中</h1>
-<p>Foundry 中的大部分数据接入工作，主要是从源系统抽取数据，并将其同步至数据集或流中。</p>
-<p>借助流，Foundry 支持<strong>基于推送的接入</strong>方式，以满足事件驱动的业务流需求。</p>
-<p>Foundry 中基于推送的记录接入方式，与常规 REST 服务遵循相同的原则。我们提供了一系列 REST 端点，暴露出基于推送的 API，用于接收记录并将其写入流和数据集。向流中推送数据需要以下基本信息：</p>
-<ul>
-<li>流的数据集资源标识符。</li>
-<li>分支名称。</li>
-<li>用于对请求进行身份验证的令牌。</li>
-</ul>
-<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>如果已经为数据配置了 Foundry 源，建议直接连接该源。了解如何使用现有源<a href="/docs/foundry/data-connection/set-up-streaming-sync/">设置流同步</a>，或了解如何<a href="/docs/foundry/available-connectors/kafka/">设置 Kafka 源</a>。<br><br>
-如果需要从无法通过 Foundry 正确进行身份验证或不符合标准流模式的系统接收入站 Webhook，请考虑使用<a href="/docs/foundry/data-connection/listeners-overview/">监听器</a>。</p></div>
-<p>接下来，我们将探讨将数据推送到流中所需的步骤：</p>
-<ol>
-<li><a href="#part-1-initial-setup">设置</a>新流。</li>
-<li>将记录<a href="#part-2-push-records-into-the-stream">推送</a>至流中。</li>
-<li><a href="#part-3-share-the-stream">共享</a>该流。</li>
-<li><a href="#part-4-test-the-stream">测试</a>该流。</li>
-</ol>
-<h2 id="user-content-part-1-initial-setup" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#part-1-initial-setup"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>第一部分：初始设置</h2>
-<p>首先，启动创建流的工作流。</p>
-<ol>
-<li>登录 Foundry。</li>
-<li>导航至<a href="/docs/foundry/compass/move-and-share-resources/">项目</a>。</li>
-<li>在右上角选择 <strong>+ 新建</strong>。</li>
-<li>向下滚动并选择 <strong>流</strong>。</li>
-</ol>
-<img alt="Create stream" height="493" src="/docs/resources/foundry/data-connection/stream-create@2x.png?width=0.50" srcset="/docs/resources/foundry/data-connection/stream-create@2x.png?width=0.50 1x, /docs/resources/foundry/data-connection/stream-create@2x.png 2x" style="aspect-ratio:583 / 493" width="583" node="[object Object]">
-<p>接下来，必须定义流的模式、吞吐量和键。</p>
-<ul>
-<li><strong>模式</strong>定义了流数据的结构和类型。</li>
-<li><strong>吞吐量</strong>代表数据处理速率，会影响流中使用的分区数量。详情请参阅关于<a href="/docs/foundry/building-pipelines/streaming-performance-considerations/#throughput">吞吐量</a>和<a href="/docs/foundry/data-integration/streams/#partitions">分区</a>的文档。</li>
-<li><strong>键</strong>用于在使用多个分区时保证唯一 ID 的顺序。详情请参阅关于<a href="/docs/foundry/building-pipelines/streaming-keys/">流键</a>的文档。</li>
-</ul>
-<p>在本教程中，我们将创建一个简单的单分区流。</p>
-<ul>
-<li>将模式设置为 <code>sensor_id: String</code>、<code>temperature: Double</code> 和 <code>created_at: Timestamp</code>。</li>
-<li>将吞吐量设置为 <code>Normal</code>。</li>
-</ul>
-<p>然后，对流进行配置。</p>
-<ul>
-<li>选择 <code>从 JSON 样本生成...</code> 按钮并粘贴现有的 JSON 文本，即可从现有的 JSON 数据块中自动生成模式。</li>
-<li>如果要从关系型数据库流式传输实时更新，请设置<a href="/docs/foundry/data-integration/change-data-capture/">变更数据捕获</a>。</li>
-<li>根据流的并行处理需求，评估是否需要更高的吞吐量设置。有关更多信息，请查阅关于<a href="/docs/foundry/data-integration/streams/#partitions">分区</a>的文档。</li>
-<li>在使用多个分区时，考虑设置键以保证顺序。</li>
-</ul>
-<img alt="Define stream" height="600" src="/docs/resources/foundry/data-connection/stream-define@2x.png?width=0.50" srcset="/docs/resources/foundry/data-connection/stream-define@2x.png?width=0.50 1x, /docs/resources/foundry/data-connection/stream-define@2x.png 2x" style="aspect-ratio:1810 / 1287" width="843.8228438228438" node="[object Object]">
-<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>在选择<strong>创建流</strong>之前，必须解决所有验证错误。将鼠标悬停在页面底部的工具提示上，可查看有关错误的更多详细信息。</p></div>
-<p>选择右下角的 <strong>创建流</strong> 按钮，进入<strong>连接</strong>页面。在此页面，可以指定连接流数据的方式。</p>
-<h2 id="user-content-part-2-push-records-into-the-stream" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#part-2-push-records-into-the-stream"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>第二部分：将记录推送到流中</h2>
-<p>现在可以开始连接流了。</p>
-<ol>
-<li>
-<p>对于基于推送的接入，请在<strong>通过 API 连接</strong>部分下方选择任一选项。</p>
-<p>任何能够发起 HTTP 请求的语言或技术均可用于推送记录。我们提供了 cURL、Python、Node 环境下的 JavaScript 以及 Java 的示例。如果想通过 Foundry 同步接入数据，而不是将数据推送到 Foundry，请查阅如何<a href="/docs/foundry/data-connection/set-up-streaming-sync/">设置流同步</a>。</p>
-<p>本示例中，我们将选择 <strong>cURL</strong>。</p>
- <img alt="Stream connection" height="600" src="/docs/resources/foundry/data-connection/stream-connect@2x.png?width=0.50" srcset="/docs/resources/foundry/data-connection/stream-connect@2x.png?width=0.50 1x, /docs/resources/foundry/data-connection/stream-connect@2x.png 2x" style="aspect-ratio:3076 / 2022" width="912.7596439169139" node="[object Object]">
-<p>随后将进入<strong>推送</strong>数据工作流页面。</p>
-</li>
-<li>
-<p>接下来，选择身份验证机制。我们支持两种请求身份验证方式：</p>
-<ul>
-<li><strong>使用第三方应用程序推送（推荐）：</strong>此方法使用 OAuth2 工作流创建安全令牌，用于将记录推送到流中。</li>
-<li><strong>使用个人令牌推送：</strong>此方法使用用户生成的令牌，仅供测试使用。</li>
-</ul>
+<h1 id="user-content-push-data-into-a-stream" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#push-data-into-a-stream"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>将数据推送到流中</h1><p>Foundry 中大多数数据摄入工作都集中在从源系统拉取数据并将其同步到数据集或流中。</p><p>通过流，Foundry 支持 <strong>基于推送的摄入</strong>，以支持事件驱动的工作流程。</p><p>Foundry 中基于推送的记录摄入遵循与典型 REST 服务相同的原理。通过一系列 REST 端点，我们提供一个可以消耗记录并将其写入流和数据集的基于推送的 API。要向流中推送数据，需要以下高级信息：</p><ul><li>流的数据集资源标识符。</li><li>分支名称。</li><li>用于认证请求的令牌。</li></ul><div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>如果您已经为您的数据配置了 Foundry 源，您可能希望连接到该源。了解如何 <a href="/docs/foundry/data-connection/set-up-streaming-sync/">设置流式同步</a> </p>
 
-<img alt="流推送选项" height="600" src="/docs/resources/foundry/data-connection/stream-push-auth@2x.png?width=0.50" srcset="/docs/resources/foundry/data-connection/stream-push-auth@2x.png?width=0.50 1x, /docs/resources/foundry/data-connection/stream-push-auth@2x.png 2x" style="aspect-ratio:1717 / 660" width="1560.9090909090908" node="[object Object]">
-</li>
-<li>
-<p>在本教程中，请选择<strong>使用第三方应用程序推送</strong>方法。按照屏幕上的步骤设置第三方应用程序，并创建您的客户端密钥。配置应用程序的操作限制时，请确保包含 <code>api:use-streams-write</code> 操作，以便第三方应用程序能够将记录推送到流中。</p>
- <img alt="流推送第三方授权" height="600" src="/docs/resources/foundry/data-connection/stream-push-auth-third-party@2x.png?width=0.50" srcset="/docs/resources/foundry/data-connection/stream-push-auth-third-party@2x.png?width=0.50 1x, /docs/resources/foundry/data-connection/stream-push-auth-third-party@2x.png 2x" style="aspect-ratio:2096 / 1652" width="761.2590799031477" node="[object Object]">
-</li>
-<li>
-<p>现在，选择<strong>前往第三方应用程序</strong>，在您的 Foundry 平台设置中打开第三方应用程序管理页面。</p>
-</li>
-<li>
-<p>在屏幕右上角选择<strong>注册新应用程序</strong>。</p>
- <img alt="第三方新应用" height="236" src="/docs/resources/foundry/data-connection/stream-third-party-register@2x.png?width=0.50" srcset="/docs/resources/foundry/data-connection/stream-third-party-register@2x.png?width=0.50 1x, /docs/resources/foundry/data-connection/stream-third-party-register@2x.png 2x" style="aspect-ratio:2090 / 236" width="2090" node="[object Object]">
-</li>
-<li>
-<p>选择一个名称，并将客户端类型设置为<strong>服务端应用程序</strong>。</p>
- <img alt="第三方创建应用" height="498" src="/docs/resources/foundry/data-connection/stream-third-party-register-new@2x.png?width=0.50" srcset="/docs/resources/foundry/data-connection/stream-third-party-register-new@2x.png?width=0.50 1x, /docs/resources/foundry/data-connection/stream-third-party-register-new@2x.png 2x" style="aspect-ratio:800 / 498" width="800" node="[object Object]">
-</li>
-<li>
-<p>选择<strong>创建</strong>，系统将显示您的客户端 ID 和密钥。</p>
-<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>离开此页面后，客户端密钥将无法再次访问。请务必将其保存在安全的位置。</p></div>
-</li>
-<li>
-<p>现在，您可以将客户端 ID 和密钥添加到<strong>推送</strong>工作流页面中。</p>
- <img alt="添加客户端密钥" height="600" src="/docs/resources/foundry/data-connection/stream-client-secret@2x.png?width=0.50" srcset="/docs/resources/foundry/data-connection/stream-client-secret@2x.png?width=0.50 1x, /docs/resources/foundry/data-connection/stream-client-secret@2x.png 2x" style="aspect-ratio:2092 / 1566" width="801.5325670498084" node="[object Object]">
-</li>
-<li>
-<p>滚动至工作流的<strong>配置应用程序</strong>部分，然后选择<strong>管理应用程序</strong>，在您的 Foundry 平台设置中打开<strong>第三方应用程序</strong>管理页面。</p>
- <img alt="配置第三方应用" height="464" src="/docs/resources/foundry/data-connection/stream-configure-third-party-app@2x.png?width=0.50" srcset="/docs/resources/foundry/data-connection/stream-configure-third-party-app@2x.png?width=0.50 1x, /docs/resources/foundry/data-connection/stream-configure-third-party-app@2x.png 2x" style="aspect-ratio:1628 / 464" width="1628" node="[object Object]">
-</li>
-<li>
-<p>接下来，启用<strong>客户端凭证授权</strong>设置。</p>
-<img alt="配置授权" height="600" src="/docs/resources/foundry/data-connection/stream-third-party-app-server@2x.png?width=0.50" srcset="/docs/resources/foundry/data-connection/stream-third-party-app-server@2x.png?width=0.50 1x, /docs/resources/foundry/data-connection/stream-third-party-app-server@2x.png 2x" style="aspect-ratio:915 / 864" width="635.4166666666666" node="[object Object]">
-</li>
-<li>
-<p>最后，点击右上角的<strong>保存</strong>。</p>
-</li>
-</ol>
-<h2 id="user-content-part-3-share-the-stream" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="复制链接到章节" href="#part-3-share-the-stream"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>第 3 部分：共享流</h2>
-<p>现在，我们需要将流与我们创建的应用程序共享。</p>
-<ol>
-<li>
-<p>首先，返回至<strong>推送</strong>工作流页面。在工作流的<strong>使用您的新应用程序</strong>部分下，找到您生成的客户端 ID。</p>
- <img alt="客户端 ID" height="364" src="/docs/resources/foundry/data-connection/stream-client-id@2x.png?width=0.50" srcset="/docs/resources/foundry/data-connection/stream-client-id@2x.png?width=0.50 1x, /docs/resources/foundry/data-connection/stream-client-id@2x.png 2x" style="aspect-ratio:1954 / 364" width="1954" node="[object Object]">
-</li>
-<li>
-<p>接下来，选择右上角的<strong>共享</strong>，在屏幕右侧打开流的<strong>详情</strong>侧边栏的<strong>角色</strong>选项卡。</p>
- <img alt="共享第三方应用" height="600" src="/docs/resources/foundry/data-connection/stream-share-third-party-app@2x.png?width=0.50" srcset="/docs/resources/foundry/data-connection/stream-share-third-party-app@2x.png?width=0.50 1x, /docs/resources/foundry/data-connection/stream-share-third-party-app@2x.png 2x" style="aspect-ratio:1298 / 1062" width="733.3333333333334" node="[object Object]">
-</li>
-<li>
-<p>将客户端 ID 复制并粘贴到<strong>角色</strong>搜索框中，以查找您创建的应用程序。选择<strong>+</strong>进行搜索，并选择 <code>Editor</code> 角色。</p>
-</li>
-<li>
-<p>在侧面板底部选择<strong>保存</strong>以共享该流。</p>
-</li>
-<li>
-<p>返回至推送工作流，并选择<strong>下一步</strong>。</p>
-</li>
-</ol>
-<h2 id="user-content-part-4-test-the-stream" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="复制链接到章节" href="#part-4-test-the-stream"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>第 4 部分：测试流</h2>
-<p>系统将向您展示可用于将测试记录推送到流中的代码示例。代码示例会根据您在先前步骤中选择的语言而有所不同。在本示例中，我们使用 cURL。</p>
-<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>在运行 cURL 命令之前，请确保已安装 jq ↩ 以便在命令行中解析 JSON。</p></div>
-<ol>
-<li>首先，从第一个代码框中复制命令。该命令将请求 Foundry 的 OAuth2 端点，并为您提供可用于推送记录的访问令牌。</li>
-</ol>
-  <img alt="使用 cURL 推送记录" height="600" src="/docs/resources/foundry/data-connection/stream-curl-push@2x.png?width=0.50" srcset="/docs/resources/foundry/data-connection/stream-curl-push@2x.png?width=0.50 1x, /docs/resources/foundry/data-connection/stream-curl-push@2x.png 2x" style="aspect-ratio:2106 / 1318" width="958.7253414264036" node="[object Object]">
-<ol start="2">
-<li>
-<p>在 Mac、Windows 或 Linux 机器的 bash 终端中执行该命令。</p>
-<p>命令执行后，您将获得一个名为 <code>$ACCESS_TOKEN</code> 的可用变量。在下一条推送记录的命令中，您将使用此变量。</p>
-<p>第二条命令将使用 cURL 向 Foundry 端点发送 POST 请求，其中包含我们要插入流中的记录。该命令已预填了一条模拟记录以推送到流中，但您可以在 HTTP 请求中提供任何符合该流模式的数据。</p>
-</li>
-<li>
-<p>将第二条命令复制并粘贴到您的终端中并执行。</p>
-<p>
+使用现有源，或学习如何 <a href="/docs/foundry/available-connectors/kafka/">设置 Kafka 源</a>。 <br><br>
+如果您需要从无法正确与 Foundry 身份验证或符合标准流模式的系统接收入站 webhook，请考虑使用 <a href="/docs/foundry/data-connection/listeners-overview/">监听器</a>。</p></div><p>下面，我们将讨论将数据推送到流中的步骤：</p><ol><li><a href="#part-1-initial-setup">设置</a>一个新的流。</li><li><a href="#part-2-push-records-into-the-stream">将记录推送到</a>流中。</li><li><a href="#part-3-share-the-stream">共享</a>流。</li><li><a href="#part-4-test-the-stream">测试</a>流。</li></ol><h2 id="user-content-part-1-initial-setup" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#part-1-initial-setup"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>第一部分：初始设置</h2><p>首先，开始流创建工作流程。</p><ol><li>登录 Foundry。</li><li>导航到一个 <a href="/docs/foundry/compass/move-and-share-resources/">项目（Project）</a>。</li><li>在右上角选择 <strong>+ 新建</strong>。</li><li>向下滚动并选择 <strong>流（Stream）</strong>。</li></ol><img alt="创建流" height="493" src="/docs/resources/foundry/data-connection/stream-create@2x.png?width=0.50" srcset="/docs/resources/foundry/data-connection/stream-create@2x.png?width=0.50 1x, /docs/resources/foundry/data-connection/stream-create@2x.png 2x" style="aspect-ratio:583 / 493" width="583" node="[object Object]"><p>
 
-如果命令执行成功，您将看到记录出现在流中。</p>
- <img alt="View records" height="482" src="/docs/resources/foundry/data-connection/stream-view-records@2x.png?width=0.50" srcset="/docs/resources/foundry/data-connection/stream-view-records@2x.png?width=0.50 1x, /docs/resources/foundry/data-connection/stream-view-records@2x.png 2x" style="aspect-ratio:1242 / 482" width="1242" node="[object Object]">
-</li>
-</ol>
-<p>要更改推送到流中的数据，请修改 post 请求的 data 参数。</p>
+接下来，我们必须为流定义模式、吞吐量和键。</p><ul><li><strong>模式</strong> 定义了你的流数据的结构和类型。</li><li><strong>吞吐量</strong> 表示数据处理速率，并将影响你的流中使用的分区数量。了解更多请参阅我们的 <a href="/docs/foundry/building-pipelines/streaming-performance-considerations/#throughput">吞吐量</a> 和 <a href="/docs/foundry/data-integration/streams/#partitions">分区</a> 文档。</li><li><strong>键</strong> 用于在使用多个分区时保证唯一ID的顺序。了解更多请参阅我们的 <a href="/docs/foundry/building-pipelines/streaming-keys/">流键</a> 文档。</li></ul><p>在本教程中，我们将创建一个简单的单分区流。</p><ul><li>将模式设置为 <code>sensor_id: String</code>, <code>temperature: Double</code>, 和 <code>created_at: Timestamp</code>。</li><li>将吞吐量设置为 <code>Normal</code>。</li></ul><p>然后，配置你的流。</p><ul><li>通过选择 <code>Generate from JSON sample...</code> 按钮并粘贴你已有的 JSON blob 来自动从现有的 JSON blob 生成模式。</li><li>如果你正在从关系型数据库实时流式传输更新，请设置 <a href="/docs/foundry/data-integration/change-data-capture/">变更数据捕获</a>。</li><li>考虑你的流的并行性需求，以确定是否需要更高的吞吐量设置。有关更多信息，请查看我们的 <a href="/docs/foundry/data-integration/streams/#partitions">分区</a> 文档。</li><li>
+
+在使用多个分区时，建议为排序保证设置一个键。</li></ul><img alt="定义流" height="600" src="/docs/resources/foundry/data-connection/stream-define@2x.png?width=0.50" srcset="/docs/resources/foundry/data-connection/stream-define@2x.png?width=0.50 1x, /docs/resources/foundry/data-connection/stream-define@2x.png 2x" style="aspect-ratio:1810 / 1287" width="843.8228438228438" node="[object Object]"><div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>在选择<strong>创建流</strong>之前，必须解决所有验证错误。有关错误的更多详细信息，请将鼠标悬停在页面底部的工具提示上。</p></div><p>在右下角选择<strong>创建流</strong>按钮以导航到<strong>连接</strong>页面。在此处，您可以指定如何连接到流数据。</p><h2 id="user-content-part-2-push-records-into-the-stream" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="复制链接到该部分" href="#part-2-push-records-into-the-stream"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>第二部分：将记录推送到流中</h2><p>我们现在准备好连接我们的流了。</p><ol><li><p>对于基于推送的数据摄入，选择<strong>通过API连接</strong>部分下的其中一个选项。</p><p>
+
+任何能够发起HTTP请求的语言或技术都可以用来推送记录。我们提供了cURL、Python、通过Node的JavaScript和Java的示例。如果您希望通过Foundry同步而非直接将数据推送到Foundry来摄取数据，请查看如何< a href="/docs/foundry/data-connection/set-up-streaming-sync/">设置流式同步</a>。</p><p>对于这个示例，我们将选择<strong>cURL</strong>。</p><img alt="流连接" height="600" src="/docs/resources/foundry/data-connection/stream-connect@2x.png?width=0.50" srcset="/docs/resources/foundry/data-connection/stream-connect@2x.png?width=0.50 1x, /docs/resources/foundry/data-connection/stream-connect@2x.png 2x" style="aspect-ratio:3076 / 2022" width="912.7596439169139" node="[object Object]"><p>您将进入<strong>推送</strong>数据工作流程页面。</p></li><li><p>接下来，选择一种认证机制。我们支持两种向请求进行认证的方式：</p><ul><li><strong>使用第三方应用程序进行推送（推荐）：</strong>此方法使用OAuth2流程生成一个安全令牌，可用于将记录推送到您的流中。</li><li><strong>使用个人令牌进行推送：</strong>此方法仅用于测试目的，使用用户生成的令牌。</li></ul><img alt="流推送选项" height="600" src="/docs/resources/foundry/data-connection/stream-push-auth@2x.png?width=0.50" srcset="/docs/resources/foundry/data-connection/stream-push-auth@2x.png?width=0.50 1x, /docs/resources/foundry/data-connection/stream-push-auth@2x.png 2x" style="aspect-ratio:1717 / 660" width="1560.9090909090908" node="[object Object]"></li><li><p>在本教程中，选择<strong>使用第三方应用程序进行推送</strong>
+
+方法。按照屏幕上的步骤设置第三方应用程序并创建您的 <a href="/docs/foundry/platform-security-third-party/register-3pa/">客户端密钥</a>。在配置应用程序的操作限制时，确保包含 <code>api:use-streams-write</code> 操作，以便第三方应用程序可以将记录推送到流中。</p><img alt="流推送第三方认证" height="600" src="/docs/resources/foundry/data-connection/stream-push-auth-third-party@2x.png?width=0.50" srcset="/docs/resources/foundry/data-connection/stream-push-auth-third-party@2x.png?width=0.50 1x, /docs/resources/foundry/data-connection/stream-push-auth-third-party@2x.png 2x" style="aspect-ratio:2096 / 1652" width="761.2590799031477" node="[object Object]"></li><li><p>现在，选择<strong>转到第三方应用程序</strong>，以在您的Foundry平台设置中打开第三方应用程序管理页面。</p></li><li><p>在屏幕的右上角选择<strong>注册新应用</strong>。</p><img alt="第三方新应用" height="236" src="/docs/resources/foundry/data-connection/stream-third-party-register@2x.png?width=0.50" srcset="/docs/resources/foundry/data-connection/stream-third-party-register@2x.png?width=0.50 1x, /docs/resources/foundry/data-connection/stream-third-party-register@2x.png 2x" style="aspect-ratio:2090 / 236" width="2090" node="[object Object]"></li><li><p>选择一个名称，并将客户端类型设置为<strong>服务器应用</strong>。</p><img alt="第三方创建应用" height="498" src="/docs/resources/foundry/data-connection/stream-third-party-register-new@2x.png?width=0.50" srcset="/docs/resources/foundry/data-connection/stream-third-party-register-new@2x.png?width=0.50 1x, /docs/resources/foundry/data-connection/stream-third-party-register-new@2x.png 2x" style="aspect-ratio:800 / 498" width="800" node="[object Object]"></li><li><p>选择<strong>创建</strong>，您将看到您的客户端ID和密钥。</p><div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>
+
+客户端密钥一旦离开此页面将无法访问。请确保将其存储在安全的位置。</p></div></li><li><p>现在，您可以将客户端ID和密钥添加到<strong>推送</strong>工作流页面。</p><img alt="添加客户端密钥" height="600" src="/docs/resources/foundry/data-connection/stream-client-secret@2x.png?width=0.50" srcset="/docs/resources/foundry/data-connection/stream-client-secret@2x.png?width=0.50 1x, /docs/resources/foundry/data-connection/stream-client-secret@2x.png 2x" style="aspect-ratio:2092 / 1566" width="801.5325670498084" node="[object Object]"></li><li><p>向下滚动到工作流的<strong>配置应用程序</strong>部分，然后选择<strong>管理应用程序</strong>以在您的Foundry平台设置中打开<strong>第三方应用程序</strong>管理页面。</p><img alt="配置第三方应用" height="464" src="/docs/resources/foundry/data-connection/stream-configure-third-party-app@2x.png?width=0.50" srcset="/docs/resources/foundry/data-connection/stream-configure-third-party-app@2x.png?width=0.50 1x, /docs/resources/foundry/data-connection/stream-configure-third-party-app@2x.png 2x" style="aspect-ratio:1628 / 464" width="1628" node="[object Object]"></li><li><p>接下来，启用<strong>客户端凭证授予</strong>设置。</p><img alt="配置授权" height="600" src="/docs/resources/foundry/data-connection/stream-third-party-app-server@2x.png?width=0.50" srcset="/docs/resources/foundry/data-connection/stream-third-party-app-server@2x.png?width=0.50 1x, /docs/resources/foundry/data-connection/stream-third-party-app-server@2x.png 2x" style="aspect-ratio:915 / 864" width="635.4166666666666" node="[object Object]"></li><li><p>最后，点击右上角的<strong>保存</strong>。</p></li></ol><h2 id="user-content-part-3-share-the-stream" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#part-3-share-the-stream"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>第三部分：共享流</h2><p>
+
+现在，我们需要将流与我们创建的应用程序进行共享。</p><ol><li><p>首先，返回到<strong>推送</strong>工作流页面。在工作流的<strong>使用您的新应用程序</strong>部分下，找到您生成的客户端ID。</p><img alt="客户端ID" height="364" src="/docs/resources/foundry/data-connection/stream-client-id@2x.png?width=0.50" srcset="/docs/resources/foundry/data-connection/stream-client-id@2x.png?width=0.50 1x, /docs/resources/foundry/data-connection/stream-client-id@2x.png 2x" style="aspect-ratio:1954 / 364" width="1954" node="[object Object]"></li><li><p>接下来，在右上角选择<strong>共享</strong>，以打开右侧屏幕上的<strong>角色</strong>选项卡的<strong>详情</strong>侧边栏。</p><img alt="共享第三方应用" height="600" src="/docs/resources/foundry/data-connection/stream-share-third-party-app@2x.png?width=0.50" srcset="/docs/resources/foundry/data-connection/stream-share-third-party-app@2x.png?width=0.50 1x, /docs/resources/foundry/data-connection/stream-share-third-party-app@2x.png 2x" style="aspect-ratio:1298 / 1062" width="733.3333333333334" node="[object Object]"></li><li><p>将客户端ID复制并粘贴到<strong>角色</strong>搜索字段中，以查找您创建的应用程序。选择<strong>+</strong>来搜索并选择<code>Editor</code>角色。</p></li><li><p>在侧边栏底部选择<strong>保存</strong>以共享该流。</p></li><li><p>返回到推送工作流并选择<strong>下一步。</strong></p></li></ol><h2 id="user-content-part-4-test-the-stream" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#part-4-test-the-stream">
+
+<svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>第4部分：测试流</h2><p>现在您将看到一些代码示例，这些示例可用于将测试记录推送到流中。根据您在上一步中选择的语言，代码示例会有所不同。在此示例中，我们使用cURL。</p><div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" width="20" height="20" viewBox="0 0 20 20" role="img" fill="currentColor"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>在运行cURL命令之前，请确保安装 <a href="https://jqlang.org/">jq ↗</a> 用于命令行JSON解析。</p></div><ol><li>首先，从第一个框中复制命令。这将访问Foundry的OAuth2端点，为您提供一个可以用来推送记录的访问令牌。</li></ol><img alt="使用cURL推送记录" height="600" src="/docs/resources/foundry/data-connection/stream-curl-push@2x.png?width=0.50" srcset="/docs/resources/foundry/data-connection/stream-curl-push@2x.png?width=0.50 1x, /docs/resources/foundry/data-connection/stream-curl-push@2x.png 2x" style="aspect-ratio:2106 / 1318" width="958.7253414264036" node="[object Object]"><ol start="2"><li><p>在Mac、Windows或Linux机器上的bash终端中执行该命令。</p><p>一旦执行了该命令，您将拥有一个名为 <code>$ACCESS_TOKEN</code> 的可用变量。您将在下一个命令中使用此变量来推送记录。</p><p>
+
+第二个命令将使用cURL通过POST请求向Foundry端点发送我们想要插入流中的记录。该命令已预填了一个示例记录以推送到流中，但您可以提供任何符合流模式的HTTP请求数据。</p></li><li><p>将第二个命令复制并粘贴到终端并执行它。</p><p>如果命令成功，您将在流中看到记录出现。</p><img alt="查看记录" height="482" src="/docs/resources/foundry/data-connection/stream-view-records@2x.png?width=0.50" srcset="/docs/resources/foundry/data-connection/stream-view-records@2x.png?width=0.50 1x, /docs/resources/foundry/data-connection/stream-view-records@2x.png 2x" style="aspect-ratio:1242 / 482" width="1242" node="[object Object]"></li></ol><p>要更改推送到流中的数据，请修改POST请求的数据参数。</p>
 <pre><code>[{ \"value\": {\"sensor_id\":\"sensor4\",\"temperature\":4.132} }]
 </code></pre>
-<p>您还可以通过展开 <strong>Test with JSON</strong> 卡片，从用户界面将测试记录发送到流中。</p>
-<img alt="Test with JSON" height="600" src="/docs/resources/foundry/data-connection/stream-test-with-json.png" style="aspect-ratio:1720 / 664" width="1554.2168674698796" node="[object Object]">
-<h2 id="user-content-next--steps" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#next--steps"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>后续步骤</h2>
-<p>现在您已成功将数据推送到流中，可以开始转换数据了。选择 <strong>Start pipelining</strong> 以导航到 Pipeline Builder 应用程序，您将在其中构建流式处理管道。了解如何<a href="/docs/foundry/building-pipelines/create-stream-pipeline-pb/">转换您的数据</a>，并详细了解<a href="/docs/foundry/pipeline-builder/overview/">Pipeline Builder 中可用的不同转换方式</a>。</p>
+<p>您也可以通过展开<strong>使用JSON测试</strong>卡片，从用户界面发送测试记录到流中。</p><img alt="使用JSON测试" height="600" src="/docs/resources/foundry/data-connection/stream-test-with-json.png" style="aspect-ratio:1720 / 664" width="1554.2168674698796" node="[object Object]"><h2 id="user-content-next--steps" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="复制链接到此部分" href="#next--steps"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>下一步</h2><p>
+
+现在您已成功将数据推送到流中，可以开始转换您的数据了。选择 <strong>开始构建管道</strong> 以导航到 Pipeline Builder 应用程序，在那里您将构建自己的流式处理管道。了解如何 <a href="/docs/foundry/building-pipelines/create-stream-pipeline-pb/">转换您的数据</a>，并了解更多有关 <a href="/docs/foundry/pipeline-builder/overview/">Pipeline Builder 中可用的不同转换</a> 的信息。</p>
 </article>
 </body>
 </html>
