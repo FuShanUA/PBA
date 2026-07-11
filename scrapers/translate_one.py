@@ -5,7 +5,7 @@ import sys, os, re, time
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CONTENT_DIR = os.path.join(ROOT, "content", "docs")
 MAX_WORDS = 200
-DEADLINE = 600  # 5 min per page, should be enough for 20-25 chunks
+DEADLINE = 1200  # 5 min per page, should be enough for 20-25 chunks
 API_TIMEOUT = 30
 
 TERM_PAIRS = {
