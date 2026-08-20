@@ -14,6 +14,13 @@ import json, re, os, sys, time, hashlib, urllib.request, argparse, subprocess
 from datetime import datetime, timezone
 from urllib.parse import urljoin, urlparse
 
+# Global import so translate_title() and translate_article_file() can access it
+try:
+    sys.path.insert(0, '/Users/shanfu/cc/Library/Tools/common')
+    from llm_utils import LLMProvider
+except Exception:
+    LLMProvider = None
+
 ROOT = os.path.dirname(os.path.abspath(__file__))
 
 def log(msg):
@@ -327,7 +334,12 @@ def translate_article_file(en_path, zh_path, client, translator_agent, md_lib):
     """Translate an HTML article file to Chinese, preserving paragraph structure."""
     with open(en_path, 'r', encoding='utf-8') as f:
         html = f.read()
-    # Extract text content from HTML
+    # Extract only article content (avoid translating nav/menu/footer)
+    art_start = html.find('<article')
+    if art_start >= 0:
+        art_end = html.find('</article>', art_start)
+        if art_end > art_start:
+            html = html[art_start:art_end + len('</article>')]
     text = re.sub(r'<[^>]+>', '\n', html)
     text = re.sub(r'\n{3,}', '\n\n', text).strip()
     if not text or len(text) < 50:
@@ -365,7 +377,7 @@ def translate_article_file(en_path, zh_path, client, translator_agent, md_lib):
         # Wrap in basic HTML
         zh_html = f'''<!DOCTYPE html>
 <html lang="zh"><head><meta charset="UTF-8">
-<style>body{{max-width:800px;margin:0 auto;padding:24px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;line-height:1.8;}}</style>
+<style>body{{max-width:800px;margin:0 auto;padding:24px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;line-height:1.8;}}img{{max-width:100%;height:auto;}}pre{{overflow-x:auto;}}table{{max-width:100%;display:block;overflow-x:auto;}}</style>
 </head><body>{rendered}</body></html>'''
         with open(zh_path, 'w', encoding='utf-8') as f:
             f.write(zh_html)

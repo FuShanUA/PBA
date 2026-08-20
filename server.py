@@ -67,6 +67,13 @@ class Handler(BaseHTTPRequestHandler):
             self._send_json(403, {"error": "forbidden"})
             return
         if not os.path.isfile(safe):
+            # Chinese variant missing -> fall back to English version
+            if rel_path.endswith("_zh.html"):
+                en_path = rel_path[: -len("_zh.html")] + ".html"
+                en_safe = os.path.normpath(os.path.join(ROOT, en_path))
+                if en_safe.startswith(ROOT) and os.path.isfile(en_safe):
+                    self._serve_file(en_path)
+                    return
             self._send_json(404, {"error": "not found"})
             return
         ext = os.path.splitext(safe)[1].lower()

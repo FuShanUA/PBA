@@ -44,7 +44,7 @@ SPECIAL_PAGES = {
 EXCLUDE_PREFIXES = [
     "/blog", "/docs", "/sitemap", "/cookie", "/terms", "/privacy-and-security",
     "/human-rights", "/modern-slavery", "/store", "/contact", "/jp", "/uk",
-    "/us-public-policy", "/responsible-business", "/q1-2026", "/news-details",
+    "/us-public-policy", "/responsible-business", "/news-details",
 ]
 
 def load_manifest():
@@ -84,6 +84,10 @@ def categorize_url(path):
     # Check if it's a platform sub-page
     if top == "aip" and len(parts) > 0:
         return "Platforms", "平台", "AIP"
+    
+    # Shareholder letters (e.g. /q1-2026-letter/, /q2-2025-letter/en/)
+    if re.match(r"^q[1-4]-\d{4}-letter$", top):
+        return "Newsroom", "新闻", "letters"
     
     return "Other", "其他", top
 
@@ -371,6 +375,16 @@ def main():
         "tag_freq": sc_counts,
         "cat_hierarchy": cat_hierarchy,
     }
+    
+    # Preserve review state from existing file so approved/excluded slugs survive rescans
+    if os.path.exists(OUTPUT_PATH):
+        try:
+            with open(OUTPUT_PATH, encoding="utf-8") as f:
+                old = json.load(f)
+            output["approved_slugs"] = old.get("approved_slugs", [])
+            output["excluded_slugs"] = old.get("excluded_slugs", [])
+        except Exception:
+            pass
     
     os.makedirs(os.path.dirname(OUTPUT_PATH), exist_ok=True)
     with open(OUTPUT_PATH, "w", encoding="utf-8") as f:

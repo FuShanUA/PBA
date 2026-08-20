@@ -389,10 +389,11 @@ def run_update(sources, progress=None, do_translate=True):
         elif src == "website":
             summary["website"] = scan_website(progress)
 
-    rebuild_index(progress)
-
     if do_translate:
         translate(progress)
+
+    # Rebuild AFTER translate so translated titles (tt) land in index.json
+    rebuild_index(progress)
 
     status = source_status()
     progress({"phase": "complete", "msg": f"[{_ts()}] 更新全部完成", "status": status})
