@@ -266,8 +266,6 @@ footer{text-align:center;padding:20px;color:var(--muted);border-top:1px solid va
 .docs-original-link:hover{text-decoration:underline}
 .docs-nested-content{flex:1;width:100%;border:none;background:#fff}
 .docs-loading{padding:40px;text-align:center;color:var(--muted)}
-.docs-exit{display:flex;align-items:center;gap:6px;width:100%;margin-bottom:8px;padding:7px 9px;border:1px solid var(--border);border-radius:6px;background:transparent;color:var(--muted);font-size:.78em;font-weight:600;cursor:pointer}
-.docs-exit:hover{color:var(--text);border-color:var(--accent)}
 .docs-product-list{display:grid;gap:6px;margin-top:10px}
 .docs-product-btn{display:flex;align-items:center;justify-content:space-between;padding:9px 10px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text);font-size:.9em;font-weight:650;cursor:pointer;text-align:left}
 .docs-product-btn:hover{border-color:var(--accent)}
@@ -392,8 +390,9 @@ var SOURCE_META={blog:{name:"Blog",name_zh:"博客"},website:{name:"Website",nam
 var SOURCE_ORDER=["blog","website","docs","video","patent","contract"];
 
 function buildSidebar(){
-if(currentSource==="docs"){buildDocsSidebar();return}
 var sb=document.getElementById("sidebar");var h="";
+for(var scKey in sourceCollapsed){sourceCollapsed[scKey]=true}
+sourceCollapsed[currentSource]=false;
 // Group categories by source
 var bySource={};
 for(var si=0;si<SOURCE_ORDER.length;si++){
@@ -417,6 +416,13 @@ var srcTotal=info?info.total:0;if(!info){info={cats:{},total:0};}
 var meta=SOURCE_META[src2]||{name:src2,name_zh:src2};
 var srcLabel=lang==="zh"?meta.name_zh:meta.name;
 h+="<div class='source-group"+(sourceCollapsed[src2]?" collapsed":"")+"' data-source='"+src2+"'><div class='source-header"+(currentSource===src2?" active-src":"")+"' data-source='"+src2+"'><span class='source-arrow'></span>"+srcLabel+"<span class='source-total'>"+info.total+"</span></div><div class='source-body'>";
+if(src2==="docs"){
+h+="<div class='docs-product-list'>";
+["foundry","apollo","gotham"].forEach(function(prod){
+h+="<button class='docs-product-btn"+(docsSelectedProduct===prod?" active":"")+"' type='button' data-product='"+prod+"'>"+DOCS_PRODUCT_NAMES[prod]+"</button>";
+});
+h+="</div>";
+}else{
 var cats=Object.keys(info.cats).sort(function(a,b){return info.cats[b]-info.cats[a]});
 for(var ci2=0;ci2<cats.length;ci2++){
 var cat=cats[ci2],count=info.cats[cat];
@@ -438,6 +444,7 @@ h+="<div class='tag sub"+sActive+"' data-type='sc' data-val='"+subKey+"' data-ca
 }
 h+="</div></div></div>";
 }
+}
 h+="</div></div>";
 }
 sb.innerHTML=h;
@@ -448,7 +455,16 @@ currentSource=src;
 F.bc.clear();F.sc.clear();
 dateFilter.year=null;dateFilter.month=null;
 buildYearSelect();buildMonthSelect();
+for(var sk in sourceCollapsed){sourceCollapsed[sk]=true}
+sourceCollapsed[src]=false;
 buildSidebar();resetPage();render();
+})});
+sb.querySelectorAll(".docs-product-btn").forEach(function(el){
+el.addEventListener("click",function(e){
+e.stopPropagation();
+docsSelectedProduct=el.dataset.product;
+docsSelectedNavId=DOCS_DEFAULT_NAV[docsSelectedProduct];
+buildSidebar();
 })});
 // Bind category header clicks
 sb.querySelectorAll(".acc-header").forEach(function(el){el.addEventListener("click",function(){
@@ -470,6 +486,7 @@ resetPage();render();
 sb.querySelectorAll(".tag").forEach(function(el){el.addEventListener("click",function(e){e.stopPropagation();var type=el.dataset.type,val=el.dataset.val;
 if(type==="bc"){F.bc.clear();F.bc.add(val)}else if(type==="sc"){F.sc.clear();F.sc.add(val)}
 buildSidebar();buildTagBar();resetPage();render()})});
+if(currentSource==="docs")renderDocsNav();
 }
 
 function getFiltered(){
@@ -543,28 +560,6 @@ var DOCS_PRODUCT_NAMES={foundry:"Foundry",apollo:"Apollo",gotham:"Gotham"};
 
 function docsNavTitle(item){
   return lang==="zh"?(item.title_zh||item.title):item.title;
-}
-
-function buildDocsSidebar(){
-  var sb=document.getElementById("sidebar");
-  var h="<button class='docs-exit' id='docsExit' type='button'>&larr; "+(lang==="zh"?"返回知识库":"Back to library")+"</button><div class='docs-product-list'>";
-  ["foundry","apollo","gotham"].forEach(function(prod){
-    h+="<button class='docs-product-btn"+(docsSelectedProduct===prod?" active":"")+"' type='button' data-product='"+prod+"'>"+DOCS_PRODUCT_NAMES[prod]+"</button>";
-  });
-  h+="</div>";
-  sb.innerHTML=h;
-  document.getElementById("docsExit").addEventListener("click",function(){
-    currentSource="blog";F.bc.clear();F.sc.clear();dateFilter.year=null;dateFilter.month=null;
-    buildYearSelect();buildMonthSelect();buildSidebar();resetPage();render();
-  });
-  sb.querySelectorAll(".docs-product-btn").forEach(function(el){
-    el.addEventListener("click",function(){
-      docsSelectedProduct=el.dataset.product;
-      docsSelectedNavId=DOCS_DEFAULT_NAV[docsSelectedProduct];
-      buildDocsSidebar();
-    });
-  });
-  renderDocsNav();
 }
 
 function findDocsNavItem(product,id){
