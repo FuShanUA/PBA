@@ -2,6 +2,8 @@
 """Translate large docs pages. Code blocks are excluded from translation."""
 import sys, os, re, time
 
+from translation_cleanup import sanitize_translated_html
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CONTENT_DIR = os.path.join(ROOT, "content", "docs")
 MAX_WORDS = 200
@@ -48,6 +50,8 @@ Rules:
 4. Keep all HTML tags intact - only translate visible text
 5. Term translations:
 {terms}
+
+Return only the translated HTML. Do not repeat these rules, the term list, or the content marker.
 
 Content to translate:
 {content}"""
@@ -184,12 +188,13 @@ def main():
         done = 0
         for chunk in chunks:
             if time.time() - t0 > DEADLINE:
-                parts.append(chunk)
-                continue
+                raise TimeoutError("translation deadline exceeded")
             if not chunk.strip():
                 continue
             result = translate_chunk(client, chunk)
-            parts.append(result if result else chunk)
+            if not result or not result.strip():
+                raise RuntimeError("translation API returned an empty result")
+            parts.append(sanitize_translated_html(result))
             done += 1
             if done % 10 == 0:
                 elapsed = time.time() - t0

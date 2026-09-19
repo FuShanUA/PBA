@@ -8,6 +8,8 @@ to ensure workers actually return and become available for new work.
 import sys, os, re, time, json, argparse
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
+from translation_cleanup import sanitize_translated_html
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CONTENT_DIR = os.path.join(ROOT, "content", "docs")
 MAX_WORDS_PER_CHUNK = 200
@@ -35,6 +37,8 @@ def build_translation_prompt(content):
     return f"""Translate the following HTML from English to Simplified Chinese. Keep all HTML tags intact. Keep product names in English: Palantir, Foundry, Apollo, Gotham, AIP.
 
 {terms_str}
+
+Return only the translated HTML. Do not repeat the term list or the content marker.
 
 Content:
 {content}"""
@@ -151,13 +155,13 @@ def translate_one_slug(slug, client):
         for i, chunk in enumerate(chunks):
             # Check deadline before each chunk
             if time.time() - t0 > SLUG_DEADLINE:
-                # Use remaining untranslated chunks as-is (English fallback)
-                parts.append(chunk)
-                continue
+                raise TimeoutError("translation deadline exceeded")
             if not chunk.strip():
                 continue
             result = call_api(client, chunk)
-            parts.append(result if result else chunk)
+            if not result or not result.strip():
+                raise RuntimeError("translation API returned an empty result")
+            parts.append(sanitize_translated_html(result))
 
         translated = '\n\n'.join(parts)
         if not translated:

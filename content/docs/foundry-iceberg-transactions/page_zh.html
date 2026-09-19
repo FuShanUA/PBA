@@ -40,44 +40,6 @@ th,td{border:1px solid #ddd;padding:8px;text-align:left}
 <p>为了说明这一点，我们举一个例子：</p>
 <p>
 
-  Foundry -> Foundry
-  Apollo -> Apollo
-  Gotham -> Gotham
-  AIP -> AIP
-  Ontology -> 本体论
-  ontology -> 本体论
-  Pipeline -> 管道
-  pipeline -> 管道
-  Transform -> 转换
-  transform -> 转换
-  Workshop -> Workshop
-  workshop -> Workshop
-  Code Repositories -> 代码仓库
-  Code Workspaces -> 代码工作区
-  Data Integration -> 数据集成
-  Model Integration -> 模型集成
-  Object -> 对象
-  object -> 对象
-  Dataset -> 数据集
-  dataset -> 数据集
-  Tenant -> 租户
-  tenant -> 租户
-  Marking -> 标记
-  marking -> 标记
-  Permission -> 权限
-  permission -> 权限
-  Role -> 角色
-  role -> 角色
-  Function -> 函数
-  function -> 函数
-  Action -> 操作
-  action -> 操作
-  Property -> 属性
-  property -> 属性
-  Interface -> 接口
-  interface -> 接口
-
-内容：
 假设你有一个任务，它从名为<code>orders</code>和<code>customers</code>的两个表中增量读取新行，进行连接，并将结果追加到两个表：<code>order_summary</code>和<code>customer_metrics</code>。有一天，该任务在运行过程中失败，处理完第一个表<code>order_summary</code>的写入后，但在写入第二个表<code>customer_metrics</code>之前。</p>
 <p><strong>使用标准的Iceberg事务语义：</strong>第一个写入操作会被提交。此时<code>order_summary</code>表将反映新的数据批次，而<code>customer_metrics</code>表不会。这两个输出处于不一致的状态。当任务重新运行时，它会重新读取相同的输入行，并再次将它们写入<code>order_summary</code>，从而导致前一次部分运行的数据重复。</p>
 <p><strong>使用Foundry的Iceberg事务语义：</strong>第一个写入操作不会被提交。此时<code>order_summary</code>表将< strong >不会</strong>反映新的数据批次。两个表都保持不变，处于一致的状态。当任务重新运行时，它会正确地将新数据写入两个表，而不会出现重复。</p>
@@ -85,44 +47,6 @@ th,td{border:1px solid #ddd;padding:8px;text-align:left}
 <h3 id="user-content-job-queuing-and-optimistic-concurrency" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#job-queuing-and-optimistic-concurrency"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>作业队列和乐观并发</h3>
 <p>
 
-  Foundry -> Foundry
-  Apollo -> Apollo
-  Gotham -> Gotham
-  AIP -> AIP
-  Ontology -> 本体论
-  ontology -> 本体论
-  Pipeline -> 管道
-  pipeline -> 管道
-  Transform -> 转换
-  transform -> 转换
-  Workshop -> Workshop
-  workshop -> Workshop
-  Code Repositories -> 代码仓库
-  Code Workspaces -> 代码工作区
-  Data Integration -> 数据集成
-  Model Integration -> 模型集成
-  Object -> 对象
-  object -> 对象
-  Dataset -> 数据集
-  dataset -> 数据集
-  Tenant -> 租户
-  tenant -> 租户
-  Marking -> 标记
-  marking -> 标记
-  Permission -> 权限
-  permission -> 权限
-  Role -> 角色
-  role -> 角色
-  Function -> 函数
-  function -> 函数
-  Action -> 操作
-  action -> 操作
-  Property -> 属性
-  property -> 属性
-  Interface -> 接口
-  interface -> 接口
-
-内容：
 Foundry 的构建系统确保在任何时间点，针对给定输出最多只有一个作业在运行。写入同一输出的作业将被排队并按顺序运行，而不是同时运行。这意味着实际上，常规管道作业不会出现写入冲突，但管道作业和 Iceberg 维护作业之间可能会出现冲突。</p>
 <p>相比之下，标准的 Iceberg 使用乐观并发，允许多个写入者同时对同一张表进行操作，并在提交时检测和解决冲突。Foundry 的事务模型为了更严格的更新和正确性，放弃了乐观并发。如果事务遇到冲突的并发更新，提交将失败，构建系统会重试该作业。正确性始终得到保证，代价是发生冲突更新时需要重新计算该作业。</p>
 <p>冲突的一个常见原因是 <strong>维护任务</strong>，例如压缩，目前这些任务与常规管道作业同时运行。如果压缩任务在作业运行期间更新了表，该作业的事务将无法提交，构建系统会重试该作业。对于频繁进行压缩的表，这可能导致偶尔的重试。</p>

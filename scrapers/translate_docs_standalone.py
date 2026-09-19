@@ -16,6 +16,8 @@ Requirements:
 import sys, os, re, time, json, argparse
 from urllib.parse import urlparse
 
+from translation_cleanup import sanitize_translated_html
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CONTENT_DIR = os.path.join(ROOT, "content", "docs")
 MAX_WORDS_PER_CHUNK = 400
@@ -48,6 +50,8 @@ Rules:
 {terms_str}
 4. Keep code blocks, URLs, and file paths unchanged
 5. Translate naturally and fluently, maintaining technical accuracy
+
+Return only the translated HTML. Do not repeat these rules, the term list, or the content marker.
 
 Content to translate:
 {content}"""
@@ -273,27 +277,27 @@ def scrape_phase(pages):
                        resp = page.goto(url, wait_until="domcontentloaded", timeout=30000)
                        if not resp or resp.status != 200:
                            err += 1; continue
-                        try:
-                            page.wait_for_selector(CONTENT_SELECTOR, timeout=10000)
-                        except Exception:
-                            page.wait_for_timeout(3000)
+                       try:
+                           page.wait_for_selector(CONTENT_SELECTOR, timeout=10000)
+                       except Exception:
+                           page.wait_for_timeout(3000)
                        content_html = page.evaluate(f"""() => {{
                            const el = document.querySelector('{CONTENT_SELECTOR}');
                            return el ? el.innerHTML : '';
                        }}""")
-                        if not content_html or len(content_html) < 50:
-                            err += 1; continue
-                        title = page.evaluate(f"""() => {{
-                            const el = document.querySelector('{CONTENT_SELECTOR} h1');
-                            return el ? el.textContent.trim() : document.title;
-                        }}""")
-                        with open(os.path.join(page_dir, "page.html"), "w", encoding="utf-8") as f:
-                            f.write(build_reader_html(title, content_html, "en"))
-                        with open(os.path.join(page_dir, "meta.json"), "w", encoding="utf-8") as f:
-                            json.dump({"slug": slug, "url": url}, f, ensure_ascii=False)
-                        ok += 1
-                        if ok % 20 == 0:
-                            print(f"  [{ok+err}/{len(todo)}] scraped: {slug[:50]}", flush=True)
+                       if not content_html or len(content_html) < 50:
+                           err += 1; continue
+                       title = page.evaluate(f"""() => {{
+                           const el = document.querySelector('{CONTENT_SELECTOR} h1');
+                           return el ? el.textContent.trim() : document.title;
+                       }}""")
+                       with open(os.path.join(page_dir, "page.html"), "w", encoding="utf-8") as f:
+                           f.write(build_reader_html(title, content_html, "en"))
+                       with open(os.path.join(page_dir, "meta.json"), "w", encoding="utf-8") as f:
+                           json.dump({"slug": slug, "url": url}, f, ensure_ascii=False)
+                       ok += 1
+                       if ok % 20 == 0:
+                           print(f"  [{ok+err}/{len(todo)}] scraped: {slug[:50]}", flush=True)
                     except Exception:
                         err += 1; continue
                 browser.close()
@@ -336,7 +340,9 @@ def translate_phase():
                 if not chunk.strip():
                     continue
                 result = glm_translate(client, chunk)
-                parts.append(result if result else chunk)
+                if not result or not result.strip():
+                    raise RuntimeError("translation API returned an empty result")
+                parts.append(sanitize_translated_html(result))
                 time.sleep(2)
 
             translated = '\n\n'.join(parts)
