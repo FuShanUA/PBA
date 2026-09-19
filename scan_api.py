@@ -17,7 +17,7 @@ SOURCES = ["blog", "website"]  # docs excluded for now
 # Auto-filter patterns for website articles
 import re as _re
 LOCALE_RE = _re.compile(r"/(de|fr|es|ja|zh|ko|pt|it)/?$")
-BAD_TITLE_RE = _re.compile(r"^(Untitled|500 Error|404|Page Not Found|Error)$", _re.I)
+BAD_TITLE_RE = _re.compile(r"(Untitled|^500 Error|^404|Page Not Found|^Error$)", _re.I)
 DOWNLOAD_RE = _re.compile(r"/download$|/-download$")
 
 def _should_auto_hide(article):
@@ -80,6 +80,33 @@ def source_status():
     return out
 
 
+
+def _download_blog_article_pw(url, html_path):
+    """Download a blog article using Playwright (headful) to bypass Cloudflare.
+    
+    Returns (html, og_image, og_description) or raises on failure.
+    """
+    from playwright.sync_api import sync_playwright
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=False)
+        page = browser.new_page(
+            user_agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36",
+        )
+        try:
+            resp = page.goto(url, wait_until="domcontentloaded", timeout=30000)
+            if resp.status != 200:
+                raise Exception(f"HTTP {resp.status}")
+            page.wait_for_timeout(5000)
+            html = page.content()
+            og_image = page.evaluate('''(function(){var m=document.querySelector('meta[property=\"og:image\"]');return m?m.content:''})''')
+            og_desc = page.evaluate('''(function(){var m=document.querySelector('meta[property=\"og:description\"]');return m?m.content:''})''')
+            with open(html_path, "w", encoding="utf-8") as f:
+                f.write(html)
+            return html, og_image, og_desc
+        finally:
+            browser.close()
+
+
 def scan_blog(progress=None):
     """Scan blog.palantir.com RSS for new articles, download + index them."""
     if progress is None:
@@ -137,6 +164,9 @@ def scan_blog(progress=None):
         article_dir = os.path.join(ROOT, "articles", slug)
         os.makedirs(article_dir, exist_ok=True)
         html_path = os.path.join(article_dir, "reader.html")
+        html = None
+        th = ""
+        desc = ""
         try:
             req = urllib.request.Request(url, headers={
                 "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
@@ -149,6 +179,14 @@ def scan_blog(progress=None):
             th = th_m.group(1) if th_m else ""
             desc_m = re.search(r'<meta property="og:description" content="([^"]+)"', html)
             desc = desc_m.group(1) if desc_m else ""
+        except Exception as e:
+            progress({"phase": "blog:download", "msg": f"[{_ts()}]   urllib 失败 ({e}), 尝试 Playwright..."})
+            try:
+                html, th, desc = _download_blog_article_pw(url, html_path)
+            except Exception as e2:
+                progress({"phase": "blog:download", "msg": f"[{_ts()}]   下载失败 {slug}: {e2}"})
+                html = None
+        if html:
             entry = {
                 "t": a["t"], "tt": a["t"], "d": a["d"], "s": slug, "u": url,
                 "bc": [], "sc": {}, "th": th, "ds": desc, "sn": desc,
@@ -156,8 +194,6 @@ def scan_blog(progress=None):
             }
             blog_data["articles"].append(entry)
             progress({"phase": "blog:download", "msg": f"[{_ts()}]   下载完成: {slug}"})
-        except Exception as e:
-            progress({"phase": "blog:download", "msg": f"[{_ts()}]   下载失败 {slug}: {e}"})
 
     blog_data["last_scan"] = datetime.now(timezone.utc).isoformat()
     with open(blog_json_path, "w", encoding="utf-8") as f:
