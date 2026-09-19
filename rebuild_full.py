@@ -40,8 +40,8 @@ def count_tags(field):
 
 TC = {
     "blogCategory": count_tags('blogCategory'),
-    "tech": count_tags('tech'),
-    "product": count_tags('product'),
+    "tc": count_tags('tech'),
+    "pc": count_tags('product'),
     "industry": count_tags('industry')
 }
 
