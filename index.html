@@ -235,6 +235,28 @@ footer{text-align:center;padding:20px;color:var(--muted);border-top:1px solid va
 
 
 
+
+/* Docs tree view */
+.docs-tree-view{padding:0 8px}
+.docs-product{margin-bottom:24px}
+.docs-product-header{font-size:1.3em;font-weight:700;padding:10px 0;border-bottom:2px solid var(--accent);margin-bottom:8px;color:var(--text);display:flex;align-items:center;gap:8px}
+.docs-product-header .docs-count{font-size:.6em;font-weight:400;color:var(--muted);background:var(--card);padding:2px 8px;border-radius:10px;border:1px solid var(--border)}
+.docs-section{margin-bottom:4px}
+.docs-section-header{font-size:.95em;font-weight:600;padding:6px 10px;border-radius:6px;cursor:pointer;user-select:none;display:flex;align-items:center;gap:6px;color:var(--text);transition:background .12s}
+.docs-section-header:hover{background:var(--card-hover)}
+.docs-section-arrow{display:inline-block;width:0;height:0;border-top:4px solid var(--muted);border-left:3px solid transparent;border-right:3px solid transparent;transition:transform .2s;flex-shrink:0}
+.docs-section.collapsed .docs-section-arrow{transform:rotate(-90deg)}
+.docs-section.collapsed .docs-section-body{display:none}
+.docs-section-body{padding:2px 0 4px 0}
+.docs-item{padding:4px 10px 4px 24px;font-size:.88em;line-height:1.5}
+.docs-item a{color:var(--muted);text-decoration:none;transition:color .12s}
+.docs-item a:hover{color:var(--accent)}
+.docs-item a.external::after{content:" \2197";font-size:.8em;opacity:.6}
+.docs-item a.local::before{content:"\2022 ";font-size:.6em;color:var(--accent);opacity:.7}
+.docs-loading{padding:40px;text-align:center;color:var(--muted)}
+/* Active source in sidebar */
+.source-header.active-src{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+.source-header.active-src .source-total{color:var(--accent)}
 </style></head><body>
 <header><h1>Palantir知识联邦</h1>
 <div class="header-right">
@@ -281,11 +303,12 @@ var I18N={zh:{search_ph:"搜索关键词...",sort_new:"最新优先",sort_old:"�
 // Load data from index.json, then initialize
 var TAG_ZH={"Engineering & Technology": "工程与技术", "Engineering & Tech": "工程与技术", "Palantir AI": "Palantir AI", "Product": "产品", "Privacy & Civil Liberties": "隐私与公民自由", "Palantir Global": "Palantir 全球", "Life at Palantir": "Palantir 生活", "Culture": "企业文化", "Company": "公司", "Frontend Engineering": "前端工程", "Production Infrastructure": "生产基础设施", "Software Supply Chain": "软件供应链", "Information Security": "信息安全", "Foundations": "基础设施", "Foundry Architecture": "Foundry 架构", "Software Engineering": "软件工程", "Git": "Git", "Git Internals": "Git 内部原理", "General": "通用", "Global": "全球", "Kubernetes": "Kubernetes", "Edge Computing": "边缘计算", "Resilience": "系统韧性", "Foundry": "Foundry", "AIP": "AIP", "Apollo": "Apollo", "Ontology": "本体论", "ERP Software": "ERP 软件", "Machine Learning": "机器学习", "RFX Blog Series": "RFX 博客系列", "Privacy": "隐私", "Public Policy": "公共政策", "AI Ethics": "AI 伦理", "Responsible AI": "负责任 AI", "Privacy and Technology": "隐私与技术", "Palantir Explained": "Palantir 解析", "FAQ": "常见问题", "UK": "英国", "Germany": "德国", "France": "法国", "Japan": "日本", "Spanish": "西班牙语", "Internships": "实习项目", "Careers": "招聘", "Team": "团队", "Roles": "职位角色", "Partnerships": "合作伙伴", "Defense": "国防", "Healthcare": "医疗", "Supply Chain": "供应链"};
 var I18N={zh:{search_ph:"搜索关键词...",sort_new:"最新优先",sort_old:"最早优先",sort_az:"标题 A-Z",all_years:"所有年份",all_months:"所有月份",blog_cat:"博客分类",sub_cat:"子分类",no_result:"未找到相关文章",filter:"筛选",load_more:"加载更多",months:["1月","2月","3月","4月","5月","6月","7月","8月","9月","10月","11月","12月"]},en:{search_ph:"Search keywords...",sort_new:"Newest first",sort_old:"Oldest first",sort_az:"Title A-Z",all_years:"All Years",all_months:"All Months",blog_cat:"Blog Categories",sub_cat:"Subcategories",no_result:"No articles found",filter:"Filter",load_more:"Load More",months:["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]}};
-var A=[],BC={},SC={},DT={},tagFreq={},CAT_HIERARCHY={},sourceCollapsed={blog:true,website:true,docs:true,video:true,patent:true,contract:true};
+var A=[],BC={},SC={},DT={},tagFreq={},CAT_HIERARCHY={},sourceCollapsed={blog:true,website:true,docs:true,video:true,patent:true,contract:true};var currentSource="blog";var docUrlMap={};
 fetch('data/index.json?_='+Date.now()).then(function(r){return r.json()}).then(function(idx){
 A=idx.articles||[];BC=idx.bc||{};SC=idx.sc||{};DT=idx.dt||{};tagFreq=idx.tag_freq||{};CAT_HIERARCHY=idx.cat_hierarchy||{};
 // Auto-detect TAG_ZH from sources if present
 if(idx.tag_zh)for(var k in idx.tag_zh)TAG_ZH[k]=idx.tag_zh[k];
+for(var di=0;di<(idx.articles||[]).length;di++){var da=idx.articles[di];if(da.source==="docs"&&da.u&&da.hp){docUrlMap[da.u.replace(/\/$/,"")]=da.hp}}
 initApp();
 }).catch(function(e){console.error('Failed to load index.json:',e);document.getElementById('grid').innerHTML='<p style="padding:40px;text-align:center;color:var(--muted)">Failed to load data. If running locally, use a web server.</p>'});
 
@@ -352,7 +375,7 @@ var info=bySource[src2];
 var srcTotal=info?info.total:0;if(!info){info={cats:{},total:0};}
 var meta=SOURCE_META[src2]||{name:src2,name_zh:src2};
 var srcLabel=lang==="zh"?meta.name_zh:meta.name;
-h+="<div class='source-group"+(sourceCollapsed[src2]?" collapsed":"")+"' data-source='"+src2+"'><div class='source-header' data-source='"+src2+"'><span class='source-arrow'></span>"+srcLabel+"<span class='source-total'>"+info.total+"</span></div><div class='source-body'>";
+h+="<div class='source-group"+(sourceCollapsed[src2]?" collapsed":"")+"' data-source='"+src2+"'><div class='source-header"+(currentSource===src2?" active-src":"")+"' data-source='"+src2+"'><span class='source-arrow'></span>"+srcLabel+"<span class='source-total'>"+info.total+"</span></div><div class='source-body'>";
 var cats=Object.keys(info.cats).sort(function(a,b){return info.cats[b]-info.cats[a]});
 for(var ci2=0;ci2<cats.length;ci2++){
 var cat=cats[ci2],count=info.cats[cat];
@@ -380,8 +403,11 @@ sb.innerHTML=h;
 // Bind source header clicks (collapse/expand)
 sb.querySelectorAll(".source-header").forEach(function(el){el.addEventListener("click",function(){
 var src=el.dataset.source;
-sourceCollapsed[src]=!sourceCollapsed[src];
-buildSidebar();
+currentSource=src;
+F.bc.clear();F.sc.clear();
+dateFilter.year=null;dateFilter.month=null;
+buildYearSelect();buildMonthSelect();
+buildSidebar();resetPage();render();
 })});
 // Bind category header clicks
 sb.querySelectorAll(".acc-header").forEach(function(el){el.addEventListener("click",function(){
@@ -408,6 +434,7 @@ buildSidebar();buildTagBar();resetPage();render()})});
 function getFiltered(){
 var q=document.getElementById("search").value.toLowerCase().trim();
 return A.filter(function(a){
+if((a.source||"blog")!==currentSource)return false;
 if(!q)return true;
 var title=lang==="zh"?(a.tt||a.t||""):(a.t||"");
 if(title.toLowerCase().indexOf(q)>=0)return true;
@@ -434,7 +461,68 @@ if(d.length>=7){var y2=d.substring(0,4),mo2=parseInt(d.substring(5,7),10)-1;retu
 return d;
 }
 
+
+function renderDocsTree(){
+var g=document.getElementById("grid");
+document.getElementById("af").innerHTML="";
+document.getElementById("loadMore").style.display="none";
+g.innerHTML="<div class='docs-loading'>"+(lang==="zh"?"\u52a0\u8f7d\u6587\u6863\u5bfc\u822a...":"Loading docs...")+"</div>";
+fetch("data/docs_nav_tree.json").then(function(r){return r.json()}).then(function(tree){
+var byProduct={};
+for(var i=0;i<tree.length;i++){
+var item=tree[i];var prod=item.product||"other";
+if(!byProduct[prod])byProduct[prod]=[];
+byProduct[prod].push(item);
+}
+var prodOrder=["foundry","apollo","gotham"];
+var prodNames={foundry:"Foundry",apollo:"Apollo",gotham:"Gotham"};
+var h="";
+for(var pi=0;pi<prodOrder.length;pi++){
+var prod=prodOrder[pi];
+var items=byProduct[prod];if(!items)continue;
+var prodLabel=prodNames[prod]||prod;
+h+="<div class='docs-product'>";
+h+="<div class='docs-product-header'>"+prodLabel+" <span class='docs-count'>"+items.length+"</span></div>";
+var sections={};var sectionOrder=[];
+for(var j=0;j<items.length;j++){
+var item=items[j];
+var pathParts=(item.path||"").replace("/docs/"+prod+"/","").split("/");
+var sec=pathParts[0]||"other";
+if(!sections[sec]){sections[sec]=[];sectionOrder.push(sec)}
+sections[sec].push(item);
+}
+for(var si=0;si<sectionOrder.length;si++){
+var sec=sectionOrder[si];
+var secItems=sections[sec];
+var secLabel=sec.replace(/-/g," ").replace(/\b\w/g,function(c){return c.toUpperCase()});
+h+="<div class='docs-section collapsed'><div class='docs-section-header'><span class='docs-section-arrow'></span>"+esc(secLabel)+" <span style='font-size:.8em;color:var(--muted)'>("+secItems.length+")</span></div><div class='docs-section-body'>";
+for(var ii=0;ii<secItems.length;ii++){
+var item=secItems[ii];
+var indent=(item.depth||0)*16+8;
+var title=lang==="zh"?(item.title_zh||item.title):item.title;
+var url=(item.url||"").replace(/\/$/,"");
+var localPath=docUrlMap[url];
+var cls=localPath?"local":"external";
+var href=localPath?localPath:url;
+h+="<div class='docs-item' style='margin-left:"+indent+"px'><a href='"+esc(href)+"' target='_blank' class='"+cls+"'>"+esc(title)+"</a></div>";
+}
+h+="</div></div>";
+}
+h+="</div>";
+}
+g.innerHTML="<div class='docs-tree-view'>"+h+"</div>";
+g.querySelectorAll(".docs-section-header").forEach(function(el){
+el.addEventListener("click",function(){
+el.parentElement.classList.toggle("collapsed");
+});
+});
+}).catch(function(e){
+g.innerHTML="<div class='docs-loading'>"+(lang==="\u4e2d"?"\u6587\u6863\u52a0\u8f7d\u5931\u8d25":"Failed to load docs")+"</div>";
+});
+}
+
 function render(){
+if(currentSource==="docs"){renderDocsTree();return}
 var f=getFiltered();var sb=document.getElementById("sortBy").value;
 if(sb==="date-desc")f.sort(function(a,b){var sa=typeof a.sort==="number"?a.sort:9999,sb2=typeof b.sort==="number"?b.sort:9999;if(sa!==sb2)return sa-sb2;return(b.d||"").localeCompare(a.d||"")});
 else if(sb==="date-asc")f.sort(function(a,b){var sa=typeof a.sort==="number"?a.sort:9999,sb2=typeof b.sort==="number"?b.sort:9999;if(sa!==sb2)return sb2-sa;return(a.d||"").localeCompare(b.d||"")});
