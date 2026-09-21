@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>示例:Python 转换中的变更日志视图</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<div class="ptcom-design__markdownDoc__1uarhel" data-pagefind-body="true"><h1 data-pagefind-weight="1" id="user-content-example-changelog-views-in-python-transforms" level="1" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#example-changelog-views-in-python-transforms" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>示例:Python 转换中的变更日志视图</h1>
+<p>本页面提供在 Python 转换中处理 CDC(变更数据捕获)和 Iceberg 变更日志的代码示例。</p>
+<p>请特别注意以下模式和最佳实践:</p>
+<ul>
+<li>始终使用 <code>@incremental(v2_semantics=True)</code> 来处理 Iceberg 表。</li>
+<li>将 <code>.with_table_incremental_options(table_read_mode="changelog")</code> 添加到装饰器中。如果不添加,转换将以仅追加模式解析其输入,并且 <code>source.changelog()</code> 会引发错误。请参阅 <a href="/docs/foundry/iceberg/incremental-transforms/#incremental-decorator-and-read-mode">增量读取模式</a> 以了解详情。</li>
+<li>使用 <code>source.changelog([identifier_columns])</code> 来获取自上次运行以来每个唯一行(由标识符列定义)的变更。</li>
+<li>在合并之前,对变更日志应用逻辑(例如清理、去重或数据增强)。</li>
+<li>使用 <code>output.apply_changelog(changelog_view_df, [identifier_columns])</code> 来合并变更(包括 upsert 和删除)。</li>
+<li>仅在增量上下文不可用时(例如,在首次运行时),才回退到全量快照覆盖。</li>
+</ul>
+<h2 data-pagefind-weight="0.9" id="user-content-example-incremental-replication" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#example-incremental-replication" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>示例:增量复制</h2>
+<p>此示例是一个简单的 CDC 工作流,它在应用所有必要的过滤后,使用变更日志 API 将变更从源 Iceberg 表复制到目标表。</p>
+<pre><div class="ptcom-design__wrapper__12wpwnx" data-pagefind-weight="0.5"><span class="ptcom-design__clipboard__1l1gb20 ptcom-design__clipboard__12wpwnx"><span class="ptcom-design__confirmation__1l1gb20" data-pagefind-ignore="true">Copied!</span><svg aria-hidden="true" aria-label="clipboard" data-view-component="true" height="16" version="1.1" viewbox="0 0 16 16" width="16"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z" fill="currentColor" fill-rule="evenodd"></path><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z" fill="currentColor" fill-rule="evenodd"></path></svg></span><div style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;overflow:auto;position:relative;margin:0;padding:0.75em"><code style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;float:left;padding-right:10px"><span class="react-syntax-highlighter-line-number">1
+</span><span class="react-syntax-highlighter-line-number">2
+</span><span class="react-syntax-highlighter-line-number">3
+</span><span class="react-syntax-highlighter-line-number">4
+</span><span class="react-syntax-highlighter-line-number">5
+</span><span class="react-syntax-highlighter-line-number">6
+</span><span class="react-syntax-highlighter-line-number">7
+</span><span class="react-syntax-highlighter-line-number">8
+</span><span class="react-syntax-highlighter-line-number">9
+</span><span class="react-syntax-highlighter-line-number">10
+</span><span class="react-syntax-highlighter-line-number">11
+</span><span class="react-syntax-highlighter-line-number">12
+</span><span class="react-syntax-highlighter-line-number">13
+</span><span class="react-syntax-highlighter-line-number">14
+</span><span class="react-syntax-highlighter-line-number">15
+</span><span class="react-syntax-highlighter-line-number">16
+</span><span class="react-syntax-highlighter-line-number">17
+</span><span class="react-syntax-highlighter-line-number">18
+</span><span class="react-syntax-highlighter-line-number">19
+</span><span class="react-syntax-highlighter-line-number">20
+</span><span class="react-syntax-highlighter-line-number">21
+</span><span class="react-syntax-highlighter-line-number">22
+</span><span class="react-syntax-highlighter-line-number">23
+</span><span class="react-syntax-highlighter-line-number">24
+</span><span class="react-syntax-highlighter-line-number">25
+</span><span class="react-syntax-highlighter-line-number">26
+</span></code><code class="language-python" style="white-space:pre;text-align:left;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none">from transforms.api import (
+    IncrementalTableTransformInput,
+    IncrementalTransformContext,
+    incremental,
+    transform,
+)
+from transforms.tables import TableInput, TableOutput, TableTransformOutput
+
+@incremental(v2_semantics=True).with_table_incremental_options(table_read_mode="changelog")
+@transform.spark.using(
+    source=TableInput("&lt;PATH&gt;/input"),
+    output=TableOutput("&lt;PATH&gt;/output"),
+)
+def incremental_cleanup(
+    ctx: IncrementalTransformContext,
+    source: IncrementalTableTransformInput,
+    output: TableTransformOutput,
+):
+    # Create a changelog view from the last seen Iceberg snapshot ID.
+    changelog_view_df = source.changelog(["id"])
+
+    # Read the changelog view, then merge into the target Iceberg table.
+    output.apply_changelog(
+        changelog_view_df.filter(...),  # Changelog view with any transformation logic applied
+        ["id"]  # Identifier column(s)
+    )</code></div></div></pre>
+<p><strong>关键点:</strong></p>
+<ul>
+<li><code>source.changelog([identifier_cols])</code> 仅返回自上次运行以来新增、已更改或已删除的行。</li>
+<li>变更日志数据帧可以被修改,但 <code>_change_type</code> 列必须保留,前提是您打算使用 <code>apply_changelog</code>。</li>
+<li><code>output.apply_changelog(df, identifier_columns)</code> 将变更合并到目标表中。每一行都根据其 <code>_change_type</code> 值及其在输出表中基于标识符的匹配项：
+<ul>
+<li><code>INSERT</code>/<code>UPDATE_AFTER</code>：更新任何与标识符列匹配的现有行，如果没有匹配项，则插入新行。 <code>UPDATE_BEFORE</code> 被忽略。</li>
+<li><code>DELETE</code>：删除输出表中与标识符列匹配的任何现有行。</li>
+</ul>
+</li>
+</ul>
+<h3 data-pagefind-weight="0.8" id="user-content-changelog-performance-optimization" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#changelog-performance-optimization" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>变更日志性能优化</h3>
+<ul>
+<li>
+<p>变更日志的读取和更新在增量更改时性能最佳。将整个输入表作为变更日志进行读取和应用可能会很慢，因为需要在较大的快照范围内对行更改进行关联。为提升性能，请使用 <code>ctx.is_incremental</code> 对代码进行分支，并在转换未以增量方式运行时（例如首次运行时）回退到完整快照覆盖。</p>
+<pre><div class="ptcom-design__wrapper__12wpwnx" data-pagefind-weight="0.5"><span class="ptcom-design__clipboard__1l1gb20 ptcom-design__clipboard__12wpwnx"><span class="ptcom-design__confirmation__1l1gb20" data-pagefind-ignore="true">Copied!</span><svg aria-hidden="true" aria-label="clipboard" data-view-component="true" height="16" version="1.1" viewbox="0 0 16 16" width="16"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z" fill="currentColor" fill-rule="evenodd"></path><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z" fill="currentColor" fill-rule="evenodd"></path></svg></span><div style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;overflow:auto;position:relative;margin:0;padding:0.75em"><code style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;float:left;padding-right:10px"><span class="react-syntax-highlighter-line-number">1
+</span><span class="react-syntax-highlighter-line-number">2
+</span><span class="react-syntax-highlighter-line-number">3
+</span><span class="react-syntax-highlighter-line-number">4
+</span><span class="react-syntax-highlighter-line-number">5
+</span><span class="react-syntax-highlighter-line-number">6
+</span><span class="react-syntax-highlighter-line-number">7
+</span></code><code class="language-python" style="white-space:pre;text-align:left;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none">def changelog_with_fallback(ctx, source, output):
+    if ctx.is_incremental:
+        changelog_df = source.changelog(["id"])
+        output.apply_changelog(changelog_df.filter(...), ["id"])
+    else:
+        # Full snapshot overwrite
+        output.write_dataframe(source.dataframe().filter(...))</code></div></div></pre>
+</li>
+<li>
+<p>提供标识符列时，变更日志视图的创建性能更佳，因为这可以实现更简单的内部分区。如果未传递标识符列，系统将生成净变更日志，其效率可能较低。请参阅 <a href="/docs/foundry/iceberg/changelog-primer/">变更日志技术入门</a> ，了解有关使用净变更日志的更多详细信息。</p>
+</li>
+</ul></div>
+</article>
+</body>
+</html>

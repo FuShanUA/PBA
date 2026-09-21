@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>为 Azure 配置专用链接出口</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<div class="ptcom-design__markdownDoc__1uarhel" data-pagefind-body="true"><h1 data-pagefind-weight="1" id="user-content-configure-private-link-egress-for-azure" level="1" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#configure-private-link-egress-for-azure" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>为 Azure 配置专用链接出口</h1>
+<p>本页面概述了如何为部署在 Azure 上的 Palantir 平台配置和管理专用链接出口,以连接到 Azure 中托管的客户服务,该功能由 <a href="https://learn.microsoft.com/en-us/azure/private-link/private-link-overview">Azure Private Link ↗</a>提供支持。</p>
+<p>专用链接出口支持通过专用出口访问 Azure 服务、部署在 Azure 上的用户自有资源,或部署在 Azure 上的第三方 API。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-configure-a-private-link" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#configure-a-private-link" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>配置专用链接</h2>
+<p>导航到 <strong>专用链接</strong> 选项卡,该选项卡位于 Control Panel 的 <strong>网络出口</strong> 页面,即可管理专用链接。</p>
+<p><img alt="The Control Panel page for managing private links in Azure." height="600" node="[object Object]" src="/docs/resources/foundry/administration/private-link-overview-azure.png" style="aspect-ratio:3274 / 1814" width="1082.9106945975743"/></p>
+<p>要成功创建专用链接连接:</p>
+<ol>
+<li><a href="#create-a-private-link-service-for-your-target-resource">为您的目标资源创建专用链接服务</a>。</li>
+<li><a href="#allow-the-palantir-platform-to-access-the-target-resource">允许 Palantir 平台访问目标资源</a>。</li>
+<li><a href="#provide-the-target-resource-details">提供目标资源的详细信息</a>。</li>
+<li><a href="#create-private-link-egress-policies">创建网络出口策略</a>。</li>
+</ol>
+<h3 data-pagefind-weight="0.8" id="user-content-create-a-private-link-service-for-your-target-resource" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#create-a-private-link-service-for-your-target-resource" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>为您的目标资源创建专用链接服务</h3>
+<h4 id="user-content-azure-services-that-support-private-endpoints"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#azure-services-that-support-private-endpoints" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>支持专用终结点的 Azure 服务</h4>
+<p>许多 Azure 服务原生支持专用终结点,使您能够通过专用链接连接到这些服务,而无需创建自定义专用链接服务。支持专用终结点的 Azure 服务的完整列表可在 <a href="https://learn.microsoft.com/en-us/azure/private-link/availability">Azure 文档 ↗</a>中找到。</p>
+<p>对于这些服务,Azure 会自动提供必要的专用链接服务配置,您只需创建专用终结点连接即可。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-allow-the-palantir-platform-to-access-the-target-resource" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#allow-the-palantir-platform-to-access-the-target-resource" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>允许 Palantir 平台访问目标资源</h3>
+<p>要使 Palantir 平台能够创建指向您的 Azure 资源的专用终结点连接，您必须配置可见性设置，并可选择配置自动审批设置。</p>
+<h4 id="user-content-for-custom-private-link-services"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#for-custom-private-link-services" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>对于自定义专用链接服务</h4>
+<p>对于自定义 <a href="https://learn.microsoft.com/en-us/azure/private-link/private-link-service-overview">专用链接服务 ↗</a>，请按照以下步骤操作：</p>
+<ol>
+<li>
+<p>在以下位置查找 Palantir 平台的 Azure 订阅 ID： <strong>控制面板 &gt; 网络出口 &gt; 专用链接</strong>。 <br/><br/>
+<img alt="A Control Panel callout displaying the Palantir platform's Azure subscription." height="392" node="[object Object]" src="/docs/resources/foundry/administration/private-link-account-callout-azure.png" style="aspect-ratio:1412 / 392" width="1412"/> <br/><br/></p>
+</li>
+<li>
+<p>将 Palantir 订阅 ID 添加到对您的专用链接服务具有可见性的订阅列表中。这使 Palantir 平台能够请求访问该服务。</p>
+</li>
+<li>
+<p>（可选）为 Palantir 订阅 ID 启用自动审批，以便自动批准连接请求，从而无需手动审批。</p>
+</li>
+</ol>
+<h4 id="user-content-for-azure-paas-services"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#for-azure-paas-services" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>对于 Azure PaaS 服务</h4>
+<p>对于大多数 Azure PaaS 服务（例如 Azure Storage、Azure SQL Database、Azure Key Vault、Cosmos DB 等），默认行为如下：</p>
+<ul>
+<li>任何知道该资源 ID 或名称的用户都可以查看该资源。</li>
+<li>任何在其订阅中拥有足够 Azure 权限的用户都可以尝试创建指向您的资源的专用终结点。</li>
+<li>这将触发手动审批工作流，您需要在其中接受或拒绝连接请求。</li>
+</ul>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>自动审批配置因 Azure 服务而异。某些服务支持预先批准的订阅，而其他服务则需要对每个连接请求进行手动审批。有关详细说明，请查阅针对您的具体服务的 Azure 文档。</p></div>
+<h3 data-pagefind-weight="0.8" id="user-content-provide-the-target-resource-details" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#provide-the-target-resource-details" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>提供目标资源的详细信息</h3>
+<p>要在 Control Panel 中创建专用链接，您需要获取想要连接的目标资源的 Azure 资源 ID。</p>
+<ol>
+<li>导航到 <strong>Control Panel &gt; 网络出口 &gt; 专用链接</strong> 并选择 <strong>新建专用链接</strong>。</li>
+<li>输入您的 Azure 资源的 <strong>资源 ID</strong> 。资源 ID 是指向您的资源的完整 Azure Resource Manager 路径。</li>
+<li>（可选）指定 <strong>子资源</strong> ，如果您想要连接到目标资源的特定子资源（例如 <code>blob</code> 用于 Azure Storage，或 <code>sqlServer</code> 用于 Azure SQL Database）。</li>
+</ol>
+<h4 id="user-content-standard-private-links"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#standard-private-links" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>标准专用链接</h4>
+<p>标准专用链接是连接大多数 Azure 资源和自定义专用链接服务时的默认配置。对于 Azure SQL Database、Azure Key Vault、Azure Cosmos DB、自定义专用链接服务以及其他 Azure PaaS 服务，请使用标准专用链接。创建标准专用链接时，您需要提供资源 ID，并可以选择指定子资源。</p>
+<p><img alt="The Control Panel dialog to create a standard private link in Azure." height="600" node="[object Object]" src="/docs/resources/foundry/administration/private-link-create-normal-azure.png" style="aspect-ratio:996 / 1142" width="523.292469352014"/></p>
+<p><strong>高级设置：</strong></p>
+<ul>
+<li><strong>DNS 区域：</strong> 用于名称解析的专用 DNS 区域（例如 <code>privatelink.blob.core.windows.net</code>）。如果指定了 DNS 记录，则为必需。</li>
+<li><strong>DNS 记录：</strong> 可以选择为专用链接指定自定义 DNS 记录。如果添加 DNS 记录，则还必须指定 DNS 区域。</li>
+</ul>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>对于标准专用链接，DNS 配置为可选项。如果未指定，则必须直接使用 Azure 生成的专用终结点 IP 地址。</p></div>
+<h4 id="user-content-storage-private-links"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#storage-private-links" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>存储专用链接</h4>
+<p>将存储专用链接专门用于 Azure 存储帐户（资源 ID 中包含 <code>/Microsoft.Storage/storageAccounts/</code> 的资源）。与标准专用链接不同，存储专用链接会自动定义 DNS 配置，以处理存储资源的 Azure 网络边缘情况。系统会生成所需的 DNS 区域和记录，格式为 <code>{storage-account-name}.privatelink.{sub-resource}.core.windows.net</code>。</p>
+<p><img alt="The Control Panel dialog to create a storage private link in Azure." height="600" node="[object Object]" src="/docs/resources/foundry/administration/private-link-create-storage-azure.png" style="aspect-ratio:994 / 1170" width="509.7435897435897"/></p>
+<p><strong>有关存储专用链接的重要说明：</strong></p>
+<ul>
+<li>DNS 配置由系统自动管理，无法更改。</li>
+<li>系统将为存储帐户的专用终结点创建相应的 DNS 记录。</li>
+<li>必须根据要访问的存储服务指定子资源（blob、file、table、queue、dfs）。</li>
+</ul>
+<p>提供上述详细信息后，选择 <strong>创建</strong>。</p>
+<p>专用链接可能具有以下状态：</p>
+<ul>
+<li><strong>正在创建：</strong> 专用链接的创建已开始。</li>
+<li><strong>正在创建云资源：</strong> 正在预配 Azure 专用终结点和相关云资源。</li>
+<li><strong>正在等待云资源：</strong> 正在等待 Azure 完成专用终结点的预配。</li>
+<li><strong>等待接受：</strong> 专用链接正在等待服务提供商接受（适用于某些 Azure 服务）。</li>
+<li><strong>就绪：</strong> 专用链接已成功创建，并且可以正常运行。</li>
+</ul>
+<h3 data-pagefind-weight="0.8" id="user-content-create-private-link-egress-policies" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#create-private-link-egress-policies" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>创建专用链接出站策略</h3>
+<p>成功创建专用链接后，请创建专用链接出站策略，以允许对目标资源进行出站访问。</p>
+<ol>
+<li>若要创建网络出站策略，请在控制面板中选择以下选项： <strong>操作 &gt; 创建网络出站策略</strong> 。</li>
+<li>选择 <strong>专用链接</strong> 类型的地址，并在创建网络出站策略时为每个条目输入目标资源的端口。这些已创建的策略会显示在控制面板中的以下位置： <strong>操作 &gt; 查看网络出站策略</strong> 。</li>
+</ol>
+<p><img alt="The Control Panel display of network egress policy settings in a private link for Azure." height="600" node="[object Object]" src="/docs/resources/foundry/administration/private-link-create-egress-policy-azure.png" style="aspect-ratio:1414 / 614" width="1381.7589576547232"/></p>
+<p>在专用链接处于 <strong>就绪</strong> 状态且已创建网络出站策略后，即可在 Palantir 平台中使用该专用链接。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-manage-private-links" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#manage-private-links" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>管理专用链接</h2>
+<p>可对专用链接执行的操作显示在专用链接详情页面的 <strong>操作</strong> 菜单下；此外，在专用链接页面中，每个条目也会显示相应的可用操作。</p>
+<p><img alt="The Control Panel display of the menu for managing a private link through the details page." height="570" node="[object Object]" src="/docs/resources/foundry/administration/private-link-managing-1-azure.png" style="aspect-ratio:1414 / 570" width="1414"/></p>
+<p><img alt="The Control Panel display of the menu for managing a private link through the overview page." height="388" node="[object Object]" src="/docs/resources/foundry/administration/private-link-managing-2-azure.png" style="aspect-ratio:1412 / 388" width="1412"/></p>
+<h3 data-pagefind-weight="0.8" id="user-content-update-a-private-link" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#update-a-private-link" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>更新专用链接</h3>
+<p>专用链接的 <strong>DNS 区域</strong>、 <strong>DNS 记录</strong>和 <strong>TCP 端口</strong> 可通过选择以下选项进行更新： <strong>操作 &gt; 更新</strong>。</p>
+<p><img alt="The Control Panel display for updating a private link in Azure." height="600" node="[object Object]" src="/docs/resources/foundry/administration/private-link-update-azure.png" style="aspect-ratio:1008 / 642" width="942.0560747663551"/></p>
+<h3 data-pagefind-weight="0.8" id="user-content-delete-a-private-link" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#delete-a-private-link" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>删除专用链接</h3>
+<p>若要删除私有链接，请选择 <strong>操作 &gt; 删除</strong>。</p></div>
+</article>
+</body>
+</html>

@@ -82,6 +82,10 @@ header h1{font-size:1.35em;font-weight:700;color:var(--accent);letter-spacing:-0
 .sync-toast-actions button{padding:6px 14px;border-radius:6px;border:1px solid var(--border);font-size:.8em;cursor:pointer;background:var(--card);color:var(--text);transition:all 0.15s}
 .sync-toast-actions button:hover{border-color:var(--accent);color:var(--accent)}
 .sync-toast-actions .toast-primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.docs-lang-toast{position:fixed;bottom:24px;right:24px;z-index:350;max-width:360px;background:var(--card);border:1px solid var(--border);border-radius:8px;box-shadow:0 8px 32px rgba(0,0,0,0.14);padding:12px 16px;transform:translateY(16px);opacity:0;transition:transform .25s ease,opacity .25s ease;pointer-events:none}
+.docs-lang-toast.show{transform:translateY(0);opacity:1}
+.docs-lang-toast strong{display:block;font-size:.92em}
+.docs-lang-toast span{display:block;margin-top:3px;font-size:.8em;color:var(--muted);line-height:1.45}
 .sync-badge{position:absolute;top:-6px;right:-6px;width:8px;height:8px;border-radius:50%;background:var(--accent);display:none}
 .sync-badge.active{display:block;animation:pulse 1.5s ease-in-out infinite}
 @keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(14,165,233,0.4)}50%{opacity:0.6;box-shadow:0 0 0 6px rgba(14,165,233,0)}}
@@ -299,6 +303,7 @@ footer{text-align:center;padding:20px;color:var(--muted);border-top:1px solid va
 <div class="sync-actions"><button class="sync-cancel" id="syncCancel">关闭</button><button class="sync-run" id="syncRun">开始更新</button></div>
 </div>
 <div class="sync-toast" id="syncToast"><div class="sync-toast-bar"></div><div class="sync-toast-body"><div class="sync-toast-title" id="toastTitle"></div><div class="sync-toast-msg" id="toastMsg"></div><div class="sync-toast-actions" id="toastActions"></div></div></div>
+<div class="docs-lang-toast" id="docsLangToast" role="status"><strong id="docsLangToastTitle"></strong><span id="docsLangToastMsg"></span></div>
 <div class="review-modal" id="reviewModal"><div class="review-modal-inner"><div class="review-modal-head"><div><h2>新内容审阅</h2><span class="review-count" id="reviewCount"></span></div><span style="cursor:pointer;font-size:1.3em;color:var(--muted)" id="reviewClose">&times;</span></div><div class="review-modal-body" id="reviewBody"></div><div class="review-modal-foot"><button class="review-batch-btn" id="reviewExcludeAll">全部排除</button><button class="review-batch-btn all-approve" id="reviewApproveAll">全部保留</button></div></div></div>
 <div class="sidebar-overlay" id="sidebarOverlay"></div>
 <div class="layout"><div class="sidebar" id="sidebar"></div><div class="sidebar-resizer" id="sidebarResizer"></div>
@@ -341,12 +346,12 @@ var I18N={zh:{search_ph:"搜索关键词...",sort_new:"最新优先",sort_old:"�
 // Load data from index.json, then initialize
 var TAG_ZH={"Engineering & Technology": "工程与技术", "Engineering & Tech": "工程与技术", "Palantir AI": "Palantir AI", "Product": "产品", "Privacy & Civil Liberties": "隐私与公民自由", "Palantir Global": "Palantir 全球", "Life at Palantir": "Palantir 生活", "Culture": "企业文化", "Company": "公司", "Frontend Engineering": "前端工程", "Production Infrastructure": "生产基础设施", "Software Supply Chain": "软件供应链", "Information Security": "信息安全", "Foundations": "基础设施", "Foundry Architecture": "Foundry 架构", "Software Engineering": "软件工程", "Git": "Git", "Git Internals": "Git 内部原理", "General": "通用", "Global": "全球", "Kubernetes": "Kubernetes", "Edge Computing": "边缘计算", "Resilience": "系统韧性", "Foundry": "Foundry", "AIP": "AIP", "Apollo": "Apollo", "Ontology": "本体论", "ERP Software": "ERP 软件", "Machine Learning": "机器学习", "RFX Blog Series": "RFX 博客系列", "Privacy": "隐私", "Public Policy": "公共政策", "AI Ethics": "AI 伦理", "Responsible AI": "负责任 AI", "Privacy and Technology": "隐私与技术", "Palantir Explained": "Palantir 解析", "FAQ": "常见问题", "UK": "英国", "Germany": "德国", "France": "法国", "Japan": "日本", "Spanish": "西班牙语", "Internships": "实习项目", "Careers": "招聘", "Team": "团队", "Roles": "职位角色", "Partnerships": "合作伙伴", "Defense": "国防", "Healthcare": "医疗", "Supply Chain": "供应链"};
 var I18N={zh:{search_ph:"搜索关键词...",sort_new:"最新优先",sort_old:"最早优先",sort_az:"标题 A-Z",all_years:"所有年份",all_months:"所有月份",blog_cat:"博客分类",sub_cat:"子分类",no_result:"未找到相关文章",filter:"筛选",load_more:"加载更多",months:["1月","2月","3月","4月","5月","6月","7月","8月","9月","10月","11月","12月"]},en:{search_ph:"Search keywords...",sort_new:"Newest first",sort_old:"Oldest first",sort_az:"Title A-Z",all_years:"All Years",all_months:"All Months",blog_cat:"Blog Categories",sub_cat:"Subcategories",no_result:"No articles found",filter:"Filter",load_more:"Load More",months:["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]}};
-var A=[],BC={},SC={},DT={},tagFreq={},CAT_HIERARCHY={},sourceCollapsed={blog:true,website:true,docs:true,video:true,patent:true,contract:true};var currentSource="blog";var docUrlMap={};var docsTreeData=null;var docsCurrentPage=null;
+var A=[],BC={},SC={},DT={},tagFreq={},CAT_HIERARCHY={},sourceCollapsed={blog:true,website:true,docs:true,video:true,patent:true,contract:true};var currentSource="blog";var docUrlMap={},docPathMap={};var docsTreeData=null;var docsCurrentPage=null;
 fetch('data/index.json?_='+Date.now()).then(function(r){return r.json()}).then(function(idx){
 A=idx.articles||[];BC=idx.bc||{};SC=idx.sc||{};DT=idx.dt||{};tagFreq=idx.tag_freq||{};CAT_HIERARCHY=idx.cat_hierarchy||{};
 // Auto-detect TAG_ZH from sources if present
 if(idx.tag_zh)for(var k in idx.tag_zh)TAG_ZH[k]=idx.tag_zh[k];
-for(var di=0;di<(idx.articles||[]).length;di++){var da=idx.articles[di];if(da.source==="docs"&&da.u&&da.hp){docUrlMap[da.u.replace(/\/$/,"")]=da.hp}}
+for(var di=0;di<(idx.articles||[]).length;di++){var da=idx.articles[di];if(da.source==="docs"&&da.u&&da.hp){docUrlMap[da.u.replace(/\/$/,"")]=da.hp;docPathMap[da.hp]=da.u.replace(/\/$/,"")}}
 initApp();
 }).catch(function(e){console.error('Failed to load index.json:',e);document.getElementById('grid').innerHTML='<p style="padding:40px;text-align:center;color:var(--muted)">Failed to load data. If running locally, use a web server.</p>'});
 
@@ -627,11 +632,30 @@ function loadDocsNavPage(item){
   frame.src=path||"about:blank";
 }
 
+var DOCS_LANGUAGE_PATH=/^\/(?:docs\/)?(zh|jp|ja|kr|ko|fr|de|es|pt|it|ru)(?:[-_][A-Za-z]{2})?(?:\/|$)/;
+function isPalantirLanguageUrl(parsed){
+  if(parsed.hostname!=="www.palantir.com"&&parsed.hostname!=="palantir.com")return false;
+  if(DOCS_LANGUAGE_PATH.test(parsed.pathname))return true;
+  var language=(parsed.searchParams.get("lang")||parsed.searchParams.get("locale")||"").toLowerCase();
+  return !!language&&language!=="en";
+}
+function showDocsLanguageNotice(){
+  var toast=document.getElementById("docsLangToast");
+  document.getElementById("docsLangToastTitle").textContent=lang==="zh"?"本应用不收录":"Not included";
+  document.getElementById("docsLangToastMsg").textContent=lang==="zh"?"已忽略原文的多语言版本链接，当前页面保持不变。":"Multilingual version links are ignored; the current page stays unchanged.";
+  toast.classList.add("show");
+  clearTimeout(window._docsLangToastTimer);
+  window._docsLangToastTimer=setTimeout(function(){toast.classList.remove("show")},3200);
+}
+
 function normalizeDocsFrame(){
   var frame=this instanceof HTMLIFrameElement?this:document.getElementById("docsFrame");
   try{
     var doc=frame.contentDocument;
     if(!doc)return;
+    var framePath=(frame.getAttribute("src")||"").split("#")[0].replace(/page_zh\.html$/,"page.html");
+    var originalUrl=docPathMap[framePath];
+    var originalBase=originalUrl?new URL(originalUrl):null;
     doc.querySelectorAll('img[src^="/docs/resources/"]').forEach(function(img){
       img.src="https://www.palantir.com"+img.getAttribute("src");
     });
@@ -642,10 +666,17 @@ function normalizeDocsFrame(){
         return parts.join(" ");
       }).join(",");
     });
-    doc.querySelectorAll('a[href^="/docs/"],a[href^="https://www.palantir.com/docs/"]').forEach(function(link){
+    doc.querySelectorAll("a[href]").forEach(function(link){
       var raw=link.getAttribute("href");
-      var parsed=new URL(raw,"https://www.palantir.com");
-      var key=(parsed.origin+parsed.pathname+parsed.search).replace(/\/$/,"");
+      if(!raw||raw.charAt(0)==="#"||/^(mailto:|tel:|javascript:)/i.test(raw))return;
+      var parsed=new URL(raw,originalBase||window.location.href);
+      if(parsed.hostname!=="www.palantir.com"&&parsed.hostname!=="palantir.com")return;
+      if(isPalantirLanguageUrl(parsed)){
+        link.setAttribute("data-docs-language-link","1");
+        return;
+      }
+      if(!parsed.pathname.startsWith("/docs/")||parsed.pathname.startsWith("/docs/resources/"))return;
+      var key=(parsed.protocol+"//"+parsed.hostname+parsed.pathname).replace(/^https:\/\/palantir\.com/,"https://www.palantir.com").replace(/\/$/,"");
       var base=docUrlMap[key];
       if(base){
         var localized=lang==="zh"?base.replace(/page\.html$/,"page_zh.html"):base;
@@ -656,6 +687,14 @@ function normalizeDocsFrame(){
         link.href=parsed.href;
       }
     });
+    doc.addEventListener("click",function(e){
+      var link=e.target&&e.target.closest?e.target.closest("a[href]"):null;
+      if(link&&link.getAttribute("data-docs-language-link")==="1"){
+        e.preventDefault();
+        e.stopPropagation();
+        showDocsLanguageNotice();
+      }
+    },true);
   }catch(e){}
 }
 document.getElementById("docsFrame").addEventListener("load",normalizeDocsFrame);

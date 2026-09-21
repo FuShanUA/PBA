@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>外部转换 [旧版]</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<div class="ptcom-design__markdownDoc__1uarhel" data-pagefind-body="true"><h1 data-pagefind-weight="1" id="user-content-external-transforms-legacy" level="1" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#external-transforms-legacy" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>外部转换 [旧版]</h1>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>直接引用出口策略、凭据值和出口管制标记的转换处于 <a href="/docs/foundry/platform-overview/development-life-cycle/">旧版</a> 开发阶段，预计不会再进行额外开发。仍提供完整支持。我们建议使用 <a href="/docs/foundry/data-connection/external-transforms/">基于源的外部转换</a>。</p></div>
+<p>您可以在代码仓库中使用 Python 转换，直接在代码中连接外部系统。例如，如果您需要与外部系统交互的复杂逻辑，或想要使用第三方提供的软件开发工具包（SDK），这将非常有用。我们建议使用外部转换，通过 REST API 执行定时同步和导出。</p>
+<p><a href="/docs/foundry/data-connection/external-transforms/">基于源的外部转换</a> 是使用代码连接外部系统的受支持方式。与本页面所述的旧版外部转换相比，其优势包括：连接无法从互联网访问的系统、无需更改代码即可轮换凭据，以及使用 <a href="/docs/foundry/data-integration/virtual-tables/">虚拟表</a>。如需了解更多优势以及这两种方法之间的工作流程差异，请查阅 <a href="/docs/foundry/data-connection/external-transforms/#comparison-of-external-transforms-and-legacy-external-transforms">外部转换与旧版外部转换的对比</a>。</p>
+<p>在继续之前，请务必创建 <a href="/docs/foundry/transforms-python/getting-started/#set-up-a-python-code-repository">Python 转换代码仓库</a> 并按照以下说明进行配置。</p>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>连接到外部系统的转换只有当它们 <em>不</em> 使用 Foundry 输入时，才能使用代码仓库中的 Preview 辅助工具进行预览。</p></div>
+<h2 data-pagefind-weight="0.9" id="user-content-allow-code-repositories-to-set-up-external-connections" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#allow-code-repositories-to-set-up-external-connections" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>允许代码仓库设置外部连接</h2>
+<p>本节介绍使用外部转换所需的配置。</p>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>外部转换只能与运行在 <strong>SECURE</strong> 模式下的代码仓库一起使用。其他安全模式需要联系 Palantir 支持团队才能使用。</p></div>
+<h3 data-pagefind-weight="0.8" id="user-content-enable-external-system-interaction" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#enable-external-system-interaction" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>启用外部系统交互</h3>
+<p>在您刚创建的代码仓库中，具有 <code>Information Security Officer</code> 角色的 Foundry 用户应导航至 <a href="/docs/foundry/code-repositories/repository-settings/">仓库 <strong>设置</strong></a> 选项卡，然后导航至 <strong>仓库 &gt; 外部系统</strong> 以开启以下选项： <strong>允许从此仓库访问外部系统</strong>。</p>
+<p>该 <code>Information Security Officer</code> 是 Foundry 中的默认角色；用户可以被授予 <code>Information Security Officer</code> 角色，该操作在 <a href="/docs/foundry/administration/enrollments-and-organizations-permissions/">控制面板</a> 的 <strong>注册权限</strong>下进行。</p>
+<p><img alt="Enable external system interaction" height="550" node="[object Object]" src="/docs/resources/foundry/data-connection/external-transforms-enable.png" style="aspect-ratio:1656 / 550" width="1656"/></p>
+<h3 data-pagefind-weight="0.8" id="user-content-enable-dataset-inputs" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#enable-dataset-inputs" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>启用数据集输入</h3>
+<p>具有 <code>Information Security Officer</code> 角色的 Foundry 用户可以选择性地允许在外部转换中使用输入。</p>
+<p>当数据集被用作可以与外部系统通信的转换的输入时，该数据集中的任何数据都有可能离开 Foundry。具有 <code>Information Security Officer</code> 角色应为此仓库中允许用作外部转换输入的任何数据选择相应的安全标记和组织标记集。</p>
+<p>例如，您可能有一个带有 <strong></strong> 标记（位于 <strong>Palantir</strong> 组织）的数据集。要在外部转换中使用此数据集，信息安全官必须同时添加 <strong></strong> 标记和 <strong>Palantir</strong> 组织，具体是在代码仓库设置的步骤三 <strong></strong>中完成。</p>
+<p><img alt="Enable external system interaction with inputs" height="600" node="[object Object]" src="/docs/resources/foundry/data-connection/external-transforms-enable-inputs.png" style="aspect-ratio:1670 / 982" width="1020.3665987780041"/></p>
+<h3 data-pagefind-weight="0.8" id="user-content-add-the-transforms-external-systems-library" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#add-the-transforms-external-systems-library" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>添加 <code>transforms-external-systems</code> 库</h3>
+<p>为代码仓库启用外部系统交互后，您必须添加 <code>transforms-external-systems</code> 库，该库可在 <a href="/docs/foundry/transforms-python/use-python-libraries/"><strong></strong> 侧边栏选项卡</a> （位于代码界面左侧）中找到。</p>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>如果您在 <a href="/docs/foundry/vs-code/overview/">VS Code 工作区</a>中使用 Python 转换仓库，请导航至 <strong></strong> 选项卡（位于顶部导航栏中），然后选择 <strong></strong> 以访问 <strong></strong> 和 <strong></strong> 设置。</p></div>
+<p><img alt="Add library in the Libraries tab to left side panel. " height="600" node="[object Object]" src="/docs/resources/foundry/data-connection/external-transforms-library.png" style="aspect-ratio:2880 / 1464" width="1180.327868852459"/></p>
+<h3 data-pagefind-weight="0.8" id="user-content-configure-egress-and-credentials" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#configure-egress-and-credentials" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>配置出站和凭据</h3>
+<p>添加库后，您可以访问一个新的 <strong></strong> 选项卡，该选项卡位于代码界面左侧。</p>
+<p>在此标签页中，您可以设置您的代码所调用的任何端点所需的网络出口策略，并添加供仓库使用的凭据（如有必要）。请注意，并非所有端点都需要凭据。</p>
+<img alt="The Egress and Credentials tab in Code Editor" node="[object Object]" src="/docs/resources/foundry/data-connection/external-transforms-egress-and-credentials-tab.png?width=300" style="aspect-ratio:854 / 1378" width="300"/>
+<h2 data-pagefind-weight="0.9" id="user-content-use-network-egress-policies-and-credentials" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#use-network-egress-policies-and-credentials" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>使用网络出口策略和凭据</h2>
+<h3 data-pagefind-weight="0.8" id="user-content-add-egress-policies" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#add-egress-policies" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>添加出口策略</h3>
+<p>Foundry 要求从用户编写的代码发起的所有连接在访问外部目标时都必须绑定到网络出口策略。网络出口策略允许从用户编写的代码发起的、经许可的连接访问 Foundry 之外的目标。</p>
+<p>如果您的租户已启用自助出口功能，您可以 <a href="/docs/foundry/administration/configure-egress/">创建和管理出口策略</a> （在 Control Panel 中进行）。如果您的连接需要添加新的网络路由，请联系您的信息安全官或 Palantir 支持团队，并提供出口策略的详细信息。</p>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>如果您的 Foundry 实例未启用自助出口功能，请联系 Palantir 支持团队，以便在内部启用该端点并配置策略。</p></div>
+<p>在将出口策略用于外部转换（无论是全局还是非全局）之前，您必须从 <strong>Egress</strong> 标签页导入这些策略，该标签页位于代码仓库的 <strong>Egress and Credentials</strong> 面板中。该 <strong>Egress</strong> 标签页会展示您具有权限的所有策略，并将其分为三类：</p>
+<ul>
+<li><strong>已导入：</strong> 当前代码仓库中可供您的转换使用的网络出口策略。</li>
+<li><strong>可导入：</strong> 需要向网络出口策略添加项目引用。</li>
+<li><strong>需要访问请求：</strong> 您对该策略拥有 <code>Viewer</code> 权限，但没有 <code>Importer</code> 权限。</li>
+</ul>
+<p>在此标签页中，搜索所需的网络出口策略。如果该策略被标记为 <code>Importable</code>，请选中它，然后选择 <strong>将出口策略导入项目</strong>。</p>
+<p>如果所需的网络出口策略被标记为 <code>Access request required</code>，则一名具有 <code>Information Security Officer</code> 角色的 Foundry 用户应授予您 <code>Importer</code> 角色。该操作在控制面板的 <strong>网络出口</strong> 页面中进行。要授予 <code>Importer</code> 角色，信息安全官应首先选择所需的网络策略，然后选择 <strong>操作 &gt; 管理共享</strong> ，将您添加为该策略的 <code>Importer</code> 。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-add-credentials" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#add-credentials" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>添加凭据</h3>
+<p>如果您的外部系统需要授权凭据（用户名和密码）才能获得访问权限，您可以使用 <strong>凭据</strong> 标签页（位于 <strong>出口和凭据</strong> 侧面板中）来添加一组凭据，并在您的代码中使用它们。</p>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>如果源端点已建立允许列表流程，则您必须将 Foundry IP 地址加入允许列表。请联系 Palantir 支持团队获取所需的 IP 地址。</p></div>
+<h4 id="user-content-pass-certificates"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#pass-certificates" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>传递证书</h4>
+<p>如果您的外部系统要求传入 SSL/TLS 证书，您可以将该证书存储在凭证中，然后在外部转换逻辑中使用该凭证。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-write-external-transforms-logic" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#write-external-transforms-logic" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>编写外部转换逻辑</h2>
+<p>现在，您可以编写向外部系统写入数据的 Python 数据转换了。我们建议先查看关于如何 <a href="/docs/foundry/transforms-python/getting-started/#write-a-python-data-transformation">编写 Python 数据转换</a> 的基本说明，然后再编写外部转换。</p>
+<p>从 <code>transforms.external.systems</code> 包中导入所需的 <code>use_external_systems</code> 装饰器以及 <code>EgressPolicy</code> 和 <code>Credential</code> （如果需要）输入。从 <code>transforms-api</code>中导入转换装饰器和 <code>Output</code>。如果您的外部源不需要凭证，则无需将 <code>Credential</code> 输入添加到您的逻辑中。</p>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>您必须使用 <code>use_external_systems</code> 装饰器才能成功编写外部转换逻辑。一个转换不能同时包含 <code>use_external_systems</code> 装饰器和 <code>external_systems</code> 装饰器（用于基于源的外部转换）。</p></div>
+<p>以下示例展示了如何使用 <code>use_external_systems</code> 装饰器：</p>
+<pre><div class="ptcom-design__wrapper__12wpwnx" data-pagefind-weight="0.5"><span class="ptcom-design__clipboard__1l1gb20 ptcom-design__clipboard__12wpwnx"><span class="ptcom-design__confirmation__1l1gb20" data-pagefind-ignore="true">Copied!</span><svg aria-hidden="true" aria-label="clipboard" data-view-component="true" height="16" version="1.1" viewbox="0 0 16 16" width="16"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z" fill="currentColor" fill-rule="evenodd"></path><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z" fill="currentColor" fill-rule="evenodd"></path></svg></span><div style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;overflow:auto;position:relative;margin:0;padding:0.75em"><code style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;float:left;padding-right:10px"><span class="react-syntax-highlighter-line-number">1
+</span><span class="react-syntax-highlighter-line-number">2
+</span><span class="react-syntax-highlighter-line-number">3
+</span><span class="react-syntax-highlighter-line-number">4
+</span><span class="react-syntax-highlighter-line-number">5
+</span><span class="react-syntax-highlighter-line-number">6
+</span><span class="react-syntax-highlighter-line-number">7
+</span><span class="react-syntax-highlighter-line-number">8
+</span><span class="react-syntax-highlighter-line-number">9
+</span><span class="react-syntax-highlighter-line-number">10
+</span><span class="react-syntax-highlighter-line-number">11
+</span><span class="react-syntax-highlighter-line-number">12
+</span></code><code class="language-python" style="white-space:pre;text-align:left;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none">from transforms.api import transform, Output
+from transforms.external.systems import use_external_systems, EgressPolicy, Credential
+
+@use_external_systems(
+    egress=EgressPolicy('&lt;policy RID&gt;'),
+    creds=Credential('&lt;credential RID&gt;')
+)
+@transform(
+    output=Output('/path/to/output/dataset')
+)
+def compute(egress, creds, ...):
+    # ...</code></div></div></pre>
+<p>然后，您可以设置一个简单的转换来调用 API：</p>
+<pre><div class="ptcom-design__wrapper__12wpwnx" data-pagefind-weight="0.5"><span class="ptcom-design__clipboard__1l1gb20 ptcom-design__clipboard__12wpwnx"><span class="ptcom-design__confirmation__1l1gb20" data-pagefind-ignore="true">Copied!</span><svg aria-hidden="true" aria-label="clipboard" data-view-component="true" height="16" version="1.1" viewbox="0 0 16 16" width="16"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z" fill="currentColor" fill-rule="evenodd"></path><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z" fill="currentColor" fill-rule="evenodd"></path></svg></span><div style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;overflow:auto;position:relative;margin:0;padding:0.75em"><code style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;float:left;padding-right:10px"><span class="react-syntax-highlighter-line-number">1
+</span><span class="react-syntax-highlighter-line-number">2
+</span><span class="react-syntax-highlighter-line-number">3
+</span><span class="react-syntax-highlighter-line-number">4
+</span><span class="react-syntax-highlighter-line-number">5
+</span><span class="react-syntax-highlighter-line-number">6
+</span><span class="react-syntax-highlighter-line-number">7
+</span><span class="react-syntax-highlighter-line-number">8
+</span><span class="react-syntax-highlighter-line-number">9
+</span><span class="react-syntax-highlighter-line-number">10
+</span><span class="react-syntax-highlighter-line-number">11
+</span><span class="react-syntax-highlighter-line-number">12
+</span><span class="react-syntax-highlighter-line-number">13
+</span><span class="react-syntax-highlighter-line-number">14
+</span><span class="react-syntax-highlighter-line-number">15
+</span><span class="react-syntax-highlighter-line-number">16
+</span><span class="react-syntax-highlighter-line-number">17
+</span><span class="react-syntax-highlighter-line-number">18
+</span></code><code class="language-python" style="white-space:pre;text-align:left;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none">from transforms.api import transform, Output
+from transforms.external.systems import EgressPolicy, use_external_systems, Credential
+import requests
+
+
+@use_external_systems(
+    egress=EgressPolicy('&lt;policy RID&gt;'),
+    creds=Credential('&lt;credential RID&gt;')
+)
+@transform(
+    output=Output('/path/to/output/dataset')
+)
+def compute(egress, output, creds):
+    username = creds.get('username')
+    password = creds.get('password')
+    response = requests.get('https://&lt;API URL&gt;', auth=(username, password), timeout=10).text
+    with output.filesystem().open('response.json', 'w') as f:
+        f.write(response)</code></div></div></pre>
+<p>您还可以在单个转换中指定多个出口策略或凭证，如下例所示。</p>
+<pre><div class="ptcom-design__wrapper__12wpwnx" data-pagefind-weight="0.5"><span class="ptcom-design__clipboard__1l1gb20 ptcom-design__clipboard__12wpwnx"><span class="ptcom-design__confirmation__1l1gb20" data-pagefind-ignore="true">Copied!</span><svg aria-hidden="true" aria-label="clipboard" data-view-component="true" height="16" version="1.1" viewbox="0 0 16 16" width="16"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z" fill="currentColor" fill-rule="evenodd"></path><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z" fill="currentColor" fill-rule="evenodd"></path></svg></span><div style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;overflow:auto;position:relative;margin:0;padding:0.75em"><code style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;float:left;padding-right:10px"><span class="react-syntax-highlighter-line-number">1
+</span><span class="react-syntax-highlighter-line-number">2
+</span><span class="react-syntax-highlighter-line-number">3
+</span><span class="react-syntax-highlighter-line-number">4
+</span><span class="react-syntax-highlighter-line-number">5
+</span><span class="react-syntax-highlighter-line-number">6
+</span><span class="react-syntax-highlighter-line-number">7
+</span><span class="react-syntax-highlighter-line-number">8
+</span><span class="react-syntax-highlighter-line-number">9
+</span><span class="react-syntax-highlighter-line-number">10
+</span><span class="react-syntax-highlighter-line-number">11
+</span><span class="react-syntax-highlighter-line-number">12
+</span><span class="react-syntax-highlighter-line-number">13
+</span><span class="react-syntax-highlighter-line-number">14
+</span></code><code class="language-python" style="white-space:pre;text-align:left;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none">from transforms.api import transform, Output
+from transforms.external.systems import use_external_systems, EgressPolicy, Credential
+
+@use_external_systems(
+    egress1=EgressPolicy('&lt;first policy RID&gt;'),
+    egress2=EgressPolicy('&lt;second policy RID&gt;'),
+    creds1=Credential('&lt;first credential RID&gt;'),
+    creds2=Credential('&lt;second credential RID&gt;')
+)
+@transform(
+    output=Output('/path/to/output/dataset')
+)
+def compute(egress1, egress2, creds1, creds2, ...):
+    # ...</code></div></div></pre>
+<h2 data-pagefind-weight="0.9" id="user-content-add-foundry-dataset-inputs" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#add-foundry-dataset-inputs" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>添加 Foundry 数据集输入</h2>
+<p>在某些情况下，编写用于处理 Foundry 输入数据的外部转换可能会很有用。例如，您可能希望查询 API 来为表格数据集中的每一行收集额外的元数据。或者，您可能有一个需要将 Foundry 数据镜像到外部软件系统的工作流。</p>
+<p>此类情况被视为 <em>受出口控制的</em> 工作流，因为它们开启了将安全的 Foundry 数据导出到另一个安全保证未知且数据溯源被切断的系统的可能性。转换开发人员有责任评估导出工作流的安全性，并确保离开 Foundry 的数据在外部系统中得到妥善保护。Foundry 提供了治理控制，确保开发人员能够清晰地编码安全意图，并且信息安全官可以审计与外部系统交互的工作流的范围和意图。</p>
+<p>要选择启用导出控制，请将 <code>ExportControl</code> 应用于您的外部转换。该 <code>ExportControl</code> 接受用于导出的安全标记和组织 ID 列表。这样，如果上游数据带有额外的安全标记，转换任务将必然失败。要扩展代码仓库中支持的可导出标记集合，必须由信息安全官调整代码仓库设置。请导航至 <strong>设置 &gt; 代码仓库</strong> 选项卡。然后，在 <strong>外部系统</strong> 部分中，选择 <strong>允许在此代码仓库中将 Foundry 输入用于外部系统</strong> （第 3 步下方）。</p>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>安全标记和组织均以标记的形式实现，应在导出控制配置中一并列出。有关缺失标记的错误消息可能指的是安全标记或组织。</p></div>
+<p>例如，您可以使用导出外部转换来下载 Foundry 数据集中指定的图像 URL：</p>
+<pre><div class="ptcom-design__wrapper__12wpwnx" data-pagefind-weight="0.5"><span class="ptcom-design__clipboard__1l1gb20 ptcom-design__clipboard__12wpwnx"><span class="ptcom-design__confirmation__1l1gb20" data-pagefind-ignore="true">Copied!</span><svg aria-hidden="true" aria-label="clipboard" data-view-component="true" height="16" version="1.1" viewbox="0 0 16 16" width="16"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z" fill="currentColor" fill-rule="evenodd"></path><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z" fill="currentColor" fill-rule="evenodd"></path></svg></span><div style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;overflow:auto;position:relative;margin:0;padding:0.75em"><code style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;float:left;padding-right:10px"><span class="react-syntax-highlighter-line-number">1
+</span><span class="react-syntax-highlighter-line-number">2
+</span><span class="react-syntax-highlighter-line-number">3
+</span><span class="react-syntax-highlighter-line-number">4
+</span><span class="react-syntax-highlighter-line-number">5
+</span><span class="react-syntax-highlighter-line-number">6
+</span><span class="react-syntax-highlighter-line-number">7
+</span><span class="react-syntax-highlighter-line-number">8
+</span><span class="react-syntax-highlighter-line-number">9
+</span><span class="react-syntax-highlighter-line-number">10
+</span><span class="react-syntax-highlighter-line-number">11
+</span><span class="react-syntax-highlighter-line-number">12
+</span><span class="react-syntax-highlighter-line-number">13
+</span><span class="react-syntax-highlighter-line-number">14
+</span><span class="react-syntax-highlighter-line-number">15
+</span><span class="react-syntax-highlighter-line-number">16
+</span><span class="react-syntax-highlighter-line-number">17
+</span><span class="react-syntax-highlighter-line-number">18
+</span><span class="react-syntax-highlighter-line-number">19
+</span><span class="react-syntax-highlighter-line-number">20
+</span><span class="react-syntax-highlighter-line-number">21
+</span><span class="react-syntax-highlighter-line-number">22
+</span><span class="react-syntax-highlighter-line-number">23
+</span><span class="react-syntax-highlighter-line-number">24
+</span></code><code class="language-python" style="white-space:pre;text-align:left;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none">from transforms.api import transform, Input, Output
+from transforms.external.systems import use_external_systems, ExportControl, EgressPolicy
+from pyspark.sql.functions import udf
+import shutil
+
+@use_external_systems(
+    export_control=ExportControl(markings=['&lt;marking ID&gt;']),
+    egress=EgressPolicy(&lt;policy RID&gt;),
+)
+@transform(
+    images_output=Output('/path/to/output/dataset'),
+    image_urls=Input('/path/to/input/dataset'),
+)
+def compute(export_control, egress, images_output, image_urls):
+
+    @udf
+    def download(name, url):
+        response = requests.get(url, stream=True)
+        with images_output.filesystem().open(f'{name}.jpg', mode='wb') as out_file:
+            shutil.copyfileobj(response.raw, out_file)
+
+        return True
+
+    image_urls.dataframe().withColumn('downloaded', download(col('Name'), col('Url'))).collect()</code></div></div></pre>
+<h2 data-pagefind-weight="0.9" id="user-content-add-foundry-media-set-outputs" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#add-foundry-media-set-outputs" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>添加 Foundry 媒体集输出</h2>
+<p>在使用外部转换摄取图像、音频或 PDF 等媒体文件时，您可能希望将这些文件写入 <a href="/docs/foundry/data-integration/media-sets/">媒体集</a>。若要将媒体项写入现有媒体集，请以编程方式将该媒体项放入指定的媒体集输出中：</p>
+<pre><div class="ptcom-design__wrapper__12wpwnx" data-pagefind-weight="0.5"><span class="ptcom-design__clipboard__1l1gb20 ptcom-design__clipboard__12wpwnx"><span class="ptcom-design__confirmation__1l1gb20" data-pagefind-ignore="true">Copied!</span><svg aria-hidden="true" aria-label="clipboard" data-view-component="true" height="16" version="1.1" viewbox="0 0 16 16" width="16"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z" fill="currentColor" fill-rule="evenodd"></path><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z" fill="currentColor" fill-rule="evenodd"></path></svg></span><div style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;overflow:auto;position:relative;margin:0;padding:0.75em"><code style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;float:left;padding-right:10px"><span class="react-syntax-highlighter-line-number">1
+</span><span class="react-syntax-highlighter-line-number">2
+</span><span class="react-syntax-highlighter-line-number">3
+</span><span class="react-syntax-highlighter-line-number">4
+</span><span class="react-syntax-highlighter-line-number">5
+</span><span class="react-syntax-highlighter-line-number">6
+</span><span class="react-syntax-highlighter-line-number">7
+</span><span class="react-syntax-highlighter-line-number">8
+</span><span class="react-syntax-highlighter-line-number">9
+</span><span class="react-syntax-highlighter-line-number">10
+</span><span class="react-syntax-highlighter-line-number">11
+</span><span class="react-syntax-highlighter-line-number">12
+</span><span class="react-syntax-highlighter-line-number">13
+</span><span class="react-syntax-highlighter-line-number">14
+</span><span class="react-syntax-highlighter-line-number">15
+</span><span class="react-syntax-highlighter-line-number">16
+</span><span class="react-syntax-highlighter-line-number">17
+</span><span class="react-syntax-highlighter-line-number">18
+</span><span class="react-syntax-highlighter-line-number">19
+</span><span class="react-syntax-highlighter-line-number">20
+</span><span class="react-syntax-highlighter-line-number">21
+</span></code><code class="language-python" style="white-space:pre;text-align:left;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none">from transforms.api import transform
+from transforms.mediasets import MediaSetOutput
+from transforms.external.systems import use_external_systems
+import requests
+import tempfile
+
+
+@use_external_systems()
+@transform(
+    media_set_output=MediaSetOutput('/path/to/output/media/set')
+)
+def compute(media_set_output):
+    response = requests.get('https://&lt;API URL&gt;')
+    fname = 'my_image.png'
+
+    with tempfile.NamedTemporaryFile() as tmp:
+        tmp.write(response.content)
+        tmp.flush()
+
+        with open(tmp.name, 'rb') as tmp_read:
+            media_set_output.put_media_item(tmp_read, path=fname)</code></div></div></pre>
+<h2 data-pagefind-weight="0.9" id="user-content-more-ways-to-connect-to-external-systems" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#more-ways-to-connect-to-external-systems" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>连接到外部系统的更多方式</h2>
+<h3 data-pagefind-weight="0.8" id="user-content-interact-with-api-services" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#interact-with-api-services" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>与 API 服务交互</h3>
+<p>如果外部系统中存在 API 服务，您可以通过编程方式访问并使用这些服务。例如，您可以使用 <a href="https://docs.mapbox.com/api/maps/static-images/">Mapbox Static Images API ↗</a> 从外部转换中向 Foundry 数据集输出地图图像：</p>
+<pre><div class="ptcom-design__wrapper__12wpwnx" data-pagefind-weight="0.5"><span class="ptcom-design__clipboard__1l1gb20 ptcom-design__clipboard__12wpwnx"><span class="ptcom-design__confirmation__1l1gb20" data-pagefind-ignore="true">Copied!</span><svg aria-hidden="true" aria-label="clipboard" data-view-component="true" height="16" version="1.1" viewbox="0 0 16 16" width="16"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z" fill="currentColor" fill-rule="evenodd"></path><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z" fill="currentColor" fill-rule="evenodd"></path></svg></span><div style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;overflow:auto;position:relative;margin:0;padding:0.75em"><code style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;float:left;padding-right:10px"><span class="react-syntax-highlighter-line-number">1
+</span><span class="react-syntax-highlighter-line-number">2
+</span><span class="react-syntax-highlighter-line-number">3
+</span><span class="react-syntax-highlighter-line-number">4
+</span><span class="react-syntax-highlighter-line-number">5
+</span><span class="react-syntax-highlighter-line-number">6
+</span><span class="react-syntax-highlighter-line-number">7
+</span><span class="react-syntax-highlighter-line-number">8
+</span><span class="react-syntax-highlighter-line-number">9
+</span><span class="react-syntax-highlighter-line-number">10
+</span><span class="react-syntax-highlighter-line-number">11
+</span><span class="react-syntax-highlighter-line-number">12
+</span><span class="react-syntax-highlighter-line-number">13
+</span><span class="react-syntax-highlighter-line-number">14
+</span><span class="react-syntax-highlighter-line-number">15
+</span><span class="react-syntax-highlighter-line-number">16
+</span><span class="react-syntax-highlighter-line-number">17
+</span><span class="react-syntax-highlighter-line-number">18
+</span><span class="react-syntax-highlighter-line-number">19
+</span><span class="react-syntax-highlighter-line-number">20
+</span><span class="react-syntax-highlighter-line-number">21
+</span><span class="react-syntax-highlighter-line-number">22
+</span></code><code class="language-python" style="white-space:pre;text-align:left;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none">from transforms.external.systems import EgressPolicy, use_external_systems, Credential
+from transforms.api import transform, Output
+from mapbox import Static
+
+
+@use_external_systems(
+    egress=EgressPolicy('&lt;policy RID&gt;'),
+    mapbox_creds=Credential('&lt;credential RID&gt;')
+)
+@transform(
+    output=Output('/Users/username/datasets/example_mapbox'),
+)
+def compute(output, egress, mapbox_creds):
+    mapbox_access_token = mapbox_creds.get('mapbox-token')
+    client = Static(access_token=mapbox_access_token)
+    london = client.image('mapbox.satellite', lat=51.5072, lon=0.0, z=12)
+    with output.filesystem().open('london.log', 'w') as f:
+        f.write(f'response code: {london.status_code}')
+    with open('london.png', 'wb') as f:
+        f.flush()
+    with output.filesystem().open('london.png', 'wb') as f:
+        f.write(london.content)</code></div></div></pre>
+<h3 data-pagefind-weight="0.8" id="user-content-interact-with-dataset-files" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#interact-with-dataset-files" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>与数据集文件交互</h3>
+<p>您可以像在常规转换中一样，通过编程方式打开、流式处理文件并与文件进行交互。了解更多关于 <a href="/docs/foundry/transforms-python/unstructured-files/#read-and-write-unstructured-files">读取和写入非结构化文件</a>。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-incremental-processing" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#incremental-processing" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>增量处理</h3>
+<p>您可以像运行常规转换一样，增量运行外部转换。</p>
+<p>在外部增量转换中，通常需要在多次执行之间维护状态。对于常规增量转换，系统会跟踪输入文件并将其与最近处理的事务进行比较。而对于外部增量转换，必须以其他方式显式存储增量状态。一种选择是保存一个状态文件，用于保存增量转换的最新状态，如下例所示：</p>
+<pre><div class="ptcom-design__wrapper__12wpwnx" data-pagefind-weight="0.5"><span class="ptcom-design__clipboard__1l1gb20 ptcom-design__clipboard__12wpwnx"><span class="ptcom-design__confirmation__1l1gb20" data-pagefind-ignore="true">Copied!</span><svg aria-hidden="true" aria-label="clipboard" data-view-component="true" height="16" version="1.1" viewbox="0 0 16 16" width="16"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z" fill="currentColor" fill-rule="evenodd"></path><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z" fill="currentColor" fill-rule="evenodd"></path></svg></span><div style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;overflow:auto;position:relative;margin:0;padding:0.75em"><code style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;float:left;padding-right:10px"><span class="react-syntax-highlighter-line-number">1
+</span><span class="react-syntax-highlighter-line-number">2
+</span><span class="react-syntax-highlighter-line-number">3
+</span><span class="react-syntax-highlighter-line-number">4
+</span><span class="react-syntax-highlighter-line-number">5
+</span><span class="react-syntax-highlighter-line-number">6
+</span><span class="react-syntax-highlighter-line-number">7
+</span><span class="react-syntax-highlighter-line-number">8
+</span><span class="react-syntax-highlighter-line-number">9
+</span><span class="react-syntax-highlighter-line-number">10
+</span><span class="react-syntax-highlighter-line-number">11
+</span><span class="react-syntax-highlighter-line-number">12
+</span><span class="react-syntax-highlighter-line-number">13
+</span><span class="react-syntax-highlighter-line-number">14
+</span><span class="react-syntax-highlighter-line-number">15
+</span><span class="react-syntax-highlighter-line-number">16
+</span><span class="react-syntax-highlighter-line-number">17
+</span><span class="react-syntax-highlighter-line-number">18
+</span><span class="react-syntax-highlighter-line-number">19
+</span><span class="react-syntax-highlighter-line-number">20
+</span><span class="react-syntax-highlighter-line-number">21
+</span><span class="react-syntax-highlighter-line-number">22
+</span><span class="react-syntax-highlighter-line-number">23
+</span><span class="react-syntax-highlighter-line-number">24
+</span><span class="react-syntax-highlighter-line-number">25
+</span><span class="react-syntax-highlighter-line-number">26
+</span><span class="react-syntax-highlighter-line-number">27
+</span><span class="react-syntax-highlighter-line-number">28
+</span><span class="react-syntax-highlighter-line-number">29
+</span><span class="react-syntax-highlighter-line-number">30
+</span><span class="react-syntax-highlighter-line-number">31
+</span><span class="react-syntax-highlighter-line-number">32
+</span><span class="react-syntax-highlighter-line-number">33
+</span><span class="react-syntax-highlighter-line-number">34
+</span><span class="react-syntax-highlighter-line-number">35
+</span><span class="react-syntax-highlighter-line-number">36
+</span><span class="react-syntax-highlighter-line-number">37
+</span><span class="react-syntax-highlighter-line-number">38
+</span><span class="react-syntax-highlighter-line-number">39
+</span><span class="react-syntax-highlighter-line-number">40
+</span><span class="react-syntax-highlighter-line-number">41
+</span><span class="react-syntax-highlighter-line-number">42
+</span><span class="react-syntax-highlighter-line-number">43
+</span><span class="react-syntax-highlighter-line-number">44
+</span><span class="react-syntax-highlighter-line-number">45
+</span><span class="react-syntax-highlighter-line-number">46
+</span><span class="react-syntax-highlighter-line-number">47
+</span><span class="react-syntax-highlighter-line-number">48
+</span><span class="react-syntax-highlighter-line-number">49
+</span><span class="react-syntax-highlighter-line-number">50
+</span><span class="react-syntax-highlighter-line-number">51
+</span><span class="react-syntax-highlighter-line-number">52
+</span><span class="react-syntax-highlighter-line-number">53
+</span><span class="react-syntax-highlighter-line-number">54
+</span><span class="react-syntax-highlighter-line-number">55
+</span><span class="react-syntax-highlighter-line-number">56
+</span><span class="react-syntax-highlighter-line-number">57
+</span><span class="react-syntax-highlighter-line-number">58
+</span><span class="react-syntax-highlighter-line-number">59
+</span><span class="react-syntax-highlighter-line-number">60
+</span><span class="react-syntax-highlighter-line-number">61
+</span><span class="react-syntax-highlighter-line-number">62
+</span><span class="react-syntax-highlighter-line-number">63
+</span></code><code class="language-python" style="white-space:pre;text-align:left;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none">from transforms.api import transform, Input, Output, configure, incremental
+from pyspark.sql import Row
+from pyspark.sql import functions as F
+from pyspark.sql import types as T
+import logging
+import time
+import json
+log = logging.getLogger(__name__)
+
+@incremental()
+@configure(profile=["KUBERNETES_NO_EXECUTORS"])
+@use_external_systems(
+    egress=EgressPolicy('&lt;policy RID&gt;'),
+    creds=Credential('&lt;credential RID&gt;')
+)
+@transform(
+    out=Output("&lt;output_dataset&gt;"),
+)
+def compute(ctx, out, egress, creds):
+    # Get the filesystem of the output dataset to read and write files onto it:
+    out_fs = out.filesystem()
+    state_filename = "_state.json" # Prepend with "_" to consider it a hidden file and not show it in the dataset preview.
+    state = {"last_seen" : 0} # Some arbitrary starting state
+
+    # Try to fetch the state from the output dataset:
+    try:
+        with out_fs.open(state_filename, mode='r') as state_file:
+            data = json.load(state_file)
+            # Validate the fetched state:
+            state = data
+            logging.info(f"state file found, continuing from : {data}")
+
+    except Exception as e:
+        logging.warn("state file not found, starting over from default state")
+
+
+    # Here, write logic to make API Calls, create custom processing, generate a dataframe and save it, or save files directly to the output dataset.
+    # For example purposes, the following generates a dataframe and saves it on the output dataset (as if we fetched some data through API calls):
+    out.write_dataframe(get_dataframe(ctx))
+    # Update the state for next iteration:
+    state["last_seen"] = 1 + state["last_seen"]
+
+    # Save the new state on the output dataset:
+    with out_fs.open(state_filename, "w") as state_file:
+        json.dump(state, state_file)
+
+
+# This function generates a dataframe for example purposes. This step would not be relevant in a production implementation:
+def get_dataframe(ctx):
+    # Define the schema of the dataframe:
+    schema = T.StructType([
+        T.StructField("name", T.StringType(), True),
+        T.StructField("age", T.IntegerType(), True),
+        T.StructField("city", T.StringType(), True)
+    ])
+
+    # Create a list of rows:
+    data = [("Alice", 25, "New York"),
+            ("Bob", 30, "San Francisco"),
+            ("Charlie", 35, "London")]
+
+    # Create a PySpark dataframe:
+    df = ctx.spark_session.createDataFrame(data, schema=schema)</code></div></div></pre></div>
+</article>
+</body>
+</html>

@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LLM 容量管理</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<div class="ptcom-design__markdownDoc__1uarhel" data-pagefind-body="true"><h1 data-pagefind-weight="1" id="user-content-llm-capacity-management" level="1" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#llm-capacity-management" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>LLM 容量管理</h1>
+<p>LLM 容量是行业层面的有限资源，所有提供商（Azure、OpenAI、AWS Bedrock、Google Cloud Vertex 等）均限制每个账户可用的最大容量。因此，Palantir AIP 遵循 LLM 提供商引入的市场级约束。整个行业的标准计量单位是每分钟令牌数（TPM）和每分钟请求数（RPM）。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-enrollment-capacity-and-rate-limits" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#enrollment-capacity-and-rate-limits" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>注册容量与速率限制</h2>
+<p>Palantir 为每个注册设定了一定的最大容量，称为“注册级别速率限制”。该容量使用 TPM 和 RPM 按模型进行度量，涵盖您的注册中启用的所有提供商的所有模型，包括 GPT、Claude、Gemini、Llama、Mixtral 等。通过这种方式，每个模型都拥有单独、独立的容量，不受其他模型使用情况的影响。</p>
+<p>AIP 中的 LLM 容量在三个层面进行管理：注册级别限制设定总体上限， <a href="#manage-project-rate-limits">项目速率限制</a> 控制每个项目可使用的容量，而 <a href="#user-rate-limits">用户速率限制</a> 则管控未归属于项目的流量的单个用户消耗。</p>
+<p>默认情况下，所有客户均处于中等层级，该层级的容量足以构建原型并扩展到若干用例，即使面对数百名用户和大型数据集（例如数百万份文档）也绰绰有余。</p>
+<p>此外，如果需要额外的容量，AIP 提供将注册容量从中等层级升级为大型或 XL 层级的选项。如果您频繁达到注册速率限制，导致无法扩展 AIP 的使用，或者预计将增加管道数量或用户总数，请联系 Palantir 支持团队。</p>
+<p>注册限制现在显示在 <strong>AIP 速率限制</strong> 标签页（位于 Resource Management 应用程序）中，同时还显示注册层级。</p>
+<p><img alt="The AIP rate limits overview in the Resource Management application displays enrollment limits alongside project and user rate limit management cards." height="600" node="[object Object]" src="/docs/resources/foundry/aip/rate-limits-overview.png" style="aspect-ratio:3378 / 1672" width="1212.200956937799"/></p>
+<p>AIP 通过注册层级（尤其是 XL 层级）提供足够的容量来构建大规模工作流。这些层级已为数百家大规模使用 LLM 的 Palantir 客户提供了充足的容量，并且我们会继续提高这些限制。</p>
+<p>有关各模型和各层级注册速率限制的完整明细，请参阅 <a href="/docs/foundry/aip/llm-enrollment-rate-limits/">LLM 注册速率限制</a>。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-aip-usage-and-limits" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#aip-usage-and-limits" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>AIP 使用情况和限制</h2>
+<p>注册管理员可以导航到 <strong>AIP 使用情况和限制</strong> 页面（位于 Resource Management 应用程序中），以执行以下操作：</p>
+<ul>
+<li>
+<p><a href="#view-usage"><strong>查看使用情况：</strong></a> 查看您注册中所有项目和资源在所有 Palantir 提供的模型上的 LLM token 和请求使用情况。</p>
+</li>
+<li>
+<p><a href="#manage-rate-limits"><strong>管理速率限制：</strong></a> 管理您注册的项目和用户速率限制。</p>
+<ul>
+<li><strong>项目速率限制：</strong> 按模型配置给定项目中所有资源在任意给定分钟内合计可使用的 TPM 和 RPM 的最大百分比。</li>
+<li><strong>用户速率限制：</strong> 按模型配置任何单个用户在任意给定分钟内可使用的最大 TPM 和 RPM。</li>
+</ul>
+</li>
+</ul>
+<h3 data-pagefind-weight="0.8" id="user-content-view-usage" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#view-usage" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>查看使用情况</h3>
+<p>该 <strong>查看使用情况</strong> 选项卡可让您了解您注册中所有项目、资源和用户在所有 Palantir 提供的模型上的 LLM token 和请求使用情况。管理员可以使用此视图更好地管理 LLM 容量并处理速率限制。</p>
+<p><img alt="AIP token usage views page." height="600" node="[object Object]" src="/docs/resources/foundry/aip/aip-usage-views.png" style="aspect-ratio:3352 / 1848" width="1088.3116883116884"/></p>
+<p>此视图允许您：</p>
+<ul>
+<li>查看 <strong>所有模型的汇总使用情况</strong> 以及每个单独模型的使用情况明细。</li>
+<li>跟踪 <strong>每分钟的 token 和请求使用情况</strong>，因为 LLM 容量是在每分钟 token (TPM) 和每分钟请求 (RPM) 级别进行管理的。</li>
+<li><strong>一次深入查看单个模型</strong>，因为容量是针对每个模型单独管理的。</li>
+<li>查看 <strong>注册使用情况总览，并深入到项目级别的使用情况</strong>，鉴于如上文所述，LLM 容量既设有注册层级限制，也为每个项目设有项目层级限制。</li>
+<li>查看 <strong>按用户归因的</strong> 各模型总使用量。</li>
+<li>查看 <strong>速率限制阈值。</strong> 该切换开关（位于右上角）通过显示虚线来直观展示何时达到项目或注册层级限制。这些限制因模型和项目而异。图中会显示两条速率限制线：注册层级/项目限制，以及“批量限制”，该限制对特定项目和整个注册层级均以总容量的 80% 为上限。了解更多关于 <a href="#prioritizing-interactive-queries">优先处理交互式查询</a> 的信息，请见下文。</li>
+<li><strong>筛选缩小到特定时间范围、两周的数据，精确到分钟</strong>。用户可以使用左侧边栏上的日期范围筛选器，也可以直接在图表上通过拖放方式使用时间范围筛选器，下钻到特定的时间范围。当时间范围短于 6 小时时，图表将包含按项目（在注册层级）或按资源（在项目层级）的细分。</li>
+<li><strong>以表格形式查看使用概览。</strong> 在图表下方,表格包含每个项目的令牌和请求汇总(筛选到单个项目时,则为每个资源的汇总)。该表格受所有筛选器的影响(包括时间范围、模型以及项目筛选器,如已应用)。</li>
+</ul>
+<p>请注意,此视图 <strong>并未针对 LLM 使用成本管理进行优化</strong>。 <a href="#visibility-into-llm-cost-on-aip-enrollments">了解如何通过 <strong>分析</strong> 选项卡,查看已启用 AIP 的注册中的 LLM 成本。</a></p>
+<h3 data-pagefind-weight="0.8" id="user-content-taking-action-based-on-aip-usage" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#taking-action-based-on-aip-usage" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>根据 AIP 使用情况采取行动</h3>
+<p>如果您在注册或项目级别达到速率限制,可以考虑采取以下任一措施:</p>
+<ul>
+<li>调整项目限制,为可能占满您注册容量的特定资源或项目设置使用上限。</li>
+<li>跟踪交互式使用情况,确保其没有因管道而受到速率限制。如果确实如此,您可以在项目级别限制这些管道,或者将资源移至限制更高的单独项目。</li>
+<li>将构建安排在一天中的不同时间段,并将大型构建安排在周末——尽可能避免同时运行多个大型构建,并尽可能将常规构建安排在不同时间或以不同频率运行,以避免冲突。</li>
+<li>将您的工作流切换到您的注册当前尚未使用、因此可用容量充足的其他模型。</li>
+<li>请求升级到更大的层级。</li>
+</ul>
+<h2 data-pagefind-weight="0.9" id="user-content-manage-rate-limits" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#manage-rate-limits" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>管理速率限制</h2>
+<p>LLM 请求按以下两种方式之一进行归因，且这两种方式互斥——每个请求仅受其中一种限制类型的约束：</p>
+<ul>
+<li><strong>按项目归因的请求</strong> 受注册限制和相关项目限制的约束。这涵盖请求源自已配置项目资源的工作流（例如 Pipeline Builder 管道、AIP Logic、Automate、Chatbot Studio 和 Workshop 应用）。按用户限制不适用于这些请求。</li>
+<li><strong>按用户归因的请求</strong> 受注册限制和调用用户的按用户限制的约束。这涵盖请求直接源自用户会话（而非项目资源）的工作流（例如 AI FDE、AIP Assist、AIP Analyst、Pipeline Builder Explain 和 Generate 等原生助手功能，以及 Continue (VS Code) 和 Claude Code 等连接到 Foundry 所提供模型的 IDE 集成）。</li>
+</ul>
+<p><img alt="The Manage rate limits tab shows options for managing project rate limits and user rate limits." height="484" node="[object Object]" src="/docs/resources/foundry/aip/manage-rate-limits.png" style="aspect-ratio:3022 / 484" width="3022"/></p>
+<h3 data-pagefind-weight="0.8" id="user-content-manage-project-rate-limits" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#manage-project-rate-limits" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>管理项目速率限制</h3>
+<p>在 <strong>管理速率限制</strong> 标签页（位于 <strong>AIP 用量和限制</strong> 页面（位于资源管理中），管理员可以灵活地在 AIP 中出现宏大用例时，最大化面向生产用例的 LLM 使用量，并限制或禁止实验性项目占满整个注册容量。注册管理员可以按模型配置给定项目内所有资源在任意给定分钟内合计可使用的 TPM 和 RPM 的最大百分比。</p>
+<p><img alt="Check rate limits for your models on the AIP rate limits page in the Resource Management application." height="600" node="[object Object]" src="/docs/resources/foundry/aip/check-rate-limits.png" style="aspect-ratio:3354 / 1848" width="1088.9610389610389"/></p>
+<p>默认情况下，所有项目都会获得一个特定的运行限额。管理员可以创建额外的项目限额，定义每个限额包含哪些项目，以及可以使用注册容量的百分比。</p>
+<h4 id="user-content-model-overrides"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#model-overrides" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>模型覆盖设置</h4>
+<p>在每个项目限额内，您可以配置特定于模型的覆盖设置，以进一步控制模型层面的容量分配。模型覆盖设置允许您为各个模型设置不同的百分比限额，从而覆盖基础项目限额。这些覆盖设置仅适用于包含在该特定项目限额中的项目（对于默认限额，则适用于未分配到任何其他手动创建的项目限额的所有项目）。</p>
+<p>模型覆盖支持更细粒度的容量管理，并允许您创建模型“允许列表”；您可以将基础项目限制设置为 0%，然后仅为已批准的模型添加具有特定百分比的模型覆盖。您还可以通过将特定模型的覆盖限制百分比设置为 0% 来明确禁止使用这些模型。</p>
+<p>例如，以下步骤说明了如何限制项目限制中的项目仅使用 Claude Sonnet 4 和 GPT-4.1：</p>
+<ol>
+<li>将基础项目限制设置为 0%。</li>
+<li>为 Claude Sonnet 4 添加 30% 的模型覆盖。</li>
+<li>为 GPT-4.1 添加 25% 的模型覆盖。</li>
+</ol>
+<p>包含在此项目限制中的所有项目的用户，将只能在其分配的容量限制内访问指定的模型。</p>
+<p><img alt="Add model overrides to control model level usage on projects." height="600" node="[object Object]" src="/docs/resources/foundry/aip/aip-project-limit-model-overrides.png" style="aspect-ratio:800 / 980" width="489.7959183673469"/></p>
+<h3 data-pagefind-weight="0.8" id="user-content-user-rate-limits" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#user-rate-limits" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>用户速率限制</h3>
+<p>单用户速率限制用于管控单个用户在归属于该用户的请求中可用的容量。它们可确保任何单个用户都无法通过交互式工作流耗尽该注册中某个模型的全部容量。</p>
+<p>用户速率限制在 <strong>管理速率限制</strong> 选项卡上进行管理，该选项卡位于资源管理的 <strong>AIP 使用与限制</strong> 页面下。注册管理员可以查看默认的单用户限制、创建用户组覆盖以及配置单模型覆盖。</p>
+<p><img alt="The user rate limits configuration page displays default per-user limits and user-group override settings." height="600" node="[object Object]" src="/docs/resources/foundry/aip/user-rate-limits-overview.png" style="aspect-ratio:3360 / 1720" width="1172.093023255814"/></p>
+<h4 id="user-content-default-per-user-limits"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#default-per-user-limits" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>默认单用户限制</h4>
+<p>每个模型的默认每用户限额显示在 <strong></strong> 选项卡中(位于 <strong></strong> 列中(位于 <a href="/docs/foundry/aip/llm-enrollment-rate-limits/">注册速率限制表)</a>。这些默认值由 Palantir 设置,适用于所有用户,除非管理员在 <strong>用户速率限制</strong> 选项卡中进行了覆盖。
+每个模型的默认每用户限额显示在 <strong>用户速率限制</strong> 选项卡中(位于 <strong>每用户限额</strong> 列中(位于 <a href="/docs/foundry/aip/llm-enrollment-rate-limits/">注册速率限制表)</a>。这些默认值由 Palantir 设置,适用于所有用户,除非管理员在 <strong>用户速率限制</strong> 选项卡中进行了覆盖。</p>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>我们建议使用 Palantir 的默认用户速率限制。我们定义这些限制,旨在平衡以下两个方面:(a) 防止注册限额被单个用户占满;以及 (b) 让用户能够高效使用 Foundry 中的最新 AIP 工具,从而最大限度地提高工作效率。如果管理员选择为所有模型设置新的自定义限制,则应随着新模型的发布重新审视该限制,以确保不会无意间限制其用户。</p></div>
+<h4 id="user-content-per-user-overrides"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#per-user-overrides" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>每用户覆盖设置</h4>
+<p>注册管理员可以覆盖每用户默认值，为特定用户（作为特定用户组的一部分）授予不同的每用户限制。这对于高级用户、交互式应用程序背后的服务账户，或者其用户归属工作流需要持续高吞吐量的团队非常有用，而无需提高注册的整体容量层级。它也可作为一种工具，用于保护生产工作流中使用的某个模型的容量，避免被用户意外占满。</p>
+<p>每用户覆盖可以通过以下两种方式之一来表示：</p>
+<ul>
+<li><strong>注册限制的百分比：</strong> 介于 1 到 100 之间的值，表示注册级别速率限制的百分比。例如，如果某个注册对某个模型拥有 400 万 TPM，而管理员配置了 25% 的覆盖，则受该覆盖影响的任何用户将获得 100 万 TPM 的有效限制。</li>
+<li><strong>绝对 TPM 和 RPM 值：</strong> 明确的每分钟令牌数和每分钟请求数值。当基于百分比的方法不符合所需限制时，这为管理员提供了精确的控制。</li>
+</ul>
+<p>配置覆盖后，它将取代已发布的每用户默认值；它不会与默认值混合，也不会受默认值下限的约束。</p>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>将某个模型的每用户限制设置为低于 50,000 TPM 或 10 RPM，可能会导致受影响用户的某些 AIP 功能无法正常使用。当配置的限制低于这些建议的最低值时，覆盖表单会显示警告。</p></div>
+<h4 id="user-content-levels-of-override"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#levels-of-override" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>覆盖级别</h4>
+<p>每用户覆盖可以在三个级别进行配置，并按具体程度依次应用：</p>
+<ol>
+<li><strong>默认每用户覆盖：</strong> 一个适用于该注册中所有用户、且跨所有模型生效的统一百分比。它将成为新的基线，取代 Palantir 发布的各模型默认值。</li>
+<li><strong>按模型覆盖：</strong> 在默认值的基础上，针对一个或多个特定模型设置的不同百分比或绝对限制。按模型覆盖允许管理员针对单个模型提高或降低每用户限制，而无需更改整个目录范围内的限制。</li>
+<li><strong>用户组覆盖：</strong> 针对一个或多个 Foundry 用户组的覆盖。用户组覆盖定义自身的默认百分比，并可选择定义自身的按模型覆盖（百分比或绝对限制）。当用户属于某个覆盖所针对的用户组时，将使用该组的配置，而不是整个注册范围内的每用户默认值。</li>
+</ol>
+<p>如果未在任何级别配置覆盖，则将使用该模型发布的每用户默认值。</p>
+<p><img alt="The user rate limits override configuration allows administrators to set percentage or absolute limit overrides for specific user groups." height="600" node="[object Object]" src="/docs/resources/foundry/aip/user-rate-limits-override.png" style="aspect-ratio:700 / 1021" width="411.36141038197843"/></p>
+<h4 id="user-content-how-user-group-overrides-resolve"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#how-user-group-overrides-resolve" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>用户组覆盖的解析方式</h4>
+<p>用户组覆盖适用于一组具名的 Foundry 用户组。每个覆盖都包含一个名称、可选的描述、可选的默认百分比，以及一组可选的各模型限制。当用户属于某个覆盖中列出的任一用户组时，该用户即与该覆盖匹配。</p>
+<p>如果用户属于多个覆盖所涵盖的用户组，则在这些覆盖中产生的最高限制将对该用户和模型生效。这使得覆盖具有累加性和可预测性：通过一个用户组授予用户的更高限制，不会因其属于另一个配置较低的用户组而被静默撤销。例如，假设某个注册的默认用户限制为 40%。用户 A 属于两个不同的用户限制覆盖下的两个用户组，其中一个将用户限制定义为 10%，另一个定义为注册容量的 35%。用户 A 的用户限制将为 35%，即各覆盖中最高的限制。</p>
+<p>当移除某个用户组覆盖时，受影响用户组的成员将回退到整个注册范围的每用户配置。如果该注册自身没有每用户配置，则回退到已发布的每用户默认值。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-aip-reserved-capacity" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#aip-reserved-capacity" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>AIP 预留容量</h3>
+<p>预留容量是资源管理中的一项 AIP LLM 容量管理工具。预留容量可保证占用模型可用的每分钟令牌数(TPM)和每分钟请求数(RPM)中的一定份额。请将其用于不得因项目速率限制、注册限制或共享同一池的其他资源竞争而被限流的关键生产工作流。</p>
+<p><img alt="An example of allocated reserved capacity for a specific model, showing the projects that have been allocated reserved capacity and the percentage distribution across those projects." height="600" node="[object Object]" src="/docs/resources/foundry/aip/aip-reserved-capacity-overview.png" style="aspect-ratio:3452 / 1442" width="1436.3384188626906"/></p>
+<h4 id="user-content-key-features"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#key-features" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>核心功能</h4>
+<ul>
+<li>预留容量在模型级别进行配置,即从该模型可用的总容量中预留特定数量的 TPM 和 RPM。</li>
+<li>可以为项目分配总预留容量的百分比,使您能够优先保障最关键的资源,并根据组织要求自定义 LLM 分配。</li>
+<li>当预留容量耗尽时,已分配该容量的项目将自动回退到受现有项目限制和注册限制约束的共享容量。</li>
+</ul>
+<h4 id="user-content-availability-and-costs"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#availability-and-costs" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>可用性和成本</h4>
+<p>预留容量适用于所有模型。您最多可预留模型总容量的 50%。如果总容量随后减少,您的预留量将予以保留,最多可达新总容量的 95%。</p>
+<p>根据过去一年 AIP 的性能表现，预留容量已足以实现 99.9% 的正常运行时间。我们无法保证 100% 的容量可用性，但根据过去一年的使用模式，超过 99% 的 LLM 请求失败是由 enrollment 和项目速率限制导致的。这些问题可以通过预留容量工具加以解决。</p>
+<p>预留容量作为一项服务不会产生额外费用；额外费用将取决于额外的 token 用量，这与 AIP 中所有其他 LLM 使用情况相同。对于未来的新用例或特定模型，此政策可能会有所变化。如果此政策发生变化，我们不会对使用预留容量的现有工作流追溯收费；这些工作流将继续仅根据额外的 token 用量产生费用。</p>
+<p>具有 <code>resource management administrator</code> 权限的用户可以为模型预留容量，并将其分配给特定项目。</p>
+<h4 id="user-content-example-usage"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#example-usage" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>使用示例</h4>
+<p>请参考以下示例，以进一步了解预留容量的使用：</p>
+<ul>
+<li>对于给定模型，您的 enrollment 拥有 100 万 TPM 的容量。对于包含生产应用程序的项目，该应用程序的默认限额为 enrollment 容量的 70%，即 70 万 TPM。</li>
+<li>要提高此生产应用程序的容量，您可以通过提高项目速率限制，将包含该应用程序的项目的容量提升至注册容量的 100%，即 100 万 TPM。</li>
+<li>虽然该应用程序的限额现已达到注册限额的 100%，但它仍在与其他资源争夺此共享容量。您可以在 <strong>查看使用量</strong> 标签页（位于 <strong>AIP 使用量与限制</strong> 部分中，该部分属于资源管理应用程序）中识别竞争资源。之后，您可以错开竞争资源的时间安排，或将资源迁移到不同的模型。</li>
+<li>为确保此生产应用程序即使在您优化时间安排和模型使用后仍能获得所需容量，您可以使用预留容量。假设您从可用的 100 万 TPM 中预留 25 万 TPM，剩余 75 万 TPM 作为共享容量。</li>
+<li>您可以将该预留容量分配给关键资源，例如您的生产应用程序。该应用程序会首先使用其预留的 25 万 TPM。该容量耗尽后，应用程序将使用 75 万 TPM 的共享容量，并与其他资源竞争。注册的总容量仍为 100 万 TPM：其中 25 万 TPM 专供此应用程序使用，其余 75 万 TPM 由所有资源共享。</li>
+</ul>
+<h2 data-pagefind-weight="0.9" id="user-content-visibility-into-llm-cost-on-aip-enrollments" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#visibility-into-llm-cost-on-aip-enrollments" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>AIP 注册中 LLM 成本的可见性</h2>
+<p>使用 <strong>分析</strong> 页面来查看您启用了 AIP 的注册中的 LLM 使用成本。</p>
+<p>在 <strong>分析</strong> 页面中，选择 <strong>按来源筛选：</strong> <code>All LLMs</code> 和 <strong>按来源分组</strong>。这将生成一个按模型细分的每日 LLM 成本图表。</p>
+<p><img alt="The Analysis tab of Resource Management allows you to filter LLMs into the view to see a chart of daily LLM cost segmented by model." height="600" node="[object Object]" src="/docs/resources/foundry/aip/analysis-tab-llm-usage.png" style="aspect-ratio:3366 / 1834" width="1101.1995637949838"/></p>
+<h2 data-pagefind-weight="0.9" id="user-content-prioritizing-interactive-queries" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#prioritizing-interactive-queries" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>优先处理交互式查询</h2>
+<p>通常，AIP 会优先处理交互式请求，而非包含批量请求的管道。交互式查询定义为用户与 LLM 进行的任何实时交互，例如 Workshop、Chatbot Studio、AIP Logic LLM 面板中的预览，以及 Pipeline Builder LLM 节点中的预览。批量查询定义为在用户不期望立即获得响应的情况下发送的大量请求，例如转换管道、Pipeline Builder、Automate（用于 Logic）。</p>
+<p>此原则目前保证，注册和项目级别始终会有 20% 的容量预留给交互式查询。这意味着，对于某个模型的 100,000 TPM 容量，在任何给定分钟内，管道最多只能使用 80,000 TPM,而至少有 20,000 TPM(最多可达 100,000 TPM)可用于交互式查询。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-faq" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#faq" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>常见问题</h2>
+<h3 data-pagefind-weight="0.8" id="user-content-what-is-an-example-of-how-project-level-and-user-level-rate-limits-are-expected-to-be-used" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#what-is-an-example-of-how-project-level-and-user-level-rate-limits-are-expected-to-be-used" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>项目级和用户级速率限制预期如何使用的示例是什么?</h3>
+<p>请考虑以下示例：</p>
+<ul>
+<li>某注册在生产环境中只有一个 AIP 用例，因此包含该用例的项目被移至</li>
+<li>除了这个生产用例之外，还有一个处于测试阶段的用例需要考虑。该测试阶段的用例应能够运行测试，而不会占用全部生产用量。可以将此用例添加到容量上限为 30% 的           </li>
+<li>除了前面提到的用例之外，我们还添加了第二个生产用例。不过，与使用 GPT-5 的第一个用例不同，这个用例使用的是 Claude Sonnet 4.6。我们可以放心地将这个新用例与第一个生产用例一同添加到“生产”限额中。</li>
+<li>同一注册希望让一组用户能够试用 LLM。注册管理员将两个项目添加到容量上限为 20% 的“实验”限额中。</li>
+<li>从技术上讲，测试项目和这两个实验项目合计最多可消耗 70% 的容量，但历史数据显示，实际使用量通常低于这一水平。</li>
+<li>最后，该注册希望防止其生产用例被单个用户占用。管理员将 GPT-5 和 Claude Sonnet 4.6 的默认用户速率限制覆盖值设置为注册容量的 10%，同时提高了 Claude Opus 4.6 和 GPT-5.4 的容量。此外，他们还将用户主文件夹的容量设置为 0%（以避免在私有文件夹中进行构建，并鼓励协作），并在控制面板的 AIP 设置中为这些指定用户授予 LLM 构建者权限。</li>
+</ul>
+<h3 data-pagefind-weight="0.8" id="user-content-why-is-the-percent-enforced-on-each-project-in-a-limit-category-rather-than-shared-across-projects-and-users" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#why-is-the-percent-enforced-on-each-project-in-a-limit-category-rather-than-shared-across-projects-and-users" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>为什么在限制类别中，百分比是针对每个项目强制执行，而不是在项目和用户之间共享？</h3>
+<ul>
+<li>多个项目和资源能够共享相同的 100% 容量，原因在于：根据一年多以来数百个客户的历史 LLM 使用模式，大多数项目和资源并不会调用 LLM。因此，多个资源可以共享相同的 100% 容量。</li>
+<li>如果限制类别中的所有项目共享相同的使用百分比，则会对使用量实施硬性限制。然而，根据现有的使用情况，这种做法在 99.9% 的情况下并无必要。多个资源在同一分钟内同时使用最大容量的情况极为罕见，即使发生这种情况，请求也会重试直至成功。</li>
+</ul>
+<h3 data-pagefind-weight="0.8" id="user-content-why-are-there-aip-usage-limits" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#why-are-there-aip-usage-limits" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>为什么会存在 AIP 使用限制？</h3>
+<ul>
+<li>
+<p>首先，不同提供商在 TPM、RPM 以及区域可用性方面的服务存在显著差异。虽然 AIP 确实利用了所有提供商的容量，但 Palantir 无法绕过各云服务提供商施加的限制。</p>
+</li>
+<li>
+<p>除此之外，与大多数提供商的常规服务相比，Palantir 向客户提供的 LLM 容量需要满足更高的合规要求。Palantir 保证零数据保留（ZDR），并可控制数据路由至特定区域（地域限制）。</p>
+</li>
+<li>
+<p>大多数提供商（即 Azure OpenAI、AWS Bedrock、GCP Vertex 以及 Palantir 托管的模型）均支持地域限制，但对地域受限的请求，其 LLM 容量保证也较小。其他提供商（如 OpenAI 直连、Anthropic 直连和 xAI）在较少的区域提供其模型。</p>
+<ul>
+<li>客户在 Control Panel 中的 <strong>AIP Settings</strong>下启用的模型提供商越多，其获得的容量就越高。</li>
+<li>对于使用量较高的客户，我们提供升级到更大层级以获取更多容量的选项。</li>
+<li>没有地域限制的 AIP 客户可以使用更大的容量池。</li>
+<li>某些模型在某些区域仍未广泛可用。有时 Palantir 会获得这些模型的早期访问权限，但这并非总能实现。</li>
+<li>某些功能仍不可用，例如 batch API。Batch API 支持在 24 小时内处理数十亿个 token，但需要在该时间段内存储数据，这无法满足 Palantir 的合规要求。</li>
+</ul>
+</li>
+<li>
+<p>如上所述，我们的中型到 XL 级别足以支持大规模生产工作流。请联系 Palantir 支持团队以更改您的级别。</p>
+</li>
+</ul>
+<h3 data-pagefind-weight="0.8" id="user-content-what-are-the-biggest-obstacles-to-solving-the-capacity-problem" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#what-are-the-biggest-obstacles-to-solving-the-capacity-problem" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>解决容量问题的最大障碍是什么？</h3>
+<ul>
+<li>地域限制是导致容量问题的最主要原因。如果您的注册受到地域限制，并且您能够从法律角度移除地域限制，则应与您的 Palantir 团队合作进行此项操作。</li>
+<li>新模型在早期阶段通常容量有限。</li>
+<li>对于运行数百万个条目的大型管道，容量问题要难解决得多。</li>
+</ul></div>
+</article>
+</body>
+</html>

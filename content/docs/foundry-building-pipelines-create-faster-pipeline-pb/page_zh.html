@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pipeline Builder 中的快速管道</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<div class="ptcom-design__markdownDoc__1uarhel" data-pagefind-body="true"><h1 data-pagefind-weight="1" id="user-content-faster-pipelines-in-pipeline-builder" level="1" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#faster-pipelines-in-pipeline-builder" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Pipeline Builder 中的快速管道</h1>
+<p>Pipeline Builder 现在支持快速管道，它可以缩短批处理和增量管道的执行时间。此管道使用的后端由 <a href="https://datafusion.apache.org/">DataFusion ↗</a>提供支持，DataFusion 是一个用 <a href="https://www.rust-lang.org/">Rust ↗</a>编写的开源查询引擎。与基于 Spark 的传统管道相比，快速管道可以大幅加速计算过程。</p>
+<p>快速管道此前被称为 <em>轻量级管道</em>，因为“轻量级”一词指的是执行这些管道所需的时间和计算资源的减少，而非其所处理数据的大小。更名反映出，快速管道既能缩短执行时间，又能降低计算资源使用量，即使对于大规模数据集也是如此。</p>
+<p>快速管道经过专门设计，可优化构建时间并高效执行低延迟操作。特别是，运行时间在 15 分钟以内的管道将从快速管道配置中获益最多。</p>
+<p>我们鼓励您尝试不同的管道配置来提升性能。您可以通过在分支上进行测试，或者复制现有管道以比较新配置与原始配置的性能，来探索这些功能。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-create-a-new-faster-pipeline" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#create-a-new-faster-pipeline" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>创建新的快速管道</h2>
+<p>如果您不熟悉在 Pipeline Builder 中创建管道，请查阅以下文档： <a href="/docs/foundry/building-pipelines/create-batch-pipeline-pb/">如何在 Pipeline Builder 中创建批处理管道</a> 在继续之前。</p>
+<ol>
+<li>打开 Pipeline Builder 并选择 <strong>创建新管道</strong>。</li>
+<li>输入管道名称和所需位置后，请选择 <strong>更快管道</strong> （位于 <strong>管道类型下）</strong>。</li>
+<li>选择 <strong>创建管道</strong>。</li>
+</ol>
+<p><img alt="Screenshot of Pipeline selection" height="600" node="[object Object]" src="/docs/resources/foundry/building-pipelines/faster-pb-create-new.png" style="aspect-ratio:952 / 680" width="840"/></p>
+<h2 data-pagefind-weight="0.9" id="user-content-convert-between-faster-and-standard-batch-pipelines" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#convert-between-faster-and-standard-batch-pipelines" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>在更快管道与标准批处理管道之间转换</h2>
+<p>您可以按照以下步骤在更快管道与标准批处理管道之间相互转换。通过重复该流程并选择所需选项，可随时撤销此转换。</p>
+<ol>
+<li>要转换批处理管道，请转到 <strong>设置</strong> 并选择 <strong>转换为更快管道</strong>。</li>
+</ol>
+<p><img alt='Screenshot of pipeline settings "Convert to faster pipeline" option' height="508" node="[object Object]" src="/docs/resources/foundry/building-pipelines/faster-pb-settings.png" style="aspect-ratio:1170 / 508" width="1170"/></p>
+<p>要将管道转换回批处理管道，请转到 <strong>设置</strong> 并选择 <strong>转换为批处理管道</strong>。</p>
+<p><img alt='Screenshot of pipeline settings "Convert to batch pipeline" option' height="460" node="[object Object]" src="/docs/resources/foundry/building-pipelines/faster-pb-convert-to-batch.png" style="aspect-ratio:1182 / 460" width="1182"/></p>
+<ol start="2">
+<li>如果管道与新管道类型兼容，您将看到一个对话框，可在其中确认转换。</li>
+</ol>
+<p><img alt="The dialog shows a successful conversion to a Faster pipeline with a confirmation message." height="600" node="[object Object]" src="/docs/resources/foundry/building-pipelines/faster-pb-can-convert.png" style="aspect-ratio:1110 / 738" width="902.4390243902438"/></p>
+<ol start="3">
+<li>如果管道与新管道类型不兼容，则在您尝试转换管道时会出现警告。该警告将列出与更快管道不兼容的任何表达式或转换。</li>
+</ol>
+<p><img alt="The dialog shows an unsuccessful conversion to a Faster pipeline with a warning listing incompatible features." height="600" node="[object Object]" src="/docs/resources/foundry/building-pipelines/faster-pb-cannot-convert.png" style="aspect-ratio:1050 / 698" width="902.5787965616046"/></p>
+<p>您可以开启 <strong>显示管道转换检查</strong> ，随时查看与更快管道选项不兼容的任何内容。</p>
+<p><img alt="The dialog shows the show pipeline conversion checks toggled on." height="600" node="[object Object]" src="/docs/resources/foundry/building-pipelines/faster-show-conversion-checks.png" style="aspect-ratio:1060 / 924" width="688.3116883116883"/></p>
+<p>在您开启 <strong>显示管道转换检查</strong>后, <strong>更快的转换兼容性检查</strong> 部分将出现在屏幕底部的 <strong>管道警告</strong> 面板中。该部分列出了在快速管道中不受支持的转换和表达式。要快速定位包含不受支持的转换的节点,请点击 <strong>转到节点</strong> 图标(位于相应行右侧)。</p>
+<p><img alt="The Pipeline warnings bottom panel with the Faster conversion compatibility checks section." height="600" node="[object Object]" src="/docs/resources/foundry/building-pipelines/faster-pb-pipeline-warnings.png" style="aspect-ratio:2272 / 962" width="1417.047817047817"/></p>
+<h2 data-pagefind-weight="0.9" id="user-content-known-limitations" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#known-limitations" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>已知限制</h2>
+<p>快速管道目前不支持与标准批量管道相同的一组转换和表达式。最值得注意的是,不受支持的转换和表达式包括 LLM 功能、地理空间功能以及媒体集操作。</p>
+<p>由于快速管道与批量管道之间存在差异,您应始终使用 <strong>预览</strong> 或通过检查构建输出来验证结果。</p>
+<p>快速管道中的大多数受支持表达式,其行为与批量管道中的等效表达式相同。已知限制包括:</p>
+<ul>
+<li>浮点结果的最后几位数字可能有所不同。</li>
+<li>Decimal 溢出将抛出错误,而不是输出 <code>NULL</code> 值。</li>
+<li>结构体无法与 <code>&lt;</code>、 <code>&gt;</code>、 <code>==</code>等来进行比较。</li>
+<li><code>pow</code> 溢出时返回 <code>NULL</code> 而不是 <code>inf</code>。</li>
+<li>对于复杂类型（如结构体、数组、映射）及其向字符串的转换，Cast 功能可能存在差异。例如，这些类型转换为字符串时，null 值的呈现方式可能有所不同。</li>
+<li>对以下格式的支持有限： <code>TimestampToString</code>、 <code>DateToString</code>、 <code>StringToTimestamp</code>和 <code>StringToDate</code>。</li>
+<li>对于结构体、数组和映射等复杂类型，不支持最小值和最大值。</li>
+<li>空输出将生成 0 个文件，而非一个空文件。</li>
+<li>构建时不支持除行数以外的统计信息。</li>
+<li>不支持创建时间序列参考值。</li>
+<li>不支持已训练模型节点。</li>
+</ul>
+<h2 data-pagefind-weight="0.9" id="user-content-pipeline-type-support-comparison" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#pipeline-type-support-comparison" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>管道类型支持对比</h2>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__success__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>以下大小建议仅作为一般规则，并不适用于所有查询。对于合适类型的转换，速度更快的轻量级引擎甚至可以在单个节点上处理 TB 级别的输入。</p></div>
+<p>如果您的管道没有遇到上一节中提到的任何限制，我们建议先使用更快的选项。如果您的数据规模有此需求，或者您想使用尚不支持的转换和表达式，则可以切换到标准 Spark 选项。您可以 <a href="#convert-between-faster-and-standard-batch-pipelines">在不同类型的管道之间进行转换</a>。</p>
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>特性</th><th>标准</th><th>更快</th></tr></thead><tbody><tr><td>最佳（未压缩）数据大小</td><td>&gt; 50GB</td><td>1-50GB</td></tr><tr><td>最佳行数<sup>*</sup></td><td>&gt; 2亿</td><td>100万-2亿</td></tr><tr><td>启动开销</td><td>显著</td><td>极小</td></tr><tr><td>内存效率</td><td>良好</td><td>优秀</td></tr><tr><td>处理速度（小数据量）</td><td>较慢</td><td>优秀</td></tr><tr><td>处理速度（中等数据量）</td><td>较快</td><td>优秀</td></tr><tr><td>处理速度（大数据量）</td><td>优秀</td><td>可变</td></tr><tr><td>并行执行</td><td>分布式</td><td>单节点</td></tr><tr><td>内存溢写</td><td>自动</td><td>自动</td></tr></tbody></table></div>
+<p><sup>*</sup> 每个查询引擎可处理的行数会因 schema 而异。这些数字仅作为常见情况下的一般参考。</p></div>
+</article>
+</body>
+</html>

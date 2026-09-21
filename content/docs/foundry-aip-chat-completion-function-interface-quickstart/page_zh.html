@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>使用函数接口注册 LLM [旧版]</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<div class="ptcom-design__markdownDoc__1uarhel" data-pagefind-body="true"><h1 data-pagefind-weight="1" id="user-content-register-an-llm-using-function-interfaces-legacy" level="1" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#register-an-llm-using-function-interfaces-legacy" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>使用函数接口注册 LLM [旧版]</h1>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><div class="ptcom-design__title__19o1cwu">旧版</div><p>本页面介绍了使用函数接口注册 LLM 的旧版方法，该方法已被 <a href="/docs/foundry/aip/bring-your-own-model/">已注册模型实现</a> 于 2026 年 3 月取代，后者现为推荐的方法。 <br/><br/>
+本页面上的 TypeScript 示例使用 TypeScript v1 函数 API，而通过函数接口注册模型仅在 <a href="/docs/foundry/functions/language-feature-support/#typescript-v1-vs-typescript-v2">TypeScript v1</a> 中受支持。此注册方法没有 TypeScript v2 的等效实现；请改用 <a href="/docs/foundry/aip/bring-your-own-model/">已注册模型</a> 。 <br/><br/>
+在使用函数接口注册 LLM 之前，请联系 Palantir 支持团队。</p></div>
+<p>您可以在 Palantir 平台中使用自己的 LLM，方法是借助 <a href="/docs/foundry/functions/function-interfaces/">函数接口</a>。例如，您可以引入自己微调的模型以在 AIP Logic 中使用，从而为用户提供更大的灵活性和更多选择。函数接口使您能够注册并使用 LLM，无论这些模型是本地部署、托管在您自己的云上，还是在其他平台上微调的。</p>
+<p>目前有两种方法可以建立与 OpenAI 的自定义连接：</p>
+<ul>
+<li><strong>Webhook：</strong> 您可以创建一个 webhook，并从您的 TypeScript 代码仓库中直接调用它。本教程采用此方法。</li>
+<li><strong>直接数据源：</strong> 您可以在 Data Connection 中创建 REST API 数据源，并从您的 TypeScript 函数中发起 fetch 调用。</li>
+</ul>
+<p>本教程介绍如何创建源来定义您的 LLM 的 API 端点、通过 webhook 从 TypeScript 函数调用模型,以及发布函数以供在 Palantir 平台中使用(例如,在 AIP Logic 或 Pipeline Builder 中使用)。</p>
+<p><img alt='Example of "bring your own model" usage in Logic with GPTo1.' height="600" node="[object Object]" src="/docs/resources/foundry/aip/byom-tutorial-logic-usage.png" style="aspect-ratio:1813 / 1294" width="840.6491499227202"/></p>
+<h2 data-pagefind-weight="0.9" id="user-content-prerequisites" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#prerequisites" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>前提条件</h2>
+<ul>
+<li>请先熟悉 <a href="/docs/foundry/data-connection/set-up-source/">如何设置 Data Connection 源和网络策略</a> 以了解如何将您的特定 LLM 端点连接到 Foundry。</li>
+<li>我们建议您至少了解在 Foundry 中编写 TypeScript 函数的基础知识。如需了解更多信息,请参阅 <a href="/docs/foundry/functions/getting-started/">函数入门</a>。</li>
+</ul>
+<h2 data-pagefind-weight="0.9" id="user-content-tutorial-overview" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#tutorial-overview" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>教程概述</h2>
+<p>在本教程中,您将编写一个 TypeScript 函数,通过 <strong>webhook</strong>调用外部 OpenAI 模型,实现 <code>ChatCompletion</code> 函数接口,并将模型注册到 Foundry。完成本教程后,您将能够在 AIP Logic 中原生使用自定义 LLM API。</p>
+<ol>
+<li><a href="#set-up-rest-source-and-webhook">设置 REST 源和 webhook。</a></li>
+<li><a href="#implement-the-chatcompletion-interface-with-a-typescript-function">使用 TypeScript 函数实现 <code>ChatCompletion</code> 接口。</a>
+<ul>
+<li>创建一个 TypeScript 代码仓库,您将在其中编写实现函数接口的函数。</li>
+<li>将以下资源导入您的仓库:
+<ul>
+<li>OpenAI 源及关联的 webhook</li>
+<li>该 <code>ChatCompletion</code> 函数接口</li>
+</ul>
+</li>
+<li>编写一个 TypeScript 函数,并使用 <code>@ChatCompletion</code> 函数接口并调用您的源。</li>
+<li>保存并发布您的函数。</li>
+</ul>
+</li>
+<li>您的函数现在将使您能够 <a href="/docs/foundry/aip/use-registered-llm/#aip-logic">在 AIP Logic 中使用您注册的 LLM</a>。</li>
+</ol>
+<h2 data-pagefind-weight="0.9" id="user-content-set-up-rest-source-and-webhook" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#set-up-rest-source-and-webhook" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>设置 REST 源和 webhook</h2>
+<p>为了维护平台安全，您需要使用 Data Connection 应用程序将对 OpenAI 的调用注册为 webhook。以下步骤介绍了如何在 Data Connection 中设置 REST API 源和 webhook。</p>
+<p><a href="/docs/foundry/data-connection/external-functions/">了解有关如何创建 webhook 并在 TypeScript 函数中使用它的更多信息。</a></p>
+<h3 data-pagefind-weight="0.8" id="user-content-set-up-source" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#set-up-source" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>设置源</h3>
+<ol>
+<li>
+<p>打开 <strong>Data Connection</strong> 应用程序。</p>
+</li>
+<li>
+<p>选择 <strong>新建源</strong>。</p>
+</li>
+<li>
+<p>搜索 <code>REST API</code>。</p>
+</li>
+<li>
+<p>在 <strong>协议源</strong>下，选择 <strong>REST API</strong>。</p>
+</li>
+<li>
+<p>在 <strong>连接到您的数据源</strong> 页面上，选择 <strong>Foundry worker</strong>。</p>
+</li>
+<li>
+<p>为您的源命名，并将该源保存到文件夹中。本示例使用的源名称为 <code>MyOpenAI</code>。</p>
+</li>
+<li>
+<p>在 <strong>连接详细信息</strong>下，请执行以下步骤：</p>
+<ul>
+<li>将域名基础 URL 设置为 <code>https://api.openai.com</code> ，并将 <strong>身份验证</strong> 设置为 <strong>Bearer token</strong>。 <a href="https://developers.openai.com/api/reference/overview">了解有关 OpenAI API 的更多信息。 ↗</a>。</li>
+<li>请按照 <a href="https://platform.openai.com/api-keys">OpenAI 的说明 ↗</a> 来创建 <a href="https://platform.openai.com/api-keys">API 密钥 ↗</a>。</li>
+<li>将新创建的 API 密钥复制粘贴到 Data Connection 中的 <strong>Bearer token</strong> 字段中。</li>
+<li>将端口设置为 <code>443</code>。</li>
+<li>再创建一个密钥，名为 <code>APIKey</code> 并粘贴与 bearer token 字段中使用的相同 API 密钥。</li>
+<li>将 <code>https://api.openai.com</code> 添加到 Palantir 托管的 SaaS 平台与外部域名之间的网络出站允许列表中。为此，您可以导航至 <strong>网络连接</strong> 并选择 <strong>请求并自行批准新策略</strong>。
+<ul>
+<li>如果您没有执行此步骤所需的权限，请联系您的 Palantir 代表。</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p>您必须启用 <strong>导出配置</strong> ，才能在 AIP Logic 和 Pipeline Builder 等平台应用中使用此 API 端点。要启用 <strong>导出配置</strong>，请开启以下选项：</p>
+<ul>
+<li><strong>AIP Logic：</strong> 开启 <strong>启用导出到此源，无需进行标记验证</strong>；这将使您能够在 AIP Logic 中使用您的 LLM。</li>
+<li><strong>Pipeline Builder：</strong> 开启 <strong>启用导出到此源</strong>；这将使您能够在 Pipeline Builder 中使用您的 LLM。请注意，此功能目前处于 beta 开发阶段，可能无法在您的 enrollment 上使用。</li>
+</ul>
+</li>
+<li>
+<p>您必须 <strong>启用代码导入</strong> ，才能在您的函数中使用此端点。</p>
+<ul>
+<li>开启 <strong>允许将此源导入代码仓库</strong>。</li>
+<li>开启 <strong>允许将此源导入管道</strong>。</li>
+</ul>
+</li>
+<li>
+<p>选择 <strong>继续</strong> 和 <strong>开始使用</strong> 以完成您的 API 端点和出站设置。</p>
+</li>
+</ol>
+<h3 data-pagefind-weight="0.8" id="user-content-add-webhooks-to-source" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#add-webhooks-to-source" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>向源添加 webhook</h3>
+<ol>
+<li>
+<p>在 <strong>源概览</strong> 页面中，选择 <strong>创建 webhook</strong>。</p>
+</li>
+<li>
+<p>保存你的 webhook，名称为 <code>Create Chat Completion</code> ，API 名称为 <code>CreateChatCompletion</code>。</p>
+</li>
+<li>
+<p>从 <a href="https://developers.openai.com/api/reference/resources/chat">OpenAI Create chat completion 文档 ↗</a>中导入示例 curl。</p>
+</li>
+<li>
+<p>配置 <code>messages</code> 和 <code>model</code> 输入参数，如下例所示。</p>
+<img alt="Webhook configuration input configuration." node="[object Object]" src="/docs/resources/foundry/aip/byom-tutorial-webhook-configuration-1.png?width=450" style="aspect-ratio:1046 / 1716" width="450"/>
+</li>
+<li>
+<p>配置 <code>choices</code> 和 <code>usage</code> 输出参数，如下例所示。</p>
+<img alt="Webhook configuration output configuration." node="[object Object]" src="/docs/resources/foundry/aip/byom-tutorial-webhook-configuration-2.png?width=450" style="aspect-ratio:548 / 1024" width="450"/>
+</li>
+<li>
+<p>将 webhook 设置为 <code>Read API</code>。带有 <code>Write API</code> 标记的 webhook 只能在 <code>@OntologyEditFunction()</code>中使用，因此无法从你在下一节中编写的 <code>@ChatCompletion()</code> 函数中调用。请参阅 <a href="/docs/foundry/functions/webhooks/">webhooks</a> 以了解有关此选项的更多信息。</p>
+</li>
+<li>
+<p>测试并保存你的 webhook。</p>
+</li>
+</ol>
+<p>现在，你已拥有一个 REST 源和一个 webhook，可以将它们导入到你的 TypeScript 仓库中。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-implement-thechatcompletioninterface-with-a-typescript-function" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#implement-thechatcompletioninterface-with-a-typescript-function" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>使用 TypeScript 函数实现 ChatCompletion 接口</h2>
+<p>在设置好用于从外部 LLM 获取聊天补全的 webhook 之后，你可以创建一个函数来实现 Foundry 提供的 <code>ChatCompletion</code> 接口，并调用你的 OpenAI webhook。</p>
+<p>AIP Logic 在显示已注册的模型时，会搜索所有实现 <code>ChatCompletion</code> 接口的函数，因此你必须声明你的函数实现了此接口。此外，声明你的函数实现此接口，可以在编译时强制确保签名与预期的形状相匹配。</p>
+<p>您可以使用 TypeScript 编写聊天补全实现。为此，您需要 <a href="/docs/foundry/functions/getting-started/">创建新的 TypeScript 函数仓库</a>。</p>
+<p>此示例函数将：</p>
+<ul>
+<li>调用之前创建的 OpenAI webhook。</li>
+<li>实现聊天补全接口。</li>
+</ul>
+<h3 data-pagefind-weight="0.8" id="user-content-import-webhook-and-interface-into-a-typescript-repository" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#import-webhook-and-interface-into-a-typescript-repository" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>将 webhook 和接口导入 TypeScript 仓库</h3>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>本教程假设您对在 Foundry 中编写 TypeScript 函数有基本的了解。请查看 <a href="/docs/foundry/functions/getting-started/">入门</a> 指南，以初步了解 Foundry 中的 TypeScript 函数。</p></div>
+<p>首先，您需要将 OpenAI webhook 和 <code>ChatCompletion</code> 函数接口导入到仓库中。打开 TypeScript 函数仓库后，选择资源导入图标，并导入聊天补全函数接口以及与您之前创建的 webhook 相关联的 OpenAI 源。</p>
+<ol>
+<li>
+<p>使用 <strong>添加</strong> 选项（位于 <strong>资源导入</strong> 侧面板中）以导入：</p>
+<ul>
+<li>
+<p>该 <code>OpenAI</code> REST API 源，其中包含 <code>CreateChatCompletion</code> webhook</p>
+</li>
+<li>
+<p>该 <code>ChatCompletion</code> 函数接口</p>
+<img alt="Import resources into Typescript repository." node="[object Object]" src="/docs/resources/foundry/aip/byom-tutorial-add-resources.png?width=400" style="aspect-ratio:595 / 481" width="400"/>
+</li>
+</ul>
+</li>
+<li>
+<p>在 <strong>资源导入</strong> 面板中，搜索 <code>OpenAI</code> 包含该 <code>CreateChatCompletion</code> webhook 的源，并将其导入您的 TypeScript 仓库。 <a href="/docs/foundry/functions/resource-imports-sidebar/">详细了解如何将资源导入代码仓库。</a></p>
+<img alt="Import source and webhook into Typescript repository." node="[object Object]" src="/docs/resources/foundry/aip/byom-tutorial-source-import.png?width=600" style="aspect-ratio:1996 / 1194" width="600"/>
+</li>
+<li>
+<p>在 <strong>资源导入</strong> 面板中，搜索 <code>ChatCompletion</code> 接口并将其导入您的 TypeScript 仓库。</p>
+<img alt="Import Function interface into Typescript repository." node="[object Object]" src="/docs/resources/foundry/aip/byom-tutorial-function-interface-import.png?width=600" style="aspect-ratio:1998 / 1198" width="600"/>
+</li>
+</ol>
+<p>此时，您的 <strong>资源导入</strong> 应同时包含 OpenAI 源和 <code>ChatCompletion</code> 接口，如下图所示。</p>
+<img alt="Post Typescript resource import view." node="[object Object]" src="/docs/resources/foundry/aip/byom-tutorial-post-resource-import-view.png?width=450" style="aspect-ratio:510 / 639" width="450"/>
+<p>导入资源后，Task Runner 将重新运行一个 <code>localDev</code> 用于生成相关代码绑定的任务。您可以通过打开 <strong>Task Runner</strong> 标签页（位于页面底部的功能区中）来查看该任务的进度。</p>
+<p><img alt="Task Runner view." height="556" node="[object Object]" src="/docs/resources/foundry/aip/byom-tutorial-task-runner-view.png" style="aspect-ratio:1211 / 556" width="1211"/></p>
+<h3 data-pagefind-weight="0.8" id="user-content-write-a-typescript-function" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#write-a-typescript-function" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>编写 TypeScript 函数</h3>
+<p>在本节中，您将编写一个 TypeScript 函数，该函数会调用之前创建的 OpenAI webhook 并实现聊天补全接口。</p>
+<h4 id="user-content-implement-function-scaffolding"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#implement-function-scaffolding" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>实现函数脚手架</h4>
+<p>同时导入 <code>CreateChatCompletion</code> webhook（通过 <strong>OpenAI</strong> 源）和 <code>ChatCompletion</code> 函数接口将生成与这些资源进行交互的代码绑定。</p>
+<p>您可以通过选择 <code>ChatCompletion</code> 函数接口（位于 <strong>Resource imports</strong> 面板中）来找到用于搭建函数脚手架的代码片段。</p>
+<p><img alt="Chat Completion more info navigation." height="559" node="[object Object]" src="/docs/resources/foundry/aip/byom-tutorial-chat-completion-more-details-page-nav-1.png" style="aspect-ratio:872 / 559" width="872"/></p>
+<p>以下示例展示了您的代码在此阶段可能的样子：</p>
+<pre><div class="ptcom-design__wrapper__12wpwnx" data-pagefind-weight="0.5"><span class="ptcom-design__clipboard__1l1gb20 ptcom-design__clipboard__12wpwnx"><span class="ptcom-design__confirmation__1l1gb20" data-pagefind-ignore="true">Copied!</span><svg aria-hidden="true" aria-label="clipboard" data-view-component="true" height="16" version="1.1" viewbox="0 0 16 16" width="16"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z" fill="currentColor" fill-rule="evenodd"></path><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z" fill="currentColor" fill-rule="evenodd"></path></svg></span><div style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;overflow:auto;position:relative;margin:0;padding:0.75em"><code style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;float:left;padding-right:10px"><span class="react-syntax-highlighter-line-number">1
+</span><span class="react-syntax-highlighter-line-number">2
+</span><span class="react-syntax-highlighter-line-number">3
+</span><span class="react-syntax-highlighter-line-number">4
+</span><span class="react-syntax-highlighter-line-number">5
+</span><span class="react-syntax-highlighter-line-number">6
+</span><span class="react-syntax-highlighter-line-number">7
+</span><span class="react-syntax-highlighter-line-number">8
+</span><span class="react-syntax-highlighter-line-number">9
+</span><span class="react-syntax-highlighter-line-number">10
+</span><span class="react-syntax-highlighter-line-number">11
+</span><span class="react-syntax-highlighter-line-number">12
+</span><span class="react-syntax-highlighter-line-number">13
+</span><span class="react-syntax-highlighter-line-number">14
+</span><span class="react-syntax-highlighter-line-number">15
+</span><span class="react-syntax-highlighter-line-number">16
+</span><span class="react-syntax-highlighter-line-number">17
+</span><span class="react-syntax-highlighter-line-number">18
+</span></code><code class="language-typescript" style="white-space:pre;text-align:left;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none">// index.ts
+import { ChatCompletion } from "@palantir/languagemodelservice/contracts";
+import {
+  FunctionsGenericChatCompletionRequestMessages,
+  GenericCompletionParams,
+  FunctionsGenericChatCompletionResponse
+} from "@palantir/languagemodelservice/api";
+import { OpenAI } from "@foundry/external-systems/sources";
+
+// This decorator tells the compiler and Foundry that our function is implementing the ChatCompletion interface.
+// Note that the generic @Function decorator is not required.
+@ChatCompletion()
+public myFunction(
+    messages: FunctionsGenericChatCompletionRequestMessages,
+    params: GenericCompletionParams,
+): FunctionsGenericChatCompletionResponse {
+    // TODO: Implement the body
+}</code></div></div></pre>
+<h4 id="user-content-implement-function-body"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#implement-function-body" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>实现函数主体</h4>
+<p>本节包含该函数完成请求的最简单实现。</p>
+<pre><div class="ptcom-design__wrapper__12wpwnx" data-pagefind-weight="0.5"><span class="ptcom-design__clipboard__1l1gb20 ptcom-design__clipboard__12wpwnx"><span class="ptcom-design__confirmation__1l1gb20" data-pagefind-ignore="true">Copied!</span><svg aria-hidden="true" aria-label="clipboard" data-view-component="true" height="16" version="1.1" viewbox="0 0 16 16" width="16"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z" fill="currentColor" fill-rule="evenodd"></path><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z" fill="currentColor" fill-rule="evenodd"></path></svg></span><div style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;overflow:auto;position:relative;margin:0;padding:0.75em"><code style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;float:left;padding-right:10px"><span class="react-syntax-highlighter-line-number">1
+</span><span class="react-syntax-highlighter-line-number">2
+</span><span class="react-syntax-highlighter-line-number">3
+</span><span class="react-syntax-highlighter-line-number">4
+</span><span class="react-syntax-highlighter-line-number">5
+</span><span class="react-syntax-highlighter-line-number">6
+</span><span class="react-syntax-highlighter-line-number">7
+</span><span class="react-syntax-highlighter-line-number">8
+</span><span class="react-syntax-highlighter-line-number">9
+</span><span class="react-syntax-highlighter-line-number">10
+</span><span class="react-syntax-highlighter-line-number">11
+</span><span class="react-syntax-highlighter-line-number">12
+</span><span class="react-syntax-highlighter-line-number">13
+</span><span class="react-syntax-highlighter-line-number">14
+</span><span class="react-syntax-highlighter-line-number">15
+</span><span class="react-syntax-highlighter-line-number">16
+</span><span class="react-syntax-highlighter-line-number">17
+</span><span class="react-syntax-highlighter-line-number">18
+</span><span class="react-syntax-highlighter-line-number">19
+</span><span class="react-syntax-highlighter-line-number">20
+</span><span class="react-syntax-highlighter-line-number">21
+</span><span class="react-syntax-highlighter-line-number">22
+</span><span class="react-syntax-highlighter-line-number">23
+</span><span class="react-syntax-highlighter-line-number">24
+</span><span class="react-syntax-highlighter-line-number">25
+</span><span class="react-syntax-highlighter-line-number">26
+</span><span class="react-syntax-highlighter-line-number">27
+</span><span class="react-syntax-highlighter-line-number">28
+</span><span class="react-syntax-highlighter-line-number">29
+</span><span class="react-syntax-highlighter-line-number">30
+</span><span class="react-syntax-highlighter-line-number">31
+</span><span class="react-syntax-highlighter-line-number">32
+</span><span class="react-syntax-highlighter-line-number">33
+</span><span class="react-syntax-highlighter-line-number">34
+</span><span class="react-syntax-highlighter-line-number">35
+</span><span class="react-syntax-highlighter-line-number">36
+</span><span class="react-syntax-highlighter-line-number">37
+</span><span class="react-syntax-highlighter-line-number">38
+</span><span class="react-syntax-highlighter-line-number">39
+</span><span class="react-syntax-highlighter-line-number">40
+</span><span class="react-syntax-highlighter-line-number">41
+</span><span class="react-syntax-highlighter-line-number">42
+</span><span class="react-syntax-highlighter-line-number">43
+</span><span class="react-syntax-highlighter-line-number">44
+</span><span class="react-syntax-highlighter-line-number">45
+</span><span class="react-syntax-highlighter-line-number">46
+</span><span class="react-syntax-highlighter-line-number">47
+</span><span class="react-syntax-highlighter-line-number">48
+</span><span class="react-syntax-highlighter-line-number">49
+</span><span class="react-syntax-highlighter-line-number">50
+</span><span class="react-syntax-highlighter-line-number">51
+</span><span class="react-syntax-highlighter-line-number">52
+</span><span class="react-syntax-highlighter-line-number">53
+</span><span class="react-syntax-highlighter-line-number">54
+</span><span class="react-syntax-highlighter-line-number">55
+</span><span class="react-syntax-highlighter-line-number">56
+</span><span class="react-syntax-highlighter-line-number">57
+</span></code><code class="language-typescript" style="white-space:pre;text-align:left;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none">import { isErr, UserFacingError } from "@foundry/functions-api";
+import { OpenAI } from "@foundry/external-systems/sources";
+import { ChatCompletion } from "@palantir/languagemodelservice/contracts";
+import {
+    ChatMessageRole,
+    FunctionsGenericChatCompletionRequestMessages,
+    FunctionsGenericChatCompletionResponse,
+    GenericChatMessage,
+    GenericCompletionParams,
+} from "@palantir/languagemodelservice/api";
+
+export class MyFunctions {
+    @ChatCompletion()
+    public async myFunction(
+        messages: FunctionsGenericChatCompletionRequestMessages,
+        params: GenericCompletionParams
+    ): Promise&lt;FunctionsGenericChatCompletionResponse&gt; {
+        const res = await OpenAI.webhooks.CreateChatCompletion.call({
+            model: "gpt-4o",
+            messages: convertToWebhookList(messages),
+        });
+
+        if (isErr(res)) {
+            throw new UserFacingError("Error from OpenAI.");
+        }
+
+        return {
+            completion: res.value.output.choices[0].message.content ?? "No response from OpenAI.",
+            tokenUsage: {
+                promptTokens: res.value.output.usage.prompt_tokens,
+                maxTokens: res.value.output.usage.total_tokens,
+                completionTokens: res.value.output.usage.completion_tokens,
+            },
+        }
+    }
+}
+
+function convertToWebhookList(
+    messages: FunctionsGenericChatCompletionRequestMessages,
+): Array&lt;{ role: string; content: string; }&gt;  {
+    return messages.map((genericChatMessage: GenericChatMessage) =&gt; {
+        return { role: convertRole(genericChatMessage.role), content: genericChatMessage.content };
+    });
+}
+
+function convertRole(role: ChatMessageRole): "system" | "user" | "assistant" {
+    switch (role) {
+        case "SYSTEM":
+            return "system";
+        case "USER":
+            return "user";
+        case "ASSISTANT":
+            return "assistant";
+        default:
+            throw new Error(`Unsupported role: ${role}`);
+    }
+}</code></div></div></pre>
+<h3 data-pagefind-weight="0.8" id="user-content-testing" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#testing" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>测试</h3>
+<p>现在，您可以通过从底部工具栏中选择 <strong>Functions</strong> 标签页来测试您的函数，这会打开一个预览面板。请选择 <strong>Published</strong>，选择您的函数，然后选择以 <strong>JSON</strong>格式提供输入的选项。</p>
+<p>您可以使用如下消息进行测试：</p>
+<pre><div class="ptcom-design__wrapper__12wpwnx" data-pagefind-weight="0.5"><span class="ptcom-design__clipboard__1l1gb20 ptcom-design__clipboard__12wpwnx"><span class="ptcom-design__confirmation__1l1gb20" data-pagefind-ignore="true">Copied!</span><svg aria-hidden="true" aria-label="clipboard" data-view-component="true" height="16" version="1.1" viewbox="0 0 16 16" width="16"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z" fill="currentColor" fill-rule="evenodd"></path><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z" fill="currentColor" fill-rule="evenodd"></path></svg></span><div style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;overflow:auto;position:relative;margin:0;padding:0.75em"><code style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;float:left;padding-right:10px"><span class="react-syntax-highlighter-line-number">1
+</span><span class="react-syntax-highlighter-line-number">2
+</span><span class="react-syntax-highlighter-line-number">3
+</span><span class="react-syntax-highlighter-line-number">4
+</span><span class="react-syntax-highlighter-line-number">5
+</span><span class="react-syntax-highlighter-line-number">6
+</span><span class="react-syntax-highlighter-line-number">7
+</span><span class="react-syntax-highlighter-line-number">8
+</span></code><code class="language-json" style="white-space:pre;text-align:left;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none">{
+    "messages": [
+        {
+            "role": "USER",
+            "content": "hello world"
+        }
+    ]
+}</code></div></div></pre></div>
+</article>
+</body>
+</html>

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>建立数据中继连接</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<div class="ptcom-design__markdownDoc__1uarhel" data-pagefind-body="true"><h1 data-pagefind-weight="1" id="user-content-establish-a-data-relay-connection" level="1" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#establish-a-data-relay-connection" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>建立数据中继连接</h1>
+<p>数据中继连接使 <strong>注册管理员</strong> 能够在两个 <a href="/docs/foundry/administration/enrollments-and-organizations/">注册</a> 之间通过现有的跨域解决方案（CDS）而非直接网络连接交换数据。与  <a href="/docs/foundry/peer-manager/establish-mpx-connection/">Multipass 交换器（MPX）连接</a>类似，数据中继连接是 <a href="/docs/foundry/peer-manager/create-a-peer-connection/">创建对等连接</a>的前提条件。</p>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>当这两个注册之间没有可用的直接网络连接时，请使用数据中继连接，这意味着您必须使用现有的 CDS 来交换数据。如果这两个注册之间有可用的网络连接，请改为 <a href="/docs/foundry/peer-manager/establish-mpx-connection/">建立 MPX 连接</a> 。</p></div>
+<p>在 Peer Manager 中，您可以通过配置一个或多个  <em>CDS 通道</em> 来为每个远程注册建立数据中继连接。每个通道在单一方向（<strong>导出</strong> 或 <strong>导入</strong>）上通过一种类型的 CDS 传输方式路由数据，例如共享文件目录、HTTP 端点、S3 存储桶或  <a href="https://developer.anduril.com/">Lattice ↗</a>  服务。以下各节中的说明概述了 <strong>注册管理员</strong> 在 <em>每个</em> 注册上为建立连接而必须采取的操作。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-coordinate-cds-channel-details-with-the-remote-administrator" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#coordinate-cds-channel-details-with-the-remote-administrator" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>与远程管理员协调 CDS 通道详细信息</h2>
+<p>在任一 <strong>注册管理员</strong> 创建通道时，请与远程 enrollment 的管理员协调以下事项，以确保连接两侧的 CDS 通道相互匹配：</p>
+<ul>
+<li><strong>每个通道的方向：</strong> 每个通道仅在一个方向上发送数据。要将数据从 <code>Enrollment A</code> 导出到 <code>Enrollment B</code>， <code>Enrollment A</code> 上的管理员需要创建一个 <strong>Export</strong> 通道， <code>Enrollment B</code> 上的管理员需要创建一个 <strong>Import</strong> 通道。要双向发送数据， <em>双方</em> 管理员都需要创建一对相互匹配的 <strong>Export</strong> 和 <strong>Import</strong> 通道。</li>
+<li><strong>连接类型：</strong> 通道两侧必须使用相同的连接类型。例如，如果导出侧使用 <strong>HTTP</strong>，则导入侧也必须使用 <strong>HTTP</strong>。可用的连接类型如下：
+<ul>
+<li><strong>File：</strong> 导出侧将数据以文件形式写入某个目录，导入侧则从该目录读取数据。</li>
+<li><strong>HTTP：</strong> 数据通过网络发送。此选项还支持任何可配置为透传 HTTP 请求的 CDS。</li>
+<li><strong>S3：</strong> 导出侧将数据写入 S3 存储桶，导入侧从该存储桶读取数据，并在处理完成后删除文件。</li>
+<li><strong>Lattice：</strong> 双方均使用 Kubernetes 服务账户身份验证或静态令牌连接到 Lattice 服务 URI。</li>
+</ul>
+</li>
+<li><strong>通道密钥（可选）：</strong> 如果导出方使用密钥对传出负载进行签名，则导入方必须注册相同的密钥以验证传入负载。</li>
+<li><strong>远程注册 RID：</strong> 每位管理员在创建自己的通道时都必须提供对方注册的 RID。要查找注册 RID，请使用 Foundry API 中的 <a href="/docs/foundry/api/v2/admin-v2-resources/enrollments/get-current-enrollment/">Get Current Enrollment</a> 端点，或导航到 Control Panel 并从 URL 中获取 RID： <code>https://{FOUNDRY_URL}/workspace/control-panel/enrollment/{ENROLLMENT_RID}/home</code>。</li>
+</ul>
+<h2 data-pagefind-weight="0.9" id="user-content-create-a-cds-channel" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#create-a-cds-channel" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>创建 CDS 通道</h2>
+<p>与另一位管理员协调好 CDS 通道后，请在您的注册中按照以下步骤创建您负责的每个 CDS 通道：</p>
+<ol>
+<li>在 Peer Manager 中，打开 <strong>网络连接</strong> 选项卡。</li>
+<li>在 <strong>通过 CDS 发送数据</strong> 部分中，选择 <strong>新建 CDS 通道</strong> ，Peer Manager 会将您引导至 <strong>新建通道</strong> 页面。</li>
+<li>填写 <strong>通道详情</strong> 部分：
+<ul>
+<li><strong>通道名称：</strong> 用于标识通道的名称。</li>
+<li><strong>通道描述</strong> <em>（可选）</em>：关于通道用途的简短描述。</li>
+<li><strong>远程注册 RID：</strong> 通道另一侧注册的 RID。</li>
+<li><strong>通道密钥</strong> <em>（可选）</em>：用于对传出负载进行签名或验证传入负载的密钥。通道两侧的密钥必须一致。</li>
+<li><strong>要覆盖的通道</strong> <em>（可选）</em>：此通道将覆盖的只读通道的名称。</li>
+<li><strong>方向：</strong> 如果此通道向远程注册发送数据，请选择 <strong>导出</strong> ；如果此通道从远程注册接收数据，请选择 <strong>导入</strong> 。</li>
+</ul>
+</li>
+<li>请查看 <strong>Guard</strong> 配置部分。对于 <strong>导出</strong> 通道，您必须设置与您的 CDS 兼容的 <strong>Schema 版本</strong> ，因为接受默认值可能会导致通道创建失败。</li>
+<li>在 <strong>集成</strong> 部分中，从可用选项中选择该通道承载的数据类型：
+<ul>
+<li><strong>对等互连：</strong> 通过该通道路由两个注册用于协调对等连接和对等互连作业的控制平面流量。您必须选择此集成，才能将该通道用作 <a href="/docs/foundry/peer-manager/create-a-peer-connection/">对等连接</a>的底层传输。</li>
+<li><strong>聊天：</strong> 在两个注册的用户之间路由跨注册的聊天消息。</li>
+<li><strong>Geotime：</strong> 在两个注册之间路由 <a href="/docs/foundry/geospatial/types-of-geospatial-and-geotemporal-data/#geotemporal-data">地理时间数据</a>，例如位置和轨迹。</li>
+<li><strong>心跳：</strong> 通过该通道路由周期性心跳信号，以便每个注册都能检测该通道是否可达并正常运行。</li>
+</ul>
+</li>
+<li>如有需要，可切换 <strong>对等媒体集</strong> ，以配置额外的管道，在 <a href="/docs/foundry/media-sets-advanced-formats/media-overview/">媒体集</a> 与支持二进制文件的辅助 CDS 通道之间传输二进制数据。</li>
+<li>选择 <strong>连接类型</strong> 与另一位管理员在 <strong>通道配置</strong> 部分中选择的内容相匹配，并为该传输方式填写相应的配置字段。</li>
+<li>选择 <strong>保存更改</strong> 以创建通道，该通道将显示在 <strong>网络连接</strong> 选项卡的 CDS 通道表中。</li>
+</ol>
+<p>如果需要双向发送数据，请重复上述步骤，创建一个方向相反的第二个通道。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-next-steps" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#next-steps" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>后续步骤</h2>
+<p>在两位管理员均创建好相互匹配的 CDS 通道并确认通道运行正常后，您可以返回 Peer Manager， <a href="/docs/foundry/peer-manager/create-a-peer-connection/">创建对等连接</a> 来使用这些数据中继通道。在 Peer Manager 的 <strong>网络连接</strong> 选项卡中，您可以查看和管理与远程注册关联的 CDS 通道。</p></div>
+</article>
+</body>
+</html>

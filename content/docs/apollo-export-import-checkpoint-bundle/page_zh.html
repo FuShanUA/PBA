@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Checkpoint bundle</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<div class="ptcom-design__markdownDoc__1uarhel" data-pagefind-body="true"><h1 data-pagefind-weight="1" id="user-content-checkpoint-bundle" level="1" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#checkpoint-bundle" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>检查点捆绑包</h1>
+<p>在向导出管道添加新的传输目标时，您可能希望新的传输目标能够快速追上导出管道的最新捆绑包。当导出管道拥有很长的捆绑包历史记录，逐一传输到新传输目标会耗费过长时间时，这一点尤其重要。</p>
+<p>检查点捆绑包允许新的传输目标与导出管道的最新状态保持同步，而无需从导出管道历史记录的开头开始传输所有捆绑包。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-terminology" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#terminology" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>术语</h2>
+<ul>
+<li><strong>快照捆绑包</strong>：没有依赖项的捆绑包。导入时，它可以将目标 Hub 更新为创建捆绑包时导出管道<a href="/docs/apollo/export-import/data-selection-rules/">数据选择规则</a>的最新状态。每个导出管道的第一个捆绑包始终是快照捆绑包。</li>
+<li>
+
+<strong>增量软件包</strong>：依赖于先前构建的软件包的软件包。它包含自其所依赖的上一个软件包以来的变更。</li>
+<li><strong>检查点软件包</strong>：用于快速接入新传输目标的快照软件包。</li>
+</ul>
+<p>下面是一个更详细地说明这些概念的示例。假设有一个导出管道，其数据选择规则选择 <code>RELEASE</code> 发布渠道上 <code>example-product</code> 的产品发布版本。<code>example-product</code> 有四个产品发布版本 <code>1.0.0</code>、<code>1.1.0</code> 和 <code>1.2.0</code>、<code>1.3.0</code>，分别在第 1、2、3 和 5 天发布。</p>
+<p>如果导出管道使用<strong>增量</strong>策略：</p>
+<ol>
+<li>在第 1 天，创建软件包 1。第一个软件包始终是快照软件包，因此会导出满足数据选择规则的最新资源。在本例中，<code>RELEASE</code> 发布渠道上 <code>example-product</code> 的最新发布版本是 <code>1.0.0</code>，该版本包含在此软件包中。</li>
+<li>
+
+第 3 天，创建了捆绑包 2。管道使用<strong>增量</strong>策略，并创建一个增量捆绑包。增量捆绑包依赖于上一个导出捆绑包。它将仅包含自捆绑包 1 创建以来的变更。<code>example-product</code> 的 <code>RELEASE</code> 发布通道上有两个新的发布版本，即 <code>1.1.0</code> 和 <code>1.2.0</code>，因此这些发布版本被包含在该捆绑包中。请注意，<code>1.0.0</code> 已包含在捆绑包 1 中，因此不会包含在增量捆绑包中。</li>
+<li>第 4 天，创建了捆绑包 3，即另一个增量捆绑包。由于 <code>example-product</code> 在 <code>RELEASE</code> 发布通道上没有新的发布版本，因此该增量捆绑包不包含任何产品发布版本。</li>
+<li>假设导出管道配置为在成功创建 2 个增量捆绑包后创建检查点捆绑包。捆绑包 3 的成功构建将触发捆绑包 4（一个检查点捆绑包）的创建。检查点捆绑包是一种快照捆绑包，会导出满足数据选择规则的最新资源。在本例中，<code>1.2.0</code> 是 <code>example-product</code> 在 <code>RELEASE</code> 上的最新发布版本，因此被包含在该捆绑包中。</li>
+<li>
+
+在第 5 天，创建了 Bundle 5。它是一个增量 Bundle，依赖于上一个增量 Bundle 3。自 Bundle 3 以来，<code>RELEASE</code> 发布渠道上出现了 <code>example-product</code> 的新发布版本 <code>1.3.0</code>，因此该发布版本包含在 Bundle 中。请注意，检查点 Bundle 不会影响未来增量 Bundle 的内容。</li>
+</ol>
+<p>如果导出管道使用<strong>快照</strong>策略：</p>
+<ol>
+<li>在第 1 天，创建了 Bundle 1。它是一个包含满足数据选择规则的最新资源的快照 Bundle。Bundle 中包含了 <code>example-product:1.0.0</code>。</li>
+<li>在第 3 天，创建了 Bundle 2。由于导出管道使用快照策略，新 Bundle 将是一个快照 Bundle。鉴于 <code>1.2.0</code> 是 <code>example-product</code> 在 <code>RELEASE</code> 发布渠道上的最新发布版本，新的快照 Bundle 将包含 <code>example-product:1.2.0</code>。</li>
+</ol>
+<h2 data-pagefind-weight="0.9" id="user-content-configure-checkpoint-bundles" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#configure-checkpoint-bundles" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>配置检查点 Bundle</h2>
+<p>您可以在管道设置的<strong>构建设置</strong>部分配置检查点 Bundle。<strong>检查点 Bundle</strong>设置允许您指定创建检查点 Bundle 的频率。</p>
+<p>
+
+<img alt="默认检查点 Bundle 设置" height="600" node="[object Object]" src="/docs/resources/apollo/export-import/default.png" style="aspect-ratio:2272 / 1090" width="1250.6422018348624"/></p>
+<p>默认情况下，每成功创建 10 个<a href="#terminology"><strong>增量</strong> Bundle</a> 后，就会创建一个检查点 Bundle。当向导出管道添加新传输目标时，新传输目标将从最近的<a href="#terminology"><strong>快照</strong> Bundle</a>（可以是检查点 Bundle）开始。</p>
+<p><img alt="传输到新传输目标的第一个 Bundle" height="594" node="[object Object]" src="/docs/resources/apollo/export-import/first-bundle-for-new-transfer-target.png" style="aspect-ratio:1474 / 594" width="1474"/></p>
+<p>您可以为检查点 Bundle 的创建频率指定自定义值。该值表示在创建检查点 Bundle 之前应创建的增量 Bundle 的数量。值越大，检查点 Bundle 的创建频率就越低，新传输目标可能需要更长时间才能完成追赶。对于用于单个传输目标的导出管道（例如，仅将环境设置导出到单个目标 Hub 的管道），可以将该值设置为较高的值（例如 100），以降低检查点 Bundle 的创建频率。当源 Hub 的存储空间有限时，也建议采用此设置，因为检查点 Bundle 体积较大。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-export-and-import" level="2" node="[object Object]">
+
+<a aria-hidden="true" aria-label="复制指向该部分的链接" class="autolink-header" href="#export-and-import" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>导出与导入</h2>
+<p>您可以在导出管道的导出捆绑包收件箱中查看检查点捆绑包。这些捆绑包将带有 <code>CHECKPOINT</code> 标记。</p>
+<p><img alt="检查点捆绑包导出" height="274" node="[object Object]" src="/docs/resources/apollo/export-import/export-checkpoint-bundle.png" style="aspect-ratio:718 / 274" width="718"/></p>
+<p>检查点捆绑包在捆绑包收件箱中的条目将显示为灰色，因为它们不会被传输到导出管道的任何现有传输目标，也绝不会在任何时候影响导出管道的状态。</p>
+<p>检查点捆绑包将以与其他捆绑包完全相同的方式导入到目标 Hub 中。成功准入后，您可以在导入捆绑包收件箱中查看检查点捆绑包，这些捆绑包将带有 <code>CHECKPOINT</code> 标记：</p>
+<p><img alt="检查点捆绑包导入" height="600" node="[object Object]" src="/docs/resources/apollo/export-import/import-checkpoint-bundle.png" style="aspect-ratio:3084 / 824" width="2245.631067961165"/></p></div>
+</article>
+</body>
+</html>

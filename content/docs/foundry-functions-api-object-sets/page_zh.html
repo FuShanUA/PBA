@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>API：对象集</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<div class="ptcom-design__markdownDoc__1uarhel" data-pagefind-body="true"><h1 data-pagefind-weight="1" id="user-content-api-object-sets" level="1" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#api-object-sets" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>API：对象集</h1>
+<p>一个 <strong>对象集</strong> 表示单一类型对象的无序集合。您可以使用函数 API 来筛选对象集、基于已定义的关联类型对其他对象类型执行 Search Around，以及计算聚合值或检索具体对象。除了将单个对象作为输入传递给函数之外，您还可以随时使用对象搜索 API 搜索对象集。</p>
+<p>筛选、排序和聚合仅适用于启用了 <code>Searchable</code> <a href="/docs/foundry/object-link-types/metadata-render-hints/">渲染提示</a> 的属性，因为这些属性已为搜索建立了索引。您可以在本体论管理器中启用此渲染提示。</p>
+<p>作为函数输入，对象集比对象数组更高效，因为它们会推迟到需要时才加载。请参阅 <a href="/docs/foundry/functions/optimize-performance/">优化性能</a> 以了解高效使用对象集的最佳实践。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-object-search" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#object-search" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>对象搜索</h2>
+<p>该 <code>Objects.search()</code> 接口允许您对导入到项目中的任何对象类型发起搜索。在本示例中，该函数使用给定的 <code>airportCode</code> 来查找从该机场出发的所有航班。然后，它会找出这些航班的所有不同目的地并将其返回。</p>
+<pre><div class="ptcom-design__wrapper__12wpwnx" data-pagefind-weight="0.5"><span class="ptcom-design__clipboard__1l1gb20 ptcom-design__clipboard__12wpwnx"><span class="ptcom-design__confirmation__1l1gb20" data-pagefind-ignore="true">Copied!</span><svg aria-hidden="true" aria-label="clipboard" data-view-component="true" height="16" version="1.1" viewbox="0 0 16 16" width="16"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z" fill="currentColor" fill-rule="evenodd"></path><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z" fill="currentColor" fill-rule="evenodd"></path></svg></span><div style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;overflow:auto;position:relative;margin:0;padding:0.75em"><code style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;float:left;padding-right:10px"><span class="react-syntax-highlighter-line-number">1
+</span><span class="react-syntax-highlighter-line-number">2
+</span><span class="react-syntax-highlighter-line-number">3
+</span><span class="react-syntax-highlighter-line-number">4
+</span><span class="react-syntax-highlighter-line-number">5
+</span><span class="react-syntax-highlighter-line-number">6
+</span><span class="react-syntax-highlighter-line-number">7
+</span><span class="react-syntax-highlighter-line-number">8
+</span><span class="react-syntax-highlighter-line-number">9
+</span><span class="react-syntax-highlighter-line-number">10
+</span><span class="react-syntax-highlighter-line-number">11
+</span><span class="react-syntax-highlighter-line-number">12
+</span><span class="react-syntax-highlighter-line-number">13
+</span><span class="react-syntax-highlighter-line-number">14
+</span><span class="react-syntax-highlighter-line-number">15
+</span><span class="react-syntax-highlighter-line-number">16
+</span></code><code class="language-typescript" style="white-space:pre;text-align:left;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none">import { Function } from "@foundry/functions-api";
+import { Objects } from "@foundry/ontology-api";
+
+export class FlightFunctions {
+    @Function()
+    public currentFlightDestinations(airportCode: string): Set&lt;string&gt; {
+        const flightsFromAirport = Objects.search()
+            .flights()
+            .filter(flight =&gt; flight.departureAirportCode.exactMatch(airportCode))
+            .all();
+
+        const destinations = flightsFromAirport.map(flight =&gt; flight.arrivalAirportCode!);
+
+        return new Set(destinations);
+    }
+}</code></div></div></pre>
+<p>对象集也可以通过将对象列表、对象资源标识符列表或对象集资源标识符作为参数传递给所搜索的对象类型来创建。例如： <code>Objects.search().flights([flight])</code>。</p>
+<p>获得给定类型的对象集后，您就可以对该集合执行各种操作，如下文所述。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-filtering" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#filtering" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>过滤</h2>
+<p>对象集上的 <code>.filter()</code> 方法允许您根据对象的可搜索属性对对象集进行过滤。过滤方法接受一个过滤定义，该定义基于您所过滤属性的类型。</p>
+<ul>
+<li>所有属性类型都支持 <code>.exactMatch()</code> 过滤器，该过滤器会筛选出与该属性值完全匹配的对象。这对于筛选字符串的完全匹配（如上例所示），或筛选对象的主键（例如<code>.filter(object =&gt; object.primaryKey.exactMatch(PrimaryKey))</code>）。
+<ul>
+<li>要检查某个属性是否为 <code>null</code> 或 <code>undefined</code>，请使用 <code>hasProperty()</code> 方法。</li>
+<li>要传递多个值，请使用展开运算符 <code>.exactMatch(...listVariable)</code>。如果传入空数组，则该过滤器将被忽略。</li>
+</ul>
+</li>
+<li>字符串属性支持多种关键字过滤器。有关完整详情，请参阅 Code Assist 中每个方法的文档。
+<ul>
+<li><code>.phrase()</code> 将搜索查询拆分为词元（通常是单个单词），然后根据值是否按顺序包含所有给定的词元且中间没有其他词元来进行过滤。请注意，以下划线或句点分隔的字符串值将被视为一个词元。例如，搜索 "banana" 时，属性值为 "banana_pudding" 或 "banana.pudding" 的对象将不会被返回。</li>
+<li><code>.phrasePrefix()</code> 几乎与 <code>phrase()</code>相同，但最后一个词元也会匹配以该词元开头的词元。例如，使用 <code>.phrasePrefix()</code> 搜索 <code>fresh banana</code> 会匹配属性值 <code>fresh banana_pudding</code>，但不匹配属性值 <code>banana_pudding fresh</code>。使用 <code>.phrasePrefix()</code> 搜索 <code>pudding</code> 不会匹配属性值 <code>banana_pudding</code>。</li>
+<li><code>.prefixOnLastToken()</code> 将搜索查询拆分为词元，然后根据值是否包含所有给定的词元来进行过滤，其中最后一个词元也会匹配以该词元开头的词元。例如， <code>big app</code> 会匹配 <code>big apples</code> 以及 <code>apples from the big tree</code>，但不会匹配 <code>apples from the biggest tree</code>。</li>
+<li><code>.matchAnyToken()</code>， <code>.fuzzyMatchAnyToken()</code> 将搜索查询拆分为词元，然后根据值是否包含给定词元中的任意一个来进行过滤。其中 <code>fuzzy</code> 版本允许匹配近似值。</li>
+<li><code>.matchAllTokens()</code>， <code>.fuzzyMatchAllTokens()</code> 将搜索查询拆分为多个词元，然后根据值是否包含所有给定词元来进行筛选。该 <code>fuzzy</code> 版本允许近似值进行匹配。
+<ul>
+<li>模糊筛选器可以接受一个可选的 <code>Fuzziness</code> 参数，该参数从 <code>@foundry/functions-api</code>导入。</li>
+<li>有关可用 <code>Fuzziness</code> 选项的说明，请参阅 <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/common-options.html#fuzziness">ElasticSearch 文档 ↗</a>。更多信息也可在下方找到。</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>数字、日期和时间戳属性支持 <code>.range()</code> 筛选器。
+<ul>
+<li>范围筛选器提供一组 <code>.lt()</code>、 <code>.lte()</code>、 <code>.gt()</code> 和 <code>gte()</code> 方法，分别用于执行小于 / 小于或等于 / 大于 / 大于或等于比较。</li>
+</ul>
+</li>
+<li>布尔属性支持 <code>.isTrue()</code> 和 <code>.isFalse()</code> 筛选器。</li>
+<li>地理点属性支持 <code>.withinDistanceOf()</code>、 <code>.withinPolygon()</code>和 <code>.withinBoundingBox()</code> 筛选器。</li>
+<li>地理形状属性支持 <code>.withinBoundingBox()</code>、 <code>.intersectsBoundingBox()</code>、 <code>.doesNotIntersectBoundingBox()</code>、 <code>.withinPolygon()</code>、 <code>.intersectsPolygon()</code>和 <code>doesNotIntersectPolygon()</code> 筛选器。</li>
+<li>关联筛选器可使用 <code>.isPresent()</code> 方法来筛选具有或不具有特定类型关联对象的对象。</li>
+<li>数组属性支持 <code>.contains()</code> 筛选器，该筛选器会筛选出数组属性值包含给定值中 <em>任意一个</em> 的对象。</li>
+</ul>
+<h3 data-pagefind-weight="0.8" id="user-content-combining-filters" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#combining-filters" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>组合筛选器</h3>
+<p>您可以使用 <code>Filters</code> API 来组合筛选器，该 API 从 <code>@foundry/functions-api</code>导出。可用的方法包括：</p>
+<ul>
+<li><code>and()</code> 将对象集筛选为通过所有给定筛选器的对象</li>
+<li><code>or()</code> 将对象集筛选为满足任一给定筛选条件的对象</li>
+<li><code>not()</code> 对给定的筛选条件取反</li>
+</ul>
+<p>在下面的示例中，我们可以按航班目的地筛选航班对象集，使用 <code>and()</code>：</p>
+<pre><div class="ptcom-design__wrapper__12wpwnx" data-pagefind-weight="0.5"><span class="ptcom-design__clipboard__1l1gb20 ptcom-design__clipboard__12wpwnx"><span class="ptcom-design__confirmation__1l1gb20" data-pagefind-ignore="true">Copied!</span><svg aria-hidden="true" aria-label="clipboard" data-view-component="true" height="16" version="1.1" viewbox="0 0 16 16" width="16"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z" fill="currentColor" fill-rule="evenodd"></path><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z" fill="currentColor" fill-rule="evenodd"></path></svg></span><div style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;overflow:auto;position:relative;margin:0;padding:0.75em"><code style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;float:left;padding-right:10px"><span class="react-syntax-highlighter-line-number">1
+</span><span class="react-syntax-highlighter-line-number">2
+</span><span class="react-syntax-highlighter-line-number">3
+</span><span class="react-syntax-highlighter-line-number">4
+</span><span class="react-syntax-highlighter-line-number">5
+</span><span class="react-syntax-highlighter-line-number">6
+</span><span class="react-syntax-highlighter-line-number">7
+</span><span class="react-syntax-highlighter-line-number">8
+</span><span class="react-syntax-highlighter-line-number">9
+</span></code><code class="language-typescript" style="white-space:pre;text-align:left;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none">import { Filters } from "@foundry/functions-api";
+
+
+Objects.search()
+    .flights()
+    .filter(flight =&gt; Filters.or(
+        Filters.and(flight.destination.exactMatch("SFO"), flight.passengerCount.gt(100)),
+        Filters.and(flight.destination.exactMatch("LAX"), flight.passengerCount.gt(300)),
+    ))</code></div></div></pre>
+<p>上述代码将筛选出抵达 SFO 且搭载超过 100 名乘客，或抵达 LAX 且搭载超过 300 名乘客的航班。</p>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><div class="ptcom-design__title__19o1cwu">警告</div><p>该 <code>.filter()</code> 方法在对象集上不会使用运算符 <code>&amp;&amp;</code> 或 <code>||</code>。要应用多个筛选条件，您必须使用 <code>Filters</code> 中上面列出的方法之一（或调用 <code>.filter()</code> 多次以实现 <code>and</code> 条件）。</p></div>
+<h3 data-pagefind-weight="0.8" id="user-content-filtering-on-string-properties-with-fuzzy-search" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#filtering-on-string-properties-with-fuzzy-search" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>使用模糊搜索对字符串属性进行筛选</h3>
+<p>指定可选的 <code>fuzziness</code> 参数可以对模糊匹配行为进行更精细的控制。如果不指定模糊度，允许的编辑距离将根据您所搜索词元的长度自动确定。您需要导入 <code>Fuzziness</code> （来自 <code>@foundry/functions-api</code> ）才能指定编辑距离。</p>
+<h4 id="user-content-fuzzy-match-any-token"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#fuzzy-match-any-token" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>模糊匹配任意词元</h4>
+<pre><code>Objects.search().employee().filter(employee =&gt; employee.firstName.fuzzyMatchAnyToken("Michael", { fuzziness: Fuzziness.LEVENSHTEIN_TWO })).all();
+</code></pre>
+<p>上面的代码会返回名字与所提供的搜索词相差不超过两次编辑（Levenshtein 距离为 2）的所有员工。在此示例中，这将包括 <code>Michael</code>， <code>Micheal</code>， <code>Mikhael</code>， <code>Michel</code>， <code>Mikhail</code>， <code>Mihail</code> （但不包括 <code>Miguel</code> 例如）。如果您对搜索词的准确性更有把握，可以采用较小的编辑距离（即不同的 Levenshtein 距离）进行搜索，从而进一步细化搜索结果。</p>
+<h4 id="user-content-fuzzy-match-all-tokens"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#fuzzy-match-all-tokens" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>对所有词元进行模糊匹配</h4>
+<pre><code>Objects.search().employee().filter(employee =&gt; employee.fullName.fuzzyMatchAllTokens("Michael Smith", { fuzziness: Fuzziness.LEVENSHTEIN_ONE })).all();
+</code></pre>
+<p>您还可以对包含多个词元的短语使用模糊过滤器。上述代码将匹配全名中 <strong>同时包含</strong> <code>Michael</code> 和 <code>Smith</code> 且每个词元最多允许一处编辑的员工——例如， <code>Mikhael Smitt</code> （即每个词元的 Levenshtein 距离均为 1）。使用 <code>fuzzyMatchAllTokens</code> 或 <code>fuzzyMatchesAllTokens</code> 过滤器时，不会考虑词元的顺序。</p>
+<h4 id="user-content-fuzzy-match-on-string-array-properties"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#fuzzy-match-on-string-array-properties" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>对字符串数组属性进行模糊匹配</h4>
+<p>所有针对基于数组的属性的过滤器都可以使用其底层类型可用的方法。例如，可以根据字符串属性可用的任何方法对字符串数组属性进行过滤，不过这些方法的命名可能略有不同。对数组属性进行过滤时，只需数组元素中有任意一个匹配，该对象即会被返回。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-search-around" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#search-around" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>周边搜索</h2>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><div class="ptcom-design__title__19o1cwu">周边搜索限制</div><p>加载到内存中的对象集 <code>.all()</code> 或 <code>.allAsync()</code> 最多允许 <strong>进行 3 次周边搜索</strong>。如果使用了超过 3 次 Search Around,将抛出错误。在 Object Storage v2 中,当从对象集 A 对对象集 B 执行 Search Around 时,生成的对象集 B 不能包含超过 1000 万个对象实例,否则将抛出错误。对于 Object Storage v1,该限制为 100,000 个对象实例。</p></div>
+<p>根据对象集的对象类型, <em>Search Around</em> 方法会被生成,以支持遍历 <a href="/docs/foundry/object-link-types/link-types-overview/">关联</a> 。这一遍历同样基于对象集的对象类型。在下面的示例中,我们先根据出发代码筛选出一个 Flights 对象集,然后 Search Around 到这些航班上的乘客。最终得到一个 Passengers 对象集,该对象集可以进一步筛选或继续 Search Around。</p>
+<pre><div class="ptcom-design__wrapper__12wpwnx" data-pagefind-weight="0.5"><span class="ptcom-design__clipboard__1l1gb20 ptcom-design__clipboard__12wpwnx"><span class="ptcom-design__confirmation__1l1gb20" data-pagefind-ignore="true">Copied!</span><svg aria-hidden="true" aria-label="clipboard" data-view-component="true" height="16" version="1.1" viewbox="0 0 16 16" width="16"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z" fill="currentColor" fill-rule="evenodd"></path><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z" fill="currentColor" fill-rule="evenodd"></path></svg></span><div style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;overflow:auto;position:relative;margin:0;padding:0.75em"><code style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;float:left;padding-right:10px"><span class="react-syntax-highlighter-line-number">1
+</span><span class="react-syntax-highlighter-line-number">2
+</span><span class="react-syntax-highlighter-line-number">3
+</span><span class="react-syntax-highlighter-line-number">4
+</span></code><code class="language-typescript" style="white-space:pre;text-align:left;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none">const passengersDepartingFromAirport = Objects.search()
+    .flights()
+    .filter(flight =&gt; flight.departureAirportCode.exactMatch(airportCode))
+    .searchAroundPassengers();</code></div></div></pre>
+<p>只会为已导入到项目中的关联类型生成 Search Around 方法。请参阅 <a href="/docs/foundry/functions/foo-getting-started/#import-ontology-types">该教程</a> 以了解如何导入关联类型的详细信息。</p>
+<p>请注意，出于性能原因，单次搜索中可执行的 Search Around 操作数量目前限制为 3。如果您尝试运行 Search Around 深度超过三层的搜索，该搜索将在运行时失败。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-k-nearest-neighbors-knn" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#k-nearest-neighbors-knn" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>K 近邻 (KNN)</h2>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><div class="ptcom-design__title__19o1cwu">KNN 限制</div><p>KNN 仅在索引到 <a href="/docs/foundry/object-backend/overview/">OSv2</a>中的对象类型上受支持。k 值限制在 0 &lt; K &lt;= 100 的范围内。此外，搜索向量必须与索引时使用的向量大小相同，且有 2048 维的限制。如果超出这些限制中的任何一项，将抛出错误。</p></div>
+<p>具有嵌入属性的对象类型将可用于 KNN 搜索。这些搜索将返回嵌入属性与所提供的嵌入参数最接近的 k 个对象。以下示例返回与所提供的电影剧本最相似的电影。嵌入可以在诸如 <a href="/docs/foundry/pipeline-builder/pipeline-builder-aip/#text-to-embeddings">管道构建器</a>之类的转换工具中生成；也可以在函数查询时 <a href="language-models.md#embeddings">使用 Palantir 提供的嵌入模型</a> 或 <a href="/docs/foundry/functions/functions-on-models/">在函数中使用您自己的模型</a>生成。</p>
+<p>请确保您的函数仓库的 <code>functions.json</code> 配置文件中的 <code>enableVectorProperties</code> 条目已设置为 <code>true</code>。</p>
+<pre><div class="ptcom-design__wrapper__12wpwnx" data-pagefind-weight="0.5"><span class="ptcom-design__clipboard__1l1gb20 ptcom-design__clipboard__12wpwnx"><span class="ptcom-design__confirmation__1l1gb20" data-pagefind-ignore="true">Copied!</span><svg aria-hidden="true" aria-label="clipboard" data-view-component="true" height="16" version="1.1" viewbox="0 0 16 16" width="16"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z" fill="currentColor" fill-rule="evenodd"></path><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z" fill="currentColor" fill-rule="evenodd"></path></svg></span><div style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;overflow:auto;position:relative;margin:0;padding:0.75em"><code style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;float:left;padding-right:10px"><span class="react-syntax-highlighter-line-number">1
+</span><span class="react-syntax-highlighter-line-number">2
+</span><span class="react-syntax-highlighter-line-number">3
+</span><span class="react-syntax-highlighter-line-number">4
+</span><span class="react-syntax-highlighter-line-number">5
+</span><span class="react-syntax-highlighter-line-number">6
+</span><span class="react-syntax-highlighter-line-number">7
+</span><span class="react-syntax-highlighter-line-number">8
+</span><span class="react-syntax-highlighter-line-number">9
+</span><span class="react-syntax-highlighter-line-number">10
+</span></code><code class="language-typescript" style="white-space:pre;text-align:left;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none">import { Objects } from "@foundry/ontology-api";
+
+const kValue: number = 2;
+// Vector can be generated from FML Live or come from an existing object
+const vector: Double[] = [0.7, 0.1, 0.3];
+const movies: Movies[] = Objects.search()
+        .movies()
+        .nearestNeighbors(obj =&gt; obj.vectorProperty.near(vector, { kValue }))
+        .orderByRelevance()
+        .take(kValue);</code></div></div></pre>
+<p>有关完整语义搜索工作流的示例，请查阅 <a href="/docs/foundry/ontology/using-palantir-provided-models-to-create-a-semantic-search-workflow/">语义搜索工作流指南</a>。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-set-operations" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#set-operations" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>集合运算</h2>
+<p>可以使用集合运算以多种方式组合同一对象类型的对象集：</p>
+<ul>
+<li><code>.union()</code> 会创建一个新对象集，其中包含存在于任一给定对象集中的对象。</li>
+<li><code>.intersect()</code> 会创建一个新对象集，其中包含存在于所有给定对象集中的对象。</li>
+<li><code>.subtract()</code> 会移除存在于给定对象集中的任何对象。</li>
+</ul>
+<h2 data-pagefind-weight="0.9" id="user-content-retrieving-all-objects" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#retrieving-all-objects" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>检索所有对象</h2>
+<p>该 <code>.all()</code> 和 <code>.allAsync()</code> 方法会检索对象集中的所有对象。请注意，如果您尝试一次加载过多对象，您的函数将无法执行。目前，您最多可以加载 100,000 个对象。但是，加载超过 10,000 个对象也可能导致函数执行超时。 <a href="/docs/foundry/functions/manage-functions/#enforced-limits">了解有关函数中时间和空间限制的更多信息。</a></p>
+<p>您可以使用 <code>.allAsync()</code> 方法来获取一个 Promise，该 Promise 会解析为对象集中的所有对象。这对于并行加载来自多个对象集的数据非常有用。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-ordering-and-limiting" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#ordering-and-limiting" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>排序和限制</h2>
+<p>您无需检索所有对象，而是可以对对象集应用排序子句，然后指定要加载的具体对象数量，从而加载有限数量的对象。为此，您可以使用以下方法：</p>
+<ul>
+<li><code>.orderBy()</code> 指定用于排序的可搜索属性，并允许您指定排序方向。只有类型可排序的属性（数字、日期和字符串）才可在此方法中选择。您可以调用 <code>.orderBy()</code> 多次，以按多个属性进行排序。</li>
+<li><code>.orderByRelevance()</code> 指定应按对象与所提供筛选条件的匹配程度返回对象，最相关的排在最前面。查询词与给定对象的属性值之间的相关性是一个复杂的判定过程，需要考虑该词在属性值中出现的频率、该词在所有对象中出现的频率等因素。在仅执行 <code>.exactMatch()</code> 筛选或对非字符串属性进行筛选时，相关性不太适用。请注意，只有 <code>.orderBy()</code> 和 <code>.orderByRelevance()</code> 中的一个可以在单次搜索中使用。</li>
+<li><code>.take()</code> 和 <code>.takeAsync()</code> 使您能够从集合中检索指定数量的对象。只有在指定了排序之后，才能使用这些方法。</li>
+</ul>
+<p>例如，以下代码将检索入职日期最早的十名员工：</p>
+<pre><div class="ptcom-design__wrapper__12wpwnx" data-pagefind-weight="0.5"><span class="ptcom-design__clipboard__1l1gb20 ptcom-design__clipboard__12wpwnx"><span class="ptcom-design__confirmation__1l1gb20" data-pagefind-ignore="true">Copied!</span><svg aria-hidden="true" aria-label="clipboard" data-view-component="true" height="16" version="1.1" viewbox="0 0 16 16" width="16"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z" fill="currentColor" fill-rule="evenodd"></path><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z" fill="currentColor" fill-rule="evenodd"></path></svg></span><div style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;overflow:auto;position:relative;margin:0;padding:0.75em"><code style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;float:left;padding-right:10px"><span class="react-syntax-highlighter-line-number">1
+</span><span class="react-syntax-highlighter-line-number">2
+</span><span class="react-syntax-highlighter-line-number">3
+</span><span class="react-syntax-highlighter-line-number">4
+</span></code><code class="language-typescript" style="white-space:pre;text-align:left;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none">Objects.search()
+    .employees()
+    .orderBy(e =&gt; e.startDate.asc())
+    .take(10)</code></div></div></pre>
+<p>再举一个例子，假设有一个对象类型 <code>claims</code> 其中包含某保险公司的事故理赔文本。假设您想查找一起涉及红色汽车和鹿的特定理赔。如果不使用 <code>.orderByRelevance()</code> 行，任何包含以下任意词语的结果 <code>red</code>、 <code>car</code>、 <code>collision</code>、 <code>with</code>或 <code>deer</code> 都可能出现在前 10 个结果中。而使用 <code>.orderByRelevance()</code> 行时，前 10 个结果将是包含搜索词最多的理赔，从而使最相关的理赔排在最前面。</p>
+<pre><div class="ptcom-design__wrapper__12wpwnx" data-pagefind-weight="0.5"><span class="ptcom-design__clipboard__1l1gb20 ptcom-design__clipboard__12wpwnx"><span class="ptcom-design__confirmation__1l1gb20" data-pagefind-ignore="true">Copied!</span><svg aria-hidden="true" aria-label="clipboard" data-view-component="true" height="16" version="1.1" viewbox="0 0 16 16" width="16"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z" fill="currentColor" fill-rule="evenodd"></path><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z" fill="currentColor" fill-rule="evenodd"></path></svg></span><div style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;overflow:auto;position:relative;margin:0;padding:0.75em"><code style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;float:left;padding-right:10px"><span class="react-syntax-highlighter-line-number">1
+</span><span class="react-syntax-highlighter-line-number">2
+</span><span class="react-syntax-highlighter-line-number">3
+</span><span class="react-syntax-highlighter-line-number">4
+</span><span class="react-syntax-highlighter-line-number">5
+</span></code><code class="language-typescript" style="white-space:pre;text-align:left;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none">const results = Objects.search()
+    .claims()
+    .filter(doc =&gt; doc.text.matchAnyToken("red car collision with deer"))
+    .orderByRelevance()
+    .take(10)</code></div></div></pre>
+<h2 data-pagefind-weight="0.9" id="user-content-computing-aggregations" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#computing-aggregations" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>计算聚合</h2>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><div class="ptcom-design__title__19o1cwu">聚合限制</div><p>从 Objects API 返回的聚合结果限制为 <strong>总共 10,000 个桶</strong>。如果超出此限制，将抛出错误。</p><p>使用 <code>.topValues()</code>进行分桶时，如果数据包含超过 1,000 个不同的值，结果将是近似值。在这种情况下，最常出现的值列表可能不准确。</p></div>
+<h3 data-pagefind-weight="0.8" id="user-content-grouping-objects-by-properties" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#grouping-objects-by-properties" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>按属性对对象进行分组</h3>
+<p>在许多情况下，无需加载对象集中的所有对象。相反，您只需加载按值分桶的聚合结果即可进行进一步分析。</p>
+<p>要开始计算聚合，请调用 <code>.groupBy()</code> 对象集上的方法。这允许您指定按对象集中对象类型的某个可搜索属性进行分桶。例如，此代码按入职日期对员工进行分组：</p>
+<pre><div class="ptcom-design__wrapper__12wpwnx" data-pagefind-weight="0.5"><span class="ptcom-design__clipboard__1l1gb20 ptcom-design__clipboard__12wpwnx"><span class="ptcom-design__confirmation__1l1gb20" data-pagefind-ignore="true">Copied!</span><svg aria-hidden="true" aria-label="clipboard" data-view-component="true" height="16" version="1.1" viewbox="0 0 16 16" width="16"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z" fill="currentColor" fill-rule="evenodd"></path><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z" fill="currentColor" fill-rule="evenodd"></path></svg></span><div style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;overflow:auto;position:relative;margin:0;padding:0.75em"><code style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;float:left;padding-right:10px"><span class="react-syntax-highlighter-line-number">1
+</span><span class="react-syntax-highlighter-line-number">2
+</span><span class="react-syntax-highlighter-line-number">3
+</span></code><code class="language-typescript" style="white-space:pre;text-align:left;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none">Objects.search()
+    .employees()
+    .groupBy(e =&gt; e.startDate.byDays())</code></div></div></pre>
+<p>在指定按哪个属性进行分桶时，您需要根据属性类型提供有关如何执行分桶的额外信息：</p>
+<ul>
+<li>对于 <code>boolean</code> 属性，唯一选项是 <code>.topValues()</code>。这将返回两个桶，一个用于 <code>true</code> ，另一个用于 <code>false</code>。</li>
+<li>对于字符串属性，有两种选项：
+<ul>
+<li><code>.topValues()</code>：用于获得快速响应时间，适用于基数较小的属性。它按字符串属性的前 1,000 个值进行分桶。此限制是为了确保返回的聚合结果不会过大。</li>
+<li><code>.exactValues()</code>：用于获得更精确的聚合结果，并可为高基数属性考虑最多 10,000 个桶。所考虑的桶数量可通过 <code>.exactValues({"maxBuckets": numBuckets})</code> 来指定，其中 <code>numBuckets</code> 必须是介于 0 和 10,000 之间的整数值。此方法的响应时间可能较长，因为需要考虑更多结果。</li>
+</ul>
+</li>
+<li>对于数值属性（例如 <code>Integer</code>、 <code>Long</code>、 <code>Float</code>、 <code>Double</code>），两种分桶选项为：
+<ul>
+<li><code>.byRanges()</code> 允许您指定应使用的确切范围。例如，您可以使用 <code>.byRanges({ min: 0, max: 50 }, { min: 50, max: 100 })</code> 将对象分桶到您在此处指定的 [0, 50] 和 [50, 100] 两个范围中。该范围的 <code>min</code> 是包含的，而 <code>max</code> 是不包含的。您可以省略 <code>min</code> 或 <code>max</code> 来分别表示包含从 -∞ 到 <code>max</code> 或从 <code>min</code> 到 ∞ 的值的桶。</li>
+<li><code>.byFixedWidth()</code> 指定每个桶的宽度。例如，您可以使用 <code>.byFixedWidth(50)</code> 将对象分桶到宽度均为 50 的各个范围中。</li>
+</ul>
+</li>
+<li>对于 <code>LocalDate</code> 属性，提供了多种便捷方法以便轻松分桶：
+<ul>
+<li><code>.byYear()</code></li>
+<li><code>.byQuarter()</code></li>
+<li><code>.byMonth()</code></li>
+<li><code>.byWeek()</code></li>
+<li><code>.byDays()</code> 将值按天进行分桶。您可以传入天数用作桶宽度。</li>
+</ul>
+</li>
+<li>对于 <code>Timestamp</code> 属性，适用与 <code>LocalDate</code>相同的分桶选项，同时还提供以下附加选项：
+<ul>
+<li><code>.byHours()</code> 将值按小时进行分桶。您可以传入小时数用作桶宽度。</li>
+<li><code>.byMinutes()</code> 将值按分钟进行分桶。您可以传入分钟数用作桶宽度。</li>
+<li><code>.bySeconds()</code> 将值按秒进行分桶。您可以传入秒数用作桶宽度。</li>
+</ul>
+</li>
+<li>对于 <code>Array</code> 属性进行分组时，分桶选项由数组中元素的类型决定。具体而言，您为 <code>Array&lt;PropertyType&gt;</code> 获得的分桶方法与您为 <code>PropertyType</code> 获得的相同（例如， <code>Array&lt;boolean&gt;</code> 获得的分桶方法与 <code>boolean</code>的相同）。
+<ul>
+<li>例如，如果您有一个名为 <code>employeeSet</code> 的对象集，其中包含 Alice 和 Bob，他们的 <code>Array&lt;string&gt;</code> 属性 <code>pastCountries</code> 的值分别为 <code>["US", "UK"]</code> 和 <code>["US"]</code> ，那么 <code>employeeSet.groupBy(e =&gt; e.pastCountries.exactValues()).count()</code> 将返回 <code>{ "US": 2, "UK": 1 }</code>。</li>
+</ul>
+</li>
+</ul>
+<p>按一个属性分组后，您可以选择调用 <code>.segmentBy()</code> 方法来执行进一步分桶。这使您能够计算按两个可搜索属性分桶的三维聚合。例如，您可以按入职日期和角色对员工进行分组，如下所示：</p>
+<pre><div class="ptcom-design__wrapper__12wpwnx" data-pagefind-weight="0.5"><span class="ptcom-design__clipboard__1l1gb20 ptcom-design__clipboard__12wpwnx"><span class="ptcom-design__confirmation__1l1gb20" data-pagefind-ignore="true">Copied!</span><svg aria-hidden="true" aria-label="clipboard" data-view-component="true" height="16" version="1.1" viewbox="0 0 16 16" width="16"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z" fill="currentColor" fill-rule="evenodd"></path><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z" fill="currentColor" fill-rule="evenodd"></path></svg></span><div style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;overflow:auto;position:relative;margin:0;padding:0.75em"><code style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;float:left;padding-right:10px"><span class="react-syntax-highlighter-line-number">1
+</span><span class="react-syntax-highlighter-line-number">2
+</span><span class="react-syntax-highlighter-line-number">3
+</span><span class="react-syntax-highlighter-line-number">4
+</span></code><code class="language-typescript" style="white-space:pre;text-align:left;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none">Objects.search()
+    .employees()
+    .groupBy(e =&gt; e.startDate.byDays())
+    .segmentBy(e =&gt; e.role.topValues())</code></div></div></pre>
+<h3 data-pagefind-weight="0.8" id="user-content-choosing-an-aggregation-metric" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#choosing-an-aggregation-metric" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>选择聚合指标</h3>
+<p>对对象集进行分组后，您可以调用各种聚合方法来计算每个桶的聚合指标。需要属性的方法仅接受标记为可搜索的属性。可能的聚合方法包括：</p>
+<ul>
+<li><code>.count()</code> 仅返回每个桶中的对象数量</li>
+<li><code>.average()</code> 返回给定数值、时间戳或日期属性的平均值</li>
+<li><code>.max()</code> 返回给定数值、时间戳或日期属性的最大值</li>
+<li><code>.min()</code> 返回给定数值、时间戳或日期属性的最小值</li>
+<li><code>.sum()</code> 返回给定数值属性值的总和</li>
+<li><code>.cardinality()</code> 返回给定属性中不同值的大致数量</li>
+</ul>
+<p>调用这些方法之一会返回一个 <code>TwoDimensionalAggregation</code> 或 <code>ThreeDimensionalAggregation</code>。一个 <code>ThreeDimensionalAggregation</code> 会被返回，如果你先调用了 <code>.segmentBy()</code> ，之后才调用最终聚合方法之一。</p>
+<p><a href="/docs/foundry/functions/types-reference/#aggregation-types">详细了解这些聚合类型的结构，包括 <strong>有效的分桶类型</strong>。</a></p>
+<p>请注意，生成的聚合结果会被包装在一个 <code>Promise</code>中，因为计算聚合需要从远程服务加载数据。你可以使用 <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/async_function">async/await ↗</a> 语法来解包 <code>Promise</code> 结果。</p>
+<p>下面是加载聚合并将其作为结果返回的完整示例。</p>
+<pre><div class="ptcom-design__wrapper__12wpwnx" data-pagefind-weight="0.5"><span class="ptcom-design__clipboard__1l1gb20 ptcom-design__clipboard__12wpwnx"><span class="ptcom-design__confirmation__1l1gb20" data-pagefind-ignore="true">Copied!</span><svg aria-hidden="true" aria-label="clipboard" data-view-component="true" height="16" version="1.1" viewbox="0 0 16 16" width="16"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z" fill="currentColor" fill-rule="evenodd"></path><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z" fill="currentColor" fill-rule="evenodd"></path></svg></span><div style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;overflow:auto;position:relative;margin:0;padding:0.75em"><code style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;float:left;padding-right:10px"><span class="react-syntax-highlighter-line-number">1
+</span><span class="react-syntax-highlighter-line-number">2
+</span><span class="react-syntax-highlighter-line-number">3
+</span><span class="react-syntax-highlighter-line-number">4
+</span><span class="react-syntax-highlighter-line-number">5
+</span><span class="react-syntax-highlighter-line-number">6
+</span><span class="react-syntax-highlighter-line-number">7
+</span><span class="react-syntax-highlighter-line-number">8
+</span><span class="react-syntax-highlighter-line-number">9
+</span><span class="react-syntax-highlighter-line-number">10
+</span><span class="react-syntax-highlighter-line-number">11
+</span><span class="react-syntax-highlighter-line-number">12
+</span><span class="react-syntax-highlighter-line-number">13
+</span></code><code class="language-typescript" style="white-space:pre;text-align:left;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none">import { Function, ThreeDimensionalAggregation } from "@foundry/functions-api";
+import { Objects } from "@foundry/ontology-api";
+
+export class AggregationFunctions {
+    @Function()
+    public async employeesByRoleAndOffice(): Promise&lt;ThreeDimensionalAggregation&lt;string, string&gt;&gt; {
+        return Objects.search()
+            .employee()
+            .groupBy(e =&gt; e.title.topValues())
+            .segmentBy(e =&gt; e.office.topValues())
+            .count();
+    }
+}</code></div></div></pre>
+<p>下面是不使用 groupBy 语句进行聚合的完整示例：</p>
+<pre><div class="ptcom-design__wrapper__12wpwnx" data-pagefind-weight="0.5"><span class="ptcom-design__clipboard__1l1gb20 ptcom-design__clipboard__12wpwnx"><span class="ptcom-design__confirmation__1l1gb20" data-pagefind-ignore="true">Copied!</span><svg aria-hidden="true" aria-label="clipboard" data-view-component="true" height="16" version="1.1" viewbox="0 0 16 16" width="16"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z" fill="currentColor" fill-rule="evenodd"></path><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z" fill="currentColor" fill-rule="evenodd"></path></svg></span><div style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;overflow:auto;position:relative;margin:0;padding:0.75em"><code style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;float:left;padding-right:10px"><span class="react-syntax-highlighter-line-number">1
+</span><span class="react-syntax-highlighter-line-number">2
+</span><span class="react-syntax-highlighter-line-number">3
+</span><span class="react-syntax-highlighter-line-number">4
+</span><span class="react-syntax-highlighter-line-number">5
+</span><span class="react-syntax-highlighter-line-number">6
+</span><span class="react-syntax-highlighter-line-number">7
+</span><span class="react-syntax-highlighter-line-number">8
+</span><span class="react-syntax-highlighter-line-number">9
+</span><span class="react-syntax-highlighter-line-number">10
+</span></code><code class="language-typescript" style="white-space:pre;text-align:left;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none">import { Function } from "@foundry/functions-api";
+import { Objects } from "@foundry/ontology-api";
+
+export class AggregationFunctions {
+    @Function()
+    public async employeesStats(): Promise&lt;Double&gt; {
+        // Count of all employees, default to zero if count() returns undefined
+        return Objects.search().employee().count() ?? 0;
+    }
+}</code></div></div></pre>
+<p>你还可以通过替换上方代码示例中的相应行，来执行其他不使用 groupBy 的聚合，例如：</p>
+<ul>
+<li>所有员工的数量： <code>Objects.search().employee().count();</code> （如上例所示）</li>
+<li>员工的平均在职时长： <code>Objects.search().employee().average(e =&gt; e.tenure);</code></li>
+<li>员工的最长在职时长： <code>Objects.search().employee().max(e =&gt; e.tenure);</code></li>
+<li>员工的最短在职时长： <code>Objects.search().employee().min(e =&gt; e.tenure);</code></li>
+<li>所有员工薪资的总和： <code>Objects.search().employee().sum(e =&gt; e.salary);</code></li>
+<li>办公室的数量： <code>Objects.search().employee().cardinality(e =&gt; e.office);</code></li>
+</ul>
+<p>有关在内存中处理聚合结果的示例，请参阅 <a href="/docs/foundry/functions/create-custom-aggregation/">创建自定义聚合</a>。</p></div>
+</article>
+</body>
+</html>

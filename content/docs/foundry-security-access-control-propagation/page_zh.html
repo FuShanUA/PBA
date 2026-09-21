@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>访问控制传播</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<div class="ptcom-design__markdownDoc__1uarhel" data-pagefind-body="true"><h1 data-pagefind-weight="1" id="user-content-access-control-propagation" level="1" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#access-control-propagation" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>访问控制传播</h1>
+<p>Foundry 结合了 <a href="#mandatory-controls">强制性</a> 和 <a href="#discretionary-controls">自主性</a> 访问控制,用于管控谁可以与哪些数据进行交互。这两类控制在一个对设计安全管道或应用至关重要的属性上存在差异: <strong>传播</strong>。强制控制会在数据的派生和下游使用过程中随数据一同传播。行级和列级访问控制(包括 <a href="/docs/foundry/security/restricted-views/">受限视图</a>、 <a href="/docs/foundry/object-permissioning/object-security-policies/">对象安全策略</a>以及 <a href="/docs/foundry/security/property-security-markings/">属性安全策略</a>)会过滤用户可读取的内容。这些控制不会延伸到该次读取之外。</p>
+<p>本页面描述了每类控制的传播行为,指出这一区别在哪些情况下重要,并就如何针对特定目标选择合适的控制提供指导。</p>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>本页面是关于访问控制如何传播的参考资料。有关整体安全模型的概述,请参阅 <a href="/docs/foundry/security/overview/">安全与治理</a>。有关此处所用术语的列表,请参阅 <a href="/docs/foundry/security/security-glossary/">安全术语表</a>。</p></div>
+<h2 data-pagefind-weight="0.9" id="user-content-mandatory-controls" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#mandatory-controls" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>强制控制</h2>
+<p>强制控制由平台强制执行,不受任何用户角色或任何应用程序逻辑的影响。强制控制包括:</p>
+<ul>
+<li><strong><a href="/docs/foundry/security/markings/">标记</a>:</strong> 适用于数据集、事务、文件和列。没有所需标记的用户无法访问带有该标记的任何资源。</li>
+<li><strong><a href="/docs/foundry/security/classification-based-access-controls/">基于分类的访问控制(CBAC)</a>:</strong> 与用户许可级别关联的列级强制控制。</li>
+<li><strong><a href="/docs/foundry/security/orgs-and-spaces/">组织</a>：</strong> 用户群体与资源群体之间的强制边界。</li>
+</ul>
+<p>强制控制 <strong>会通过派生</strong> 进行传播。例如：</p>
+<ul>
+<li>基于带有标记的输入构建的数据集会继承其事务上的标记。</li>
+<li>带有 CBAC 分类标签的列在复制到下游数据集时会保留该分类。</li>
+<li>在组织范围内的项目中创建的资源会继承该组织约束。</li>
+</ul>
+<p>传播意味着，任何派生产物都无法将数据暴露给缺少所需标记、分类或组织成员资格的用户。该控制会在每个访问点根据运行用户的身份进行评估。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-discretionary-controls" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#discretionary-controls" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>自主控制</h2>
+<p>自主控制在特定资源上为特定用户或组授予访问权限。与行和列保护相关的自主控制包括：</p>
+<ul>
+<li><strong><a href="/docs/foundry/security/projects-and-roles/">项目角色</a>：</strong> 在项目上授予的角色（Owner、Editor、Viewer、Discoverer）决定了哪些用户可以读取或修改该项目中的资源。</li>
+<li><strong><a href="/docs/foundry/security/restricted-views/">受限视图</a>：</strong> 一种读取层资源，使用 <a href="/docs/foundry/platform-security-management/manage-granular-policies/">细粒度策略</a>对支撑数据集中的行进行过滤。</li>
+<li><strong><a href="/docs/foundry/object-permissioning/object-security-policies/">对象安全策略</a>：</strong> 针对本体论对象实例的行级过滤，在对象集层进行评估。</li>
+<li><strong><a href="/docs/foundry/security/property-security-markings/">属性安全策略</a>：</strong> 针对对象属性的列级过滤。</li>
+</ul>
+<p>这些控制措施用于过滤用户可以读取的内容。平台会将用户的属性和组成员身份与策略进行比对，仅返回用户有权查看的行或字段。</p>
+<p>读取完成后，用户实际接收到的行只是普通数据。它们不包含任何元数据、分类或标记，后续代码无法据此重新应用该策略。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-where-discretionary-controls-stop" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#where-discretionary-controls-stop" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>自主访问控制的边界</h3>
+<p>行级和列级访问控制会过滤用户可以读取的内容。以下操作 <strong>不</strong> 携带源策略：</p>
+<ul>
+<li><strong>函数返回值：</strong> 读取由对象安全策略过滤的对象集的函数，会返回在运行用户权限下计算出的结果。返回值不受策略约束；任何接收该值的使用方都会原样看到数据。</li>
+<li><strong>操作编辑：</strong> 操作从受某一策略约束的对象集读取数据，并写入具有不同（或没有）行级策略的对象类型。写入目标的访问控制会生效，但源策略不会传播。</li>
+<li><strong>AIP Logic 工具调用：</strong> 工具调用会将本体论数据返回到模型的上下文中。数据进入上下文后，即可被汇总、转换，并通过模型的任意输出路径返回，且不再保留与源策略的任何关联。</li>
+<li><strong>OSDK 响应：</strong> OSDK 客户端在运行用户的上下文中接收本体论有效负载。应用程序可以对数据进行渲染、记录日志、转换或转发；策略不会随有效负载一同传递。</li>
+<li><strong>Pipeline Builder 本体论输出：</strong> 从 Pipeline Builder 管道写入对象类型的行受目标端访问控制的管辖，而不受源端任何受限视图策略的管辖。</li>
+<li><strong>写回操作：</strong> 对由受限视图支撑的对象所应用的编辑，受写回目标的控制管辖。</li>
+<li><strong>导出与下载：</strong> 从 Quiver、Contour、Workshop 及其他应用程序导出的内容会在 Foundry 之外生成制品。这些制品中不含任何源策略。</li>
+</ul>
+<p>在每种情况下，运行用户都无法读取其未获授权读取的内容；访问保证依然成立。不成立的则是传播：保护源数据的约束并不会约束该数据在读取之后的处理方式。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-choosing-a-control" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#choosing-a-control" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>选择控制措施</h2>
+<p>在为数据产品选择访问控制时，请参考以下指导：</p>
+<ul>
+<li><strong>保护要求是否延伸至派生工件、写回操作、导出或模型输出？</strong> 使用强制控制（标记、CBAC 分类或组织）；强制控制会传播。</li>
+<li><strong>要求是否是在读取层过滤用户看到的内容（而不限制后续派生）？</strong> 受限视图、对象安全策略或属性安全策略是合适的选择。</li>
+<li><strong>要求是否是既要过滤用户看到的内容，又要在数据向下游流动时保护数据？</strong> 同时使用两者。由带标记的数据集支撑的受限视图为用户提供行级过滤，同时在源数据及其派生物上保留标记。</li>
+</ul>
+<p>如需更强的保护，可将标记应用于受限视图的支撑数据集。这可确保任何构建进一步派生的消费者仍受该标记的约束，包括从同级受限视图读取数据或完全绕过该视图的消费者。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-frequently-asked-questions" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#frequently-asked-questions" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>常见问题</h2>
+<p>以下问题解答了关于强制控制与自主控制在实际运用中有何区别的常见疑惑。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-do-read-only-restricted-views-protect-data-after-it-has-been-read" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#do-read-only-restricted-views-protect-data-after-it-has-been-read" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>只读受限视图能否在数据被读取后对其进行保护？</h3>
+<p>受限视图的只读属性可防止其架构和列被修改。这是一种 <strong>完整性</strong> 受限视图作为资源的属性，而非对用户可读取数据行的保密性保证。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-can-i-remove-a-marking-if-a-granular-policy-is-already-in-place" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#can-i-remove-a-marking-if-a-granular-policy-is-already-in-place" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>如果已经存在细粒度策略，我可以移除标记吗？</h3>
+<p>资源上的标记提供可传播的强制控制。受限视图上的细粒度策略提供不可传播的自主过滤。移除标记意味着用一种能够通过派生传播的控制换取一种不会传播的控制。若要让数据在下游输出和导出中保持受保护状态，请保留该标记。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-does-respecting-foundrys-security-model-guarantee-policy-enforcement-downstream" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#does-respecting-foundrys-security-model-guarantee-policy-enforcement-downstream" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>遵循 Foundry 的安全模型能否保证策略在下游得到执行？</h3>
+<p>“遵循安全模型”的应用程序在用户的权限下读取数据。这保证了用户无法读取其无权读取的内容。但这并不能保证用户所读取的数据在读取之后仍受源策略的约束。用户权限继承提供的是访问保证，而非传播保证。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-are-projects-a-security-boundary" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#are-projects-a-security-boundary" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>项目是安全边界吗？</h3>
+<p><a href="/docs/foundry/security/projects-and-roles/">项目</a> 是自主角色授权的主要容器。强制控制（标记、CBAC、组织）在各项目之间以及整个派生过程中始终有效。当保护目标要求建立一个派生产物无法脱离的硬边界时，强制控制可提供这种边界；项目提供的则是角色授权的便利性。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-see-also" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#see-also" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>另请参阅</h2>
+<ul>
+<li><a href="/docs/foundry/security/markings/">标记</a></li>
+<li><a href="/docs/foundry/security/classification-based-access-controls/">基于分类的访问控制</a></li>
+<li><a href="/docs/foundry/security/orgs-and-spaces/">组织和空间</a></li>
+<li><a href="/docs/foundry/security/restricted-views/">受限视图</a></li>
+<li><a href="/docs/foundry/object-permissioning/object-security-policies/">对象安全策略</a></li>
+<li><a href="/docs/foundry/security/property-security-markings/">属性安全标记</a></li>
+<li><a href="/docs/foundry/platform-security-management/manage-granular-policies/">管理细粒度策略</a></li>
+<li><a href="/docs/foundry/platform-security-management/manage-restricted-views/">管理受限视图</a></li>
+</ul></div>
+</article>
+</body>
+</html>

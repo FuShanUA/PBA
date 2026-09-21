@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>使用本体论查询的计算用量</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<div class="ptcom-design__markdownDoc__1uarhel" data-pagefind-body="true"><h1 data-pagefind-weight="1" id="user-content-compute-usage-with-ontology-queries" level="1" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#compute-usage-with-ontology-queries" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>使用本体论查询的计算用量</h1>
+<p>Foundry 本体论是一个数据后端，它将基于文件的数据映射到以组织为中心的对象，并为数据探索、数据分析、运营数据编辑、情景分析等提供高速查询。本体论将数据存储在多模态存储后端中，每个存储后端都有各自的用途，并且可以在单个请求中灵活查询。查询 Foundry 本体论需要了解下文讨论的一些基础概念。</p>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>如果您与 Palantir 签订了企业合同，请在开始计算用量之前联系您的 Palantir 代表。</p></div>
+<h2 data-pagefind-weight="0.9" id="user-content-core-concepts-object-types-and-object-sets" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#core-concepts-object-types-and-object-sets" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>核心概念：对象类型和对象集</h2>
+<p>第一个重要概念是 <strong>对象类型</strong> 与其对应的 <strong>对象集</strong>之间的区别。 <strong>对象类型</strong> 是实体本身（例如对象的名称和属性）的语义表示。</p>
+<p>每个对象类型都有一个对应的 <strong>对象集</strong>，其中包含对象本身。 <strong>对象集</strong> 的大小对应于传入数据集的行数以及本体论操作创建和删除的对象数量。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-core-concept-query-types" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#core-concept-query-types" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>核心概念：查询类型</h2>
+<p>第二个重要概念是 <strong>查询类型</strong>，其中包括筛选、聚合、Search Arounds 和回写操作。每种查询类型都需要计算资源才能执行。请参阅 <a href="#ontology-query-compute-2026">本体论查询计算 (2026)</a> 以了解每种查询类型当前的计算秒数开销。</p>
+<p>使用 Foundry 本体论时， <strong>查询类型</strong> 会针对 <strong>对象集</strong> 由以下 <a href="/docs/foundry/ontology/applications/">Foundry 应用</a>来执行：</p>
+<ul>
+<li>Object Explorer</li>
+<li>Workshop</li>
+<li>Quiver</li>
+<li>Slate</li>
+<li>Vertex</li>
+<li>Foundry Rules</li>
+<li>Foundry Machinery</li>
+<li>Object APIs (OPIs)</li>
+</ul>
+<p>从上述任一来源查询本体论，都会使用计算秒数来运行查询。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-investigating-foundry-compute-usage-from-ontology-queries" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#investigating-foundry-compute-usage-from-ontology-queries" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>调查来自本体论查询的 Foundry 计算用量</h2>
+<p>在 Foundry 中，计算秒数会归属于平台中的资源，而不是与这些资源交互的用户。</p>
+<p>对于本体论查询，计算资源的归属方式有多种。作为一般规则，计算资源会归属于发起查询的资源。但是，当没有可用于生成计算资源的已保存资源时（例如通过 API），计算资源将归属于被查询的对象类型。如果在单个请求中查询了多个对象，则计算资源将在这些对象之间平均分配。</p>
+<p>对于以下资源类型，本体论查询计算将归属于资源本身，而非底层对象：</p>
+<ul>
+<li>Workshop 应用</li>
+<li>Carbon 页面</li>
+<li>Quiver 分析和仪表板</li>
+<li>Vertex 应用</li>
+<li>Slate 应用</li>
+<li>Foundry Machinery 应用</li>
+<li>Foundry Rules 资源</li>
+<li>Foundry Automate</li>
+<li>AIP Logic</li>
+<li>SQL Console 工作表</li>
+<li>OSDK 应用</li>
+</ul>
+<p>由于没有可附加计算的固定资源，以下交互模式的本体论查询计算将直接附加到其所查询的对象类型。</p>
+<ul>
+<li>Object Explorer</li>
+<li>对象 API（包括 OSDK）</li>
+</ul>
+<h2 data-pagefind-weight="0.9" id="user-content-ontology-query-compute-2026" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#ontology-query-compute-2026" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>本体论查询计算（2026）</h2>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><div class="ptcom-design__title__19o1cwu">自 2026 年 1 月 1 日起生效</div><p>以下计算模型将于 2026 年 1 月 1 日生效，并取代下文 <a href="#measuring-foundry-compute-with-ontology-object-queries-legacy">旧版</a> 章节中描述的旧版模型。</p></div>
+<p>本体论查询计算由用户和代理对本体论的使用所驱动。请考虑决定计算使用量的主要因素：</p>
+<h3 data-pagefind-weight="0.8" id="user-content-factor-1-number-of-users-and-agents" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#factor-1-number-of-users-and-agents" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>因素 1：用户和代理的数量</h3>
+<p>计算秒数按累计方式计量。针对本体论运行的查询和转换越多，总体计算使用量就越高。查询量随用户交互（例如应用刷新和交互式查询）以及代理式转换线性增长。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-factor-2-query-type" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#factor-2-query-type" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>因素 2：查询类型</h3>
+<p>用户可以通过以下查询类型访问其本体论，每种查询类型均对应每次查询的最低计算秒开销。实际计算用量可能更高，具体取决于查询复杂度、对象集大小或查询的对象数量。</p>
+<ul>
+<li><strong>基础查询：</strong> 按原样返回对象集，或基于某些属性进行基本筛选。</li>
+<li><strong>Search Around 查询：</strong> 接收传入的对象集，并基于传入对象集的某个属性对另一个对象集运行二级筛选。</li>
+<li><strong>聚合查询：</strong> 接收输入对象集，并运行聚合函数（例如 <code>sum</code> 或 <code>avg</code>），作用于集合中所有对象的某个属性。</li>
+<li><strong><a href="https://www.palantir.com/docs/foundry/sql-warehousing/ontology-sql">本体论 SQL 查询</a>：</strong> 使用标准 Spark SQL 语法，直接在对象存储上针对对象类型、关联和接口运行 SQL 查询。</li>
+<li><strong>高级查询：</strong> 其他查询类型未涵盖的任何查询。例如，对整个对象集的嵌入向量应用语义搜索。</li>
+<li><strong>派生属性查询：</strong> 派生属性是在运行时根据对象上其他属性或关联的值计算得出的属性，包括对关联对象的属性进行聚合或选择。派生属性随后可用于进一步操作，例如在同一请求中进行筛选、排序或聚合。</li>
+<li><strong>操作:</strong> 用于替换指定对象集中对象属性值的写回操作。操作的最低开销为 <code>18</code> 计算秒,并随编辑对象的数量而增加,每编辑一个对象将产生额外的 <code>1</code> 计算秒(首个对象除外)。</li>
+<li><strong>本体论计算 (Phonograph) [旧版]:</strong> 针对仍使用 Object Storage v1 (OSv1) 后端的对象执行的查询。这些查询在资源管理应用程序中显示为“本体论计算 (phonograph)”。 <a href="#measuring-compute-with-object-storage-v1-legacy">现有的 OSv1 计算模型</a> 已为这些查询予以保留。</li>
+</ul>
+<p><strong>下表汇总了每种查询类型的最低计算秒开销。</strong></p>
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>查询类型</th><th>最低计算秒开销</th></tr></thead><tbody><tr><td>基础查询</td><td>2</td></tr><tr><td>Search Around 查询</td><td>5</td></tr><tr><td>聚合查询</td><td>5</td></tr><tr><td>本体论 SQL 查询</td><td>5</td></tr><tr><td>高级查询</td><td>10</td></tr><tr><td>派生属性查询</td><td>10</td></tr><tr><td>操作</td><td>18</td></tr><tr><td>本体论计算 (Phonograph) [旧版]</td><td>16</td></tr></tbody></table></div>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>针对 Object Storage v1 (OSv1) 查询的现有计算模型已予以保留。任何针对仍使用 OSv1 后端的对象执行的查询,每次查询的最低开销均为 <code>16</code> 计算秒。</p></div>
+<hr/>
+<h2 data-pagefind-weight="0.9" id="user-content-measuring-foundry-compute-with-ontology-object-queries-legacy" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#measuring-foundry-compute-with-ontology-object-queries-legacy" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>通过本体论对象查询衡量 Foundry 计算 [旧版]</h2>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><div class="ptcom-design__title__19o1cwu">旧版</div><p>以下各节介绍了 2026 年 1 月 1 日之前生效的旧版计算模型。此内容保留以供参考。有关当前计算模型,请参阅上文的 <a href="#ontology-query-compute-2026">本体论查询计算 (2026)</a> 部分。</p></div>
+<p>在旧版模型下，查询本体论按以下方式使用计算秒数：</p>
+<ul>
+<li>用于查询开销的固定最低计算秒数。</li>
+<li>额外的按比例缩放的计算秒数，其数量根据为该查询提供服务所使用的计算量来衡量。</li>
+</ul>
+<h3 data-pagefind-weight="0.8" id="user-content-measuring-compute-with-object-storage-v1-legacy" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#measuring-compute-with-object-storage-v1-legacy" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>使用 Object Storage v1 [Legacy] 衡量计算量</h3>
+<p>Object Storage v1（Phonograph）将数据存储在一个持久且可水平扩展的集群中的一组分布式索引中。在这些索引中，数据存在于大型数据结构内，由本体论查询引擎进行遍历。执行查询时，引擎可以通过遍历索引，避免在搜索过程中处理大量数据。此过程称为“修剪”（pruning）。</p>
+<p>使用此引擎，您可以搜索数十亿条记录，而所需评估的记录数量最多可减少 1000 倍。对一条记录的每次物理评估称为一次“命中”（hit）。Object Storage v1 旨在将每次查询中的命中次数降至最低。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-measuring-compute-with-object-storage-v2-legacy" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#measuring-compute-with-object-storage-v2-legacy" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>使用 Object Storage v2 [Legacy] 衡量计算量</h3>
+<p>对象存储 v2 (OSv2) 以增强的索引格式存储对象，该格式由 Palantir 针对高速索引、Search Arounds 和回写进行了优化，并可平滑地交接给多个计算后端以完成复杂任务。这包括将完全并行化的 Spark 计算作为查询的一部分。</p>
+<p>鉴于对象存储 v2 也使用高效的索引结构，对象存储 v1 中关于 <strong>命中数</strong> 的相同原则同样适用于基本查询。但是，作为查询一部分而启动的按需 Spark 容器也会使用计算秒。</p>
+<p>对对象存储 v2 后端中的对象进行的查询按以下模式使用计算资源：</p>
+<ul>
+<li>每个查询的最低计算秒开销为 <code>16</code> 计算秒，适用于对象存储 v1 后端中的对象。</li>
+<li>每个查询的最低计算秒开销为 <code>4</code> 计算秒，适用于对象存储 v2 后端中的对象。对象存储 v2 的优化结构所需的开销低于对象存储 v1，因此其最低计算秒开销也更低。</li>
+<li>当进程通过查询的剪枝过程执行计算工作时，需要额外的计算秒数。额外的计算秒数会随索引中的对象数量以及查询类型而相应增加。</li>
+<li>在 Object Storage v2 (OSv2) 中，索引剪枝同样需要额外的计算秒数。但是，当在超过 100,000 个对象上运行 search-around，或在单个请求中对超过 10,000 个对象运行写回操作时，OSv2 还支持按需 Spark 集群搜索。这些 Spark 集群的使用量计入方式与平台上所有其他基于 Spark 的应用程序相同。请参阅 <a href="/docs/foundry/resource-management/usage-types/">并行计算文档</a> 以了解详细说明。</li>
+<li>向本体论执行写回的操作具有最低开销。每个操作的计算秒数开销为 <code>18</code>。此外，操作的开销还会随写回请求中编辑的对象数量而增加，对于超出第一个对象的每个被编辑对象，会产生额外的 <code>1</code> 计算秒数。</li>
+<li>通过对象上的函数运行的函数具有最低开销。具体而言，每次函数执行的固定开销为 <code>4</code> 计算秒数。</li>
+</ul>
+<p><strong>下表总结了旧版模型下每种查询类型的最小计算秒数用量。</strong></p>
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>查询类型</th><th>最小计算秒数</th></tr></thead><tbody><tr><td>本体论 V1 查询</td><td>16</td></tr><tr><td>本体论 V2 查询</td><td>4</td></tr><tr><td>对象上的操作</td><td>18</td></tr><tr><td>对象上的函数</td><td>4</td></tr></tbody></table></div>
+<h2 data-pagefind-weight="0.9" id="user-content-understanding-drivers-of-foundry-compute-usage-with-ontology-queries-legacy" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#understanding-drivers-of-foundry-compute-usage-with-ontology-queries-legacy" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>通过本体论查询了解 Foundry 计算用量的驱动因素 [旧版]</h2>
+<ul>
+<li>根据一个非常简单的规则，每个查询的固定计算用量会随查询数量的增加而线性增长。执行的查询越少，总体上使用的计算资源就越少。</li>
+<li>对对象集服务的更复杂查询（例如通用多对象搜索）会针对每个对象类型启动多个子查询。请将搜索限制为单个对象类型，以减少所使用的查询数量。</li>
+<li>对较小对象集的查询使用的计算资源少于对较大对象集的查询，因为查询中的 <strong>命中</strong> 数量与所查询对象集的大小成正比。</li>
+<li>在执行其他操作之前进行预先筛选，可以充分利用高度索引化的后端结构。这将减少查询中的 <strong>命中</strong> 数量，从而降低总体计算用量。这一点在聚合和 Search Around 操作中尤其重要，因为处理筛选后的对象集所需的计算资源少于完整对象集。</li>
+</ul>
+<h2 data-pagefind-weight="0.9" id="user-content-related-resources" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#related-resources" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>相关资源</h2>
+<p>有关编写高效函数和 Automate 配置以最大限度减少计算用量的最佳实践：</p>
+<ul>
+<li><a href="/docs/foundry/functions/optimize-performance/">优化函数性能</a></li>
+<li><a href="/docs/foundry/automate/performance-best-practices/">Automate 性能最佳实践</a></li>
+</ul></div>
+</article>
+</body>
+</html>

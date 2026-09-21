@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>在 Pipeline Builder 中使用 Python 函数</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<div class="ptcom-design__markdownDoc__1uarhel" data-pagefind-body="true"><h1 data-pagefind-weight="1" id="user-content-use-a-python-function-in-pipeline-builder" level="1" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#use-a-python-function-in-pipeline-builder" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>在 Pipeline Builder 中使用 Python 函数</h1>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>Pipeline Builder 同时支持 Java 和 Python 用户定义函数（UDF）。 <a href="/docs/foundry/transforms-java/user-defined-functions/">详细了解 Java UDF</a>。</p></div>
+<h2 data-pagefind-weight="0.9" id="user-content-prerequisites" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#prerequisites" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>前提条件</h2>
+<p>本指南假设您已经编写并发布了一个 Python 函数。请查阅我们的 <a href="/docs/foundry/functions/python-getting-started/">Python 函数入门</a> 文档以获取教程。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-architecture" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#architecture" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>架构</h2>
+<p>Python 函数以 Sidecar 容器的形式在 Pipeline Builder 管道中运行。这意味着该函数无需部署，并且会随管道规模动态伸缩。嵌入式函数可以 <a href="/docs/foundry/pipeline-builder/outputs-preview-pipeline/">预览</a> ，与 Pipeline Builder 中的其他转换类似。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-how-python-functions-process-data" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#how-python-functions-process-data" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Python 函数如何处理数据</h2>
+<p>在 Pipeline Builder 中将 Python 函数用作用户定义函数（UDF）时，该函数会 <strong>每行运行一次</strong>。Pipeline Builder 不会将整个表、 <code>pandas</code> DataFrame 或 Spark DataFrame 传递给您的函数。相反，您需要将一个或多个输入列映射到函数的参数，Pipeline Builder 会为每一行调用该函数，并将该行的单元格值作为参数传递。</p>
+<p>您的函数返回的值将成为输出表中的一个新列，每行生成一个值。因此，Python UDF 返回标量（单值）类型，例如 <code>str</code>、 <code>int</code>、 <code>float</code>、 <code>bool</code>或 <code>datetime</code> 而不是 DataFrame。没有可返回的 DataFrame 类型：管道构建器从每一行的返回值中组装出的列 <em>即为</em> 最终得到的表格输出。</p>
+<p>以下示例将两列作为输入，并为每行返回一个 <code>str</code> 值，管道构建器会将该值写入一个新列：</p>
+<div><div class="ptcom-design__codeTabBar__17fxenc"><button class="ptcom-design__tabButton__17fxenc ptcom-design__isSelected__17fxenc">Python</button></div><div><div class=""><pre><div class="ptcom-design__wrapper__12wpwnx" data-pagefind-weight="0.5"><span class="ptcom-design__clipboard__1l1gb20 ptcom-design__clipboard__12wpwnx"><span class="ptcom-design__confirmation__1l1gb20" data-pagefind-ignore="true">Copied!</span><svg aria-hidden="true" aria-label="clipboard" data-view-component="true" height="16" version="1.1" viewbox="0 0 16 16" width="16"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z" fill="currentColor" fill-rule="evenodd"></path><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z" fill="currentColor" fill-rule="evenodd"></path></svg></span><div style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;overflow:auto;position:relative;margin:0;padding:0.75em"><code style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;float:left;padding-right:10px"><span class="react-syntax-highlighter-line-number">1
+</span><span class="react-syntax-highlighter-line-number">2
+</span><span class="react-syntax-highlighter-line-number">3
+</span><span class="react-syntax-highlighter-line-number">4
+</span><span class="react-syntax-highlighter-line-number">5
+</span></code><code class="language-python" style="white-space:pre;text-align:left;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none">from functions.api import function
+
+@function
+def full_name(first_name: str, last_name: str) -&gt; str:
+    return f"{first_name} {last_name}"</code></div></div></pre></div></div></div>
+<p>当您 <a href="#use-your-function-in-a-pipeline-builder-pipeline">配置该转换时</a>，请将 <code>first_name</code> 和 <code>last_name</code> 参数映射到相应的输入列。当该转换运行时，管道构建器会针对每一行对 <code>full_name</code> 进行求值，并将返回的字符串写入新的输出列。</p>
+<p>如需受支持的输入和输出类型及其对应的 Python 类型的完整列表，请参阅 <a href="/docs/foundry/functions/types-reference/">类型参考</a>。 <a href="/docs/foundry/functions/types-reference/#ontology-types">本体论类型</a> 在该参考中不受管道构建器支持：接受或返回其中一种类型的函数无法导入，也不会出现在可用函数列表中。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-return-a-struct" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#return-a-struct" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>返回结构体</h3>
+<p>要从单个函数返回多个相关值，请返回 <a href="/docs/foundry/functions/types-reference/#structcustom-type">自定义类型（结构体）</a> 而非标量。管道构建器会以单个结构体列的形式添加返回的值，其中自定义类型的每个属性对应一个字段。然后，您可以使用 <a href="/docs/foundry/pipeline-builder/functions-index/#get-struct-field">Get struct field</a> 转换来提取各个字段。</p>
+<div><div class="ptcom-design__codeTabBar__17fxenc"><button class="ptcom-design__tabButton__17fxenc ptcom-design__isSelected__17fxenc">Python</button></div><div><div class=""><pre><div class="ptcom-design__wrapper__12wpwnx" data-pagefind-weight="0.5"><span class="ptcom-design__clipboard__1l1gb20 ptcom-design__clipboard__12wpwnx"><span class="ptcom-design__confirmation__1l1gb20" data-pagefind-ignore="true">Copied!</span><svg aria-hidden="true" aria-label="clipboard" data-view-component="true" height="16" version="1.1" viewbox="0 0 16 16" width="16"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z" fill="currentColor" fill-rule="evenodd"></path><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z" fill="currentColor" fill-rule="evenodd"></path></svg></span><div style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;overflow:auto;position:relative;margin:0;padding:0.75em"><code style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;float:left;padding-right:10px"><span class="react-syntax-highlighter-line-number">1
+</span><span class="react-syntax-highlighter-line-number">2
+</span><span class="react-syntax-highlighter-line-number">3
+</span><span class="react-syntax-highlighter-line-number">4
+</span><span class="react-syntax-highlighter-line-number">5
+</span><span class="react-syntax-highlighter-line-number">6
+</span><span class="react-syntax-highlighter-line-number">7
+</span><span class="react-syntax-highlighter-line-number">8
+</span><span class="react-syntax-highlighter-line-number">9
+</span><span class="react-syntax-highlighter-line-number">10
+</span><span class="react-syntax-highlighter-line-number">11
+</span><span class="react-syntax-highlighter-line-number">12
+</span></code><code class="language-python" style="white-space:pre;text-align:left;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none">from dataclasses import dataclass
+from functions.api import function, Double
+
+@dataclass
+class Stats:
+    total: Double
+    average: Double
+
+@function
+def compute_stats(a: Double, b: Double) -&gt; Stats:
+    total = a + b
+    return Stats(total=total, average=total / 2)</code></div></div></pre></div></div></div>
+<h2 data-pagefind-weight="0.9" id="user-content-use-your-function-in-a-pipeline-builder-pipeline" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#use-your-function-in-a-pipeline-builder-pipeline" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>在 Pipeline Builder 管道中使用您的函数</h2>
+<p>请按照以下步骤在您的管道中准备并配置 Python 函数：</p>
+<ol>
+<li>打开您想要在其中使用 Python 函数的 Pipeline Builder 管道。</li>
+</ol>
+<img alt="A Python function in Pipeline Builder." node="[object Object]" src="/docs/resources/foundry/functions/python-functions-builder.png?width=800px" style="aspect-ratio:1270 / 881" width="800px"/>
+<ol start="2">
+<li>使用以下两种方法之一将您的 UDF 导入 Pipeline Builder：
+<ul>
+<li><strong>在图视图中：</strong>
+<ol>
+<li>选择 <strong>Reusables</strong> （位于管道图上部），然后选择 <strong>用户定义的函数</strong>。 <br/><br/>
+<img alt="The 'Reusables' button in Pipeline Builder." node="[object Object]" src="/docs/resources/foundry/functions/python-functions-builder-reusable.png?width=500px" style="aspect-ratio:480 / 295" width="500px"/>
+<br/><br/>
+2. 选择 <strong>导入 UDF</strong> ，然后在可用函数中搜索，找到您想要使用的函数
+3. 选择 <strong>添加</strong> （位于函数名称旁）。该函数随后应显示一个 <strong>已导入</strong> 标签。<br/><br/> <img alt="Add Python function to Pipeline Builder." node="[object Object]" src="/docs/resources/foundry/functions/python-functions-add-builder.png?width=700px" style="aspect-ratio:849 / 550" width="700px"/> <br/><br/>
+4. 关闭导入对话框，然后选择 <strong>转换</strong> （位于您的 Pipeline Builder 图中您想要使用该函数的位置）。
+5. 从转换列表中，找到 <strong>UDFs</strong> 标签页（位于左侧），以查看您导入的函数。</li>
+</ol>
+</li>
+<li><strong>使用转换选择器：</strong>
+<ol>
+<li>选择 <strong>转换</strong> （位于 Pipeline Builder 图上）。</li>
+<li>输入您想要导入的 UDF 的名称。 <br/><br/>
+<img alt="Search unimported UDFs in Pipeline Builder." node="[object Object]" src="/docs/resources/foundry/functions/python-functions-builder-search-udfs.png?width=500px" style="aspect-ratio:1456 / 662" width="500px"/>
+<br/><br/>
+3. 选择 <strong>搜索未导入的 UDF</strong>。
+4. 将鼠标悬停在所需的 UDF 上，然后选择 <strong>导入</strong>。 <br/><br/> <img alt="Import UDFs in Pipeline Builder." node="[object Object]" src="/docs/resources/foundry/functions/python-functions-builder-import-udfs.png?width=500px" style="aspect-ratio:1602 / 756" width="500px"/> <br/><br/></li>
+</ol>
+</li>
+</ul>
+</li>
+<li>填写转换定义，指定输入列和参数，然后选择 <strong>应用</strong>。</li>
+</ol>
+<img alt="Configured Python function transform in Pipeline Builder." node="[object Object]" src="/docs/resources/foundry/functions/python-functions-builder-transform.png?width=700px" style="aspect-ratio:876 / 325" width="700px"/>
+<p>现在,您应该可以在 Pipeline Builder 图表中看到您的 Python 函数,并可以预览该函数的输出。</p>
+<img alt="Python function in Pipeline Builder" node="[object Object]" src="/docs/resources/foundry/functions/python-functions-builder-ete.png?width=900px" style="aspect-ratio:1293 / 991" width="900px"/>
+<h2 data-pagefind-weight="0.9" id="user-content-external-api-calls-in-pipeline-builder" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#external-api-calls-in-pipeline-builder" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>在 Pipeline Builder 中进行外部 API 调用</h2>
+<p>要从 Pipeline Builder 向外部系统进行 API 调用,您可以发布一个 <a href="/docs/foundry/functions/api-calls/">可访问外部系统的 Python 函数</a>。这将使您能够编写与外部系统通信的逻辑,并将其用作管道的一部分。</p>
+<p>要在 Pipeline Builder 中用作用户自定义函数 (UDF),函数中使用的所有数据源都必须配置为可导入到管道中。要配置此设置,请在 Data Connection 中导航到该数据源,然后转到 <strong>连接设置 &gt; 代码导入配置</strong> 选项卡:</p>
+<p><img alt="Allow source to be imported to pipelines." height="600" node="[object Object]" src="/docs/resources/foundry/functions/allow-source-to-be-imported-to-pipelines.png" style="aspect-ratio:808 / 666" width="727.927927927928"/></p>
+<p>在该数据源上启用此选项并发布 Python 函数后,即可像使用任何其他 Python 函数一样在管道中使用该函数。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-ontology-access-in-pipeline-builder" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#ontology-access-in-pipeline-builder" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>在 Pipeline Builder 中访问本体论</h2>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>Pipeline Builder UDF 不支持通过 <code>FoundryClient()</code> 或本体论 SDK (OSDK) 直接访问本体论。实例化 <code>FoundryClient()</code> 并从 UDF 访问本体论将返回 <code>EnvironmentNotConfigured</code> 错误。此限制有助于防止数据在构建之间被取消标记或泄露。</p></div>
+<p>要从 Pipeline Builder UDF 访问本体论数据，请考虑以下方法：</p>
+<ul>
+<li><strong>使用外部源：</strong> 为执行本体论查询的 Python 函数创建一个外部源，然后将该源导入到您的 Pipeline Builder UDF 中。这样可以避免在 UDF 上下文中直接进行本体论查询所带来的身份验证和权限问题。要配置该源，请在 Data Connection 中导航到该源并启用 <strong>连接设置 &gt; 代码导入配置</strong> 如 <a href="#external-api-calls-in-pipeline-builder">上文所述</a>。</li>
+<li><strong>联接本体论支撑的数据集：</strong> 如果您的使用场景允许，请维护一个单独的数据集来保存相关的本体论支撑数据，并将其联接到您的管道中。这样可以避免调用本体论 API，并支持去重或存在性检查。</li>
+</ul></div>
+</article>
+</body>
+</html>

@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>使用 Palantir 提供的模型创建语义搜索工作流</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<div class="ptcom-design__markdownDoc__1uarhel" data-pagefind-body="true"><h1 data-pagefind-weight="1" id="user-content-use-palantir-provided-models-to-create-a-semantic-search-workflow" level="1" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#use-palantir-provided-models-to-create-a-semantic-search-workflow" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>使用 Palantir 提供的模型创建语义搜索工作流</h1>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>要使用 Palantir 提供的语言模型， <a href="/docs/foundry/aip/enable-aip-features/">必须先在您的租户中启用 AIP</a>。此外，您还必须拥有使用 <a href="/docs/foundry/platform-overview/aip-capabilities/">AIP 开发者功能</a>的权限。使用自定义模型？请改为查看 <a href="/docs/foundry/ontology/using-custom-models-to-create-a-semantic-search-workflow/">使用自定义模型创建语义搜索工作流</a> 。</p></div>
+<p>本页介绍了构建概念性端到端语义搜索工作流的过程，其中使用了 <a href="/docs/foundry/aip/supported-llms/">Palantir 提供的嵌入模型</a>。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-instructions" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#instructions" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>操作说明</h2>
+<p>首先，您需要生成嵌入向量，并将其存储在具有 <a href="/docs/foundry/object-link-types/property-metadata/#property-base-types-with-limited-support"><code>vector</code> 类型</a>的对象类型中。然后，您可以在 <a href="/docs/foundry/workshop/overview/">Workshop</a>中设置语义搜索工作流，构建一个 <a href="/docs/foundry/workshop/widgets-aip-chatbot/">AIP Chatbot Workshop 小部件</a> 解决方案，或创建一个自定义语义搜索函数，用于 <a href="/docs/foundry/workshop/overview/">Workshop</a> 和 <a href="/docs/foundry/logic/overview/">AIP Logic</a>。</p>
+<p>前提条件：</p>
+<ul>
+<li><a href="#generate-embeddings-and-create-object-type">生成嵌入向量并创建对象类型</a></li>
+</ul>
+<p>选项：</p>
+<ul>
+<li><a href="#create-a-simple-semantic-search-workflow-within-workshop-using-a-knn-object-set-no-code">在 Workshop 中使用 KNN 对象集创建简单的语义搜索工作流（无代码）</a></li>
+<li><a href="#use-aip-chatbot-no-code">使 AIP Chatbot 能够对对象进行语义搜索（无代码）</a></li>
+<li><a href="#create-a-function-to-semantically-search-across-objects-for-use-in-workshop-andor-aip-logic">创建一个跨对象进行语义搜索的函数，供 Workshop 和/或 AIP Logic 使用</a></li>
+</ul>
+<h2 data-pagefind-weight="0.9" id="user-content-generate-embeddings-and-create-object-type" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#generate-embeddings-and-create-object-type" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>生成嵌入向量并创建对象类型</h2>
+<p>我们将使用 <a href="/docs/foundry/pipeline-builder/overview/">Pipeline Builder</a> 将数据集中的文本嵌入为向量，其中会用到 <a href="/docs/foundry/pipeline-builder/pipeline-builder-aip/#text-to-embeddings"><strong>Text to Embeddings</strong> 表达式</a>。该表达式接受一个字符串，并使用 Palantir 提供的模型之一将其转换为向量；在本例中，这是 <code>text-embedding-ada-002</code> 嵌入模型。</p>
+<p><img alt="Text to Embedding" height="354" node="[object Object]" src="/docs/resources/foundry/ontology/text-to-embedding.png" style="aspect-ratio:1936 / 354" width="1936"/></p>
+<p>然后可以将这些嵌入作为向量属性添加到本体论中。</p>
+<p><img alt="Configuring a vector property in a Pipeline Builder output object property" height="572" node="[object Object]" src="/docs/resources/foundry/ontology/embeddings-as-pipeline-builder-output-object-property.png" style="aspect-ratio:1494 / 572" width="1494"/></p>
+<p>如果您希望更好地控制使用 Palantir 提供的模型生成嵌入的过程，请参阅 <a href="/docs/foundry/transforms-python-spark/palantir-provided-models/#embeddings">Python 转换中的语言模型</a>。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-create-a-simple-semantic-search-workflow-within-workshop-using-a-knn-object-set-no-code" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#create-a-simple-semantic-search-workflow-within-workshop-using-a-knn-object-set-no-code" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>使用 KNN 对象集在 Workshop 中创建简单的语义搜索工作流（无代码）</h2>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>KNN 对象集无法按相关性排序。如果需要有序的结果，请使用 <a href="#create-a-function-to-semantically-search-across-objects-for-use-in-workshop-andor-aip-logic">函数方法</a> （搭配 TypeScript v1 或 TypeScript v2）。两个版本均支持按相关性排序。</p></div>
+<p>配置 <a href="/docs/foundry/functions/api-object-sets/#k-nearest-neighbors-knn">KNN 对象集</a> （在 <a href="/docs/foundry/workshop/overview/">Workshop</a> 中）是构建语义搜索工作流的一种简单无代码方式。</p>
+<ol>
+<li>创建一个对象集 <a href="/docs/foundry/workshop/concepts-variables/">变量</a> ，并选择包含嵌入属性的对象类型。</li>
+<li>选择筛选器 <code>+ On a property</code> 选项，然后从菜单中的属性列表中选择您的嵌入属性。</li>
+<li>选中后，应会出现 K 近邻配置。如果未出现此配置，请确认您选择的属性是嵌入属性。</li>
+</ol>
+<p><img alt="Workshop KNN config" height="600" node="[object Object]" src="/docs/resources/foundry/ontology/knn-config-workshop.png" style="aspect-ratio:792 / 1066" width="445.77861163227016"/></p>
+<p>在此面板中，您可以配置：</p>
+<ul>
+<li><strong>K 值：</strong> 一个介于 1-100 之间的数字，用于指定语义搜索返回的对象数量。</li>
+<li><strong>查询：</strong> 执行语义搜索时用作查询的字符串变量。</li>
+</ul>
+<ol start="4">
+<li>接下来，创建一个 <a href="/docs/foundry/workshop/widgets-text-input/">文本输入</a> 小部件，并将其输出变量添加到上文所示的 KNN 查询选项中。</li>
+<li>最后，添加一个 <a href="/docs/foundry/workshop/widgets-object-table/">对象表</a> 小部件，并将其输入变量配置为新创建的 <a href="/docs/foundry/functions/api-object-sets/#k-nearest-neighbors-knn">KNN 对象集</a>。</li>
+</ol>
+<p><img alt="Workshop KNN semantic search" height="600" node="[object Object]" src="/docs/resources/foundry/ontology/knn-workshop-semantic.png" style="aspect-ratio:1194 / 982" width="729.5315682281059"/></p>
+<p>如需自定义程度更高的语义搜索逻辑，请参阅 <a href="#create-a-function-to-semantically-search-across-objects-for-use-in-workshop-andor-aip-logic">关于函数的章节</a>。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-use-aip-chatbot-no-code" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#use-aip-chatbot-no-code" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>使用 AIP Chatbot（无代码）</h2>
+<p>在 <a href="/docs/foundry/chatbot-studio/overview/">AIP Chatbot Studio</a> 中创建的 AIP Chatbot（前身为 AIP Agents）非常适合开始对您的对象进行语义搜索，因为它们不需要任何代码。详细了解 <a href="#create-a-function-to-semantically-search-across-objects-for-use-in-workshop-andor-aip-logic">如何整合语义搜索并对功能进行更多控制</a>。</p>
+<p>请按照 <a href="/docs/foundry/chatbot-studio/getting-started/">入门</a> 指南中的说明创建一个 AIP Chatbot，并添加 <a href="/docs/foundry/chatbot-studio/retrieval-context/#ontology-context">本体论上下文</a> 或一个 <strong>本体论语义搜索</strong> <a href="/docs/foundry/chatbot-studio/tools/#types-of-tools">工具</a>。此初始设置将使您能够要求 AIP Chatbot 对对象进行语义搜索。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-create-a-function-to-semantically-search-across-objects-for-use-in-workshop-andor-aip-logic" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#create-a-function-to-semantically-search-across-objects-for-use-in-workshop-andor-aip-logic" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>创建一个函数来跨对象进行语义搜索，以供 Workshop 和/或 AIP Logic 使用</h2>
+<p>创建一个 <a href="/docs/foundry/functions/getting-started/">函数仓库</a> 以及一个用于查询您的对象类型的函数。目标是获取用户输入并运行 <a href="/docs/foundry/functions/api-object-sets/#k-nearest-neighbors-knn">KNN 搜索</a> 在对象类型上。在 TypeScript v1 中，首先使用同一个 Palantir 提供的模型生成向量 <a href="#generate-embeddings-and-create-object-type">先前使用的</a>。要了解如何将 Palantir 提供的模型导入 TypeScript v1 函数，请参阅 <a href="/docs/foundry/functions/language-models/#embeddings">TypeScript v1 函数中的语言模型</a>。TypeScript v2 和 Python 接受文本形式的查询，如下所述。</p>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><div class="ptcom-design__title__19o1cwu">为函数启用向量属性</div><p>在继续操作之前，请确保该条目 <code>"enableVectorProperties": true</code> 存在于 <code>functions.json</code> 文件中，该文件位于你的 Functions 代码仓库中。如果此条目不存在，请将其添加到 <code>functions.json</code> 并提交该更改以继续。如果需要进一步的帮助，请联系你的 Palantir 代表。</p><p>该 <code>functions.json</code> 配置文件是 TypeScript v1 仓库的工件。对于 TypeScript v2 或 Python 仓库，文档中并未记录等效的向量属性设置，因此请勿假定此条目对它们同样适用。如果在 TypeScript v2 或 Python 仓库中 KNN 搜索失败，请联系你的 Palantir 代表。</p></div>
+<h3 data-pagefind-weight="0.8" id="user-content-example-semantic-search-function" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#example-semantic-search-function" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>语义搜索函数示例</h3>
+<p>本节中的代码示例适用于 <a href="/docs/foundry/functions/typescript-v1-getting-started/">TypeScript v1</a>、 <a href="/docs/foundry/functions/typescript-v2-getting-started/">TypeScript v2</a>和 Python 函数；请选择与你的函数版本相匹配的选项卡。TypeScript v1 将每个函数定义为导出类上的方法，并将 <code>@Function()</code> 装饰器（来自 <code>@foundry/functions-api</code> ）应用于该方法，并查询本体论，通过 <code>Objects.search()</code>。TypeScript v2 使用 <code>export default</code>来定义函数，从 <code>@osdk/functions</code>导入类型，并通过作为参数传入的 <a href="/docs/foundry/ontology-sdk/typescript-osdk/">Ontology SDK</a> 客户端来查询本体论。Python 使用 <code>@function</code> 装饰器，并在函数体内构造 Ontology SDK 客户端。如需完整对比，请查阅 <a href="/docs/foundry/functions/language-feature-support/#typescript-v1-vs-typescript-v2">TypeScript v1 与 TypeScript v2 的对比</a>。</p>
+<p>这三个版本的区别在于查询嵌入向量在何处生成，以及函数必须在何处定义：</p>
+<ul>
+<li><strong>TypeScript v1</strong> 使用 Palantir 提供的嵌入模型对查询本身进行嵌入，然后将得到的向量传递给 <code>nearestNeighbors</code>。该函数是导出类中的一个方法，按照惯例定义在 <code>functions-typescript/src/index.ts</code>中。</li>
+<li><strong>TypeScript v2</strong> 将用户文本直接传递给 <code>nearestNeighbors</code>，它既可以接受查询向量，也可以接受查询文本。无需单独进行嵌入调用，因此两步工作流程合并为一步。该函数必须是 <code>typescript-functions/src/functions</code> 目录中某个文件的默认导出，且文件名必须与函数名一致；请查阅 <a href="/docs/foundry/functions/typescript-v2-getting-started/#write-a-function">编写函数</a> 以了解完整要求。</li>
+<li><strong>Python</strong> 同样通过 <a href="/docs/foundry/ontology-sdk/python-osdk-migration/#nearest-neighbor-object-set-filtering"><code>nearest_neighbors</code></a>以文本形式接受查询。该方法是一项 Beta 功能，因此函数使用 <code>@function(beta=True)</code>进行声明。</li>
+</ul>
+<p>将嵌入作为单独的步骤来生成，正如 TypeScript v1 示例中使用 <code>TextEmbeddingAda_002.createEmbeddings</code>，没有文档记录的 TypeScript v2 等效实现。此工作流无需该实现，因为查询文本会在 KNN 搜索过程中被嵌入。若要出于其他目的在 TypeScript v2 或 Python 函数中直接调用 Palantir 提供的模型，请参阅 <a href="/docs/foundry/functions/language-models-python-tsv2/">TypeScript v2 和 Python 函数中的语言模型</a>。</p>
+<p>不同 TypeScript 版本之间的邻居数量限制有所不同。TypeScript v1 将 k 值限制在 <code>0 &lt; K &lt;= 100</code>，而 TypeScript v2 的 <code>numNeighbors</code> 参数接受的值范围为 <code>1</code> 到 <code>500</code>。</p>
+<p>TypeScript v1 使用单独的 <code>.orderByRelevance()</code> 调用来对匹配结果进行排序，然后取前 k 个结果。TypeScript v2 通过将 <code>$orderBy: "relevance"</code> 传递给 <code>fetchPage()</code>来请求按相关性排序。Python 没有文档记录的等效实现；取而代之的是，结果由传递给搜索的邻居数量来限定。Python <a href="/docs/foundry/ontology-sdk/python-osdk-migration/#nearest-neighbor-object-set-filtering"><code>nearest_neighbors</code></a> 方法返回的对象还带有 <code>_score</code> 字段。</p>
+<p>下方的 TypeScript v2 和 Python 示例接受与 TypeScript v1 示例相同的查询文本和邻居数量，并返回最近的对象。此外，TypeScript v2 函数还会接收一个本体论 SDK 客户端作为其第一个参数。</p>
+<p>在下方每个代码片段中，将每一处 <code>ObjectApiName</code> 都替换为您独有的对象类型。该标识符有时可能显示为 <code>objectApiName</code> ，且首字母为小写。</p>
+<div><div class="ptcom-design__codeTabBar__17fxenc"><button class="ptcom-design__tabButton__17fxenc ptcom-design__isSelected__17fxenc">TypeScript v1</button><button class="ptcom-design__tabButton__17fxenc">TypeScript v2</button><button class="ptcom-design__tabButton__17fxenc">Python</button></div><div><div class=""><pre><div class="ptcom-design__wrapper__12wpwnx" data-pagefind-weight="0.5"><span class="ptcom-design__clipboard__1l1gb20 ptcom-design__clipboard__12wpwnx"><span class="ptcom-design__confirmation__1l1gb20" data-pagefind-ignore="true">Copied!</span><svg aria-hidden="true" aria-label="clipboard" data-view-component="true" height="16" version="1.1" viewbox="0 0 16 16" width="16"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z" fill="currentColor" fill-rule="evenodd"></path><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z" fill="currentColor" fill-rule="evenodd"></path></svg></span><div style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;overflow:auto;position:relative;margin:0;padding:0.75em"><code style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;float:left;padding-right:10px"><span class="react-syntax-highlighter-line-number">1
+</span><span class="react-syntax-highlighter-line-number">2
+</span><span class="react-syntax-highlighter-line-number">3
+</span><span class="react-syntax-highlighter-line-number">4
+</span><span class="react-syntax-highlighter-line-number">5
+</span><span class="react-syntax-highlighter-line-number">6
+</span><span class="react-syntax-highlighter-line-number">7
+</span><span class="react-syntax-highlighter-line-number">8
+</span><span class="react-syntax-highlighter-line-number">9
+</span><span class="react-syntax-highlighter-line-number">10
+</span><span class="react-syntax-highlighter-line-number">11
+</span><span class="react-syntax-highlighter-line-number">12
+</span><span class="react-syntax-highlighter-line-number">13
+</span><span class="react-syntax-highlighter-line-number">14
+</span><span class="react-syntax-highlighter-line-number">15
+</span><span class="react-syntax-highlighter-line-number">16
+</span><span class="react-syntax-highlighter-line-number">17
+</span><span class="react-syntax-highlighter-line-number">18
+</span><span class="react-syntax-highlighter-line-number">19
+</span><span class="react-syntax-highlighter-line-number">20
+</span><span class="react-syntax-highlighter-line-number">21
+</span><span class="react-syntax-highlighter-line-number">22
+</span></code><code class="language-typescript" style="white-space:pre;text-align:left;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none">import { Function, Integer } from "@foundry/functions-api";
+import { Objects, ObjectApiName } from "@foundry/ontology-api";
+import { TextEmbeddingAda_002 } from "@foundry/models-api/language-models"
+
+export class MyFunctions {
+    @Function()
+    public async findRelevantObjects(
+        query: string,
+        kValue: Integer,
+    ): Promise&lt;ObjectApiName[]&gt; {
+        if (query.length &lt; 1) {
+            return []
+        }
+        const embedding = await TextEmbeddingAda_002.createEmbeddings({inputs: [query]}).then(r =&gt; r.embeddings[0]);
+
+        return Objects.search()
+                    .objectApiName()
+                    .nearestNeighbors(obj =&gt; obj.embeddings.near(embedding, {kValue: kValue}))
+                    .orderByRelevance()
+                    .take(kValue);
+    }
+}</code></div></div></pre></div><div class="ptcom-design__isHidden__17fxenc"><pre><div class="ptcom-design__wrapper__12wpwnx" data-pagefind-weight="0.5"><span class="ptcom-design__clipboard__1l1gb20 ptcom-design__clipboard__12wpwnx"><span class="ptcom-design__confirmation__1l1gb20" data-pagefind-ignore="true">Copied!</span><svg aria-hidden="true" aria-label="clipboard" data-view-component="true" height="16" version="1.1" viewbox="0 0 16 16" width="16"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z" fill="currentColor" fill-rule="evenodd"></path><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z" fill="currentColor" fill-rule="evenodd"></path></svg></span><div style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;overflow:auto;position:relative;margin:0;padding:0.75em"><code style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;float:left;padding-right:10px"><span class="react-syntax-highlighter-line-number">1
+</span><span class="react-syntax-highlighter-line-number">2
+</span><span class="react-syntax-highlighter-line-number">3
+</span><span class="react-syntax-highlighter-line-number">4
+</span><span class="react-syntax-highlighter-line-number">5
+</span><span class="react-syntax-highlighter-line-number">6
+</span><span class="react-syntax-highlighter-line-number">7
+</span><span class="react-syntax-highlighter-line-number">8
+</span><span class="react-syntax-highlighter-line-number">9
+</span><span class="react-syntax-highlighter-line-number">10
+</span><span class="react-syntax-highlighter-line-number">11
+</span><span class="react-syntax-highlighter-line-number">12
+</span><span class="react-syntax-highlighter-line-number">13
+</span><span class="react-syntax-highlighter-line-number">14
+</span><span class="react-syntax-highlighter-line-number">15
+</span><span class="react-syntax-highlighter-line-number">16
+</span><span class="react-syntax-highlighter-line-number">17
+</span><span class="react-syntax-highlighter-line-number">18
+</span><span class="react-syntax-highlighter-line-number">19
+</span><span class="react-syntax-highlighter-line-number">20
+</span></code><code class="language-typescript" style="white-space:pre;text-align:left;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none">import { Client, Osdk } from "@osdk/client";
+import { Integer } from "@osdk/functions";
+import { ObjectApiName } from "@ontology/sdk";
+
+export default async function findRelevantObjects(
+    client: Client,
+    query: string,
+    kValue: Integer,
+): Promise&lt;Osdk.Instance&lt;ObjectApiName&gt;[]&gt; {
+    if (query.length &lt; 1) {
+        return [];
+    }
+
+    // nearestNeighbors embeds the query text, so no separate embedding call is needed.
+    const page = await client(ObjectApiName)
+        .nearestNeighbors(query, kValue, "embeddings")
+        .fetchPage({ $pageSize: kValue, $orderBy: "relevance" });
+
+    return page.data;
+}</code></div></div></pre></div><div class="ptcom-design__isHidden__17fxenc"><pre><div class="ptcom-design__wrapper__12wpwnx" data-pagefind-weight="0.5"><span class="ptcom-design__clipboard__1l1gb20 ptcom-design__clipboard__12wpwnx"><span class="ptcom-design__confirmation__1l1gb20" data-pagefind-ignore="true">Copied!</span><svg aria-hidden="true" aria-label="clipboard" data-view-component="true" height="16" version="1.1" viewbox="0 0 16 16" width="16"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z" fill="currentColor" fill-rule="evenodd"></path><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z" fill="currentColor" fill-rule="evenodd"></path></svg></span><div style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;overflow:auto;position:relative;margin:0;padding:0.75em"><code style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;float:left;padding-right:10px"><span class="react-syntax-highlighter-line-number">1
+</span><span class="react-syntax-highlighter-line-number">2
+</span><span class="react-syntax-highlighter-line-number">3
+</span><span class="react-syntax-highlighter-line-number">4
+</span><span class="react-syntax-highlighter-line-number">5
+</span><span class="react-syntax-highlighter-line-number">6
+</span><span class="react-syntax-highlighter-line-number">7
+</span><span class="react-syntax-highlighter-line-number">8
+</span><span class="react-syntax-highlighter-line-number">9
+</span><span class="react-syntax-highlighter-line-number">10
+</span><span class="react-syntax-highlighter-line-number">11
+</span><span class="react-syntax-highlighter-line-number">12
+</span><span class="react-syntax-highlighter-line-number">13
+</span><span class="react-syntax-highlighter-line-number">14
+</span><span class="react-syntax-highlighter-line-number">15
+</span><span class="react-syntax-highlighter-line-number">16
+</span><span class="react-syntax-highlighter-line-number">17
+</span><span class="react-syntax-highlighter-line-number">18
+</span><span class="react-syntax-highlighter-line-number">19
+</span></code><code class="language-python" style="white-space:pre;text-align:left;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none">from functions.api import function, Integer
+from ontology_sdk import FoundryClient
+from ontology_sdk.ontology.objects import ObjectApiName
+
+
+@function(beta=True)
+def find_relevant_objects(query: str, k_value: Integer) -&gt; list[ObjectApiName]:
+    if len(query) &lt; 1:
+        return []
+
+    client = FoundryClient()
+    # nearest_neighbors embeds the query text, so no separate embedding call is needed.
+    return list(
+        client.ontology.objects.ObjectApiName.nearest_neighbors(
+            query=query,
+            num_neighbors=k_value,
+            vector_property=ObjectApiName.object_type.embeddings,
+        )
+    )</code></div></div></pre></div></div></div>
+<p>至此，我们已经有了一个可以运行语义搜索、用自然语言查询对象的函数。请记得 <a href="/docs/foundry/functions/getting-started/#publish-your-functions">发布该函数</a> ，以便该函数可以在 Foundry 中的任何地方使用。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-use-semantic-search-functions-in-workshop" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#use-semantic-search-functions-in-workshop" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>在 Workshop 中使用语义搜索函数</h3>
+<ol>
+<li>首先 <a href="/docs/foundry/workshop/getting-started/">创建一个 Workshop 应用程序</a>。</li>
+<li>添加一个 <a href="/docs/foundry/workshop/widgets-text-input/">文本输入小组件</a>，它将被用作已发布的 KNN 文档获取函数的输入。</li>
+<li>添加一个 <a href="/docs/foundry/workshop/widgets-object-list/">对象列表小组件</a> ，其输入为 <a href="/docs/foundry/workshop/functions-use/#function-backed-variables-in-workshop">由该函数生成的对象集</a> 和所选输入，如下所示：</li>
+</ol>
+<img alt="KNN Function to generate object set" node="[object Object]" src="/docs/resources/foundry/ontology/semantic-search-workshop-function.png?width=450" style="aspect-ratio:1204 / 716" width="450"/>
+<ol start="4">
+<li>将邻居数量（<code>kValue</code> 在 TypeScript 中， <code>k_value</code> 在 Python 中）设置为您想要返回的结果数量，但须遵守上述限制。此外，TypeScript v1 还须遵守 <a href="/docs/foundry/functions/api-object-sets/#k-nearest-neighbors-knn">指定的限制</a>。</li>
+</ol>
+<h3 data-pagefind-weight="0.8" id="user-content-use-semantic-search-functions-in-aip-logic" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#use-semantic-search-functions-in-aip-logic" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>在 AIP Logic 中使用语义搜索函数</h3>
+<p>将已发布的函数作为 <a href="/docs/foundry/logic/getting-started/#use-a-logic-function">工具</a> 添加到 AIP Logic 中。通过类似以下的提示词来指示语言模型使用该工具：</p>
+<blockquote>
+<p>使用 findRelevantObjects 工具，并将 <code>kValue</code> 设置为 5，以查找最相关的对象。请记住，在使用该工具时要在 query 周围添加引号。</p>
+</blockquote></div>
+</article>
+</body>
+</html>

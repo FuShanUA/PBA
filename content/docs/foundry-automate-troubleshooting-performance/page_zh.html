@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>自动化性能故障排查</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<div class="ptcom-design__markdownDoc__1uarhel" data-pagefind-body="true"><h1 data-pagefind-weight="1" id="user-content-troubleshooting-automation-performance" level="1" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#troubleshooting-automation-performance" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>自动化性能故障排查</h1>
+<p>本指南帮助您识别意外性能问题的根本原因并提供解决方案。本页面介绍了常见的性能峰值模式、系统化的诊断流程，以及降低资源消耗的即时缓解措施。</p>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>如需有关设计高效自动化的前瞻性指导，请参阅 <a href="/docs/foundry/automate/performance-best-practices/">性能最佳实践</a>。</p></div>
+<h2 data-pagefind-weight="0.9" id="user-content-common-performance-spike-patterns" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#common-performance-spike-patterns" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>常见的性能峰值模式</h2>
+<p>以下是常见模式，可帮助您识别和诊断自动化性能问题。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-pattern-1-active-automation-on-frequently-updating-objects" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#pattern-1-active-automation-on-frequently-updating-objects" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>模式 1：针对频繁更新对象的活跃自动化</h3>
+<p><strong>症状：</strong> 该自动化在短时间内运行了多次，产生了意外的资源消耗。例如，包含大量对象更新的自动化可能会产生多次自动化运行，而每次运行都可能触发下游影响。</p>
+<p><strong>根本原因：</strong> 某个对象类型更新非常频繁，而该自动化配置了“对象更新时”条件，且未设置基于时间的上限。这种情况通常发生在先前暂停的自动化被取消暂停时。</p>
+<p><strong>修复方法：</strong></p>
+<ol>
+<li>立即暂停该自动化，以停止后续执行。</li>
+<li>添加具有适当间隔的基于时间的条件，以限制执行频率。</li>
+<li>请验证 <strong>单次执行</strong> 模式已启用。</li>
+<li>恢复该自动化，并在接下来的一天内密切监控执行次数。</li>
+</ol>
+<h3 data-pagefind-weight="0.8" id="user-content-pattern-2-chained-automations-snowball" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#pattern-2-chained-automations-snowball" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>模式 2：链式自动化滚雪球式增长</h3>
+<p><strong>症状：</strong> 多个自动化按顺序运行,执行次数呈指数级增长。</p>
+<p><strong>根本原因:</strong> 自动化形成了一条链,每个自动化编辑对象时会触发序列中的下一个自动化:</p>
+<ul>
+<li><code>Automation A</code> 编辑对象</li>
+<li>这些编辑会触发 <code>Automation B</code>,它会分别处理每个对象</li>
+<li><code>Automation B</code> 编辑更多对象,触发 <code>Automation C</code></li>
+<li>这种乘数效应会将初始更新转化为呈指数级增长的执行次数</li>
+</ul>
+<p><strong>如何修复:</strong></p>
+<ol>
+<li>暂停链中所有下游自动化。</li>
+<li>评估是否可以将逻辑合并到更少的自动化中。</li>
+<li>确保剩余的所有自动化都使用批量处理(ObjectSet 输入和 <strong>单次执行</strong> 模式)。</li>
+<li>每次重新启用一个自动化,并在每次启用后监控执行次数。</li>
+</ol>
+<h3 data-pagefind-weight="0.8" id="user-content-pattern-3-inefficient-function-operations" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#pattern-3-inefficient-function-operations" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>模式 3:函数操作效率低下</h3>
+<p><strong>症状:</strong> 函数执行时间较长,且资源消耗随对象数量增长的扩展性很差。</p>
+<p><strong>根本原因:</strong> 函数中包含循环,每次迭代都查询一次本体论,而不是批量处理对象。</p>
+<p><strong>如何修复:</strong></p>
+<ol>
+<li>检查函数代码中是否存在内部包含本体论查询的循环。</li>
+<li>进行重构,预先加载所有所需对象或使用后端聚合。</li>
+<li>在可能的情况下,将操作输入更改为接受 ObjectSet 而不是单个对象。</li>
+</ol>
+<p>如需全面的函数优化指南,请参阅 <a href="/docs/foundry/functions/optimize-performance/">优化函数性能</a>。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-pattern-4-function-self-calling-loop" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#pattern-4-function-self-calling-loop" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>模式 4:函数自调用循环</h3>
+<p><strong>症状:</strong> 单个函数被调用多次,通常是递归调用。</p>
+<p><strong>根本原因：</strong> 一个函数编辑对象，而这些编辑会触发调用该函数的同一个自动化，从而形成循环。如果没有防护措施，这种情况可能会持续发生，直到被手动停止。</p>
+<p><strong>如何修复：</strong></p>
+<ol>
+<li>为对象添加状态标志或时间戳，以防止重复处理。</li>
+<li>添加条件逻辑，在进行编辑之前检查是否需要处理。</li>
+<li>考虑是否应将逻辑完全移出 Automate。</li>
+</ol>
+<h2 data-pagefind-weight="0.9" id="user-content-diagnostic-process" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#diagnostic-process" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>诊断流程</h2>
+<p>要调查性能激增问题，请按照以下步骤操作：</p>
+<ol>
+<li>
+<p><strong>检查自动化的执行历史：</strong> 打开自动化并查看执行历史。需要考虑的关键问题：</p>
+<ul>
+<li>它在过去一天内运行了多少次？</li>
+<li>执行激增是从什么时候开始的？</li>
+<li>频率是否随时间推移而增加？</li>
+</ul>
+</li>
+<li>
+<p><strong>确定条件触发频率：</strong> 检查条件配置和对象更新模式。需要考虑的关键问题：</p>
+<ul>
+<li>满足条件的对象多久更新一次？</li>
+<li>是否配置了基于时间的条件？如果是，间隔是多少？</li>
+<li>更新的发生频率是否高于预期？</li>
+</ul>
+</li>
+<li>
+<p><strong>追踪自动化链：</strong> 使用 <a href="/docs/foundry/autopilot/overview/">Autopilot</a> 或 <a href="/docs/foundry/workflow-lineage/overview/">Workflow Lineage</a> 以了解依赖关系。需要考虑的关键问题：</p>
+<ul>
+<li>哪些自动化会触发其他自动化？</li>
+<li>完整的影响链是什么？</li>
+<li>是否存在潜在的雪球效应，即一次执行会成倍增加？</li>
+</ul>
+</li>
+<li>
+<p><strong>审查函数实现：</strong> 检查自动化调用的函数。需要调查的关键主题：</p>
+<ul>
+<li>函数中是否包含带有本体论查询的循环？</li>
+<li>是否正确使用了批量处理模式？</li>
+<li>检查函数执行时间和外部调用次数。</li>
+</ul>
+</li>
+<li>
+<p><strong>查找递归条件：</strong> 确定自动化是否正在触发自身。需要考虑的关键问题：</p>
+<ul>
+<li>函数是否编辑了会导致同一自动化的条件再次得到满足的对象？</li>
+<li>是否存在用于防止递归处理的状态标志或防护措施？</li>
+<li>执行历史是否显示快速的重复调用？</li>
+</ul>
+</li>
+</ol>
+<h2 data-pagefind-weight="0.9" id="user-content-immediate-mitigation-steps" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#immediate-mitigation-steps" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>立即缓解步骤</h2>
+<p>当发现性能或资源消耗激增时，请按优先级顺序采取以下操作：</p>
+<ol>
+<li>
+<p><strong>止血</strong></p>
+<ul>
+<li>立即暂停导致激增的自动化。这可以防止在调查期间进一步消耗资源。</li>
+</ul>
+</li>
+<li>
+<p><strong>评估影响</strong></p>
+<ul>
+<li>检查 Resource Management 以了解总体资源影响。</li>
+<li>识别可能同样需要暂停的下游自动化。</li>
+<li>确定问题追溯到多久之前。</li>
+</ul>
+</li>
+<li>
+<p><strong>应用快速修复</strong></p>
+<ul>
+<li>如果缺少基于时间的条件，请添加一个。</li>
+<li>将执行模式更改为 <strong>单次执行</strong> 如果当前设置为多次执行。</li>
+<li>向函数添加条件逻辑，以跳过不必要的处理。</li>
+</ul>
+</li>
+<li>
+<p><strong>监控恢复情况</strong></p>
+<ul>
+<li>以降低频率或缩小范围的方式恢复自动化。</li>
+<li>在接下来的一天内密切监控执行次数。</li>
+<li>验证资源消耗是否恢复到预期水平。</li>
+</ul>
+</li>
+</ol>
+<h2 data-pagefind-weight="0.9" id="user-content-tools-and-resources" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#tools-and-resources" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>工具和资源</h2>
+<p>以下是一些提供诊断信息的资源。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-for-execution-history-and-cost-breakdowns" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#for-execution-history-and-cost-breakdowns" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>关于执行历史和成本明细</h3>
+<ul>
+<li><strong><a href="/docs/foundry/automate/history/">Automate 执行历史</a>:</strong> 显示运行次数、时间以及成功或失败状态</li>
+<li><strong><a href="/docs/foundry/aip-observability/service-logs-and-debugging/">函数日志</a>:</strong> 包含错误消息和执行时间详细信息</li>
+<li><strong><a href="/docs/foundry/ontology-manager/overview/">本体论管理器</a>:</strong> 显示查询成本，但对即时故障排除帮助不大</li>
+<li><strong><a href="/docs/foundry/resource-management/overview/">资源管理</a>:</strong> 提供按服务和资源类型划分的整体成本明细</li>
+</ul>
+<h3 data-pagefind-weight="0.8" id="user-content-automation-workflow-overview" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#automation-workflow-overview" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>自动化工作流概述</h3>
+<ul>
+<li><strong><a href="/docs/foundry/autopilot/overview/">Autopilot</a>:</strong> 用于大规模管理和监控自动化工作流的控制中心</li>
+<li><strong><a href="/docs/foundry/workflow-lineage/overview/">工作流血缘</a>:</strong> 可视化展示自动化依赖关系和链</li>
+</ul></div>
+</article>
+</body>
+</html>

@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pipeline Builder 中的子图</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<div class="ptcom-design__markdownDoc__1uarhel" data-pagefind-body="true"><h1 data-pagefind-weight="1" id="user-content-subgraphs-in-pipeline-builder" level="1" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#subgraphs-in-pipeline-builder" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Pipeline Builder 中的子图</h1>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><div class="ptcom-design__title__19o1cwu">Beta</div><p>Pipeline Builder 中的子图目前处于 <a href="/docs/foundry/platform-overview/development-life-cycle/">beta</a> 开发阶段，您的注册环境中可能无法使用该功能。在持续开发期间，功能可能会发生变化。</p></div>
+<p>Pipeline Builder 中的子图功能允许您将一个或多个转换打包成可复用的块。随后，您可以在管道中的任意位置应用该块，而无需每次重新构建逻辑。子图具有以下几项优势：</p>
+<ul>
+<li><strong>复用逻辑：</strong> 将复杂逻辑打包，并将其应用于多个管道或分支。</li>
+<li><strong>减少重复：</strong> 只需更新一次子图，即可对其所有实例生效。</li>
+<li><strong>简化管道：</strong> 用单个子图节点替换冗长的节点链，使图形更易于阅读和维护。</li>
+</ul>
+<p>本指南将介绍如何：</p>
+<ul>
+<li>从头开始创建新子图</li>
+<li>向您的管道中添加子图</li>
+<li>从现有节点创建子图</li>
+<li>添加多输入子图</li>
+</ul>
+<h2 data-pagefind-weight="0.9" id="user-content-create-a-new-subgraph-from-scratch" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#create-a-new-subgraph-from-scratch" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>从头开始创建新子图</h2>
+<p>您可以在 <strong>Reusables</strong> 菜单中创建和管理可复用的子图。</p>
+<ol>
+<li>
+<p>在 Pipeline Builder 中，打开要在其中定义子图的管道。</p>
+</li>
+<li>
+<p>在图形顶部，选择 <strong>Reusables</strong>，然后选择 <strong>Subgraphs</strong>。</p>
+<p><img alt="The Reusables menu with the Subgraphs option in Pipeline Builder." height="600" node="[object Object]" src="/docs/resources/foundry/pipeline-builder/subgraph-reusables-menu.png" style="aspect-ratio:2063 / 823" width="1504.0097205346294"/></p>
+</li>
+<li>
+<p>在 <strong>Subgraphs</strong> 窗口中，选择 <strong>Add custom subgraph</strong>。</p>
+<p><img alt="The Subgraphs window with the Add custom subgraph option." height="600" node="[object Object]" src="/docs/resources/foundry/pipeline-builder/subgraph-add-custom-subgraph.png" style="aspect-ratio:1568 / 738" width="1274.7967479674796"/></p>
+</li>
+</ol>
+<h3 data-pagefind-weight="0.8" id="user-content-configure-the-subgraph-inputs" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#configure-the-subgraph-inputs" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>配置子图输入</h3>
+<p>此时会打开一个新的空子图。</p>
+<ol>
+<li>
+<p>选择 <strong>Add input</strong> 在画布中央。</p>
+<p><img alt="The empty subgraph canvas with the Add input option." height="600" node="[object Object]" src="/docs/resources/foundry/pipeline-builder/subgraph-empty-add-input.png" style="aspect-ratio:2887 / 1635" width="1059.4495412844037"/></p>
+</li>
+<li>
+<p>一个 <strong>输入</strong> 节点将出现。选择其下方的 <strong>编辑</strong> 。</p>
+<p><img alt="The Input node with the Edit option in the subgraph editor." height="600" node="[object Object]" src="/docs/resources/foundry/pipeline-builder/subgraph-input-edit.png" style="aspect-ratio:2906 / 1321" width="1319.9091597274792"/></p>
+</li>
+<li>
+<p>在右侧窗格中，为此输入配置 <strong>必需列</strong> 。您可以手动添加列，也可以从现有数据集复制架构：</p>
+<ul>
+<li>要手动添加列，请选择 <strong>添加列</strong> 并输入列名称。</li>
+<li>要从现有数据集复制架构，请选择 <strong>从数据集</strong>。</li>
+</ul>
+<p><img alt="The Required columns pane with the Add column and From dataset options." height="600" node="[object Object]" src="/docs/resources/foundry/pipeline-builder/subgraph-required-columns.png" style="aspect-ratio:2900 / 1003" width="1734.7956131605185"/></p>
+</li>
+</ol>
+<p>如果您选择 <strong>从数据集</strong>，请选取要使用其架构的数据集，然后点击 <strong>选择</strong>按钮进行确认。输入节点现在需要来自所选数据集的列。</p>
+<p><img alt="The dataset schema picker for copying columns into a subgraph input." height="600" node="[object Object]" src="/docs/resources/foundry/pipeline-builder/subgraph-from-dataset.png" style="aspect-ratio:2908 / 1722" width="1013.240418118467"/></p>
+<h3 data-pagefind-weight="0.8" id="user-content-build-the-subgraph-logic" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#build-the-subgraph-logic" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>构建子图逻辑</h3>
+<p>定义好输入后，您就可以像构建任何其他管道一样构建子图：</p>
+<ol>
+<li>从输入节点开始，使用节点菜单添加转换、拆分、联接和其他逻辑。</li>
+<li>在转换路径的末尾创建一个 <strong>输出</strong> 节点。</li>
+<li>确保在 <strong>输出</strong> 节点架构中正确定义所有预期的输出列。</li>
+</ol>
+<p><img alt="The subgraph editor showing the node menu used to build transform logic." height="600" node="[object Object]" src="/docs/resources/foundry/pipeline-builder/subgraph-build-logic.png" style="aspect-ratio:2882 / 1538" width="1124.3172951885565"/></p>
+<p>完成后，选择右上角的 <strong>应用所有子图更改</strong> 。为子图指定一个清晰的名称。在此示例中，子图名为 <code>Manually created subgraph</code>。选择 <strong>关闭</strong> 以退出子图编辑器。您的子图现在可以用作可复用块。</p>
+<p><img alt="The named subgraph with its Output node and the Apply all subgraph changes option." height="408" node="[object Object]" src="/docs/resources/foundry/pipeline-builder/subgraph-apply-changes.png" style="aspect-ratio:2022 / 408" width="2022"/></p>
+<h2 data-pagefind-weight="0.9" id="user-content-add-a-subgraph-to-your-pipeline" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#add-a-subgraph-to-your-pipeline" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>向管道添加子图</h2>
+<p>您可以在输出与子图的输入架构相匹配的任何节点之后添加子图。有两种入口方式：</p>
+<ul>
+<li>在工具栏中，选择 <strong>将子图应用于表格</strong>。</li>
+</ul>
+<p><img alt="The Apply subgraph to table option in the Pipeline Builder toolbar." height="600" node="[object Object]" src="/docs/resources/foundry/pipeline-builder/subgraph-toolbar-apply.png" style="aspect-ratio:1287 / 802" width="962.8428927680799"/></p>
+<ul>
+<li>在节点菜单中，选择 <strong>子图</strong>。</li>
+</ul>
+<p><img alt="The Subgraph option in the node menu." height="596" node="[object Object]" src="/docs/resources/foundry/pipeline-builder/subgraph-node-menu.png" style="aspect-ratio:812 / 596" width="812"/></p>
+<h3 data-pagefind-weight="0.8" id="user-content-select-and-map-the-subgraph" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#select-and-map-the-subgraph" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>选择并映射子图</h3>
+<ol>
+<li>
+<p>选择子图应从其开始的管道节点。</p>
+</li>
+<li>
+<p>选择 <strong>将子图应用于表格</strong>，或选择 <strong>子图</strong> （位于节点菜单中）。</p>
+</li>
+<li>
+<p>在出现的横幅中，打开 <strong>选择子图</strong> 下拉菜单并选择您的子图。</p>
+<p><img alt="The Select a subgraph dropdown in the apply banner." height="600" node="[object Object]" src="/docs/resources/foundry/pipeline-builder/subgraph-select-dropdown.png" style="aspect-ratio:2793 / 720" width="2327.5"/></p>
+</li>
+<li>
+<p>将子图的 <strong>输入</strong> 映射到图中所选的节点。如果您从该节点开始，Pipeline Builder 会自动完成此映射。选择 <strong>开始</strong>。</p>
+</li>
+</ol>
+<p><img alt="The banner mapping a subgraph input to a node on the graph." height="600" node="[object Object]" src="/docs/resources/foundry/pipeline-builder/subgraph-map-input.png" style="aspect-ratio:2872 / 859" width="2006.0535506402794"/></p>
+<h3 data-pagefind-weight="0.8" id="user-content-review-and-apply" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#review-and-apply" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>查看并应用</h3>
+<p>子图配置面板随即打开：</p>
+<ul>
+<li><strong>输入</strong> 显示所选节点如何为子图提供输入。</li>
+<li><strong>配置</strong> 在子图没有需要配置的参数时为空。</li>
+</ul>
+<p>查看 <strong>输出</strong> 标签页以确认生成的架构，然后选择 <strong>应用</strong> 和 <strong>关闭</strong>。</p>
+<p><img alt="The subgraph configuration panel with the Inputs and Configuration sections." height="600" node="[object Object]" src="/docs/resources/foundry/pipeline-builder/subgraph-config-panel.png" style="aspect-ratio:2906 / 1019" width="1711.089303238469"/></p>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>如果子图的输入未包含所有必需的输入列，架构错误将显示在 <strong>错误</strong> 标签页和管道图中。</p></div>
+<p><img alt="The Errors tab listing missing required columns for a subgraph." height="600" node="[object Object]" src="/docs/resources/foundry/pipeline-builder/subgraph-schema-errors.png" style="aspect-ratio:2836 / 1540" width="1104.935064935065"/></p>
+<h2 data-pagefind-weight="0.9" id="user-content-create-a-subgraph-from-existing-nodes" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#create-a-subgraph-from-existing-nodes" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>从现有节点创建子图</h2>
+<p>您可能已经有一个想要重复使用的节点序列。您可以将这些节点直接转换为子图，或者将它们替换为已创建的子图。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-select-the-nodes-to-package" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#select-the-nodes-to-package" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>选择要打包的节点</h3>
+<ol>
+<li>在主管道中，选择要打包的节点。例如，您可以选择由连接、排序和聚合组成的序列。</li>
+<li>右键单击所选内容，然后选择 <strong>子图</strong>。</li>
+<li>要将节点打包成新的子图，请选择 <strong>创建子图</strong>。要将所选节点替换为现有子图，请选择 <strong>替换为子图</strong>。</li>
+</ol>
+<p><img alt="The right-click menu with the Subgraphs option expanded to show Create subgraph and Replace with subgraph." height="600" node="[object Object]" src="/docs/resources/foundry/pipeline-builder/subgraph-right-click-menu.png" style="aspect-ratio:2063 / 798" width="1551.1278195488721"/></p>
+<p>此时会打开一个新的子图编辑器，其中包含所选节点以及自动创建的 <strong>输入</strong> 和 <strong>输出</strong> 节点（其架构已填充）。</p>
+<p><img alt="The subgraph editor containing the selected nodes with automatically created Input and Output nodes." height="600" node="[object Object]" src="/docs/resources/foundry/pipeline-builder/subgraph-auto-input-output.png" style="aspect-ratio:2009 / 1093" width="1102.836230558097"/></p>
+<p>当子图有效且未出现架构错误时，请选择 <strong>应用所有子图更改</strong>。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-add-a-multi-input-subgraph" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#add-a-multi-input-subgraph" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>添加多输入子图</h2>
+<p>当您的子图具有多个输入时，您需要在应用子图时分别映射每个输入。</p>
+<ol>
+<li>在主图中，选择与每个子图输入对应的起始节点。</li>
+<li>从工具栏中选择 <strong>将子图应用于表格</strong> ，或从节点菜单中选择 <strong>子图</strong> 。</li>
+<li>从下拉菜单中选择您的子图。</li>
+<li>在 <strong>映射输入</strong> 部分，将每个子图输入映射到图中的一个节点。例如，将 <code>Student</code> 映射到重命名转换，并将 <code>Class</code> 映射到类型转换。选择 <strong>开始</strong>。</li>
+</ol>
+<p><img alt="The Map inputs section mapping two subgraph inputs to nodes on the graph." height="600" node="[object Object]" src="/docs/resources/foundry/pipeline-builder/subgraph-multi-input-map.png" style="aspect-ratio:2790 / 857" width="1953.3255542590432"/></p>
+<p>子图配置窗口随即打开，其中显示已映射的输入和输出预览。确认输出无误后，选择 <strong>应用</strong> 和 <strong>关闭</strong>。</p>
+<p><img alt="The subgraph configuration window previewing the output columns of the multi-input subgraph." height="600" node="[object Object]" src="/docs/resources/foundry/pipeline-builder/subgraph-multi-output-preview.png" style="aspect-ratio:2895 / 1409" width="1232.7892122072392"/></p>
+<p>返回主画布后，该子图将显示为一个单独的节点，其输出架构（例如 <code>class_id</code> 和 <code>avg_score</code>）会显示在预览面板中。</p>
+<p><img alt="The subgraph displayed as a single node on the main pipeline canvas." height="600" node="[object Object]" src="/docs/resources/foundry/pipeline-builder/subgraph-single-node.png" style="aspect-ratio:2196 / 1492" width="883.1099195710456"/></p>
+<p>然后，您可以重新连接相关节点以使用子图输出，并在其他位置使用同一子图的其他实例来替换重复的逻辑。</p></div>
+</article>
+</body>
+</html>

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>设置 Google Cloud Pub/Sub 监听器</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<div class="ptcom-design__markdownDoc__1uarhel" data-pagefind-body="true"><h1 data-pagefind-weight="1" id="user-content-set-up-a-google-cloud-pubsub-listener" level="1" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#set-up-a-google-cloud-pubsub-listener" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>设置 Google Cloud Pub/Sub 监听器</h1>
+<p>本指南逐步展示如何为 Google Pub/Sub 配置监听器，以便将事件从 Pub/Sub 主题实时传送到 Foundry 流式数据集。</p>
+<p>Google Pub/Sub 可与多种 Google Cloud 服务结合使用，将事件路由到 Foundry。例如，它可用于从 Gmail 帐户流式传输电子邮件。 <a href="https://developers.google.com/gmail/api/guides/push">查看 Google 提供的从 Gmail 进行流式传输的相关指南 ↗。</a></p>
+<p><a href="https://cloud.google.com/pubsub">详细了解 Google Pub/Sub。↗</a></p>
+<h2 data-pagefind-weight="0.9" id="user-content-prerequisites" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#prerequisites" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>前提条件</h2>
+<p>在配置之前，请确保：</p>
+<ul>
+<li>
+<p>您所在注册的入口策略已进行适当配置，可接受 Google Pub/Sub 请求。您可以将 <a href="https://www.gstatic.com/ipranges/cloud.json">您 Google Cloud 区域的 IP ↗</a>加入允许列表，或者将相应的国家/地区加入允许列表。 <a href="/docs/foundry/administration/configure-ingress/">了解如何配置入口。</a> 请注意，在实施监听器之后，提供商可能随时更改 IP，而您需要相应地更新入口。</p>
+</li>
+<li>
+<p>您拥有 Google Cloud Console 中 Pub/Sub 的访问权限。</p>
+</li>
+</ul>
+<h2 data-pagefind-weight="0.9" id="user-content-instructions" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#instructions" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>操作说明</h2>
+<ol>
+<li>
+<p>如果您还没有 Pub/Sub 主题，请先创建一个。该主题是将推送到您的 Foundry 监听器的事件流。 <br/><br/>
+<img alt="In the Google Cloud interface, create a new Pub/Sub topic." height="600" node="[object Object]" src="/docs/resources/foundry/data-connection/listeners-google-pubsub-1.png" style="aspect-ratio:3024 / 1648" width="1100.9708737864078"/> <br/><br/></p>
+</li>
+<li>
+<p>导航至 <strong>监听器</strong> 选项卡（位于 Data Connection 中）。通过在监听器类型菜单中选择 Google Cloud Pub/Sub 来创建 Foundry Pub/Sub 监听器。此步骤不会完成监听器的设置，但必须执行此步骤才能生成监听器 URL，该 URL 随后将在步骤 3 中使用。 <br/><br/>
+<img alt="Google Cloud Pub/Sub listener configuration page in Data Connection." height="600" node="[object Object]" src="/docs/resources/foundry/data-connection/listeners-google-pubsub-2.png" style="aspect-ratio:3024 / 1648" width="1100.9708737864078"/> <br/><br/></p>
+</li>
+<li>
+<p>为步骤 1 中的 Google Pub/Sub 主题创建订阅。</p>
+<p>a. 选择 <strong>推送</strong> 作为订阅类型。</p>
+<p>b. 将步骤 2 中生成的 URL 复制到您的推送订阅的 <strong>URL</strong>
+字段中。</p>
+<p>c. 勾选复选框以启用 <strong>身份验证</strong>。 <a href="https://cloud.google.com/pubsub/docs/push?authuser=1#authentication">在外部文档中查看 Pub/Sub 身份验证信息。↗</a></p>
+<ul>
+<li>选择用于身份验证的服务账号。</li>
+<li>要使用共享密钥，请在 URL 字段中将您的共享密钥作为查询参数输入到监听器端点 URL 之后。示例： <code>?token=&lt;YOUR_TOKEN&gt;</code></li>
+</ul>
+<p>d. 保存您的订阅。 <br/><br/>
+<img alt="Google Cloud Pub/Sub Add subscription to topic page with sample configuration values." height="600" node="[object Object]" src="/docs/resources/foundry/data-connection/listeners-google-pubsub-3.png" style="aspect-ratio:3024 / 1648" width="1100.9708737864078"/> <br/><br/></p>
+</li>
+<li>
+<p>将 <strong>服务账号电子邮件地址</strong>、可选的 <strong>受众声明</strong>和可选的 <strong>共享密钥</strong> 复制到监听器配置中（如下所示），然后点击 <strong>继续</strong>。 <br/><br/>
+<img alt="Google Cloud Pub/Sub Add subscription to topic page with sample configuration values." height="600" node="[object Object]" src="/docs/resources/foundry/data-connection/listeners-google-pubsub-4.png" style="aspect-ratio:3024 / 1648" width="1100.9708737864078"/> <br/><br/></p>
+</li>
+<li>
+<p>现在需要信息安全官的管理员审批。请查看开关的描述。</p>
+</li>
+<li>
+<p>选择 <strong>启动</strong> （位于监听器 <strong>测试</strong> 页面），以开启您的监听器并开始接收事件。</p>
+</li>
+<li>
+<p>向您的主题发送一条测试消息，然后查看它出现在监听器测试界面中。 <br/><br/>
+<img alt="Publish a message to test in Google Cloud Pub/Sub as part of testing your setup." height="600" node="[object Object]" src="/docs/resources/foundry/data-connection/listeners-google-pubsub-5.png" style="aspect-ratio:3024 / 1648" width="1100.9708737864078"/> <br/><br/>
+<img alt="Receive an event in your successfully configured listener." height="600" node="[object Object]" src="/docs/resources/foundry/data-connection/listeners-google-pubsub-6.png" style="aspect-ratio:3024 / 1646" width="1102.3086269744838"/> <br/><br/></p>
+</li>
+</ol>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>有效负载以 base64 编码形式到达。您可以在流式管道中使用 base64 解码转换看板对其进行解码，以获取消息的字符串表示形式。</p></div>
+<hr/>
+<p><em>所有 Google Cloud Pub/Sub™ 的屏幕截图仅供参考，其版权归 Google LLC 所有。</em></p></div>
+</article>
+</body>
+</html>

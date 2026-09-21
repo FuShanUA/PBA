@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Faster pipelines in Pipeline Builder</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<div class="ptcom-design__markdownDoc__1uarhel" data-pagefind-body="true"><h1 data-pagefind-weight="1" id="user-content-faster-pipelines-in-pipeline-builder" level="1" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#faster-pipelines-in-pipeline-builder" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Faster pipelines in Pipeline Builder</h1>
+<p>Pipeline Builder now supports faster pipelines, which can reduce execution times for batch and incremental pipelines. This pipeline uses a backend powered by <a href="https://datafusion.apache.org/">DataFusion ↗</a>, an open-source query engine written in <a href="https://www.rust-lang.org/">Rust ↗</a>. Compared to traditional Spark-based pipelines, faster pipelines can substantially accelerate compute processes.</p>
+<p>Faster pipelines were previously known as <em>lightweight pipelines</em>, as the term "lightweight" referred to the reduced time and compute resources required to execute these pipelines as opposed to the size of the data they handle. The name change reflects that faster pipelines reduce both execution time and compute resource usage, even for large-scale datasets.</p>
+<p>Faster pipelines are specifically engineered to optimize build times and execute low-latency operations efficiently. In particular, pipelines that run in under 15 minutes will benefit most from faster pipeline configuration.</p>
+<p>We encourage you to experiment with different pipeline configurations to improve performance. You can explore the capabilities by testing them on a branch or making a copy of an existing pipeline to compare the new performance with your original configuration.</p>
+<h2 data-pagefind-weight="0.9" id="user-content-create-a-new-faster-pipeline" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#create-a-new-faster-pipeline" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Create a new faster pipeline</h2>
+<p>If you are unfamiliar with creating pipelines in Pipeline Builder, review the documentation on <a href="/docs/foundry/building-pipelines/create-batch-pipeline-pb/">how to create a batch pipeline in Pipeline Builder</a> before proceeding.</p>
+<ol>
+<li>Open Pipeline Builder and select <strong>Create new pipeline</strong>.</li>
+<li>After entering a name for your pipeline and the desired location, choose <strong>Faster pipeline</strong> under <strong>Pipeline type</strong>.</li>
+<li>Select <strong>Create pipeline</strong>.</li>
+</ol>
+<p><img alt="Screenshot of Pipeline selection" height="600" node="[object Object]" src="/docs/resources/foundry/building-pipelines/faster-pb-create-new.png" style="aspect-ratio:952 / 680" width="840"/></p>
+<h2 data-pagefind-weight="0.9" id="user-content-convert-between-faster-and-standard-batch-pipelines" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#convert-between-faster-and-standard-batch-pipelines" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Convert between faster and standard batch pipelines</h2>
+<p>You can convert between faster and standard batch pipelines, and vice versa, by following the steps below. This conversion can be reversed at any time by repeating the process and selecting the desired options.</p>
+<ol>
+<li>To convert a batch pipeline, go to <strong>Settings</strong> and select <strong>Convert to Faster pipeline</strong>.</li>
+</ol>
+<p><img alt='Screenshot of pipeline settings "Convert to faster pipeline" option' height="508" node="[object Object]" src="/docs/resources/foundry/building-pipelines/faster-pb-settings.png" style="aspect-ratio:1170 / 508" width="1170"/></p>
+<p>To convert a pipeline back to a batch pipeline, go to <strong>Settings</strong> and select <strong>Convert to Batch pipeline</strong>.</p>
+<p><img alt='Screenshot of pipeline settings "Convert to batch pipeline" option' height="460" node="[object Object]" src="/docs/resources/foundry/building-pipelines/faster-pb-convert-to-batch.png" style="aspect-ratio:1182 / 460" width="1182"/></p>
+<ol start="2">
+<li>If the pipeline is compatible with the new pipeline type, you will see a dialog box where you can confirm the conversion.</li>
+</ol>
+<p><img alt="The dialog shows a successful conversion to a Faster pipeline with a confirmation message." height="600" node="[object Object]" src="/docs/resources/foundry/building-pipelines/faster-pb-can-convert.png" style="aspect-ratio:1110 / 738" width="902.4390243902438"/></p>
+<ol start="3">
+<li>If the pipeline is not compatible with the new pipeline type, a warning will appear when you try to convert your pipeline. The warning will list any expressions or transforms that are incompatible with faster pipelines.</li>
+</ol>
+<p><img alt="The dialog shows an unsuccessful conversion to a Faster pipeline with a warning listing incompatible features." height="600" node="[object Object]" src="/docs/resources/foundry/building-pipelines/faster-pb-cannot-convert.png" style="aspect-ratio:1050 / 698" width="902.5787965616046"/></p>
+<p>You can toggle on <strong>Show pipeline conversion checks</strong> at any point to see anything that is not compatible with the faster pipeline option.</p>
+<p><img alt="The dialog shows the show pipeline conversion checks toggled on." height="600" node="[object Object]" src="/docs/resources/foundry/building-pipelines/faster-show-conversion-checks.png" style="aspect-ratio:1060 / 924" width="688.3116883116883"/></p>
+<p>After you toggle on <strong>Show pipeline conversion checks</strong>, a <strong>Faster conversion compatibility checks</strong> section will appear in the <strong>Pipeline warnings</strong> panel at the bottom of the screen. This section lists any transforms and expressions that are not supported with faster pipelines. To quickly locate the node with an unsupported transform, click the <strong>Go to node</strong> icon on the right side of the corresponding row.</p>
+<p><img alt="The Pipeline warnings bottom panel with the Faster conversion compatibility checks section." height="600" node="[object Object]" src="/docs/resources/foundry/building-pipelines/faster-pb-pipeline-warnings.png" style="aspect-ratio:2272 / 962" width="1417.047817047817"/></p>
+<h2 data-pagefind-weight="0.9" id="user-content-known-limitations" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#known-limitations" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Known limitations</h2>
+<p>Faster pipelines do not currently support the same set of transforms and expressions as standard batch pipelines. Most notably, unsupported transforms and expressions include LLM features, geospatial functionality, and media set operations.</p>
+<p>Due to the differences between faster and batch pipelines, you should always verify results using <strong>Preview</strong> or by examining build outputs.</p>
+<p>Most supported expressions in faster pipelines will behave as their batch equivalents. Known limitations include:</p>
+<ul>
+<li>Floating point results may vary in the last digits.</li>
+<li>Decimal overflow will throw an error instead of outputting a <code>NULL</code> value.</li>
+<li>Structs cannot be compared with <code>&lt;</code>, <code>&gt;</code>, <code>==</code>, etc.</li>
+<li><code>pow</code> overflow returns <code>NULL</code> instead of <code>inf</code>.</li>
+<li>Cast functionality may have differences for complex types, such as structs, arrays, maps, and their conversions into strings. For example, nulls may be rendered differently when these types are converted to strings.</li>
+<li>Limited format support for <code>TimestampToString</code>, <code>DateToString</code>, <code>StringToTimestamp</code>, and <code>StringToDate</code>.</li>
+<li>Min and max are not supported for complex types, such as structs, arrays, and maps.</li>
+<li>Empty outputs will result in 0 files rather than an empty file.</li>
+<li>Stats, other than row count, are not supported on build.</li>
+<li>Creating time series reference values is not supported.</li>
+<li>Trained model nodes are not supported.</li>
+</ul>
+<h2 data-pagefind-weight="0.9" id="user-content-pipeline-type-support-comparison" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#pipeline-type-support-comparison" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Pipeline type support comparison</h2>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__success__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>The size recommendations below are intended as a general rule and do not apply to all queries. For the right types of transforms, the faster lightweight engine can process even terabyte-scale inputs on a single node.</p></div>
+<p>If your pipeline does not run into any of the limitations in the section above, we recommend using the faster option first. You can switch to the standard Spark option if your data scale demands it or if there are unsupported transforms and expressions you want to use. You can <a href="#convert-between-faster-and-standard-batch-pipelines">convert between the different types of pipelines</a>.</p>
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>Characteristic</th><th>Standard</th><th>Faster</th></tr></thead><tbody><tr><td>Optimal (uncompressed) data size</td><td>&gt; 50GB</td><td>1-50GB</td></tr><tr><td>Optimal number of rows<sup>*</sup></td><td>&gt; 200 million</td><td>1-200 million</td></tr><tr><td>Startup overhead</td><td>Significant</td><td>Minimal</td></tr><tr><td>Memory efficiency</td><td>Good</td><td>Excellent</td></tr><tr><td>Processing speed (small data)</td><td>Slow</td><td>Excellent</td></tr><tr><td>Processing speed (medium data)</td><td>Fast</td><td>Excellent</td></tr><tr><td>Processing speed (large data)</td><td>Excellent</td><td>Variable</td></tr><tr><td>Parallel execution</td><td>Distributed</td><td>Single-node</td></tr><tr><td>Memory spilling</td><td>Automatic</td><td>Automatic</td></tr></tbody></table></div>
+<p><sup>*</sup> The number of rows tolerable to each query engine will vary depending on the schema. These numbers are given as a general guide for common cases.</p></div>
+</article>
+</body>
+</html>

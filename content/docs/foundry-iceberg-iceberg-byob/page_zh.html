@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>为 Iceberg 表配置自带存储桶（BYOB）存储</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<div class="ptcom-design__markdownDoc__1uarhel" data-pagefind-body="true"><h1 data-pagefind-weight="1" id="user-content-configuring-bring-your-own-bucket-storage-for-iceberg-tables" level="1" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#configuring-bring-your-own-bucket-storage-for-iceberg-tables" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>为 Iceberg 表配置自带存储桶（BYOB）存储</h1>
+<p>本指南介绍了如何配置客户管理的存储桶，以供 Foundry Iceberg 表使用。这些步骤仅在使用自带存储桶（BYOB）存储时才需要执行。如果您使用的是 Foundry 管理的存储，则无需进行额外的配置。</p>
+<p>Foundry 支持在 AWS（S3）、Azure（ADLS）和 Google（GCS）上使用 BYOB 存储。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-step-1-create-your-storage-bucket" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#step-1-create-your-storage-bucket" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>步骤 1：创建您的存储桶</h2>
+<p>理想情况下，应在与 Foundry 实例相同的区域中预配您的存储桶。虽然这不是必需的，但为了获得最佳性能，建议这样做。</p>
+<p>在存储账户上配置适当的网络访问权限，以允许从 Foundry 进行连接。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-aws-s3" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#aws-s3" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>AWS S3</h3>
+<ol>
+<li>
+<p>预配一个 S3 存储桶。</p>
+</li>
+<li>
+<p>创建一个 IAM 角色，使其在 S3 存储桶和用于加密该存储桶的 KMS 密钥上具有以下权限：</p>
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>权限</th><th>资源</th></tr></thead><tbody><tr><td><code>s3:DeleteObject</code></td><td>S3 存储桶</td></tr><tr><td><code>s3:GetObject</code></td><td>S3 存储桶</td></tr><tr><td><code>s3:ListBucket</code></td><td>S3 存储桶</td></tr><tr><td><code>s3:PutObject</code></td><td>S3 存储桶</td></tr><tr><td><code>kms:Decrypt</code></td><td>KMS 密钥</td></tr><tr><td><code>kms:Encrypt</code></td><td>KMS 密钥</td></tr><tr><td><code>kms:GenerateDataKey</code></td><td>KMS 密钥</td></tr><tr><td><code>sts:GetFederationToken</code></td><td>—</td></tr></tbody></table></div>
+</li>
+<li>
+<p>创建一个可以担任您所创建角色的 IAM 用户或 OIDC 身份提供商。在配置 Data Connection 源时，您将使用该 IAM 用户的凭证或该 OIDC 提供商的令牌。请参阅 <a href="/docs/foundry/available-connectors/amazon-s3/">S3 源</a> 文档，以了解有关受支持的身份验证机制的更多详细信息。</p>
+</li>
+</ol>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>若要设置托管在与您的 Foundry 注册相同区域中的 S3 存储桶,需要进行额外配置。您必须在 <strong>网络出口</strong> (位于 <a href="/docs/foundry/administration/control-panel/">控制面板</a>中)明确允许来自 Palantir 的 VPC 终端节点的流量访问该存储桶。请在 <a href="/docs/foundry/administration/configure-egress/#aws-s3-bucket-endpoint-policies">网络出口文档</a>中详细了解这些要求。</p></div>
+<h3 data-pagefind-weight="0.8" id="user-content-azure-abfs" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#azure-abfs" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Azure ABFS</h3>
+<ol>
+<li>
+<p>预配存储帐户和容器。</p>
+</li>
+<li>
+<p>预配用于身份验证的客户端凭据。请参阅 <a href="/docs/foundry/available-connectors/onelake-and-azure-blob-filesystem/">ABFS 源文档</a> ,以详细了解支持的身份验证机制。</p>
+<p>对于 Iceberg BYOB,请在源中配置 ADLS 终端节点,即 <code>dfs.core.windows.net</code>。 <code>blob.core.windows.net</code> 终端节点不受支持。</p>
+</li>
+<li>
+<p>授予服务主体对存储位置的访问权限:</p>
+<ul>
+<li>请在用于存储数据的容器上分配 <strong><a href="https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles/storage#storage-blob-data-contributor">Storage Blob Data Contributor ↗</a></strong> 角色。</li>
+<li>请确保服务主体在存储帐户级别至少具有 <strong>Delegator</strong> 权限。仅容器级别的权限不足以满足 Foundry 的要求。</li>
+</ul>
+</li>
+</ol>
+<h3 data-pagefind-weight="0.8" id="user-content-google-gcs" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#google-gcs" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Google GCS</h3>
+<ol>
+<li>
+<p>预配 Google Cloud Storage 存储桶。</p>
+</li>
+<li>
+<p>创建 Google Cloud IAM 服务帐号。</p>
+</li>
+<li>
+<p>授予服务帐号对存储桶的访问权限:</p>
+<ul>
+<li>在存储桶上分配 <strong><a href="https://cloud.google.com/storage/docs/access-control/iam-roles">Storage Object Admin ↗</a></strong> 角色,以允许 Foundry Iceberg 读取、写入和删除 Iceberg 元数据文件和数据文件。</li>
+<li>分配 <strong><a href="https://cloud.google.com/iam/docs/service-account-permissions#service_account_token_creator_role">Service Account Token Creator ↗</a></strong> 在服务账户本身上，以便 Foundry 能够向 Iceberg 客户端发放短期有效且限定作用域的凭据。</li>
+</ul>
+</li>
+<li>
+<p>为服务账户创建 JSON 服务账户密钥或等效的 PKCS8 凭据值。在为 BYOB Iceberg 存储使用 GCS 源时，这些是受支持的身份验证方法。</p>
+</li>
+</ol>
+<h2 data-pagefind-weight="0.9" id="user-content-step-2-create-a-data-connection-source" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#step-2-create-a-data-connection-source" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>第 2 步：创建 Data Connection 源</h2>
+<p>存储桶预配完成后，创建一个 <a href="/docs/foundry/data-connection/overview/">Data Connection</a> 源，以将 Foundry 连接到您的存储。为 BYOB 用途配置源需要该源上的 <strong>所有者</strong> 角色。如果您没有所有者角色，请联系源所有者或您的平台管理员来更新这些设置。有关更多信息，请参阅 <a href="/docs/foundry/data-connection/permissions/#sources">源权限</a>。</p>
+<p>BYOB 源和凭据具有很高的特权，因此请为其配置限制性的访问设置，例如将它们放置在仅限管理员访问的项目中。限制访问可以控制哪些人能够访问这些凭据，并防止未经授权的修改，这类修改可能会中断您对 BYOB Iceberg 数据的访问。</p>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>当存储桶用作 Iceberg 表的支撑存储时，在该存储桶上配置的所有出站策略都将可供访问这些表的工作流使用。这些工作流中由用户编写的代码将被允许出站到这些策略所允许的目的地。</p></div>
+<ol>
+<li>在 Data Connection 中创建新源（可以是 <a href="/docs/foundry/available-connectors/amazon-s3/">S3</a>、 <a href="/docs/foundry/available-connectors/onelake-and-azure-blob-filesystem/">ABFS</a>或 <a href="/docs/foundry/available-connectors/google-cloud-storage/">Google Cloud Storage</a>），使用您配置的凭证。</li>
+<li>可选：为您的 Iceberg 表指定基本路径前缀，方法是将其附加到源 URL（例如， <code>s3://bucket-name/base-path/</code>）。如果源中未提供基本路径，Foundry 会将 <code>foundry-iceberg</code> 设置为 Iceberg 基本路径。 <strong>在将源配置为 Iceberg 存储位置后，请勿修改基本路径</strong>，否则可能会破坏对现有表的访问。</li>
+<li>使用所选源支持的身份验证方法：
+<ul>
+<li><strong>对于 ADLS 和 S3：</strong> Data Connection 提供的任何身份验证机制均受支持，包括 <code>access key and secret</code> 或 <code>OIDC</code>。</li>
+<li><strong>对于 GCS：</strong> <code>JSON credentials</code> 或 <code>PKCS8 auth</code> 是受支持的选项。</li>
+</ul>
+</li>
+<li>在源上开启 <strong>启用导出到此源</strong> 设置。</li>
+<li>将 <strong>代码导入配置</strong> 设置保持为禁用状态。即使您从代码仓库访问 Iceberg 表，Foundry Iceberg 也不需要在源上进行代码导入。</li>
+</ol>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><div class="ptcom-design__title__19o1cwu">安全注意事项</div><p>请勿将存储桶的凭证直接授予 Iceberg 客户端或其他工具。相反，应利用 Foundry Iceberg 目录的凭证分发机制来提供限定范围的短期访问权限，详情请参阅 <a href="/docs/foundry/iceberg/authentication/#access-delegation--credential-vending">访问委托与凭证分发</a>。</p></div>
+<h2 data-pagefind-weight="0.9" id="user-content-step-3-add-the-bucket-in-control-panel" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#step-3-add-the-bucket-in-control-panel" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>步骤 3：在 Control Panel 中添加存储桶</h2>
+<p>创建数据连接源后，请在 Control Panel 中将该存储桶添加到您的 Iceberg 存储配置中。请参阅 <a href="/docs/foundry/iceberg/iceberg-settings/#configuring-storage-locations">配置存储位置</a> 以了解具体操作说明。</p></div>
+</article>
+</body>
+</html>

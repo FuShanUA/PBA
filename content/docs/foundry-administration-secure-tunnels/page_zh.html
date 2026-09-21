@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>配置安全隧道</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<div class="ptcom-design__markdownDoc__1uarhel" data-pagefind-body="true"><h1 data-pagefind-weight="1" id="user-content-configure-secure-tunnels" level="1" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#configure-secure-tunnels" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>配置安全隧道</h1>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><div class="ptcom-design__title__19o1cwu">Beta</div><p>安全隧道正处于 <a href="/docs/foundry/platform-overview/development-life-cycle/">beta</a> 开发阶段,可替代 <a href="/docs/foundry/data-connection/agent-proxy/">agent 代理</a>。在积极开发过程中，功能和配置选项可能会发生变化，并且该功能可能并非在所有租户上都可用。在将安全隧道用于生产工作负载之前，请联系您的 Palantir 代表或 Palantir 支持团队。</p></div>
+<p><strong>安全隧道</strong> 为 Palantir 平台中的服务提供一条网络路径，使其能够访问独立的私有托管网络中的系统，而无需将这些系统暴露给入站连接。它们的作用与 <a href="/docs/foundry/data-connection/agent-proxy/">agent 代理</a>相同；应用程序连接到数据源时，就像该数据源可以通过平台网络直接访问一样，而所有流量都经由运行在您网络内部的组件进行中转。</p>
+<p>与作为单个可下载程序的 agent 不同，安全隧道由一组托管组件构建而成。安全隧道的 <strong>发起程序</strong> 是唯一在您的网络内部运行的组件。本页介绍其角色以及如何在您的网络中安装和配置它。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-how-secure-tunnels-work" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#how-secure-tunnels-work" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>安全隧道的工作原理</h2>
+<p>安全隧道由三个组件建立：</p>
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>组件</th><th>位置</th><th>角色</th></tr></thead><tbody><tr><td>发起程序</td><td>您的网络</td><td>在您的网络内部运行，并且仅建立 <strong>出站</strong> 与平台的连接。它会向控制平面发起出站连接，建立通往响应器的隧道，并将经代理的流量转发至您网络中的目标系统。</td></tr><tr><td>控制平面</td><td>Palantir 平台</td><td>对安全隧道发起器进行身份验证，签发并刷新其访问令牌，并充当其网络配置。</td></tr><tr><td>响应器</td><td>Palantir 平台</td><td>接受由安全隧道发起器打开的隧道。平台服务将出口流量路由至响应器，再由响应器通过隧道将其传回。</td></tr></tbody></table></div>
+<p>由于安全隧道发起器仅进行出站连接，您无需开放任何入站端口，也无需向平台暴露您网络中的任何端点。安全隧道发起器会打开 <strong>隧道</strong> 通往响应器；它以出站方式建立这些连接，随后平台通过已打开的连接回传请求流量。当平台服务连接到使用安全隧道的数据源时，流量按以下方式流动：</p>
+<p><img alt="A secure tunnel is initiated from your network, and outbound traffic from the Palantir network uses the established tunnel." height="398" node="[object Object]" src="/docs/resources/foundry/administration/secure-tunnels-network-flow.png" style="aspect-ratio:1027 / 398" width="1027"/></p>
+<p>您的网络与平台之间的所有连接均使用 TLS 加密并经过双向身份验证。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-secure-tunnels-initiator" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#secure-tunnels-initiator" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>安全隧道发起器</h2>
+<p>安全隧道发起器是唯一在您的网络内运行的安全隧道组件。它是一个单一用途的 <a href="https://www.envoyproxy.io/">Envoy ↗</a> 代理，它为连接到平台而使用 Envoy 的 <a href="https://www.envoyproxy.io/docs/envoy/latest/configuration/other_features/reverse_tunnel">反向隧道 ↗</a> 能力。安全隧道发起方以出站方式建立所有连接，而平台则回传请求流量。它具有以下特性：</p>
+<ul>
+<li><strong>仅出站：</strong> 安全隧道发起方从不接受来自平台的入站连接。它需要到平台的网络出站连接，但不需要任何入站防火墙规则。</li>
+<li><strong>令牌认证：</strong> 安全隧道发起方使用短期访问令牌向平台进行身份验证。该令牌由控制平面自动签发和轮换，因此您的网络中不会存储任何长期凭证。</li>
+<li><strong>默认拒绝出站：</strong> 安全隧道发起方只能访问 <a href="#configure-the-egress-allowlist">您明确允许的目标系统</a>。</li>
+</ul>
+<h2 data-pagefind-weight="0.9" id="user-content-secure-tunnel-cluster-and-node" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#secure-tunnel-cluster-and-node" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>安全隧道集群和节点</h2>
+<p>安全隧道发起方按集群和节点进行组织：</p>
+<ul>
+<li>
+<p>集群是安全隧道发起方的逻辑分组，其中的发起方提供对同一网络和目标系统的访问。出站策略与集群相关联，因此集群中的每个节点都提供相同的逻辑连接。</p>
+</li>
+<li>
+<p>节点代表集群内的单个安全隧道发起方部署。您可以添加多个节点来提高可用性并分散流量。每个节点都会建立并维护自己通往平台的出站隧道。</p>
+</li>
+</ul>
+<h3 data-pagefind-weight="0.8" id="user-content-create-a-secure-tunnel-cluster-and-node" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#create-a-secure-tunnel-cluster-and-node" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>创建安全隧道集群和节点</h3>
+<p>在部署安全隧道发起程序之前，请先创建集群和节点，以在平台中建立其身份。发起程序使用生成的集群和节点资源标识符（RID）
+向控制平面进行身份验证，并注册为正确的节点。</p>
+<p>集群和节点名称在注册范围内必须唯一。请选择具有描述性的名称，以标识它们所代表的网络和发起程序部署。</p>
+<ol>
+<li>
+<p>前往控制面板的 <strong>网络出口</strong> 部分。</p>
+</li>
+<li>
+<p>打开 <strong>安全隧道</strong> 选项卡。</p>
+</li>
+<li>
+<p>选择 <strong>创建集群</strong>，输入唯一的集群名称，然后选择 <strong>创建集群</strong>。</p>
+<p><img alt="The secure tunnels tab in control panel, with the button for creating a new cluster." height="600" node="[object Object]" src="/docs/resources/foundry/administration/secure-tunnel-create-cluster.png" style="aspect-ratio:2192 / 1158" width="1135.7512953367875"/></p>
+</li>
+<li>
+<p>选择 <strong>创建节点</strong>，输入唯一的节点名称，然后选择 <strong>创建</strong>。</p>
+<p><img alt="The secure tunnels cluster page with the button for creating a new node." height="600" node="[object Object]" src="/docs/resources/foundry/administration/secure-tunnel-create-node.png" style="aspect-ratio:2220 / 876" width="1520.5479452054794"/></p>
+</li>
+</ol>
+<h2 data-pagefind-weight="0.9" id="user-content-deployment-models" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#deployment-models" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>部署模式</h2>
+<p>安全隧道发起程序在您网络内的环境中作为一个或多个节点运行。您可以使用 <a href="/docs/foundry/data-connection/core-concepts/#agents">Data Connection 代理</a> 或 <a href="/docs/foundry/../apollo/core/introduction/">Apollo</a> 来管理这些节点的生命周期。无论采用哪种部署模式，在发起程序部署完成后，令牌签发、令牌轮换、TLS 证书预配和配置交付都将自动为您处理。</p>
+<p>基础设施管理员或平台管理员负责以下事项：</p>
+<ol>
+<li>在您的网络中提供一个可供安全隧道发起程序运行的环境。</li>
+<li>允许 <a href="#network-egress-requirements">网络出口</a> 流量从该环境流向平台。</li>
+<li>定义 <a href="#configure-the-egress-allowlist">出口允许列表</a> 用于确定安全隧道发起方可以访问哪些目标系统。</li>
+</ol>
+<p>安全隧道发起方支持以下部署模型：</p>
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>部署模型</th><th>生命周期管理</th></tr></thead><tbody><tr><td><a href="#managed-by-a-data-connection-agent">由 Data Connection 代理管理</a></td><td>现有或新建的 Data Connection 代理会自动重启并升级该节点。</td></tr><tr><td><a href="#helm-chart-managed-by-apollo">由 Apollo 管理的 Helm chart</a></td><td>Apollo 会部署、重启和升级该节点。</td></tr></tbody></table></div>
+<h3 data-pagefind-weight="0.8" id="user-content-prerequisites" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#prerequisites" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>前提条件</h3>
+<p>在安装安全隧道发起方之前，请确认以下事项：</p>
+<ul>
+<li>您的网络中有一个可供安全隧道发起方运行的环境。</li>
+<li>该环境能够与您的 Palantir 平台实例建立出站网络连接。请参阅 <a href="#network-egress-requirements">网络出口要求</a> 以了解更多信息。</li>
+<li>您已了解 Palantir 平台工作负载需要通过隧道访问的目标系统集合（IP 范围和端口）。</li>
+</ul>
+<h3 data-pagefind-weight="0.8" id="user-content-network-egress-requirements" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#network-egress-requirements" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>网络出口要求</h3>
+<p>运行安全隧道发起方的环境必须能够与平台建立出站连接。无需建立指向您网络的入站连接。</p>
+<p>允许从该环境向您的 Palantir 平台实例进行出站（出口）网络访问。如果您的网络默认拒绝出口流量，则可能需要开放防火墙或配置代理，以允许这些出站连接。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-managed-by-a-data-connection-agent" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#managed-by-a-data-connection-agent" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>由 Data Connection 代理管理</h3>
+<p>您可以使用现有的 <a href="/docs/foundry/data-connection/core-concepts/#agents">Data Connection 代理</a> 或 <a href="/docs/foundry/data-connection/set-up-agent/">设置新代理</a> 以管理安全隧道节点。代理会在节点发生故障后自动重启节点，并在新版本发布时对其进行升级。该代理可以继续并行运行其常规的 Data Connection 作业。</p>
+<p>要将 Data Connection 代理指定为节点的生命周期管理器：</p>
+<ol>
+<li>
+<p>打开节点并选择 <strong>编辑生命周期管理</strong>。</p>
+<p><img alt="Edit lifecycle management of a secure tunnel node." height="600" node="[object Object]" src="/docs/resources/foundry/administration/secure-tunnel-edit-lifecycle-mgmt.png" style="aspect-ratio:2338 / 1152" width="1217.7083333333335"/></p>
+</li>
+<li>
+<p>选择 <strong>使用 Data Connection 代理</strong>。</p>
+</li>
+<li>
+<p>搜索并选择将管理该节点的代理。</p>
+</li>
+<li>
+<p>选择 <strong>保存</strong>。</p>
+</li>
+</ol>
+<p><img alt="The Lifecycle management dialog for a secure tunnels node, with the option to use a Data Connection agent selected." height="600" node="[object Object]" src="/docs/resources/foundry/administration/secure-tunnels-data-connection-agent-lifecycle-management.png" style="aspect-ratio:593 / 740" width="480.81081081081084"/></p>
+<h3 data-pagefind-weight="0.8" id="user-content-helm-chart-managed-by-apollo" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#helm-chart-managed-by-apollo" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>由 Apollo 管理的 Helm chart</h3>
+<p>安全隧道发起方作为通过 <a href="/docs/foundry/../apollo/core/introduction/">Apollo</a>（即 Palantir 的持续部署系统）管理的 Helm chart 进行部署。Apollo 会将该 chart 部署到准备就绪的环境中，并为其配置以下内容：</p>
+<ul>
+<li>它所连接的控制平面地址。</li>
+<li>用于验证平台 TLS 证书的信任包。</li>
+<li>用于引导身份验证的初始访问令牌。之后，安全隧道发起方会自动轮换其自身的令牌。</li>
+</ul>
+<p>安全隧道发起方运行后，会建立通往响应方的隧道并向 Apollo 报告其健康状态。无需进一步操作即可保持安全隧道发起方处于已认证和已更新状态。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-configure-the-egress-allowlist" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#configure-the-egress-allowlist" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>配置出站白名单</h2>
+<p>安全隧道发起方会强制执行 <strong>默认拒绝</strong> 出站允许列表。只有当目标系统与允许列表中的某个条目匹配时，才能通过隧道访问该系统。如果允许列表为空，则所有出站流量都会被阻止。</p>
+<p>允许列表是一个 CIDR 块列表，每个 CIDR 块都关联一个端口或端口范围。每个条目包含以下字段：</p>
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>字段</th><th>是否必填？</th><th>描述</th></tr></thead><tbody><tr><td><code>cidrBlock</code></td><td>是</td><td>要允许的 IP 范围，采用 CIDR 表示法。使用 <code>/32</code> 后缀即可允许单个 IPv4 地址。</td></tr><tr><td><code>port</code></td><td>是</td><td>要允许的目标端口。</td></tr><tr><td><code>endPort</code></td><td>否</td><td>包含性端口范围的结束端口，该范围始于 <code>port</code>。如果省略，则只有 <code>port</code> 才被允许。</td></tr></tbody></table></div>
+<p>例如，以下允许列表允许连接到单个主机的端口 <code>7000</code> 至 <code>9000</code>，以及连接到某个子网的端口 <code>443</code>：</p>
+<pre><div class="ptcom-design__wrapper__12wpwnx" data-pagefind-weight="0.5"><span class="ptcom-design__clipboard__1l1gb20 ptcom-design__clipboard__12wpwnx"><span class="ptcom-design__confirmation__1l1gb20" data-pagefind-ignore="true">Copied!</span><svg aria-hidden="true" aria-label="clipboard" data-view-component="true" height="16" version="1.1" viewbox="0 0 16 16" width="16"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z" fill="currentColor" fill-rule="evenodd"></path><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z" fill="currentColor" fill-rule="evenodd"></path></svg></span><div style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;overflow:auto;position:relative;margin:0;padding:0.75em"><code style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;float:left;padding-right:10px"><span class="react-syntax-highlighter-line-number">1
+</span><span class="react-syntax-highlighter-line-number">2
+</span><span class="react-syntax-highlighter-line-number">3
+</span><span class="react-syntax-highlighter-line-number">4
+</span><span class="react-syntax-highlighter-line-number">5
+</span><span class="react-syntax-highlighter-line-number">6
+</span></code><code class="language-yaml" style="white-space:pre;text-align:left;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none">allowListedCidrs:
+  - cidrBlock: '192.168.1.1/32'
+    port: 7000
+    endPort: 9000
+  - cidrBlock: '192.168.2.2/24'
+    port: 443</code></div></div></pre>
+<p>要允许所有出站流量，请允许所有端口上的所有地址：</p>
+<pre><div class="ptcom-design__wrapper__12wpwnx" data-pagefind-weight="0.5"><span class="ptcom-design__clipboard__1l1gb20 ptcom-design__clipboard__12wpwnx"><span class="ptcom-design__confirmation__1l1gb20" data-pagefind-ignore="true">Copied!</span><svg aria-hidden="true" aria-label="clipboard" data-view-component="true" height="16" version="1.1" viewbox="0 0 16 16" width="16"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z" fill="currentColor" fill-rule="evenodd"></path><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z" fill="currentColor" fill-rule="evenodd"></path></svg></span><div style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;overflow:auto;position:relative;margin:0;padding:0.75em"><code style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;float:left;padding-right:10px"><span class="react-syntax-highlighter-line-number">1
+</span><span class="react-syntax-highlighter-line-number">2
+</span><span class="react-syntax-highlighter-line-number">3
+</span><span class="react-syntax-highlighter-line-number">4
+</span></code><code class="language-yaml" style="white-space:pre;text-align:left;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none">allowListedCidrs:
+  - cidrBlock: '0.0.0.0/0'
+    port: 1
+    endPort: 65535</code></div></div></pre>
+<p>如果目标与允许列表中的任何条目均不匹配，安全隧道发起方将拒绝通往该目标的连接。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-always-denied-destinations" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#always-denied-destinations" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>始终被拒绝的目标</h3>
+<p>无论允许列表如何设置，安全隧道发起方始终会拒绝发往链路本地地址范围的出站流量，其中包括云实例元数据服务（例如， <code>169.254.169.254</code>）。即使允许列表允许所有出站流量，这些目标也仍会被阻止，从而防止隧道流量到达安全隧道发起方运行环境中的敏感基础设施端点。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-next-steps" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#next-steps" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>后续步骤</h2>
+<p>当安全隧道启动器运行且其出口允许列表配置完成后，在 Control Panel 中创建一个 <a href="/docs/foundry/administration/configure-egress/#secure-tunnel-egress-policies">安全隧道出口策略</a> ，并将其分配给某个 <a href="/docs/foundry/data-connection/set-up-source/">源</a> （在 Data Connection 中），以便通过隧道路由该源的流量。</p></div>
+</article>
+</body>
+</html>

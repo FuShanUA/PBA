@@ -5,17 +5,24 @@ Uses ThreadPoolExecutor with internal deadline checks (not future.result timeout
 to ensure workers actually return and become available for new work.
 """
 
-import sys, os, re, time, json, argparse
+import sys, os, re, time, json, argparse, hashlib, shutil
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from html import escape
 
-from translation_cleanup import sanitize_translated_html
+from bs4 import BeautifulSoup
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CONTENT_DIR = os.path.join(ROOT, "content", "docs")
-MAX_WORDS_PER_CHUNK = 200
+PROGRESS_PATH = os.path.join(ROOT, "data", "translation_progress.json")
+CACHE_DIR = os.path.join(ROOT, "data", "translation_cache")
+MAX_WORDS_PER_CHUNK = 160
+MAX_ITEMS_PER_CHUNK = 8
 MAX_RETRIES = 2
-SLUG_DEADLINE = 60  # max seconds per slug (checked internally)
-API_TIMEOUT = 25   # per API call
+SLUG_DEADLINE = 3600  # max seconds per slug (checked internally)
+API_TIMEOUT = 300  # per API call
+MODEL = "glm-5.3"
+REASONING_BUDGET_TOKENS = 32  # medium-level reasoning for translation
+NONTRANSLATABLE_TAGS = ("svg", "pre", "code", "script", "style", "textarea")
 
 TERM_PAIRS = {
     "Foundry": "Foundry", "Apollo": "Apollo", "Gotham": "Gotham", "AIP": "AIP",
@@ -34,13 +41,18 @@ TERM_PAIRS = {
 
 def build_translation_prompt(content):
     terms_str = "\n".join(f"  {en} -> {zh}" for en, zh in TERM_PAIRS.items())
-    return f"""Translate the following HTML from English to Simplified Chinese. Keep all HTML tags intact. Keep product names in English: Palantir, Foundry, Apollo, Gotham, AIP.
+    return f"""Translate each "text" value in the "translations" array from English to Simplified Chinese.
 
 {terms_str}
 
-Return only the translated HTML. Do not repeat the term list or the content marker.
+Rules:
+1. Return only a JSON object with the same "translations" array and object order.
+2. Keep every "id" unchanged.
+3. Keep product names in English: Palantir, Foundry, Apollo, Gotham, AIP.
+4. Keep URLs, code identifiers, and command-line text unchanged.
+5. Translate naturally and maintain technical accuracy.
 
-Content:
+JSON input:
 {content}"""
 
 _client = None
@@ -52,7 +64,7 @@ def get_client():
     from openai import OpenAI
     api_key = os.environ.get("DASHSCOPE_API_KEY", "")
     if not api_key:
-        for p in [os.path.expanduser("~/.env"), os.path.join(ROOT, ".env"), "/Users/shanfu/cc/.env"]:
+        for p in [os.path.expanduser("~/.env"), os.path.join(ROOT, ".env"), "/Users/shanfu/cc/.env", "/Users/shanfu/cc/.baoyu-skills/.env"]:
             if os.path.exists(p):
                 with open(p) as f:
                     for line in f:
@@ -64,19 +76,36 @@ def get_client():
     if not api_key:
         print("ERROR: DASHSCOPE_API_KEY not found", flush=True)
         sys.exit(1)
-    _client = OpenAI(api_key=api_key, base_url="https://dashscope.aliyuncs.com/compatible-mode/v1")
+    _client = OpenAI(
+        api_key=api_key,
+        base_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
+        timeout=API_TIMEOUT,
+        max_retries=0,
+    )
     return _client
 
 def call_api(client, content):
     prompt = build_translation_prompt(content)
     for attempt in range(MAX_RETRIES):
         try:
-            resp = client.chat.completions.create(
-                model="qwen-turbo",
+            stream = client.chat.completions.create(
+                model=MODEL,
                 messages=[{"role": "user", "content": prompt}],
+                response_format={"type": "json_object"},
+                extra_body={
+                    "thinking": {
+                        "type": "enabled",
+                        "budget_tokens": REASONING_BUDGET_TOKENS,
+                    }
+                },
                 timeout=API_TIMEOUT,
+                stream=True,
             )
-            return resp.choices[0].message.content
+            pieces = []
+            for event in stream:
+                if event.choices and event.choices[0].delta and event.choices[0].delta.content:
+                    pieces.append(event.choices[0].delta.content)
+            return "".join(pieces)
         except Exception as e:
             s = str(e)
             if "429" in s or "rate" in s.lower():
@@ -84,6 +113,7 @@ def call_api(client, content):
             elif attempt < MAX_RETRIES - 1:
                 time.sleep(1)
             else:
+                print(f"API error ({MODEL}): {str(e)[:160]}", flush=True)
                 return None
     return None
 
@@ -91,22 +121,141 @@ def extract_article_content(html):
     m = re.search(r'<article>(.*?)</article>', html, re.DOTALL | re.I)
     return m.group(1).strip() if m else ""
 
-def chunk_content(content):
-    blocks = re.split(r'(\n\s*</?(?:p|div|h[1-6]|ul|ol|li|pre|blockquote|figure|figcaption|table|tr|td|th|section)[^>]*>\s*\n?)', content)
-    chunks, current, words = [], [], 0
-    for block in blocks:
-        if not block.strip():
+def extract_text_nodes(content):
+    """Return the parsed article and its visible, translatable text nodes."""
+    soup = BeautifulSoup(content, "html.parser")
+    entries = []
+    for node in soup.find_all(string=True):
+        if node.find_parent(NONTRANSLATABLE_TAGS):
             continue
-        wc = len(block.split())
-        if words + wc > MAX_WORDS_PER_CHUNK and current:
-            chunks.append(''.join(current))
-            current, words = [block], wc
+        raw = str(node)
+        match = re.match(r"^(\s*)(.*?)(\s*)$", raw, re.DOTALL)
+        if not match or not match.group(2):
+            continue
+        entries.append({
+            "node": node,
+            "id": len(entries),
+            "prefix": match.group(1),
+            "suffix": match.group(3),
+            "text": match.group(2),
+        })
+    return soup, entries
+
+def chunk_text_entries(entries):
+    chunks, current, words = [], [], 0
+    for entry in entries:
+        payload = {"id": entry["id"], "text": entry["text"]}
+        word_count = len(entry["text"].split())
+        if (
+            words + word_count > MAX_WORDS_PER_CHUNK
+            or len(current) >= MAX_ITEMS_PER_CHUNK
+        ) and current:
+            chunks.append(current)
+            current, words = [payload], word_count
         else:
-            current.append(block)
-            words += wc
+            current.append(payload)
+            words += word_count
     if current:
-        chunks.append(''.join(current))
+        chunks.append(current)
     return chunks
+
+def parse_translation_response(raw):
+    text = (raw or "").strip()
+    if text.startswith("```"):
+        text = re.sub(r"^```(?:json)?\s*", "", text)
+        text = re.sub(r"\s*```$", "", text)
+    start, end = text.find("["), text.rfind("]")
+    if start < 0 or end <= start:
+        raise RuntimeError("translation API did not return JSON")
+    data = json.loads(text[start:end + 1])
+    if isinstance(data, dict) and isinstance(data.get("translations"), list):
+        data = data["translations"]
+    if not isinstance(data, list):
+        raise RuntimeError("translation API returned invalid JSON")
+    translations = {}
+    for item in data:
+        if not isinstance(item, dict) or "id" not in item or "text" not in item:
+            raise RuntimeError("translation API omitted a text node")
+        translations[str(item["id"])] = str(item["text"])
+    return translations
+
+def load_translation_cache(cache_path, source_hash, expected_ids):
+    if not os.path.exists(cache_path):
+        return {}
+    try:
+        with open(cache_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        if data.get("version") != 1 or data.get("source_sha256") != source_hash:
+            return {}
+        cached = data.get("translations")
+        if not isinstance(cached, dict):
+            return {}
+        return {
+            str(key): str(value)
+            for key, value in cached.items()
+            if str(key) in expected_ids and str(value).strip()
+        }
+    except Exception:
+        return {}
+
+def save_translation_cache(cache_path, source_hash, translations):
+    os.makedirs(os.path.dirname(cache_path), exist_ok=True)
+    data = {
+        "version": 1,
+        "source_sha256": source_hash,
+        "translations": translations,
+    }
+    tmp = cache_path + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False)
+    os.replace(tmp, cache_path)
+
+def translate_article_content(content, client, deadline_started, cache_path=None):
+    soup, entries = extract_text_nodes(content)
+    if not entries:
+        return None
+
+    expected_ids = {str(entry["id"]) for entry in entries}
+    source_hash = hashlib.sha256(content.encode("utf-8")).hexdigest()
+    translations = (
+        load_translation_cache(cache_path, source_hash, expected_ids)
+        if cache_path else {}
+    )
+
+    chunks = chunk_text_entries(entries)
+    failed_chunks = 0
+    for chunk in chunks:
+        if time.time() - deadline_started > SLUG_DEADLINE:
+            break
+
+        missing = [item for item in chunk if str(item["id"]) not in translations]
+        if not missing:
+            continue
+
+        try:
+            raw = call_api(client, json.dumps({"translations": missing}, ensure_ascii=False))
+            if not raw or not raw.strip():
+                raise RuntimeError("translation API returned an empty result")
+            translations.update(parse_translation_response(raw))
+            if cache_path:
+                save_translation_cache(cache_path, source_hash, translations)
+        except Exception as e:
+            failed_chunks += 1
+            print(
+                f"Chunk failed: {len(missing)} items: {str(e)[:100]}",
+                flush=True,
+            )
+
+    if set(translations) != expected_ids:
+        missing_count = len(expected_ids - set(translations))
+        raise RuntimeError(
+            f"{missing_count} text nodes untranslated after {failed_chunks} failed chunks"
+        )
+
+    for entry in entries:
+        replacement = entry["prefix"] + translations[str(entry["id"])] + entry["suffix"]
+        entry["node"].replace_with(replacement)
+    return str(soup)
 
 def build_reader_html(title, content_html, lang="en"):
     lang_attr = "zh-CN" if lang == "zh" else "en"
@@ -136,6 +285,20 @@ th,td{{border:1px solid #ddd;padding:8px;text-align:left}}
 </body>
 </html>'''
 
+def write_progress(total, completed, errors, remaining):
+    data = {
+        "total": total,
+        "processed": completed + errors,
+        "completed": completed,
+        "errors": errors,
+        "remaining": remaining,
+        "updated_at": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
+    }
+    tmp = PROGRESS_PATH + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+    os.replace(tmp, PROGRESS_PATH)
+
 def translate_one_slug(slug, client):
     page_dir = os.path.join(CONTENT_DIR, slug)
     en_path = os.path.join(page_dir, "page.html")
@@ -150,31 +313,51 @@ def translate_one_slug(slug, client):
         if len(content) > 200000:
             return slug, False, "too big"
 
-        chunks = chunk_content(content) if len(content.split()) > MAX_WORDS_PER_CHUNK else [content]
-        parts = []
-        for i, chunk in enumerate(chunks):
-            # Check deadline before each chunk
-            if time.time() - t0 > SLUG_DEADLINE:
-                raise TimeoutError("translation deadline exceeded")
-            if not chunk.strip():
-                continue
-            result = call_api(client, chunk)
-            if not result or not result.strip():
-                raise RuntimeError("translation API returned an empty result")
-            parts.append(sanitize_translated_html(result))
-
-        translated = '\n\n'.join(parts)
+        cache_path = os.path.join(CACHE_DIR, slug + ".json")
+        translated = translate_article_content(content, client, t0, cache_path)
         if not translated:
             return slug, False, "no translation"
 
-        title_m = re.search(r'<title>([^<]+)</title>', html)
-        title = title_m.group(1) if title_m else slug
+        translated_soup = BeautifulSoup(translated, "html.parser")
+        translated_h1 = translated_soup.find("h1")
+        title = translated_h1.get_text(" ", strip=True) if translated_h1 else slug
         with open(zh_path, "w", encoding="utf-8") as f:
-            f.write(build_reader_html(title, translated, "zh"))
+            f.write(build_reader_html(escape(title), translated, "zh"))
         elapsed = time.time() - t0
         return slug, True, f"{elapsed:.0f}s"
     except Exception as e:
         return slug, False, str(e)[:60]
+
+def copy_duplicate_translations():
+    """Reuse translations for pages whose source HTML is byte-identical."""
+    groups = {}
+    for slug in os.listdir(CONTENT_DIR):
+        page_dir = os.path.join(CONTENT_DIR, slug)
+        en_path = os.path.join(page_dir, "page.html")
+        zh_path = os.path.join(page_dir, "page_zh.html")
+        if not os.path.isfile(en_path):
+            continue
+        with open(en_path, "rb") as f:
+            source_hash = hashlib.sha256(f.read()).hexdigest()
+        groups.setdefault(source_hash, []).append((slug, en_path, zh_path))
+
+    copied = 0
+    for pages in groups.values():
+        completed = [
+            zh_path for _, _, zh_path in pages
+            if os.path.exists(zh_path) and os.path.getsize(zh_path) > 200
+        ]
+        if not completed:
+            continue
+        source_zh = completed[0]
+        for slug, _, zh_path in pages:
+            if zh_path == source_zh:
+                continue
+            if not (os.path.exists(zh_path) and os.path.getsize(zh_path) > 200):
+                shutil.copyfile(source_zh, zh_path)
+                copied += 1
+                print(f"Reused translation: {slug}", flush=True)
+    return copied
 
 def main():
     parser = argparse.ArgumentParser()
@@ -190,7 +373,13 @@ def main():
         print(f"  {'OK' if r[1] else 'FAIL'}: {r[2]}", flush=True)
         return
 
-    slugs = sorted([d for d in os.listdir(CONTENT_DIR) if os.path.isdir(os.path.join(CONTENT_DIR, d))])
+    copy_duplicate_translations()
+
+    slugs = [
+        d for d in os.listdir(CONTENT_DIR)
+        if os.path.isfile(os.path.join(CONTENT_DIR, d, "page.html"))
+    ]
+    slugs.sort(key=lambda d: os.path.getsize(os.path.join(CONTENT_DIR, d, "page.html")))
     todo = []
     for slug in slugs:
         en_path = os.path.join(CONTENT_DIR, slug, "page.html")
@@ -198,6 +387,7 @@ def main():
         if os.path.exists(en_path) and not (os.path.exists(zh_path) and os.path.getsize(zh_path) > 200):
             todo.append(slug)
     print(f"[Translate] todo={len(todo)} workers={args.workers}", flush=True)
+    write_progress(len(todo), 0, 0, len(todo))
     if not todo:
         print("Nothing to translate.", flush=True)
         return
@@ -220,6 +410,7 @@ def main():
             else:
                 err += 1
             total = ok + err
+            write_progress(len(todo), ok, err, len(todo) - total)
             if total % 10 == 0 or total == len(todo):
                 elapsed = time.time() - start_time
                 rate = total / elapsed if elapsed > 0 else 0

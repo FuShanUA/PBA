@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Use Palantir-provided models to create a semantic search workflow</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<div class="ptcom-design__markdownDoc__1uarhel" data-pagefind-body="true"><h1 data-pagefind-weight="1" id="user-content-use-palantir-provided-models-to-create-a-semantic-search-workflow" level="1" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#use-palantir-provided-models-to-create-a-semantic-search-workflow" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Use Palantir-provided models to create a semantic search workflow</h1>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>To use Palantir-provided language models, <a href="/docs/foundry/aip/enable-aip-features/">AIP must first be enabled on your enrollment</a>. You also must have permissions to use <a href="/docs/foundry/platform-overview/aip-capabilities/">AIP developer capabilities</a>. Using a custom model? Review <a href="/docs/foundry/ontology/using-custom-models-to-create-a-semantic-search-workflow/">Using custom models to create a semantic search workflow</a> instead.</p></div>
+<p>This page illustrates the process of building a notional end-to-end semantic search workflow using a <a href="/docs/foundry/aip/supported-llms/">Palantir-provided embedding model</a>.</p>
+<h2 data-pagefind-weight="0.9" id="user-content-instructions" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#instructions" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Instructions</h2>
+<p>To begin, you need to generate embeddings and store them in an object type with a <a href="/docs/foundry/object-link-types/property-metadata/#property-base-types-with-limited-support"><code>vector</code> type</a>. Then, you can set up a semantic search workflow in <a href="/docs/foundry/workshop/overview/">Workshop</a>, build an <a href="/docs/foundry/workshop/widgets-aip-chatbot/">AIP Chatbot Workshop widget</a> solution, or create a custom semantic search function for use in <a href="/docs/foundry/workshop/overview/">Workshop</a> and <a href="/docs/foundry/logic/overview/">AIP Logic</a>.</p>
+<p>Prerequisite:</p>
+<ul>
+<li><a href="#generate-embeddings-and-create-object-type">Generate embeddings and create object type</a></li>
+</ul>
+<p>Options:</p>
+<ul>
+<li><a href="#create-a-simple-semantic-search-workflow-within-workshop-using-a-knn-object-set-no-code">Create a simple semantic search workflow within Workshop using a KNN object set (no-code)</a></li>
+<li><a href="#use-aip-chatbot-no-code">Enable an AIP Chatbot to semantic search for objects (no-code)</a></li>
+<li><a href="#create-a-function-to-semantically-search-across-objects-for-use-in-workshop-andor-aip-logic">Create a function to semantically search across objects for use in Workshop and/or AIP Logic</a></li>
+</ul>
+<h2 data-pagefind-weight="0.9" id="user-content-generate-embeddings-and-create-object-type" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#generate-embeddings-and-create-object-type" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Generate embeddings and create object type</h2>
+<p>We will use <a href="/docs/foundry/pipeline-builder/overview/">Pipeline Builder</a> to embed text in the dataset as vectors with the <a href="/docs/foundry/pipeline-builder/pipeline-builder-aip/#text-to-embeddings"><strong>Text to Embeddings</strong> expression</a>. The expression takes a string and converts it to a vector using one of the Palantir-provided models; in our case, this is the <code>text-embedding-ada-002</code> embedding model.</p>
+<p><img alt="Text to Embedding" height="354" node="[object Object]" src="/docs/resources/foundry/ontology/text-to-embedding.png" style="aspect-ratio:1936 / 354" width="1936"/></p>
+<p>These embeddings can then be added to the Ontology as a vector property.</p>
+<p><img alt="Configuring a vector property in a Pipeline Builder output object property" height="572" node="[object Object]" src="/docs/resources/foundry/ontology/embeddings-as-pipeline-builder-output-object-property.png" style="aspect-ratio:1494 / 572" width="1494"/></p>
+<p>If you would like more control around the generation of embeddings using Palantir-provided models, see <a href="/docs/foundry/transforms-python-spark/palantir-provided-models/#embeddings">Language models within Python transforms</a>.</p>
+<h2 data-pagefind-weight="0.9" id="user-content-create-a-simple-semantic-search-workflow-within-workshop-using-a-knn-object-set-no-code" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#create-a-simple-semantic-search-workflow-within-workshop-using-a-knn-object-set-no-code" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Create a simple semantic search workflow within Workshop using a KNN object set (no-code)</h2>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>The KNN object set cannot be sorted by relevance. If you need ordered results, use the <a href="#create-a-function-to-semantically-search-across-objects-for-use-in-workshop-andor-aip-logic">function approach</a> with TypeScript v1 or TypeScript v2. Both versions support relevance ordering.</p></div>
+<p>Configuring a <a href="/docs/foundry/functions/api-object-sets/#k-nearest-neighbors-knn">KNN object set</a> within <a href="/docs/foundry/workshop/overview/">Workshop</a> is an easy no-code way to build a semantic search workflow.</p>
+<ol>
+<li>Create an object set <a href="/docs/foundry/workshop/concepts-variables/">variable</a> and select the object type that contains an embedding property.</li>
+<li>Select the filter <code>+ On a property</code> option, then from the list of properties in the menu, select your embedding property.</li>
+<li>Once selected, the K-nearest-neighbors configuration should appear. If this configuration does not appear, verify that the property you selected is an embedding property.</li>
+</ol>
+<p><img alt="Workshop KNN config" height="600" node="[object Object]" src="/docs/resources/foundry/ontology/knn-config-workshop.png" style="aspect-ratio:792 / 1066" width="445.77861163227016"/></p>
+<p>Within this panel, you can configure:</p>
+<ul>
+<li><strong>K-value:</strong> A number between 1-100 for how many objects to return in the semantic search.</li>
+<li><strong>Query:</strong> The string variable to use as a query when performing the semantic search.</li>
+</ul>
+<ol start="4">
+<li>Next, create a <a href="/docs/foundry/workshop/widgets-text-input/">text input</a> widget and add its output variable to the KNN query option seen above.</li>
+<li>Lastly, add an <a href="/docs/foundry/workshop/widgets-object-table/">object table</a> widget and configure its input variable to be the newly created <a href="/docs/foundry/functions/api-object-sets/#k-nearest-neighbors-knn">KNN object set</a>.</li>
+</ol>
+<p><img alt="Workshop KNN semantic search" height="600" node="[object Object]" src="/docs/resources/foundry/ontology/knn-workshop-semantic.png" style="aspect-ratio:1194 / 982" width="729.5315682281059"/></p>
+<p>For more customized semantic search logic, see the <a href="#create-a-function-to-semantically-search-across-objects-for-use-in-workshop-andor-aip-logic">section on functions</a>.</p>
+<h2 data-pagefind-weight="0.9" id="user-content-use-aip-chatbot-no-code" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#use-aip-chatbot-no-code" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Use AIP Chatbot (no-code)</h2>
+<p>AIP Chatbots (formerly AIP Agents) created in <a href="/docs/foundry/chatbot-studio/overview/">AIP Chatbot Studio</a> are good for beginning semantic searches across your objects because they do not require any code. Learn more about <a href="#create-a-function-to-semantically-search-across-objects-for-use-in-workshop-andor-aip-logic">incorporating semantic search with more control over the functionality</a>.</p>
+<p>Follow the instructions on the <a href="/docs/foundry/chatbot-studio/getting-started/">getting started</a> guide to create an AIP Chatbot and either add <a href="/docs/foundry/chatbot-studio/retrieval-context/#ontology-context">Ontology context</a> or an <strong>Ontology semantic search</strong> <a href="/docs/foundry/chatbot-studio/tools/#types-of-tools">tool</a>. This initial setup will enable you to ask the AIP Chatbot to semantically search the objects.</p>
+<h2 data-pagefind-weight="0.9" id="user-content-create-a-function-to-semantically-search-across-objects-for-use-in-workshop-andor-aip-logic" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#create-a-function-to-semantically-search-across-objects-for-use-in-workshop-andor-aip-logic" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Create a function to semantically search across objects for use in Workshop and/or AIP Logic</h2>
+<p>Create a <a href="/docs/foundry/functions/getting-started/">functions repository</a> and a function to query your object type. The goal is to take user input and run a <a href="/docs/foundry/functions/api-object-sets/#k-nearest-neighbors-knn">KNN search</a> over the object type. In TypeScript v1, first generate a vector with the same Palantir-provided model <a href="#generate-embeddings-and-create-object-type">used earlier</a>. To learn how to import Palantir-provided models into a TypeScript v1 function, review <a href="/docs/foundry/functions/language-models/#embeddings">Language models in TypeScript v1 functions</a>. TypeScript v2 and Python accept the query as text, as described below.</p>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><div class="ptcom-design__title__19o1cwu">Enabling vector properties for functions</div><p>Before proceeding, ensure that the entry <code>"enableVectorProperties": true</code> is present in the <code>functions.json</code> file in your Functions code repository. If this entry is not present, add it to <code>functions.json</code> and commit the change to proceed. Contact your Palantir representative if you need further assistance.</p><p>The <code>functions.json</code> configuration file is a TypeScript v1 repository artifact. No equivalent vector property setting is documented for TypeScript v2 or Python repositories, so do not assume this entry carries over to them. Contact your Palantir representative if a KNN search fails in a TypeScript v2 or Python repository.</p></div>
+<h3 data-pagefind-weight="0.8" id="user-content-example-semantic-search-function" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#example-semantic-search-function" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Example semantic search function</h3>
+<p>The code examples in this section are available in <a href="/docs/foundry/functions/typescript-v1-getting-started/">TypeScript v1</a>, <a href="/docs/foundry/functions/typescript-v2-getting-started/">TypeScript v2</a>, and Python functions; select the tab that matches your function version. TypeScript v1 defines each function as a method on an exported class, applies the <code>@Function()</code> decorator from <code>@foundry/functions-api</code> to that method, and queries the Ontology through <code>Objects.search()</code>. TypeScript v2 defines functions with <code>export default</code>, imports types from <code>@osdk/functions</code>, and queries the Ontology through an <a href="/docs/foundry/ontology-sdk/typescript-osdk/">Ontology SDK</a> client passed as a parameter. Python uses the <code>@function</code> decorator and constructs an Ontology SDK client in the function body. For a full comparison, review the <a href="/docs/foundry/functions/language-feature-support/#typescript-v1-vs-typescript-v2">TypeScript v1 versus TypeScript v2 comparison</a>.</p>
+<p>The three versions differ in where the query embedding is produced and in where the function must be defined:</p>
+<ul>
+<li><strong>TypeScript v1</strong> embeds the query itself with a Palantir-provided embedding model, then passes the resulting vector to <code>nearestNeighbors</code>. The function is a method on an exported class, conventionally defined in <code>functions-typescript/src/index.ts</code>.</li>
+<li><strong>TypeScript v2</strong> passes the user's text directly to <code>nearestNeighbors</code>, which accepts either a query vector or query text. No separate embedding call is required, so the two-step workflow collapses into one. The function must be the default export of a file in the <code>typescript-functions/src/functions</code> directory, and the file name must match the function name; review <a href="/docs/foundry/functions/typescript-v2-getting-started/#write-a-function">Write a function</a> for the full requirements.</li>
+<li><strong>Python</strong> also accepts the query as text through <a href="/docs/foundry/ontology-sdk/python-osdk-migration/#nearest-neighbor-object-set-filtering"><code>nearest_neighbors</code></a>. The method is a beta feature, so the function is declared with <code>@function(beta=True)</code>.</li>
+</ul>
+<p>Generating an embedding as a separate step, as the TypeScript v1 example does with <code>TextEmbeddingAda_002.createEmbeddings</code>, has no documented TypeScript v2 equivalent. This workflow does not need one, because the query text is embedded during the KNN search. To call a Palantir-provided model directly from a TypeScript v2 or Python function for other purposes, review <a href="/docs/foundry/functions/language-models-python-tsv2/">Language models in TypeScript v2 and Python functions</a>.</p>
+<p>The neighbor count limit differs between the TypeScript versions. TypeScript v1 restricts the k value to the range <code>0 &lt; K &lt;= 100</code>, while the TypeScript v2 <code>numNeighbors</code> argument accepts values from <code>1</code> to <code>500</code>.</p>
+<p>TypeScript v1 sorts matches with a separate <code>.orderByRelevance()</code> call before taking the top k results. TypeScript v2 requests relevance ordering by passing <code>$orderBy: "relevance"</code> to <code>fetchPage()</code>. Python has no documented equivalent; instead, the neighbor count passed to the search bounds the results. Objects returned by the Python <a href="/docs/foundry/ontology-sdk/python-osdk-migration/#nearest-neighbor-object-set-filtering"><code>nearest_neighbors</code></a> method also carry a <code>_score</code> field.</p>
+<p>The TypeScript v2 and Python examples below accept the same query text and neighbor count as the TypeScript v1 example and return the nearest objects. The TypeScript v2 function additionally receives an Ontology SDK client as its first parameter.</p>
+<p>In each code snippet below, replace every instance of <code>ObjectApiName</code> with your unique object type. The identifier may sometimes appear as <code>objectApiName</code> with the first letter in lowercase.</p>
+<div><div class="ptcom-design__codeTabBar__17fxenc"><button class="ptcom-design__tabButton__17fxenc ptcom-design__isSelected__17fxenc">TypeScript v1</button><button class="ptcom-design__tabButton__17fxenc">TypeScript v2</button><button class="ptcom-design__tabButton__17fxenc">Python</button></div><div><div class=""><pre><div class="ptcom-design__wrapper__12wpwnx" data-pagefind-weight="0.5"><span class="ptcom-design__clipboard__1l1gb20 ptcom-design__clipboard__12wpwnx"><span class="ptcom-design__confirmation__1l1gb20" data-pagefind-ignore="true">Copied!</span><svg aria-hidden="true" aria-label="clipboard" data-view-component="true" height="16" version="1.1" viewbox="0 0 16 16" width="16"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z" fill="currentColor" fill-rule="evenodd"></path><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z" fill="currentColor" fill-rule="evenodd"></path></svg></span><div style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;overflow:auto;position:relative;margin:0;padding:0.75em"><code style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;float:left;padding-right:10px"><span class="react-syntax-highlighter-line-number">1
+</span><span class="react-syntax-highlighter-line-number">2
+</span><span class="react-syntax-highlighter-line-number">3
+</span><span class="react-syntax-highlighter-line-number">4
+</span><span class="react-syntax-highlighter-line-number">5
+</span><span class="react-syntax-highlighter-line-number">6
+</span><span class="react-syntax-highlighter-line-number">7
+</span><span class="react-syntax-highlighter-line-number">8
+</span><span class="react-syntax-highlighter-line-number">9
+</span><span class="react-syntax-highlighter-line-number">10
+</span><span class="react-syntax-highlighter-line-number">11
+</span><span class="react-syntax-highlighter-line-number">12
+</span><span class="react-syntax-highlighter-line-number">13
+</span><span class="react-syntax-highlighter-line-number">14
+</span><span class="react-syntax-highlighter-line-number">15
+</span><span class="react-syntax-highlighter-line-number">16
+</span><span class="react-syntax-highlighter-line-number">17
+</span><span class="react-syntax-highlighter-line-number">18
+</span><span class="react-syntax-highlighter-line-number">19
+</span><span class="react-syntax-highlighter-line-number">20
+</span><span class="react-syntax-highlighter-line-number">21
+</span><span class="react-syntax-highlighter-line-number">22
+</span></code><code class="language-typescript" style="white-space:pre;text-align:left;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none">import { Function, Integer } from "@foundry/functions-api";
+import { Objects, ObjectApiName } from "@foundry/ontology-api";
+import { TextEmbeddingAda_002 } from "@foundry/models-api/language-models"
+
+export class MyFunctions {
+    @Function()
+    public async findRelevantObjects(
+        query: string,
+        kValue: Integer,
+    ): Promise&lt;ObjectApiName[]&gt; {
+        if (query.length &lt; 1) {
+            return []
+        }
+        const embedding = await TextEmbeddingAda_002.createEmbeddings({inputs: [query]}).then(r =&gt; r.embeddings[0]);
+
+        return Objects.search()
+                    .objectApiName()
+                    .nearestNeighbors(obj =&gt; obj.embeddings.near(embedding, {kValue: kValue}))
+                    .orderByRelevance()
+                    .take(kValue);
+    }
+}</code></div></div></pre></div><div class="ptcom-design__isHidden__17fxenc"><pre><div class="ptcom-design__wrapper__12wpwnx" data-pagefind-weight="0.5"><span class="ptcom-design__clipboard__1l1gb20 ptcom-design__clipboard__12wpwnx"><span class="ptcom-design__confirmation__1l1gb20" data-pagefind-ignore="true">Copied!</span><svg aria-hidden="true" aria-label="clipboard" data-view-component="true" height="16" version="1.1" viewbox="0 0 16 16" width="16"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z" fill="currentColor" fill-rule="evenodd"></path><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z" fill="currentColor" fill-rule="evenodd"></path></svg></span><div style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;overflow:auto;position:relative;margin:0;padding:0.75em"><code style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;float:left;padding-right:10px"><span class="react-syntax-highlighter-line-number">1
+</span><span class="react-syntax-highlighter-line-number">2
+</span><span class="react-syntax-highlighter-line-number">3
+</span><span class="react-syntax-highlighter-line-number">4
+</span><span class="react-syntax-highlighter-line-number">5
+</span><span class="react-syntax-highlighter-line-number">6
+</span><span class="react-syntax-highlighter-line-number">7
+</span><span class="react-syntax-highlighter-line-number">8
+</span><span class="react-syntax-highlighter-line-number">9
+</span><span class="react-syntax-highlighter-line-number">10
+</span><span class="react-syntax-highlighter-line-number">11
+</span><span class="react-syntax-highlighter-line-number">12
+</span><span class="react-syntax-highlighter-line-number">13
+</span><span class="react-syntax-highlighter-line-number">14
+</span><span class="react-syntax-highlighter-line-number">15
+</span><span class="react-syntax-highlighter-line-number">16
+</span><span class="react-syntax-highlighter-line-number">17
+</span><span class="react-syntax-highlighter-line-number">18
+</span><span class="react-syntax-highlighter-line-number">19
+</span><span class="react-syntax-highlighter-line-number">20
+</span></code><code class="language-typescript" style="white-space:pre;text-align:left;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none">import { Client, Osdk } from "@osdk/client";
+import { Integer } from "@osdk/functions";
+import { ObjectApiName } from "@ontology/sdk";
+
+export default async function findRelevantObjects(
+    client: Client,
+    query: string,
+    kValue: Integer,
+): Promise&lt;Osdk.Instance&lt;ObjectApiName&gt;[]&gt; {
+    if (query.length &lt; 1) {
+        return [];
+    }
+
+    // nearestNeighbors embeds the query text, so no separate embedding call is needed.
+    const page = await client(ObjectApiName)
+        .nearestNeighbors(query, kValue, "embeddings")
+        .fetchPage({ $pageSize: kValue, $orderBy: "relevance" });
+
+    return page.data;
+}</code></div></div></pre></div><div class="ptcom-design__isHidden__17fxenc"><pre><div class="ptcom-design__wrapper__12wpwnx" data-pagefind-weight="0.5"><span class="ptcom-design__clipboard__1l1gb20 ptcom-design__clipboard__12wpwnx"><span class="ptcom-design__confirmation__1l1gb20" data-pagefind-ignore="true">Copied!</span><svg aria-hidden="true" aria-label="clipboard" data-view-component="true" height="16" version="1.1" viewbox="0 0 16 16" width="16"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z" fill="currentColor" fill-rule="evenodd"></path><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z" fill="currentColor" fill-rule="evenodd"></path></svg></span><div style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;overflow:auto;position:relative;margin:0;padding:0.75em"><code style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;float:left;padding-right:10px"><span class="react-syntax-highlighter-line-number">1
+</span><span class="react-syntax-highlighter-line-number">2
+</span><span class="react-syntax-highlighter-line-number">3
+</span><span class="react-syntax-highlighter-line-number">4
+</span><span class="react-syntax-highlighter-line-number">5
+</span><span class="react-syntax-highlighter-line-number">6
+</span><span class="react-syntax-highlighter-line-number">7
+</span><span class="react-syntax-highlighter-line-number">8
+</span><span class="react-syntax-highlighter-line-number">9
+</span><span class="react-syntax-highlighter-line-number">10
+</span><span class="react-syntax-highlighter-line-number">11
+</span><span class="react-syntax-highlighter-line-number">12
+</span><span class="react-syntax-highlighter-line-number">13
+</span><span class="react-syntax-highlighter-line-number">14
+</span><span class="react-syntax-highlighter-line-number">15
+</span><span class="react-syntax-highlighter-line-number">16
+</span><span class="react-syntax-highlighter-line-number">17
+</span><span class="react-syntax-highlighter-line-number">18
+</span><span class="react-syntax-highlighter-line-number">19
+</span></code><code class="language-python" style="white-space:pre;text-align:left;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none">from functions.api import function, Integer
+from ontology_sdk import FoundryClient
+from ontology_sdk.ontology.objects import ObjectApiName
+
+
+@function(beta=True)
+def find_relevant_objects(query: str, k_value: Integer) -&gt; list[ObjectApiName]:
+    if len(query) &lt; 1:
+        return []
+
+    client = FoundryClient()
+    # nearest_neighbors embeds the query text, so no separate embedding call is needed.
+    return list(
+        client.ontology.objects.ObjectApiName.nearest_neighbors(
+            query=query,
+            num_neighbors=k_value,
+            vector_property=ObjectApiName.object_type.embeddings,
+        )
+    )</code></div></div></pre></div></div></div>
+<p>At this point, we have a function that can run semantic search to query objects with natural language. Remember to <a href="/docs/foundry/functions/getting-started/#publish-your-functions">publish the function</a> so the function can be used anywhere within Foundry.</p>
+<h3 data-pagefind-weight="0.8" id="user-content-use-semantic-search-functions-in-workshop" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#use-semantic-search-functions-in-workshop" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Use semantic search functions in Workshop</h3>
+<ol>
+<li>Start by <a href="/docs/foundry/workshop/getting-started/">creating a Workshop application</a>.</li>
+<li>Add a <a href="/docs/foundry/workshop/widgets-text-input/">text input widget</a>, which will be used as an input to the published KNN document fetch function.</li>
+<li>Add an <a href="/docs/foundry/workshop/widgets-object-list/">object list widget</a> with an input <a href="/docs/foundry/workshop/functions-use/#function-backed-variables-in-workshop">object set generated from the function</a> and the selected inputs as shown below:</li>
+</ol>
+<img alt="KNN Function to generate object set" node="[object Object]" src="/docs/resources/foundry/ontology/semantic-search-workshop-function.png?width=450" style="aspect-ratio:1204 / 716" width="450"/>
+<ol start="4">
+<li>Set the neighbor count (<code>kValue</code> in TypeScript, <code>k_value</code> in Python) to however many results you want returned, subject to the limits described above. TypeScript v1 is additionally subject to the <a href="/docs/foundry/functions/api-object-sets/#k-nearest-neighbors-knn">specified limits</a>.</li>
+</ol>
+<h3 data-pagefind-weight="0.8" id="user-content-use-semantic-search-functions-in-aip-logic" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#use-semantic-search-functions-in-aip-logic" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Use semantic search functions in AIP Logic</h3>
+<p>Add the published function as a <a href="/docs/foundry/logic/getting-started/#use-a-logic-function">tool</a> within AIP Logic. Instruct the language model to use the tool with a prompt similar to this:</p>
+<blockquote>
+<p>Use the findRelevantObjects tool with a <code>kValue</code> of 5 to find the most related objects. Remember to add quotes around query when using the tool.</p>
+</blockquote></div>
+</article>
+</body>
+</html>

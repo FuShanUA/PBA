@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>时间序列预测训练器</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<div class="ptcom-design__markdownDoc__1uarhel" data-pagefind-body="true"><h1 data-pagefind-weight="1" id="user-content-time-series-forecasting-trainer" level="1" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#time-series-forecasting-trainer" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>时间序列预测训练器</h1>
+<p>时间序列预测训练器会并行或按顺序训练多个模型，以帮助其确定表现最佳的模型。如果该训练器判定多个模型的加权集成表现优于任何单个模型，则还可以利用集成方法。该训练器是使用 <a href="https://auto.gluon.ai/dev/index.html">AutoGluon 的 ↗</a> <code>TimeSeriesPredictor</code> 类构建的。</p>
+<p>时间序列预测训练器依赖于准确的历史时间序列数据，在多个预定义的前瞻步长上预测未来数据。模型集成的结构可在输出模型的实验页面的 <strong>Plots</strong>部分查看。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-models-trained" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#models-trained" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>已训练的模型</h2>
+<p>在内部，将会训练多个模型，除非通过排除相应模型或使用 <a href="#advanced-hyperparameters">hyperparameters</a>将其禁用。</p>
+<p>以下类型的模型可供训练：</p>
+<ul>
+<li><strong>AutoETS：</strong> 自动调优的指数平滑模型。</li>
+<li><strong>DeepAR：</strong> 自回归预测模型。</li>
+<li><strong>DirectTabular：</strong> 表格回归模型（一次性预测所有值）。</li>
+<li><strong>ETS：</strong> 朴素指数平滑模型。</li>
+<li><strong>NPTS：</strong> 非参数时间序列预测模型。</li>
+<li><strong>Naive：</strong> 基线模型，将时间戳 <code>t</code> 处的值设为 <code>t-1</code>处观测到的值。</li>
+<li><strong>PatchTST：</strong> 基于 Transformer 的时间序列预测模型。</li>
+<li><strong>RecursiveTabular：</strong> 类似于 <code>DirectTabular</code>，但会逐个预测值。</li>
+<li><strong>SeasonalNaive：</strong>  基线模型，将时间戳 <code>t</code> 等于该时间点的观测值 <code>t-1</code> 来自同一季节。</li>
+<li><strong>TemporalFusionTransformer：</strong> 一种结合了 LSTM 层和 Transformer 的深度学习模型，用于预测未来值的分位数。</li>
+<li><strong>Theta：</strong> Theta 预测模型。</li>
+<li><strong>TiDE：</strong> 时间序列密集编码器模型。</li>
+</ul>
+<h2 data-pagefind-weight="0.9" id="user-content-datasets" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#datasets" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>数据集</h2>
+<p>时间序列训练器对输入数据集的配置要求比 <a href="/docs/foundry/model-studio/trainers-regression/">回归</a> 或 <a href="/docs/foundry/model-studio/trainers-classification/">分类</a> 训练器更高。回归和分类训练器只需要一个训练数据集，而时间序列预测训练器则需要一个训练数据集和一个相应的静态数据集。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-training-dataset" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#training-dataset" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>训练数据集</h3>
+<p>训练数据集应为时间序列数据集，至少包含一个时间戳列和一个目标值列。目标值列是模型将要预测的内容。</p>
+<p>此外，训练数据集还支持以下选项的列映射：</p>
+<ul>
+<li><strong>物品 ID：</strong> 当您在单个数据集中跟踪多个时间序列时，物品 ID 列映射会非常有用。例如，包含销售历史的数据集可能包含商品的物品 ID（例如 SKU），从而可以训练模型来相互独立地预测各个物品。</li>
+<li><strong>已知协变量：</strong> 已知协变量是指在整个预测期内都已知的列。例如，列可以指示以下内容：
+<ul>
+<li>节假日和周末：某一列可以指示给定的某一天是节假日还是周末，而此类信息在整个预测期内均为已知。</li>
+<li>事件日期：某一列可以指示当天发生了某个特定事件，例如体育赛事。
+其余列将被视为 <em>过去</em> 协变量，这些值会波动且无法提前得知，例如温度或类似产品的销量。</li>
+</ul>
+</li>
+</ul>
+<h3 data-pagefind-weight="0.8" id="user-content-static-dataset" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#static-dataset" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>静态数据集</h3>
+<p>静态数据集包含与时间无关的元数据。</p>
+<p>其中可能包含以下数据：</p>
+<ul>
+<li>门店位置</li>
+<li>客户细分的年龄段</li>
+<li>定价层级或订阅级别</li>
+</ul>
+<p>静态数据集的格式必须确保每个 item ID 在 <a href="#training-dataset">训练数据集</a> 中的映射都对应于静态数据集中的单独一行。</p>
+<p>如果您的训练数据集如下所示：</p>
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>date</th><th>item_id</th><th>sales</th></tr></thead><tbody><tr><td>2025-09-01</td><td>STORE_1</td><td>14</td></tr><tr><td>2025-09-01</td><td>STORE_2</td><td>7</td></tr><tr><td>2025-09-02</td><td>STORE_1</td><td>16</td></tr><tr><td>2025-09-02</td><td>STORE_2</td><td>9</td></tr><tr><td>2025-09-03</td><td>STORE_1</td><td>13</td></tr></tbody></table></div>
+<p>静态数据集可能如下所示，其中包含有关以下列中的值的一些有用元数据 <code>item_id</code>：</p>
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>item_id</th><th>zip_code</th><th>store_class</th></tr></thead><tbody><tr><td>STORE_1</td><td>10016</td><td>LARGE</td></tr><tr><td>STORE_2</td><td>90210</td><td>POP_UP</td></tr></tbody></table></div>
+<p>随后，静态数据将与训练数据集和可选的测试数据集相关联，并通过 <code>item_id</code> 列进行联接。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-parameters" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#parameters" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>参数</h2>
+<ul>
+<li><strong>预测期长度：</strong> 推理期间需要预测的未来时间步数。</li>
+<li><strong>评估指标：</strong> 用于在训练过程中对模型性能进行评分的指标。不同的数据集可能在不同评估指标上表现更佳。有关更多详细信息，请参阅平台内文档。评估指标越高，模型性能越好。所有评估指标均遵循此规律。</li>
+<li><strong>时间限制：</strong> 可选择设置训练所花费的最大时间量。达到时间限制后，作业的训练部分将结束。请注意，在模型验证完成且模型发布之前，作业不会结束。</li>
+<li><strong>训练预设：</strong> 训练预设是对 bagging 和 stacking 相关的更复杂参数的上层抽象。
+<ul>
+<li><code>best_quality</code>：使用统计模型、深度学习模型和经典机器学习模型的组合，并包含更长的验证步骤和多次回测。此预设将生成最准确的模型，但训练可能需要较长时间。</li>
+<li><code>high_quality</code>：使用统计模型、深度学习模型和经典机器学习模型的组合。此预设将生成比 <code>medium_quality</code> 预设更准确的模型，但训练速度较慢。</li>
+<li><code>medium_quality</code>：使用统计模型和经典机器学习模型的组合，以及 <code>TemporalFusionTransformer</code>。此预设可生成性能不错且训练时间更短的模型。</li>
+<li><code>fast_training</code>：仅使用简单的统计模型和基于树的模型。此预设提供快速训练，但结果可能不够准确，仅建议用于原型设计。</li>
+</ul>
+</li>
+<li><strong>分位数级别：</strong> 分位数级别指定一组额外的分位数度量值（0.1、0.2、0.9 等），添加到预测输出中以提供概率分布预测。为某个分位数预测的值 <code>0.1</code> 表示实际值预计会低于该 <code>0.1</code> 值的时间占比为 10%。</li>
+<li><strong>重采样选项：</strong> 用于将时间序列重采样为固定频率的选项。
+<ul>
+<li><strong>频率别名：</strong> 数据频率的别名。设置为 auto 时，训练器将尝试推断时间序列数据的频率。否则，每个选项都表示一种常见的时间戳频率。例如， <code>B</code> 表示时间戳以工作日为单位， <code>W</code> 以周为单位，依此类推。这些值基于 <a href="https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases">pandas ↗</a> 偏移别名。这将用于影响任何重采样，从而调整时间戳以符合统一的频率。</li>
+<li><strong>数值聚合方法：</strong> 重采样时，可能需要修改值以将其“校正”为新的频率。此选项控制非分类值在重新采样到新时间戳之前如何跨时间戳进行聚合。</li>
+<li><strong>分类聚合方法：</strong> 与数值聚合方法相同，但适用于分类值。</li>
+</ul>
+</li>
+<li><strong>缺失值填充策略：</strong> 影响如何填充目标列中的缺失值。</li>
+<li><strong>启用集成：</strong> 当设为 true 时，将拟合由所有已训练模型组成的加权集成，并将其与单个模型进行比较，然后再确定最佳模型。</li>
+<li><strong>排除的模型类型：</strong> 排除某些模型类型，使其不会在训练期间使用。</li>
+</ul>
+<h3 data-pagefind-weight="0.8" id="user-content-advanced-hyperparameters" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#advanced-hyperparameters" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>高级：超参数</h3>
+<p>可选的超参数字段允许对每个已训练的模型进行更深度的自定义和控制，但需注意一点。定义此字段后，未在超参数字段中提供的任何模型都将被忽略。此字段将覆盖 AutoGluon 选择的默认超参数，并可能产生较差的结果。因此，如果您尚未查阅 <a href="https://auto.gluon.ai/dev/api/autogluon.tabular.TabularPredictor.fit.html#autogluon.tabular.TabularPredictor.fit">AutoGluon 文档 ↗</a>。在大多数情况下，默认超参数已能提供足够好的结果。</p>
+<p>一般来说，此处传递的参数将直接发送给底层模型实现。</p>
+<p>请参见以下示例：</p>
+<pre><div class="ptcom-design__wrapper__12wpwnx" data-pagefind-weight="0.5"><span class="ptcom-design__clipboard__1l1gb20 ptcom-design__clipboard__12wpwnx"><span class="ptcom-design__confirmation__1l1gb20" data-pagefind-ignore="true">Copied!</span><svg aria-hidden="true" aria-label="clipboard" data-view-component="true" height="16" version="1.1" viewbox="0 0 16 16" width="16"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z" fill="currentColor" fill-rule="evenodd"></path><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z" fill="currentColor" fill-rule="evenodd"></path></svg></span><div style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;overflow:auto;position:relative;margin:0;padding:0.75em"><code style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;float:left;padding-right:10px"><span class="react-syntax-highlighter-line-number">1
+</span><span class="react-syntax-highlighter-line-number">2
+</span><span class="react-syntax-highlighter-line-number">3
+</span><span class="react-syntax-highlighter-line-number">4
+</span><span class="react-syntax-highlighter-line-number">5
+</span><span class="react-syntax-highlighter-line-number">6
+</span><span class="react-syntax-highlighter-line-number">7
+</span></code><code class="language-json" style="white-space:pre;text-align:left;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none">{
+    "DeepAR": {},
+    "Theta": [
+        {"decomposition_type": "additive"},
+        {"seasonal_period": 1},
+    ],
+}</code></div></div></pre>
+<p>这些超参数将强制训练以下模型：</p>
+<ol>
+<li>一个 DeepAR 模型。</li>
+<li>一个 Theta 模型，其 <code>decomposition_type</code> 设置为 <code>additive</code>。</li>
+<li>一个 Theta 模型，其 <code>seasonal_period</code> 设置为 <code>1</code>。</li>
+</ol>
+<p>使用所提供的超参数，这些是在应用任何集成操作之前仅会被训练的模型。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-outputs" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#outputs" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>输出</h2>
+<p>时间序列预测训练器将输出一个 Foundry 模型，其中包含由验证步骤确定的最佳模型。有关该模型的详细信息，可通过 <a href="/docs/foundry/model-studio/navigation/#sidebar">导航至实验</a>，其中包含参数、指标和图表，可帮助您深入了解模型的性能。</p>
+<p>您可以使用 Quiver、Vertex 和 Workshop 等 Foundry 应用程序，将预测结果作为时间序列进行可视化和分析。 <a href="/docs/foundry/time-series/time-series-overview/">了解有关在 Foundry 中使用时间序列的更多信息</a>。</p></div>
+</article>
+</body>
+</html>

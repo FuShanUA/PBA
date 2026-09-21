@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>从 Gaia 创建本体论对象</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<div class="ptcom-design__markdownDoc__1uarhel" data-pagefind-body="true"><h1 data-pagefind-weight="1" id="user-content-create-ontology-objects-from-gaia" level="1" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#create-ontology-objects-from-gaia" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>从 Gaia 创建本体论对象</h1>
+<p>类似于您 <a href="/docs/foundry/geospatial/add-ontology-data-to-gaia/">将本体论中的数据添加到 Gaia 地图</a>的方式，您也可以通过在对象类型中标记对象，从您绘制的形状、放置的点或在地图上配置的战术图形创建本体论对象，该对象类型实现了 Gaia Geoshape Creatable、Gaia Geopoint Creatable 或 MILSTD 2525C Symbol <a href="/docs/foundry/interfaces/interface-overview/">接口</a>。</p>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>通过 Palantir 的 <a href="/docs/defense-osdk/api">Defense OSDK</a>提供的 MILSTD 2525C Symbol 接口取代了 Gaia Milsym Creatable 接口，后者目前处于开发过程中的 <a href="/docs/foundry/platform-overview/development-life-cycle/#planned-deprecation">计划弃用</a> 阶段，并将于 2026 年 7 月之前被弃用。如有关于 Defense OSDK 接口可用性或 Gaia Milsym Creatable 接口在您的注册中弃用的疑问，请联系 Palantir 支持团队。 <br/><br/></p><p>如果 <em>两种</em> 接口均在您的注册中可用，请实现 MILSTD 2525C Symbol 接口，而非 Gaia Milsym Creatable 接口。</p></div>
+<p><img alt="A Gaia map's Create shape window in the left panel is displayed, where a user can tag a shape drawn on a map as an object within an object type in their Ontology." height="600" node="[object Object]" src="/docs/resources/foundry/object-link-types/create-shape.png" style="aspect-ratio:2206 / 1738" width="761.5650172612197"/></p>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>要从 Gaia 地图创建本体论对象，您的注册必须同时使用 Foundry 和 Gotham。</p></div>
+<p>以下各部分概述了将 Gaia 形状、点和战术图形与本体论集成的端到端流程：</p>
+<ul>
+<li><a href="#install-prerequisite-marketplace-products">安装所有必要的 Marketplace 产品</a>。</li>
+<li><a href="#create-an-object-type-that-implements-the-gaia-geoshape-creatable-interface">在由受限视图支撑的受支持对象类型上实现 Gaia Geoshape Creatable 接口</a>。</li>
+<li><a href="#create-an-object-type-that-implements-the-gaia-geopoint-creatable-interface">在由受限视图支撑的受支持对象类型上实现 Gaia Geopoint Creatable 接口</a>。</li>
+<li><a href="#create-an-object-type-that-implements-the-milstd-2525c-symbol-interface">在由受限视图支撑的受支持对象类型上实现 MILSTD 2525C Symbol 接口</a>。</li>
+<li><a href="#register-your-ontology-and-its-types">注册您的本体论，并在 Gaia 中搜索您的对象类型</a>。</li>
+<li><a href="#entry-points-to-create-objects-on-your-gaia-map">了解创建对象的入口点</a>。</li>
+<li><a href="#draw-a-new-shape-on-your-gaia-map-and-tag-it-to-an-object-type">在您的地图上绘制一个新形状，并在您的对象类型中对其进行标记</a>。</li>
+<li><a href="#drop-a-new-point-on-your-gaia-map-and-tag-it-to-an-object-type">在您的地图上放置一个新点，并在您的对象类型中对其进行标记</a>。</li>
+<li><a href="#configure-a-tactical-graphic-on-your-gaia-map-and-tag-it-to-an-object-type">根据您在地图上绘制的形状配置战术图形，并在您的对象类型中对其进行标记</a>。</li>
+</ul>
+<h2 data-pagefind-weight="0.9" id="user-content-install-prerequisite-marketplace-products" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#install-prerequisite-marketplace-products" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>安装必备的 Marketplace 产品</h2>
+<p><a href="/docs/foundry/marketplace/overview/">Marketplace</a> 是 Foundry 的应用商店，提供已发布的数据产品或可供用户安装的平台资源集合。您可以通过 <strong>搜索...</strong> 栏或您主屏幕上的 <strong>Applications</strong> 门户访问 Marketplace。</p>
+<p>启动 Marketplace 后，请安装以下产品：</p>
+<ul>
+<li><a href="#core-property-types-from-the-core-ontology-store">来自 Core Ontology Store 的 Core Property Types</a>，其中包含核心共享属性类型（例如对象的分类和地理形状），可用于您本体论中的多个对象类型。</li>
+<li><a href="#gaia-geoshape-creatable-interface-from-the-gaia-app-store">来自 Gaia App Store 的 Gaia Geoshape Creatable 接口</a>，用于描述地理空间对象类型的形状，从而支持对具有相同形状的其他对象类型进行一致的建模和交互。</li>
+<li><a href="#gaia-geopoint-creatable-interface-from-the-gaia-app-store">来自 Gaia App Store 的 Gaia Geopoint Creatable 接口</a>，用于描述单点对象类型的位置。</li>
+</ul>
+<h3 data-pagefind-weight="0.8" id="user-content-core-property-types-from-the-core-ontology-store" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#core-property-types-from-the-core-ontology-store" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>来自 Core Ontology Store 的 Core Property Types</h3>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>请联系 Palantir 支持团队，将 Core Ontology 作为 <a href="/docs/foundry/marketplace/foundry-products/">Foundry 产品</a> 安装到您的 Foundry 注册环境中（如果 Marketplace 中未提供包含 Core Property Types 产品的 Core Ontology Store）。</p></div>
+<h3 data-pagefind-weight="0.8" id="user-content-gaia-geoshape-creatable-interface-from-the-gaia-app-store" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#gaia-geoshape-creatable-interface-from-the-gaia-app-store" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>来自 Gaia App Store 的 Gaia Geoshape Creatable 接口</h3>
+<p>在 Foundry 中， <a href="/docs/foundry/interfaces/interface-overview/">接口</a> 存在于您的本体论中，用于描述对象类型的形状及其功能，从而支持对具有相同形状的对象类型进行一致的建模和交互。您可以在多个对象类型上实现接口，并且接口可以扩展任意数量的其他接口。在对象类型上实现 Gaia Geoshape Creatable 接口后，您就可以使用在 Gaia 地图上绘制的形状在您的本体论中创建对象。</p>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>Gaia Geoshape Creatable 接口取代了已弃用的 Gaia Geocreatable 接口。如果您无法访问 Marketplace 中的 Gaia Geoshape Creatable 接口，请联系 Palantir 支持团队。</p></div>
+<p>要从 Marketplace 安装 Gaia Geoshape Creatable 接口：</p>
+<ol>
+<li>返回 Marketplace 并搜索 <code>Gaia App Store</code> （在 <strong>搜索商店...</strong>中）。</li>
+<li>选择 <code>Gaia Geoshape Creatable</code> 产品。</li>
+<li>选择屏幕右侧的蓝色 <strong>安装</strong> 按钮以启动草稿安装。您也可以选择为安装添加描述性后缀。</li>
+<li>指定一个 <strong>命名空间</strong> ，您的安装将保存到其中。Marketplace 将自动创建一个新的 <strong>项目</strong> ，位于所选的 <strong>命名空间</strong>中。</li>
+<li>在 <strong>权限</strong>下配置产品的分类和访问控制。您在 <strong>基于分类的访问控制 (CBAC)</strong> 下选择的分类定义了安装的 <em>最高</em> 分类。</li>
+<li>选择 <strong>下一步</strong> 以启动安装窗口的 <strong>输入</strong> 页面。</li>
+<li>选择 <strong>共享属性</strong> 选项卡（位于左侧面板中的 <strong>输入</strong> 下方），以将 <code>Geoshape</code> 您的本体论中的共享属性映射到您的新接口。</li>
+<li>选择 <strong>下一步</strong> 以启动安装窗口的 <strong>内容</strong> 页面。</li>
+</ol>
+<p><img alt="The Gaia Geoshape Creatable interface's Shared properties page is displayed, where a user configures shared properties to include in their interface." height="600" node="[object Object]" src="/docs/resources/foundry/object-link-types/map-geoshape-creatable-inputs-as-spts.png" style="aspect-ratio:2452 / 1340" width="1097.910447761194"/></p>
+<ol start="9">
+<li>您可以选择开启 <strong>为本体论实体添加前缀</strong> 选项，并输入有效的前缀。请注意，您的前缀不能包含某些特殊字符，例如圆括号或方括号。</li>
+<li>选择哪些 <strong>本体论架构迁移</strong> 以在屏幕右侧启用。如需了解更多架构管理信息，您可以查阅现有的 <a href="/docs/foundry/object-edits/schema-migrations/">对象编辑和物化文档</a>。</li>
+<li>请更新 <strong>新版本</strong> 中的自动配置，根据您的使用场景按需调整，然后再选择 <strong>下一步</strong>。Marketplace 会对某些产品进行预配置，使其自动升级。</li>
+<li>查看您的接口配置，然后选择 <strong>安装</strong>。</li>
+</ol>
+<h3 data-pagefind-weight="0.8" id="user-content-gaia-geopoint-creatable-interface-from-the-gaia-app-store" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#gaia-geopoint-creatable-interface-from-the-gaia-app-store" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>来自 Gaia App Store 的 Gaia Geopoint Creatable 接口</h3>
+<p>要从 Marketplace 的 Gaia App Store 安装 Gaia Geopoint Creatable 接口，请在商店菜单中选择 <code>Gaia Geopoint Creatable</code> 相应产品。Marketplace 的接口安装工作流在不同接口之间是通用的，因此您可以按照上述 <a href="#gaia-geoshape-creatable-interface-from-the-gaia-app-store">Geoshape Creatable 接口安装说明</a> 中概述的相同步骤进行操作，但需注意以下区别：</p>
+<ul>
+<li>在 <strong>共享属性</strong> 部分（位于 <strong>输入</strong> 窗口中），将 <code>Geopoint</code> 本体论中的共享属性映射到 Gaia Geopoint Creatable 接口。</li>
+</ul>
+<h2 data-pagefind-weight="0.9" id="user-content-create-an-object-type-that-implements-the-gaia-geoshape-creatable-interface" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#create-an-object-type-that-implements-the-gaia-geoshape-creatable-interface" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>创建实现 Gaia Geoshape Creatable 接口的对象类型</h2>
+<p>Gaia 可以发现您本体论中由 <a href="/docs/foundry/data-integration/datasets/">数据集</a> 或 <a href="/docs/foundry/security/restricted-views/">受限视图</a> 支撑的对象类型（前提是这些对象类型实现了 Gaia Geoshape Creatable 接口）。在以下部分中，您将：</p>
+<ul>
+<li><a href="#create-an-object-type-backing-dataset-or-restricted-view">创建支撑对象类型的数据集或受限视图</a>。</li>
+<li><a href="#create-an-object-type-and-ensure-it-integrates-with-gotham">创建对象类型并确保其与 Gotham 集成</a>。</li>
+<li><a href="#create-and-configure-an-action-type-to-enable-object-creation-in-gaia">配置操作类型以在 Gaia 中启用对象创建</a>。</li>
+<li><a href="#implement-the-gaia-geoshape-creatable-interface">实现 Gaia Geoshape Creatable 接口</a>。</li>
+</ul>
+<h3 data-pagefind-weight="0.8" id="user-content-create-an-object-type-backing-dataset-or-restricted-view" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#create-an-object-type-backing-dataset-or-restricted-view" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>创建支撑对象类型的数据集或受限视图</h3>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>如果您计划根据用户的分类来保护对象，或通过应用 <a href="/docs/foundry/security/markings/">标记</a> 来控制文件访问，则应创建受限视图。如果您的用例不需要基于分类的访问或标记所提供的额外对象安全性，则应创建一个数据集来支撑您的对象类型。</p></div>
+<p>要创建可与 Gaia 集成的对象类型，您首先需要创建一个数据集或受限视图，其中至少包含以下列：</p>
+<ul>
+<li><code>Geoshape</code>，您需将其设置为 <code>string</code> ，以便 Gaia 自动填充您所绘制对象的形状。</li>
+<li><code>Object ID</code>，您需将其设置为 <code>string</code> ，以便 Foundry 为您创建为对象的每个 Gaia 形状自动填充唯一 ID。这将用作您对象类型的主键。</li>
+<li><code>Classification</code>，您需将其设置为 <code>array</code> ，用于捕获对象的分类。 <code>Classification</code> 列 <em>仅</em> 在受限视图支撑您的对象类型时才需要。</li>
+</ul>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__success__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>您可以根据具体用例在数据集或受限视图中配置其他列，例如 <code>Name</code>、 <code>Category</code>或 <code>Notes</code> 设置为 <code>strings</code> 的列，以捕获用户输入的关于该对象的描述性信息。</p></div>
+<p>选择 <strong>新建</strong> 按钮，在您的项目中上传现有文件，例如 <code>.csv</code>，或使用 <a href="/docs/foundry/fusion/overview/">Fusion</a> 来创建独立数据集或为您的受限视图提供支撑的数据集。如果您使用数据集为您的对象类型提供支撑，则可以跳过下方的受限视图创建说明，并继续 <a href="#create-an-object-type-and-ensure-it-integrates-with-gotham">创建您的对象类型</a>。</p>
+<p><img alt="Users can select the New button from their Project to upload data as a .csv or create a new Fusion sheet to store data which will back a restricted view." height="600" node="[object Object]" src="/docs/resources/foundry/object-link-types/create-new-dataset-upload-fusion.png" style="aspect-ratio:2368 / 944" width="1505.0847457627117"/></p>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__success__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>您可以在 Foundry 的 <a href="/docs/foundry/security/restricted-views/#create-restricted-views">安全</a> 和 <a href="/docs/foundry/object-permissioning/configuring-rv-access-controls/">对象权限</a> 文档中参阅更多受限视图创建说明。</p></div>
+<p>您的受限视图应包含一个 <a href="/docs/foundry/security/restricted-views/#compose-a-granular-policy">细粒度策略</a> ，该策略根据用户的 <a href="/docs/foundry/security/classification-based-access-controls/">分类访问权限</a>限制用户对视图中数据的访问。请在 <strong>创建“{restricted view}”</strong> 窗口中，将编写细粒度策略作为第一步。</p>
+<p><img alt="An example restricted view policy is displayed." height="600" node="[object Object]" src="/docs/resources/foundry/object-link-types/create-restricted-view.png" style="aspect-ratio:1786 / 1140" width="940"/></p>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>如果对象包含用于限制其访问权限的 CBAC 或强制标记属性，则 Foundry 会使用从 Gaia 地图继承的 CBAC 或强制标记创建对象，并且 <em>不会</em> 应用该地图的安全和共享设置中定义的组限制。</p></div>
+<p>您可以参考下方 JSON 中的示例策略。</p>
+<pre><div class="ptcom-design__wrapper__12wpwnx" data-pagefind-weight="0.5"><span class="ptcom-design__clipboard__1l1gb20 ptcom-design__clipboard__12wpwnx"><span class="ptcom-design__confirmation__1l1gb20" data-pagefind-ignore="true">Copied!</span><svg aria-hidden="true" aria-label="clipboard" data-view-component="true" height="16" version="1.1" viewbox="0 0 16 16" width="16"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z" fill="currentColor" fill-rule="evenodd"></path><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z" fill="currentColor" fill-rule="evenodd"></path></svg></span><div style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;overflow:auto;position:relative;margin:0;padding:0.75em"><code style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;float:left;padding-right:10px"><span class="react-syntax-highlighter-line-number">1
+</span><span class="react-syntax-highlighter-line-number">2
+</span><span class="react-syntax-highlighter-line-number">3
+</span><span class="react-syntax-highlighter-line-number">4
+</span><span class="react-syntax-highlighter-line-number">5
+</span><span class="react-syntax-highlighter-line-number">6
+</span><span class="react-syntax-highlighter-line-number">7
+</span><span class="react-syntax-highlighter-line-number">8
+</span><span class="react-syntax-highlighter-line-number">9
+</span><span class="react-syntax-highlighter-line-number">10
+</span><span class="react-syntax-highlighter-line-number">11
+</span><span class="react-syntax-highlighter-line-number">12
+</span><span class="react-syntax-highlighter-line-number">13
+</span><span class="react-syntax-highlighter-line-number">14
+</span><span class="react-syntax-highlighter-line-number">15
+</span><span class="react-syntax-highlighter-line-number">16
+</span><span class="react-syntax-highlighter-line-number">17
+</span><span class="react-syntax-highlighter-line-number">18
+</span><span class="react-syntax-highlighter-line-number">19
+</span><span class="react-syntax-highlighter-line-number">20
+</span><span class="react-syntax-highlighter-line-number">21
+</span><span class="react-syntax-highlighter-line-number">22
+</span><span class="react-syntax-highlighter-line-number">23
+</span><span class="react-syntax-highlighter-line-number">24
+</span><span class="react-syntax-highlighter-line-number">25
+</span><span class="react-syntax-highlighter-line-number">26
+</span><span class="react-syntax-highlighter-line-number">27
+</span><span class="react-syntax-highlighter-line-number">28
+</span><span class="react-syntax-highlighter-line-number">29
+</span><span class="react-syntax-highlighter-line-number">30
+</span></code><code class="language-json" style="white-space:pre;text-align:left;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none">{
+  "condition": {
+    "and": {
+      "conditions": [
+        {
+          "markings": {
+            "value": {
+              "field": {
+                "fieldName": "classification"
+              },
+              "type": "field"
+            },
+            "filters": [
+              {
+                "markingTypes": {
+                  "markingTypes": [
+                    "CBAC"
+                  ]
+                },
+                "type": "markingTypes"
+              }
+            ]
+          },
+          "type": "markings"
+        }
+      ]
+    },
+    "type": "and"
+  }
+}</code></div></div></pre>
+<h3 data-pagefind-weight="0.8" id="user-content-create-an-object-type-and-ensure-it-integrates-with-gotham" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#create-an-object-type-and-ensure-it-integrates-with-gotham" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>创建一个对象类型，并确保其与 Gotham 集成</h3>
+<p>配置好您的受限视图后，启动 <a href="/docs/foundry/ontology-manager/overview/">Ontology Manager</a> 并按照以下步骤创建您的对象类型：</p>
+<ol>
+<li>选择 <strong>新建</strong> &gt; <strong>对象类型</strong> （位于屏幕右上角）。</li>
+<li>选择 <strong>使用现有数据源</strong> 并选择 <strong>选择数据源</strong> 以查找并 <strong>选择</strong> 您的受限视图，然后选择 <strong>下一步</strong>。</li>
+<li>为您的对象类型命名，并选择性地填写 <strong>描述</strong>。</li>
+<li>将 <code>Object ID</code> 设置为 <strong>主键</strong> ，并将 <code>Name</code> 设置为 <strong>标题</strong>。</li>
+<li>确保 <code>Classification</code>的 <strong>属性</strong> 是字符串数组，且 <code>Geoshape</code>的 <strong>属性</strong> 是 geoshape。仅当您的对象类型由受限视图支撑时，才需要验证前者。</li>
+</ol>
+<p><img alt="Ontology Manager's Create a new object type window is displayed, where a user can set an object type's Primary Key and Title as well as configure properties." height="600" node="[object Object]" src="/docs/resources/foundry/object-link-types/object-type-classification-array.png" style="aspect-ratio:1594 / 1172" width="816.0409556313992"/></p>
+<ol start="6">
+<li>选择 <strong>创建</strong>，因为您将在 <em>创建对象类型之后</em> 生成并配置操作类型。</li>
+</ol>
+<p>在 Ontology Manager 中查看您的草稿对象类型后，接下来您将选择 <code>Classification</code> 和 <code>Geoshape</code> 属性，作为您本体论中的共享属性类型。选择 <strong>属性</strong> 面板（位于 <strong>概览</strong> 下方），并按照以下步骤完成共享属性类型的选择流程：</p>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__success__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>如果您使用数据集来支撑您的对象类型，而该数据集 <em>不</em> 包含 <code>Classification</code> 属性，则应针对您的 <code>Geoshape</code> 属性完成以下步骤 1 和 4。</p></div>
+<ol>
+<li>选择 <code>Classification</code> 从您的属性列表中以启动 <strong>属性编辑器</strong> 窗口，该窗口位于屏幕右侧。</li>
+<li>更新 <strong>基础类型</strong> 下拉菜单，使其分别包含 <code>Mandatory control</code> 和 <code>CBAC Marking</code>。</li>
+<li>配置该属性的 <strong>最高分类</strong>。</li>
+</ol>
+<img alt="The Property editor window is displayed, where a user can map properties as shared property types" node="[object Object]" src="/docs/resources/foundry/object-link-types/map-classification-spt.png?width=400" style="aspect-ratio:802 / 904" width="400"/>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>如果您无法选择 <strong>强制控制</strong> 作为 <code>Classification</code>的基础类型，请联系您的 Palantir 支持团队，因为 <strong>强制控制</strong> 标记并非在所有 Foundry 租户中普遍可用。</p></div>
+<ol start="4">
+<li>滚动到窗口底部的 <strong>共享属性</strong> 部分，并使用下拉菜单将 <code>Classification</code> 指定为共享属性。</li>
+</ol>
+<p><img alt="Assign a shared property through the Shared property section of the Property editor window." height="423" node="[object Object]" src="/docs/resources/foundry/object-link-types/assign-classification-spt.png" style="aspect-ratio:808 / 423" width="808"/></p>
+<p>针对您的 <code>Geoshape</code> 属性，重复上述步骤 1 和 4，因为您 <em>无需</em> 配置其强制控制标记或分类。</p>
+<p>选择屏幕顶部的绿色 <strong>保存</strong> 按钮，以便在继续操作之前将增量更改发布到您的本体论。</p>
+<p>如果您的 Foundry 租户包含地图渲染服务 (MRS)，那么您的本体论中具有地理空间属性类型的对象类型将自动与 Gotham 集成，您可以继续 <a href="#create-and-configure-an-action-type-to-enable-object-creation-in-gaia">创建操作类型以在 Gaia 中启用对象创建</a>。请按照 <a href="/docs/foundry/object-link-types/enable-gotham-integration/#how-to-check-if-your-enrollment-contains-mrs">Gotham 集成文档</a> 中的步骤来检查您的租户是否包含 MRS。如果您的租户 <em>不</em> 包含 MRS，那么 <a href="/docs/foundry/object-link-types/enable-gotham-integration/#toggle-on-type-mapping-in-foundrys-ontology-manager">请按照相关说明操作</a> 以将您本体论中的数据与 Gotham 集成。</p>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>如有关于 MRS 安装或功能的问题，请联系 Palantir 支持团队。</p></div>
+<h3 data-pagefind-weight="0.8" id="user-content-create-and-configure-an-action-type-to-enable-object-creation-in-gaia" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#create-and-configure-an-action-type-to-enable-object-creation-in-gaia" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>创建并配置操作类型，以在 Gaia 中启用对象创建</h3>
+<p>创建对象类型并确保其与 Gotham 集成后，请导航返回 <strong>概述</strong> 窗口（位于 Ontology Manager 中）。在此，创建一个 <a href="/docs/foundry/action-types/overview/">操作类型</a> ，使用户能够从形状创建和编辑对象，并配置其属性，例如 <code>Name</code> 和 <code>Category</code>，所有这些操作均可在 Gaia 中完成。</p>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>您的 Foundry 注册必须包含 MRS 才能在 Gaia 中编辑本体论对象，因为此功能不适用于通过类型映射添加到 Gaia 的对象。如有关于 MRS 安装或功能的问题，请联系 Palantir 支持团队。</p></div>
+<p>请按照以下步骤配置您的操作类型：</p>
+<ol>
+<li>选择 <strong>新建</strong> （位于 <strong>操作类型</strong> 部分，即您对象类型的 <strong>概述</strong> 窗口中），以启动 <strong>创建新操作类型</strong> 弹出窗口。</li>
+</ol>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__success__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>如果您无法选择 <strong>新建</strong> 按钮（位于 <strong>操作类型</strong>中），则可以开启 <strong>允许编辑</strong> （针对您的对象类型，在 <strong>数据源</strong> 窗口中）。</p></div>
+<ol start="2">
+<li>选择 <strong>修改或创建对象</strong> （位于 <strong>对象操作</strong> 下方），然后选择 <strong>下一步</strong>。</li>
+<li>选择 <strong>自动生成主键</strong> （位于 <strong>或通过以下方式创建新对象</strong> 下拉菜单中）。</li>
+<li>选择 <strong>添加属性</strong> 以将您现有的所有属性添加到该操作类型，然后选择 <strong>下一步</strong> 以配置操作类型的元数据。</li>
+</ol>
+<p><img alt="The Create a new action type window is displayed, where a user can map action parameters used as action inputs." height="600" node="[object Object]" src="/docs/resources/foundry/object-link-types/configure-create-or-modify-action-type-properties.png" style="aspect-ratio:1618 / 1194" width="813.0653266331658"/></p>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>您只需要映射 <code>Classification</code> 属性，前提是受限视图支撑您的对象类型。</p></div>
+<ol start="5">
+<li>为您的操作类型命名，并可根据需要输入描述和更新其默认图标。</li>
+<li>选择可执行该操作的 <strong>组织</strong>、 <strong>组</strong>或 <strong>用户</strong> ，然后选择 <strong>创建</strong>。</li>
+</ol>
+<p>选择屏幕顶部的绿色 <strong>保存</strong> 按钮，以便在继续操作之前发布对本体论的增量更改。</p>
+<p>接下来，您将配置操作类型的 <strong>规则</strong> 和 <strong>参数</strong> ，请按照以下步骤操作：</p>
+<ol>
+<li>选择 <strong>规则</strong> （位于屏幕左侧）。</li>
+<li>验证 <code>Geoshape</code> 属性配置，方法是选择箭头图标，该箭头图标紧邻 <strong>配置参数</strong>。
+<ul>
+<li>确保 <code>Geoshape</code> 属性的类型为 <code>Geoshape</code> 或 <code>String</code> ，从 <strong>Type</strong> 下拉菜单（位于屏幕右侧）中进行选择。</li>
+<li>确保 <strong>Disabled</strong> 选项在 <strong>常规</strong> 面板中处于选中状态，因此用户无法手动配置 <code>Geoshape</code>的位置。</li>
+</ul>
+</li>
+</ol>
+<p><img alt="Ontology Manager's Create object window is displayed, where a user can map properties in the Rules panel to create a rule." height="540" node="[object Object]" src="/docs/resources/foundry/object-link-types/configure-create-object-type.png" style="aspect-ratio:1211 / 540" width="1211"/></p>
+<ol start="3">
+<li>选择您的 <code>Classification</code> 属性，可在屏幕左侧的 <strong>表单内容</strong> 面板中选取，并验证其 <strong>类型</strong> 是 <code>Mandatory control</code>。仅当受限视图支撑您的对象类型时，您才需要配置一个 <code>Classification</code> 属性。</li>
+<li>选择 <strong>返回表单</strong> 并移除 <code>Object Id</code> 从 <strong>若要形成内容</strong> ，请选择 <strong>X</strong> 图标（位于 <strong>Object Id</strong> 面板的最右侧）。Foundry 会自动为从 Gaia 创建的每个对象生成唯一的 ID。</li>
+<li>选择绿色的 <strong>“保存”</strong> 屏幕顶部的按钮，以将您的操作类型配置保存到本体论。</li>
+</ol>
+<h3 data-pagefind-weight="0.8" id="user-content-implement-the-gaia-geoshape-creatable-interface" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#implement-the-gaia-geoshape-creatable-interface" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>实现 Gaia Geoshape Creatable 接口</h3>
+<p>在本体论管理器中创建和配置您的对象类型的最后一步是实现 Gaia Geoshape Creatable 接口，该接口是您 <a href="#gaia-geoshape-creatable-interface-from-the-gaia-app-store">先前从 Marketplace 安装的</a>。返回到您的对象类型的 <strong>概览</strong> 页面，并按照以下步骤实现该接口，然后再将更改保存到您的本体论：</p>
+<ol>
+<li>导航至 <strong>接口</strong> 下方窗口 <strong>对象视图</strong> 在屏幕左侧。</li>
+<li>选择 <strong>实现新接口</strong> 并搜索 <code>Gaia Geoshape Creatable</code> 然后再选择 <strong>下一步</strong>.</li>
+<li>选择 <strong>请选择一个选项</strong> &gt; <strong>替换现有</strong> 以将您本体论的 <code>Geoshape</code> 共享属性类型映射到实现该接口的对象类型。</li>
+<li>选择 <strong>确认</strong> 以关闭 <strong>实现接口</strong> 窗口并 <strong>保存</strong> 新配置的接口到您的本体论中。</li>
+</ol>
+<p><img alt="Ontology Manager's Interfaces window displays the Gaia Geoshape Creatable interface after it has been implemented on an object type." height="267" node="[object Object]" src="/docs/resources/foundry/object-link-types/implemented-gaia-geoshape-creatable-interface.png" style="aspect-ratio:867 / 267" width="867"/></p>
+<h2 data-pagefind-weight="0.9" id="user-content-create-an-object-type-that-implements-the-gaia-geopoint-creatable-interface" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#create-an-object-type-that-implements-the-gaia-geopoint-creatable-interface" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>创建一个实现 Gaia Geopoint Creatable 接口的对象类型</h2>
+<p>要创建实现 Gaia Geopoint Creatable 接口的对象类型，您可以按照 <a href="#create-an-object-type-that-implements-the-gaia-geoshape-creatable-interface">上文针对 Gaia Geoshape Creatable 接口的对象类型创建说明</a> 中概述的相同步骤进行操作，但各部分有以下区别：</p>
+<ul>
+<li><a href="#create-an-object-type-backing-dataset-or-restricted-view">创建支撑对象类型的受限视图</a>。
+<ul>
+<li>创建一个 <code>Geopoint</code> 而不是 <code>Geoshape</code> 列。</li>
+</ul>
+</li>
+<li><a href="#create-an-object-type-and-ensure-it-integrates-with-gotham">创建对象类型并确保其与 Gotham 集成</a>。
+<ul>
+<li>在对象类型创建窗口中，确保 <code>Geopoint</code>的 <strong>属性</strong> 为 geopoint。</li>
+</ul>
+</li>
+<li><a href="#create-and-configure-an-action-type-to-enable-object-creation-in-gaia">配置操作类型，以便在 Gaia 中创建对象</a>。
+<ul>
+<li>确保您的 <code>Geopoint</code> 属性的 <strong>类型</strong> 位于 <code>Geopoint</code> 您的操作类型的 <strong>参数</strong> 窗口中。</li>
+</ul>
+</li>
+<li><a href="#implement-the-gaia-geoshape-creatable-interface">实现 Gaia Geoshape Creatable 接口</a>。
+<ul>
+<li>搜索 <code>Gaia Geopoint Creatable</code> 而不是 <code>Gaia Geoshape Creatable</code> 接口。</li>
+<li>在映射您本体论的共享属性类型时，请选择 <strong>替换现有</strong> ，用于 <code>Geopoint</code> 而不是 <code>Geoshape</code> 属性。</li>
+</ul>
+</li>
+</ul>
+<h2 data-pagefind-weight="0.9" id="user-content-create-an-object-type-that-implements-the-milstd-2525c-symbol-interface" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#create-an-object-type-that-implements-the-milstd-2525c-symbol-interface" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>创建一个实现 MILSTD 2525C Symbol 接口的对象类型</h2>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>与 Gaia Geoshape Creatable 和 Gaia Geopoint Creatable 接口不同，您 <strong>必须</strong> 使用受限视图来支撑实现 MILSTD 2525C Symbol 接口的对象类型。</p></div>
+<p>要创建实现 MILSTD 2525C Symbol 接口的对象类型，您可以按照 <a href="#create-an-object-type-that-implements-the-gaia-geoshape-creatable-interface">上文针对 Gaia Geoshape Creatable 接口的对象类型创建说明中概述的相同步骤</a> 进行操作，但每个部分有以下区别：</p>
+<ul>
+<li><a href="#create-an-object-type-backing-dataset-or-restricted-view">创建由对象类型支撑的受限视图</a>。
+<ul>
+<li>您将 <em>只</em> 需要创建 <code>Object ID</code>， <code>Classification</code>，以及 <code>Title</code> 列。</li>
+</ul>
+</li>
+<li><a href="#create-an-object-type-and-ensure-it-integrates-with-gotham">创建一个对象类型，并确保其与 Gotham 集成</a>。
+<ul>
+<li>在对象类型创建窗口中，将 <code>Object ID</code> 设置为 <strong>主键</strong> 并将 <code>Title</code> 设置为 <strong>标题</strong>。</li>
+</ul>
+</li>
+</ul>
+<p>在 <a href="#create-and-configure-an-action-type-to-enable-object-creation-in-gaia">配置操作类型以启用对象创建时</a>，请确保 <em>至少</em> 映射 <code>Classification</code>、 <code>Symbol Anchor Points</code>和 <code>SIDC</code> 属性（在 <strong>创建新操作类型</strong> 窗口中），然后再选择 <strong>下一步</strong>。</p>
+<p><img alt="The Create a new action type window is displayed for an object type implementing the MILSTD 2525C Symbol interface, where a user can map action parameters used as action inputs." height="600" node="[object Object]" src="/docs/resources/foundry/object-link-types/configure-milsym-action-type-properties.png" style="aspect-ratio:1632 / 1204" width="813.2890365448504"/></p>
+<p>选择绿色的 <strong>保存</strong> 按钮（位于屏幕顶部），以便在继续操作之前将增量更改发布到您的本体论。</p>
+<p>接下来，您将配置操作类型的 <strong>规则</strong> 和 <strong>参数</strong> ，具体步骤如下：</p>
+<ol>
+<li>选择 <strong>规则</strong> （位于屏幕左侧）。</li>
+<li>选择您的 <code>Classification</code> 属性右侧的箭头图标，以 <strong>配置参数</strong>。</li>
+</ol>
+<p><img alt="The Rules panel in an action type's creation window displays properties mapped as action type inputs." height="600" node="[object Object]" src="/docs/resources/foundry/object-link-types/configure-milsym-action-type.png" style="aspect-ratio:3048 / 1720" width="1063.2558139534883"/></p>
+<ol start="3">
+<li>如果 <code>Classification</code> 您的对象类型上的属性由共享属性类型实现，那么您应该开启 <strong>禁用</strong> ，位于 <strong>常规</strong> 部分，以确保自动创建的对象从您的 Gaia 地图中继承其分类标记。如果您想在创建时手动设置分类标记，则不要开启 <strong>已禁用</strong>。</li>
+<li>选择 <strong>添加</strong> 下方 <strong>设置参数的最大分类</strong> 以确保操作类型的最高分类与对象类型的最高分类相匹配。</li>
+</ol>
+<p><img alt="The action form's Classification parameter is displayed, where a user can validate its Type, Disable its editing, and configure its maximum classification." height="600" node="[object Object]" src="/docs/resources/foundry/object-link-types/configure-milsym-classification-parameter.png" style="aspect-ratio:1912 / 1620" width="708.1481481481482"/></p>
+<ol start="5">
+<li>选择绿色的 <strong>保存</strong> 按钮（位于屏幕顶部），以将操作类型发布到您的本体论中。</li>
+</ol>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>由于 <a href="/docs/foundry/object-link-types/structs-overview/#current-levels-of-support">目前尚不支持在操作中使用结构体属性</a>，您将无法配置 <code>Speed Modifier (Z)</code> 或 <code>Altitude/Depth Modifier (X)</code> 属性作为操作类型参数。</p></div>
+<ul>
+<li><a href="#implement-the-gaia-geoshape-creatable-interface">实现 Gaia Geoshape Creatable 接口</a>。
+<ul>
+<li>搜索 <code>MILSTD 2525C Symbol</code> 而不是 <code>Gaia Geoshape Creatable</code> 接口。</li>
+<li>在映射本体论的共享属性类型时，请选择 <strong>替换现有</strong> 为您的 <code>Classification</code> 属性，并 <strong>创建仅编辑属性</strong> 为其余属性。</li>
+</ul>
+</li>
+</ul>
+<h2 data-pagefind-weight="0.9" id="user-content-register-your-ontology-and-its-types" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#register-your-ontology-and-its-types" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>注册您的本体论及其类型</h2>
+<p>现在，您已拥有实现了 Gaia Geoshape Creatable、Gaia Geopoint Creatable 和 MILSTD 2525C Symbol 接口的对象类型，并且这些对象类型包含相应的操作类型，使用户能够配置其在 Gaia 地图上通过绘制的形状、放置的点位和配置的战术图形所创建的对象。接下来，您将注册您的本体论、对象类型和操作类型，注册位置为 Gaia 的管理应用程序或 <a href="/docs/foundry/administration/control-panel/">Control Panel</a> 扩展，具体取决于您的注册情况。</p>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>要访问 Gaia 的管理应用程序,您必须是平台管理员。要访问 Gaia 的 Control Panel 扩展,您必须被授予 <strong>组织管理员</strong> 角色。 <br/><br/>
+如果您无法访问管理应用程序或 Control Panel 扩展,请就相关访问问题联系 Palantir 支持团队。</p></div>
+<p>要注册您的本体论、对象类型和操作类型,请启动 Gaia 的管理应用程序或 Control Panel 扩展,并按照以下步骤操作:</p>
+<ol>
+<li>找到 <strong>本体论配置</strong> (管理应用程序)/<strong>本体论</strong> （Control Panel 扩展）面板并验证您的本体论配置。如果您的本体论尚未配置，请选择面板左侧的开关以设置 <strong>本体论配置</strong>/<strong>本体论</strong> 为 <code>overridden</code> （管理员应用）/<code>Override</code> （Control Panel 扩展）。</li>
+<li>将您的本体论的 RID 和 API 名称输入到 <strong>本体论 RID</strong> 和 <strong>API 名称</strong> 文本框中。</li>
+</ol>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__success__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>要查找并复制您的本体论的 RID 和 API 名称，请导航至本体论管理器并选择 <strong>本体论配置</strong> （位于其左侧面板底部）以启动 <strong>本体论元数据</strong> 窗口。</p></div>
+<p><img alt="The Gaia admin application's and Control Panel extension's Ontology Config panel." height="600" node="[object Object]" src="/docs/resources/foundry/object-link-types/gaia-admin-app-ontology-config.png" style="aspect-ratio:2940 / 1130" width="1561.061946902655"/></p>
+<ol start="3">
+<li>找到 <strong>Foundry 对象创建配置</strong> 面板并选择 <strong>显示</strong> （管理员应用程序）/<strong>覆盖</strong> （控制面板扩展）。</li>
+<li>选择 <strong>添加</strong> 位于您注册的现有对象和操作类型列表底部。</li>
+<li>将所有三种对象类型及其支持的操作类型的 RID 复制并粘贴到三个单独的 <strong>对象类型 rid</strong> 和 <strong>操作类型 rid</strong> 相应的文本框中。</li>
+<li>选择 <strong>预览并保存</strong> 在右上角功能区（管理应用程序）中/<strong>为 {Organization} 保存</strong> 在右下角（控制面板扩展）。</li>
+</ol>
+<p><img alt="The Gaia admin application's and Control Panel extension's Foundry Object Creation Config panel." height="561" node="[object Object]" src="/docs/resources/foundry/object-link-types/gaia-admin-app-foundry-object-creation-config.png" style="aspect-ratio:1469 / 561" width="1469"/></p>
+<p>您可以在以下位置访问您的对象类型的 RID： <strong>概览</strong> 窗口（位于 Ontology Manager 中）。选择剪贴板图标以复制 RID。此外，您还可以通过选择 <strong>“创建 {object type name}”</strong> （在 <strong>“操作类型”</strong> 部分，该部分位于 <strong>“概览”</strong> 窗口中）来获取操作类型的 RID。操作类型的 RID 也可以通过剪贴板图标进行复制。</p>
+<p><img alt="You can copy the RID of both your object type and action type from the Overview window of Ontology Manager." height="490" node="[object Object]" src="/docs/resources/foundry/object-link-types/combined-object-action-rid-copy.png" style="aspect-ratio:2000 / 490" width="2000"/></p>
+<p>接下来，您将启动 Gotham 的 Gaia 应用程序，根据您在地图上绘制的形状、放置的点位以及配置的战术图形来创建对象，使用其 <strong>添加到地图</strong> 菜单。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-entry-points-to-create-objects-on-your-gaia-map" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#entry-points-to-create-objects-on-your-gaia-map" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>在 Gaia 地图上创建对象的入口点</h2>
+<p>Gaia 提供了两个不同的入口点，可用于在您的地图上创建对象，这些入口点决定了显示在 <strong>对象类型</strong> 下拉菜单中的可用对象类型列表。</p>
+<ul>
+<li><strong>请先选择对象类型：</strong> 当您从工具栏下拉菜单中选择对象类型时，Gaia 会列出实现受支持接口的所有对象类型，包括 Gaia Geoshape Creatable、Gaia Geopoint Creatable、MILSTD 2525C Symbol 和 Gaia Milsym Creatable 接口。选择对象类型后，Gaia 会筛选可用的绘图工具，以 <em>仅显示</em> 与对象类型所实现的接口兼容的工具。例如，选择实现了 Gaia Geoshape Creatable 接口的对象类型后，将仅显示形状绘图工具。随后，当您选择某个绘图工具时，Gaia 会打开左侧面板，您的对象类型已预先填充在 <strong>对象类型</strong> 下拉菜单中。</li>
+</ul>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__success__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>一个对象类型可以实现多个接口。例如，如果某个对象类型同时实现了 Gaia Geopoint Creatable 和 Gaia Geoshape Creatable 接口，那么从工具栏中选择该对象类型时，将同时显示点符号和所有形状绘图工具，同时过滤掉符号 <strong>搜索</strong> 菜单。</p></div>
+<ul>
+<li><strong>请先选择绘图工具：</strong> 在未选择对象类型之前先选择绘图工具时,Gaia 会打开左侧面板,且不会预先选择任何对象类型。在这种情况下, <strong>对象类型</strong> 下拉菜单仅列出实现与所选工具相匹配的接口的对象类型。例如,选择点符号时,仅显示实现 Gaia Geopoint Creatable 接口的对象类型。</li>
+</ul>
+<h3 data-pagefind-weight="0.8" id="user-content-draw-a-new-shape-on-your-gaia-map-and-tag-it-to-an-object-type" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#draw-a-new-shape-on-your-gaia-map-and-tag-it-to-an-object-type" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>在您的 Gaia 地图上绘制一个新形状,并将其标记到某个对象类型</h3>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><div class="ptcom-design__title__19o1cwu">当前关于国际日期变更线的限制</div><p>虽然您可以在 Gaia 地图上创建跨越 180 度经线(即反子午线)的地图注释,但无法绘制被标记为 Foundry 对象且跨越该线的形状。 <br/><br/> 如有关于注释创建、渲染或 Gotham 中提供的 Gaia 补充文档的问题,请联系 Palantir 支持团队。</p></div>
+<p>在开始之前,请查看 <a href="#entry-points-to-create-objects-on-your-gaia-map">创建对象的入口点</a> 以了解您选择的对象类型和绘图工具如何决定您可以使用哪些对象类型。</p>
+<p>打开 Gaia 地图后，从地图左上角区域的菜单中选择对象图标，即可从 <strong>绘制注释</strong> 切换到 <strong>创建对象</strong> 模式。</p>
+<p><img alt="Gaia's toolbar is displayed." height="412" node="[object Object]" src="/docs/resources/foundry/object-link-types/select-object-map-tool-bar.png" style="aspect-ratio:1922 / 412" width="1922"/></p>
+<p>接下来，从同一菜单的右侧选择要绘制的形状。绘制完形状后， <strong>创建形状</strong> 窗口将显示在 Gaia 的左侧面板中。请按照以下步骤配置您的形状，并将其作为对象保存到您的本体论中：</p>
+<ol>
+<li>请在 <strong>对象类型</strong> 下拉菜单中搜索并选择您的对象。如果您在地图画布上的工具栏下拉菜单中选择了对象类型，则 Gaia 会自动在 <strong>创建形状</strong>的下拉菜单中填入该值。</li>
+<li>填写操作表单中的必填字段，例如 <code>Category</code> 和 <code>Name</code>，为您的对象，在您选择 <strong>完成</strong>之前。</li>
+</ol>
+<p><img alt="A polygon is drawn on a Gaia map, where a user can geotag it to an object type." height="600" node="[object Object]" src="/docs/resources/foundry/object-link-types/draw-polygon.png" style="aspect-ratio:2422 / 1702" width="853.819036427732"/></p>
+<p>将您的形状保存为对象后，它将作为 <strong>图层</strong> 之一显示在 Gaia 的左侧面板中。您可以选择该对象的名称以启动 <strong>选择</strong> 面板，该面板位于屏幕右侧，您可以在其中查看其属性并自定义其外观。</p>
+<p><img alt="Users can view a shape's object data on a Gaia map after it is drawn." height="600" node="[object Object]" src="/docs/resources/foundry/object-link-types/gaia-map-drawn-object-view.png" style="aspect-ratio:2214 / 1702" width="780.493537015276"/></p>
+<p>您还可以在 Foundry 的 <a href="/docs/foundry/object-explorer/overview/">Object Explorer</a>中查看您的对象。</p>
+<p><img alt="Users can view their drawn objects within Foundry's Object Explorer." height="590" node="[object Object]" src="/docs/resources/foundry/object-link-types/view-drawn-object-in-foundry-oe.png" style="aspect-ratio:2450 / 590" width="2450"/></p>
+<h4 id="user-content-edit-an-existing-shape-object"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#edit-an-existing-shape-object" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>编辑现有形状对象</h4>
+<p>要编辑现有形状对象，请将光标悬停在左侧面板中的对象上，然后选择 <strong>编辑所选内容</strong> 以启动 <strong>“编辑形状”</strong> 窗口,您也可以通过双击地图上的对象将其打开。</p>
+<p><img alt="Users can edit an object on their Gaia map by selecting the pencil icon to launch the Edit shape window in the left panel." height="600" node="[object Object]" src="/docs/resources/foundry/object-link-types/edit-object.png" style="aspect-ratio:3066 / 1732" width="1062.1247113163972"/></p>
+<p>选择并拖动任意顶点以调整形状,或者选择形状边界内的一个点,将形状拖动到地图上的其他位置。完成更改后,请选择 <strong>“完成”</strong> 按钮,该按钮位于 <strong>“编辑形状”</strong> 窗口的底部。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-drop-a-new-point-on-your-gaia-map-and-tag-it-to-an-object-type" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#drop-a-new-point-on-your-gaia-map-and-tag-it-to-an-object-type" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>在您的 Gaia 地图上放置一个新点,并将其标记为某个对象类型</h3>
+<p>在开始之前，请查看 <a href="#entry-points-to-create-objects-on-your-gaia-map">创建对象的入口点</a> 以了解您选择的对象类型和绘图工具如何决定您可以使用哪些对象类型。</p>
+<p>打开 Gaia 地图后，选择向下箭头以呈现符号 <strong>搜索</strong> 菜单，您可以在其中选择一个可用的符号，并将其放置在地图上的任意位置。如果您选择其中一个可用的 <strong>战术图形</strong> 符号，那么您将只能在实现该符号的对象类型中创建对象。 <a href="#create-an-object-type-that-implements-the-milstd-2525c-symbol-interface">MILSTD 2525C 符号接口</a>。Gaia 将自动填充 <strong>坐标</strong> 输入框（基于您地图的坐标系首选项）。</p>
+<p><img alt="The symbol selection in Gaia's tool bar is displayed." height="528" node="[object Object]" src="/docs/resources/foundry/object-link-types/create-geopoint-from-tool-bar.png" style="aspect-ratio:884 / 528" width="884"/></p>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__success__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>选择 <strong>文件</strong> &gt; <strong>首选项</strong> &gt; <strong>坐标系</strong> 从 Gaia 的顶部功能区更新默认坐标系。</p></div>
+<p>该 <strong>“创建符号”</strong> 窗口将显示在 Gaia 的左侧面板中，您可以在其中搜索并选择实现 Gaia Geopoint Creatable 接口的对象类型。接下来，可选择调整地理点的 <strong>“方位角（磁）”</strong> ，然后再输入 <strong>标题</strong> （用于您的对象）。选择 <strong>完成</strong> 以将放置的符号作为对象保存到您的本体论中。</p>
+<p>将地理点保存为对象后，您就可以与新地图图层进行交互，并在 Foundry 的 Object Explorer 中查看该对象 <a href="#draw-a-new-shape-on-your-gaia-map-and-tag-it-to-an-object-type">，就像您可以处理在地图上绘制的形状一样</a>.</p>
+<h4 id="user-content-edit-an-existing-geopoint-object"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#edit-an-existing-geopoint-object" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>编辑现有的地理点对象</h4>
+<p>您可以编辑现有的 geopoint 对象 <a href="#edit-an-existing-shape-object">，方法与在地图上绘制的形状相同</a>。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-configure-a-tactical-graphic-on-your-gaia-map-and-tag-it-to-an-object-type" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#configure-a-tactical-graphic-on-your-gaia-map-and-tag-it-to-an-object-type" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>在 Gaia 地图上配置战术图形并将其标记到对象类型</h3>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>您的 Foundry 注册必须包含 MRS，才能将战术图形标记到对象类型。如果对 MRS 的安装或功能有任何疑问，请联系 Palantir 支持团队。</p></div>
+<p>开始之前，请查看 <a href="#entry-points-to-create-objects-on-your-gaia-map">创建对象的入口</a> ，以了解您选择的对象类型和绘图工具如何决定哪些对象类型可供您使用。</p>
+<p><a href="#drop-a-new-point-on-your-gaia-map-and-tag-it-to-an-object-type">类似于添加要标记为对象的新地理点</a>，选择向下箭头以渲染符号 <strong>搜索</strong> 菜单，您可以在其中选择可用的战术图形并放置在地图上的任意位置。在 <strong>搜索符号...</strong> 输入框中键入所需战术图形的名称，例如 <code>Brigade Support Area</code>。</p>
+<p><img alt="Gaia's symbol search window enables a user to search for a symbol or tactical graphic to add to their map." height="600" node="[object Object]" src="/docs/resources/foundry/object-link-types/search-for-tactical-graphic.png" style="aspect-ratio:884 / 736" width="720.6521739130434"/></p>
+<p>该 <strong>创建符号</strong> 窗口将显示在 Gaia 的左侧面板中，您可以按照与上文相同的 <a href="#draw-a-new-shape-on-your-gaia-map-and-tag-it-to-an-object-type">形状创建说明</a> 将您的战术图形添加到地图上并将其标记为某个对象类型。</p>
+<p><img alt="A Gaia map displays a tactical graphic drawn and saved on a map canvas." height="600" node="[object Object]" src="/docs/resources/foundry/object-link-types/draw-tactical-graphic.png" style="aspect-ratio:1586 / 1702" width="559.1069330199765"/></p>
+<h4 id="user-content-edit-an-existing-tactical-graphic-object"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#edit-an-existing-tactical-graphic-object" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>编辑现有战术图形对象</h4>
+<p>您可以通过遵循上述 <a href="#edit-an-existing-shape-object">形状对象编辑说明来编辑现有的战术图形对象</a>。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-promote-an-annotation-to-an-object" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#promote-an-annotation-to-an-object" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>将标注提升为对象</h3>
+<p>在 Gaia 中， <em>标注</em> 是仅存在于当前地图中的形状、点或符号。您可以将地图上的标注提升为本体论中的对象，供能够访问其对象类型的其他用户在其创建的其他地图上使用。</p>
+<p>要将现有标注标记为对象，请双击地图上的标注，或将光标悬停在左侧面板的 <strong>图层</strong> 选项卡中该标注的铅笔图标上，以打开形状、点或符号编辑窗口。接下来，选择 <strong>提升为对象</strong>，请从 <strong>对象类型</strong> 下拉菜单中选择您的对象类型，并在形状、点或符号编辑窗口中填写操作表单。</p>
+<p><img alt="A Gaia map displays an annotation that a user promotes to an object through the left panel." height="600" node="[object Object]" src="/docs/resources/foundry/object-link-types/promote-annotation.png" style="aspect-ratio:3940 / 1744" width="1355.5045871559632"/></p>
+<p>要详细了解可用于将数据 <em>从</em> 您的本体论 <em>添加到</em> Gotham的各种方法，请查看现有的 <a href="/docs/foundry/geospatial/add-ontology-data-to-gaia/">地理空间数据集成文档</a>.</p></div>
+</article>
+</body>
+</html>

@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>函数中的 Webhook</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<div class="ptcom-design__markdownDoc__1uarhel" data-pagefind-body="true"><h1 data-pagefind-weight="1" id="user-content-webhooks-in-functions" level="1" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#webhooks-in-functions" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>函数中的 Webhook</h1>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>本页面上的源导入说明和代码示例特定于 TypeScript v1 函数。如需更 <a href="/docs/foundry/functions/language-feature-support/#typescript-v1-vs-typescript-v2">强大的功能</a>（包括对 Ontology SDK 和可配置资源请求的支持），我们建议 <a href="/docs/foundry/functions/typescript-v2-migration/">迁移到 TypeScript v2</a>。</p></div>
+<p>本指南将引导你设置一个可以使用 <a href="/docs/foundry/data-connection/webhooks-overview/">Webhook</a>向外部系统发出请求的函数。</p>
+<p>如果要在 TypeScript v2 或 Python 函数中使用 Webhook，请改为 <a href="/docs/foundry/data-connection/webhooks-reference/#webhook-functions">将其发布为 Webhook 函数</a>。将已发布的函数导入你的函数仓库，并 <a href="/docs/foundry/functions/query-functions/#call-a-query-function">使用 Ontology SDK 调用它</a>。Webhook 函数还可以由 <a href="/docs/foundry/workshop/functions-use/">Workshop</a>、 <a href="/docs/foundry/action-types/function-actions-overview/">函数支撑的操作</a>以及其他函数调用。</p>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><div class="ptcom-design__title__19o1cwu">先决条件</div><p>本指南假设你已创建数据连接源和 Webhook。如需更多信息，请参阅 <a href="/docs/foundry/data-connection/external-functions/">有关如何创建数据连接源和 Webhook 的文档</a>。</p></div>
+<p>支持由出站应用程序支撑的 Webhook。如需更多信息，请参阅出站应用程序配置页面中的 <a href="/docs/foundry/administration/configure-outbound-applications/#supported-workflows">支持的工作流</a> 部分。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-import-sources-into-a-functions-repository" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#import-sources-into-a-functions-repository" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>将源导入函数仓库</h2>
+<p>在按照本指南操作之前，请确保你已创建函数仓库，并了解如何编写和发布函数，如 <a href="/docs/foundry/functions/getting-started/">我们的教程</a>中所述。</p>
+<p>您必须先启用数据源，使其能够被导入到代码仓库中。为此，请前往 <strong>启用代码导入</strong> 菜单，为您的 REST API 数据源启用允许将该数据源导入代码仓库的选项。由于无法在所有使用函数的工作流中执行导出时的标记验证，因此您还必须在 <strong>启用导出</strong> 菜单中为每个数据源启用不带标记验证的导出。</p>
+<p><img alt="Code import configuration." height="521" node="[object Object]" src="/docs/resources/foundry/functions/source-code-import-configuration.png" style="aspect-ratio:860 / 521" width="860"/></p>
+<p><img alt="Export configuration." height="411" node="[object Object]" src="/docs/resources/foundry/functions/source-export-configuration.png" style="aspect-ratio:860 / 411" width="860"/></p>
+<p>接下来，要在函数中使用 webhook，必须先将该 webhook 的支撑 REST API 数据源导入到仓库中。选择 <a href="/docs/foundry/functions/resource-imports-sidebar/"><strong>资源导入</strong> 左侧面板</a> 以查看已导入到仓库中的数据源。然后选择 <strong>添加 &gt; 数据源</strong> 以显示搜索对话框，您可以在其中选择要导入的数据源。只有具有 API 名称的数据源才能通过此对话框导入。</p>
+<p><img alt="External functions source import modal showing a specific source selected for import" height="600" node="[object Object]" src="/docs/resources/foundry/functions/external-functions-source-import-modal.png" style="aspect-ratio:2032 / 1232" width="989.6103896103896"/></p>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>将数据源导入函数仓库以供 webhook 使用的方式，与将数据源导入 Python 转换仓库和计算模块的方式有所不同。仅将特定数据源用于 webhook 用途的函数仓库将 <em>不会</em> 显示在数据源概览中列出的仓库列表中。任何具有 <code>Viewer</code> 对源具有访问权限的用户将能够导入这些 webhook 并在外部函数中使用。</p></div>
+<h2 data-pagefind-weight="0.9" id="user-content-use-webhooks-in-functions" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#use-webhooks-in-functions" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>在函数中使用 webhook</h2>
+<p>将 REST API 源导入函数仓库后，它将在 TypeScript 环境中可用，并可通过该源的命名空间进行访问：</p>
+<pre><div class="ptcom-design__wrapper__12wpwnx" data-pagefind-weight="0.5"><span class="ptcom-design__clipboard__1l1gb20 ptcom-design__clipboard__12wpwnx"><span class="ptcom-design__confirmation__1l1gb20" data-pagefind-ignore="true">Copied!</span><svg aria-hidden="true" aria-label="clipboard" data-view-component="true" height="16" version="1.1" viewbox="0 0 16 16" width="16"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z" fill="currentColor" fill-rule="evenodd"></path><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z" fill="currentColor" fill-rule="evenodd"></path></svg></span><div style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;overflow:auto;position:relative;margin:0;padding:0.75em"><code style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;float:left;padding-right:10px"><span class="react-syntax-highlighter-line-number">1
+</span><span class="react-syntax-highlighter-line-number">2
+</span></code><code class="language-typescript" style="white-space:pre;text-align:left;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none">import { Function } from "@foundry/functions-api";
+import { MyDictionarySource } from "@foundry/external-systems/sources";</code></div></div></pre>
+<p>如果出现错误 <code>Cannot find module '@foundry/external-systems' or its corresponding type declarations.</code>，请确保 <code>enableExternalSystems</code> 的值设置为 <code>true</code> （位于 <code>functions-typescript/functions.json</code> 文件中）。更新并提交更改后，系统应会安装必要的软件包，包括 <code>@foundry/external-systems</code>。</p>
+<p><img alt="External functions import error message." height="208" node="[object Object]" src="/docs/resources/foundry/functions/external-functions-import-error-message.png" style="aspect-ratio:1508 / 208" width="1508"/></p>
+<h3 data-pagefind-weight="0.8" id="user-content-example-make-multiple-calls-from-a-function" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#example-make-multiple-calls-from-a-function" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>示例：从函数中进行多次调用</h3>
+<p>在下面的示例中，我们将介绍如何使用单个函数对字典 API 进行多次调用。</p>
+<p>如果您的函数不进行任何本体论编辑，您将创建 <code>@Query()</code> 函数。如果您想进行本体论编辑，则需要改用 <code>@OntologyEditFunction</code> 装饰器。有关从函数进行本体论编辑的更多信息，请参阅我们的 <a href="/docs/foundry/functions/api-ontology-edits/">文档</a>。</p>
+<p>使用标准的 <a href="https://www.typescriptlang.org/docs/handbook/release-notes/typescript-1-7.html#asyncawait-support-in-es6-targets-node-v4">TypeScript async/await 模式 ↗</a>，可以在函数中同时发起多个 webhook 调用。请使用 <code>isOk</code> 辅助函数检查调用是否成功，该函数导出自 <code>@foundry/functions-api</code>。</p>
+<p>以下函数接受一个 TypeScript 字符串数组形式的单词列表，并为每个单词进行一次调用：</p>
+<pre><div class="ptcom-design__wrapper__12wpwnx" data-pagefind-weight="0.5"><span class="ptcom-design__clipboard__1l1gb20 ptcom-design__clipboard__12wpwnx"><span class="ptcom-design__confirmation__1l1gb20" data-pagefind-ignore="true">Copied!</span><svg aria-hidden="true" aria-label="clipboard" data-view-component="true" height="16" version="1.1" viewbox="0 0 16 16" width="16"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z" fill="currentColor" fill-rule="evenodd"></path><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z" fill="currentColor" fill-rule="evenodd"></path></svg></span><div style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;overflow:auto;position:relative;margin:0;padding:0.75em"><code style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;float:left;padding-right:10px"><span class="react-syntax-highlighter-line-number">1
+</span><span class="react-syntax-highlighter-line-number">2
+</span><span class="react-syntax-highlighter-line-number">3
+</span><span class="react-syntax-highlighter-line-number">4
+</span><span class="react-syntax-highlighter-line-number">5
+</span><span class="react-syntax-highlighter-line-number">6
+</span><span class="react-syntax-highlighter-line-number">7
+</span><span class="react-syntax-highlighter-line-number">8
+</span><span class="react-syntax-highlighter-line-number">9
+</span><span class="react-syntax-highlighter-line-number">10
+</span><span class="react-syntax-highlighter-line-number">11
+</span><span class="react-syntax-highlighter-line-number">12
+</span><span class="react-syntax-highlighter-line-number">13
+</span><span class="react-syntax-highlighter-line-number">14
+</span><span class="react-syntax-highlighter-line-number">15
+</span><span class="react-syntax-highlighter-line-number">16
+</span><span class="react-syntax-highlighter-line-number">17
+</span><span class="react-syntax-highlighter-line-number">18
+</span><span class="react-syntax-highlighter-line-number">19
+</span><span class="react-syntax-highlighter-line-number">20
+</span><span class="react-syntax-highlighter-line-number">21
+</span><span class="react-syntax-highlighter-line-number">22
+</span><span class="react-syntax-highlighter-line-number">23
+</span><span class="react-syntax-highlighter-line-number">24
+</span><span class="react-syntax-highlighter-line-number">25
+</span><span class="react-syntax-highlighter-line-number">26
+</span></code><code class="language-typescript" style="white-space:pre;text-align:left;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none">import { OntologyEditFunction, isOk } from "@foundry/functions-api";
+import { MyDictionarySource } from "@foundry/external-systems/sources";
+
+export class MyFunctions {
+
+    @OntologyEditFunction()
+    public async defineWords(words: string[]): Promise&lt;void&gt; {
+
+        const results = await Promise.all(words.map(word =&gt; MyDictionarySource.webhooks.GetDefinition.call({
+            wordToDefine: word
+        })));
+
+        results.forEach((result, i) =&gt; {
+            if (isOk(result)) {
+                const output = result.value.output;
+                output.dictionary_definitions.forEach(definitions_for_word =&gt; {
+                    definitions_for_word.meanings.forEach(meaning =&gt; {
+                        meaning.definitions.forEach(def_for_part_of_speech =&gt; {
+                            console.log(`Found a ${meaning.partOfSpeech} definition for "${words[i]}": ${def_for_part_of_speech.definition}`);
+                        })
+                    })
+                });
+            }
+        });
+    }
+}</code></div></div></pre>
+<p>以下输入的日志输出 <code>["tuba", "cool"]</code>:</p>
+<pre><code>LOG [2023-07-28T03:16:22.968Z] Found a noun definition for "tuba": A large brass musical instrument, usually in the bass range, played through a vibration of the lips upon the mouthpiece and fingering of the keys.
+LOG [2023-07-28T03:16:22.968Z] Found a noun definition for "tuba": A type of Roman military trumpet, distinct from the modern tuba.
+LOG [2023-07-28T03:16:22.968Z] Found a noun definition for "tuba": A large reed stop in organs.
+LOG [2023-07-28T03:16:22.968Z] Found a noun definition for "tuba": A Malayan plant whose roots are a significant source of rotenone, Derris malaccensis.
+LOG [2023-07-28T03:16:22.968Z] Found a noun definition for "tuba": A reddish palm wine made from coconut or nipa sap.
+LOG [2023-07-28T03:16:22.968Z] Found a noun definition for "tuba": A tube or tubular organ.
+LOG [2023-07-28T03:16:22.968Z] Found a noun definition for "cool": A moderate or refreshing state of cold; moderate temperature of the air between hot and cold; coolness.
+LOG [2023-07-28T03:16:22.968Z] Found a noun definition for "cool": A calm temperament.
+</code></pre>
+<h2 data-pagefind-weight="0.9" id="user-content-error-handling" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#error-handling" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>错误处理</h2>
+<p>为了帮助缓解与联网系统交互时出现的故障，函数会使用 Result 对象来公开从 webhook 传播的错误，这些对象会提供有关所发生错误类型的信息：</p>
+<pre><div class="ptcom-design__wrapper__12wpwnx" data-pagefind-weight="0.5"><span class="ptcom-design__clipboard__1l1gb20 ptcom-design__clipboard__12wpwnx"><span class="ptcom-design__confirmation__1l1gb20" data-pagefind-ignore="true">Copied!</span><svg aria-hidden="true" aria-label="clipboard" data-view-component="true" height="16" version="1.1" viewbox="0 0 16 16" width="16"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z" fill="currentColor" fill-rule="evenodd"></path><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z" fill="currentColor" fill-rule="evenodd"></path></svg></span><div style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;overflow:auto;position:relative;margin:0;padding:0.75em"><code style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;float:left;padding-right:10px"><span class="react-syntax-highlighter-line-number">1
+</span><span class="react-syntax-highlighter-line-number">2
+</span><span class="react-syntax-highlighter-line-number">3
+</span><span class="react-syntax-highlighter-line-number">4
+</span><span class="react-syntax-highlighter-line-number">5
+</span><span class="react-syntax-highlighter-line-number">6
+</span><span class="react-syntax-highlighter-line-number">7
+</span><span class="react-syntax-highlighter-line-number">8
+</span><span class="react-syntax-highlighter-line-number">9
+</span><span class="react-syntax-highlighter-line-number">10
+</span><span class="react-syntax-highlighter-line-number">11
+</span><span class="react-syntax-highlighter-line-number">12
+</span><span class="react-syntax-highlighter-line-number">13
+</span><span class="react-syntax-highlighter-line-number">14
+</span><span class="react-syntax-highlighter-line-number">15
+</span><span class="react-syntax-highlighter-line-number">16
+</span><span class="react-syntax-highlighter-line-number">17
+</span><span class="react-syntax-highlighter-line-number">18
+</span><span class="react-syntax-highlighter-line-number">19
+</span><span class="react-syntax-highlighter-line-number">20
+</span><span class="react-syntax-highlighter-line-number">21
+</span><span class="react-syntax-highlighter-line-number">22
+</span><span class="react-syntax-highlighter-line-number">23
+</span><span class="react-syntax-highlighter-line-number">24
+</span><span class="react-syntax-highlighter-line-number">25
+</span><span class="react-syntax-highlighter-line-number">26
+</span><span class="react-syntax-highlighter-line-number">27
+</span><span class="react-syntax-highlighter-line-number">28
+</span><span class="react-syntax-highlighter-line-number">29
+</span></code><code class="language-typescript" style="white-space:pre;text-align:left;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none">import { OntologyEditFunction, isOk } from "@foundry/functions-api";
+import { MyDictionarySource } from "@foundry/external-systems/sources";
+
+export class MyFunctions {
+
+    @OntologyEditFunction()
+    public async defineWords(words: string[]): Promise&lt;void&gt; {
+
+        const results = await Promise.all(words.map(word =&gt; MyDictionarySource.webhooks.GetDefinition.call({
+            wordToDefine: word
+        })));
+
+        results.forEach((result, i) =&gt; {
+            if (isOk(result)) {
+                // Extract the response
+            } else {
+                const errorName = result.error.name;
+
+                if (errorName === "WebhookExecutionFailedToStart") {
+                    console.log("We were unable to initiate a request to the dictionary API.");
+                } else if (errorName === "ParsingResponseFailed") {
+                    console.log("The external request succeeded, but the response couldn't be parsed.");
+                } else {
+                    console.log("Something went wrong.");
+                }
+            }
+        });
+    }
+}</code></div></div></pre>
+<p>在处理错误时，编写的代码应监听特定的名称并作出相应的处理。函数目前会返回以下错误：</p>
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>错误</th><th>描述</th></tr></thead><tbody><tr><td><code>WebhookExecutionFailedToStart</code></td><td>webhook 启动失败。如果返回此错误，则可以放心地假定未向外部系统发出任何请求。</td></tr><tr><td><code>WebhookExecutionTimedOut</code></td><td>webhook 已开始执行，但在配置的 webhook 时间限制内未收到来自外部系统的响应。</td></tr><tr><td><code>RemoteRestApiReturnedError</code></td><td>外部系统返回了错误。仅针对在 REST API 源上配置的 webhook 返回。</td></tr><tr><td><code>RemoteApiReturnedError</code></td><td>外部系统返回了错误。仅针对在非 REST API 源上配置的 webhook 返回。</td></tr><tr><td><code>ParsingResponseFailed</code></td><td>webhook 执行成功，但未能成功解析来自外部系统的响应。例如，当来自外部系统的响应未包含预期字段时，就可能出现这种情况。由于 webhook 调用的结果不一定会被使用，因此是否将其标记为面向最终用户的失败由应用程序构建者决定。</td></tr><tr><td><code>ServerError</code></td><td>Webhook 服务或连接器内部发生了问题。</td></tr><tr><td><code>UnknownError</code></td><td>发生了无法直接归因于任何 Foundry 服务的错误。</td></tr></tbody></table></div>
+<p>此错误类型列表可能会发生变化；用户应将代码设计为包含默认分支，以防函数执行器返回带有新名称的错误。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-example-handle-errors-when-making-multiple-webhook-calls-from-a-single-function" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#example-handle-errors-when-making-multiple-webhook-calls-from-a-single-function" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>示例：在单个函数中进行多次 Webhook 调用时处理错误</h3>
+<p>以下代码描述了如何处理在同一函数中部分成功、部分失败的多次 Webhook 调用。在我们的示例中， <code>RemoteRestApiReturnedError</code> 会在字典服务器无法找到给定单词的定义时返回。</p>
+<pre><div class="ptcom-design__wrapper__12wpwnx" data-pagefind-weight="0.5"><span class="ptcom-design__clipboard__1l1gb20 ptcom-design__clipboard__12wpwnx"><span class="ptcom-design__confirmation__1l1gb20" data-pagefind-ignore="true">Copied!</span><svg aria-hidden="true" aria-label="clipboard" data-view-component="true" height="16" version="1.1" viewbox="0 0 16 16" width="16"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z" fill="currentColor" fill-rule="evenodd"></path><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z" fill="currentColor" fill-rule="evenodd"></path></svg></span><div style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;overflow:auto;position:relative;margin:0;padding:0.75em"><code style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;float:left;padding-right:10px"><span class="react-syntax-highlighter-line-number">1
+</span><span class="react-syntax-highlighter-line-number">2
+</span><span class="react-syntax-highlighter-line-number">3
+</span><span class="react-syntax-highlighter-line-number">4
+</span><span class="react-syntax-highlighter-line-number">5
+</span><span class="react-syntax-highlighter-line-number">6
+</span><span class="react-syntax-highlighter-line-number">7
+</span><span class="react-syntax-highlighter-line-number">8
+</span><span class="react-syntax-highlighter-line-number">9
+</span><span class="react-syntax-highlighter-line-number">10
+</span><span class="react-syntax-highlighter-line-number">11
+</span><span class="react-syntax-highlighter-line-number">12
+</span><span class="react-syntax-highlighter-line-number">13
+</span><span class="react-syntax-highlighter-line-number">14
+</span><span class="react-syntax-highlighter-line-number">15
+</span><span class="react-syntax-highlighter-line-number">16
+</span><span class="react-syntax-highlighter-line-number">17
+</span><span class="react-syntax-highlighter-line-number">18
+</span><span class="react-syntax-highlighter-line-number">19
+</span><span class="react-syntax-highlighter-line-number">20
+</span><span class="react-syntax-highlighter-line-number">21
+</span><span class="react-syntax-highlighter-line-number">22
+</span><span class="react-syntax-highlighter-line-number">23
+</span><span class="react-syntax-highlighter-line-number">24
+</span><span class="react-syntax-highlighter-line-number">25
+</span><span class="react-syntax-highlighter-line-number">26
+</span><span class="react-syntax-highlighter-line-number">27
+</span><span class="react-syntax-highlighter-line-number">28
+</span><span class="react-syntax-highlighter-line-number">29
+</span><span class="react-syntax-highlighter-line-number">30
+</span></code><code class="language-typescript" style="white-space:pre;text-align:left;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none">import { OntologyEditFunction, isOk } from "@foundry/functions-api";
+import { MyDictionarySource } from "@foundry/external-systems/sources";
+
+export class MyFunctions {
+
+    @OntologyEditFunction()
+    public async defineWords(words: string[]): Promise&lt;void&gt; {
+
+        const results = await Promise.all(words.map(word =&gt; MyDictionarySource.webhooks.GetDefinition.call({
+            wordToDefine: word
+        })));
+
+        results.forEach((result, i) =&gt; {
+            if (isOk(result)) {
+                const output = result.value.output;
+                output.dictionary_definitions.forEach(definitions_for_word =&gt; {
+                    definitions_for_word.meanings.forEach(meaning =&gt; {
+                        meaning.definitions.forEach(def_for_part_of_speech =&gt; {
+                            console.log(`Found a ${meaning.partOfSpeech} definition for "${words[i]}": ${def_for_part_of_speech.definition}`);
+                        })
+                    })
+                });
+            } else {
+                if (result.error.name === "RemoteRestApiReturnedError") {
+                    console.log(`ERROR: ${words[i]} could not be defined`, result.error.message);
+                }
+            }
+        });
+    }
+}</code></div></div></pre>
+<p>输入 <code>["asdf", "shire"]</code> 到上述函数中会返回以下结果：</p>
+<pre><code>LOG [2023-07-28T15:38:47.263Z] ERROR: asdf could not be defined Request returned an unsuccessful response code: 404 Response body: {"title":"No Definitions Found","message":"Sorry pal, we couldn't find definitions for the word you were looking for.","resolution":"You can try the search again at later time or head to the web instead."}
+LOG [2023-07-28T15:38:47.264Z] Found a noun definition for "shire": Physical area administered by a sheriff.
+LOG [2023-07-28T15:38:47.264Z] Found a noun definition for "shire": Former administrative area of Britain; a county.
+LOG [2023-07-28T15:38:47.264Z] Found a noun definition for "shire": The general area in which a person lives or comes from, used in the context of travel within the United Kingdom.
+LOG [2023-07-28T15:38:47.264Z] Found a noun definition for "shire": A rural or outer suburban local government area of Australia.
+LOG [2023-07-28T15:38:47.264Z] Found a noun definition for "shire": A shire horse.
+LOG [2023-07-28T15:38:47.264Z] Found a verb definition for "shire": To (re)constitute as one or more shires or counties.
+</code></pre>
+<h2 data-pagefind-weight="0.9" id="user-content-limitations" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#limitations" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>限制</h2>
+<p>目前，对于可以在本体论编辑函数内发起的请求数量没有限制，但现有的 <a href="/docs/foundry/functions/manage-functions/#enforced-limits">函数资源限制</a> 仍然适用。 <a href="/docs/foundry/data-connection/webhooks-reference/#limits">Webhook 限制</a> 也同样会被强制执行。</p>
+<p>函数目前支持具有以下输入和输出类型的 Webhook：</p>
+<ul>
+<li>附件</li>
+<li>布尔值</li>
+<li>整数</li>
+<li>长整数</li>
+<li>双精度浮点数</li>
+<li>字符串</li>
+<li>可选值</li>
+<li>日期</li>
+<li>时间戳</li>
+<li>列表</li>
+<li>枚举（允许的字符串类型值列表）</li>
+<li>包含和不包含预期字段的记录</li>
+</ul>
+<p>当从 <code>@Query</code> 函数调用 Webhook 时，该 Webhook 必须仅执行 <code>Read API</code> 调用,它们不会修改外部系统。查询函数会被频繁重试,或在页面加载时被静默执行,因此无法提供与使用 <code>@OntologyEditFunction</code>。配置 webhook 时,您可以使用以下选项来指定是否可以安全地从查询函数中执行该 webhook: <code>Read API</code> 或 <code>Write API</code>。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-unsupported-webhook-features" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#unsupported-webhook-features" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>不支持的 webhook 功能</h3>
+<ul>
+<li>使用 <code>OR</code> 类型作为输入或输出参数的 webhook 目前不受支持。不会为这些 webhook 生成代码。</li>
+</ul>
+<h2 data-pagefind-weight="0.9" id="user-content-handle-version-changes-in-functions-and-webhooks" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#handle-version-changes-in-functions-and-webhooks" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>处理函数和 webhook 中的版本变更</h2>
+<p>函数和 webhook 都有版本,调用方可以调用任意版本的函数或 webhook。发布函数时,当时可用的最新 webhook 版本将被固定到该函数。</p>
+<p>当函数仓库在 <a href="/docs/foundry/code-repositories/overview/">代码仓库</a> 应用程序中打开时,用于自动补全的已生成代码绑定将始终使用最新版本的 webhook。此 webhook 版本显示在左侧的 <strong>资源导入</strong> 侧面板中。</p>
+<p><img alt="Resource import side panel in a functions repository, showing a source with a single webhook." height="600" node="[object Object]" src="/docs/resources/foundry/functions/external-functions-import-sidebar.png" style="aspect-ratio:600 / 694" width="518.7319884726224"/></p>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>在发布依赖其功能的函数之前,请确保您的 webhook 稳定。</p></div>
+<p>请记住，在对 webhook 或函数进行更改时，需要重新发布函数并将用户升级到新版本。此前发布并固定的函数版本仍可供使用。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-permissions" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#permissions" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>权限</h2>
+<p>下表总结了编写、发布和使用外部函数所需的权限。</p>
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>操作</th><th>用户</th><th>所需权限</th></tr></thead><tbody><tr><td>将 webhook 导入函数仓库</td><td>函数编辑者</td><td><code>webhooks:editor</code> （对 webhook），该权限授予 <strong>编辑者</strong> 默认角色。</td></tr><tr><td>发布调用 webhook 的函数</td><td>函数编辑者</td><td><code>webhooks:execute</code> 权限（对源），该权限仅授予 <strong>所有者</strong> 和 <strong>编辑者</strong> 默认角色。</td></tr><tr><td>将操作配置为使用 <code>@OntologyEditFunction()</code> 来调用 webhooks</td><td>操作编辑者</td><td><code>webhooks:grant-action-validated-execution</code> 权限（对 webhook）以及 <code>Viewer</code> 权限（对函数）</td></tr><tr><td>执行 <code>@Query()</code> webhook（在 Workshop 中）</td><td>最终用户</td><td><code>webhooks:execute</code> 权限（对源），该权限仅授予 <code>Owner</code> 和 <code>Editor</code> 默认角色。</td></tr><tr><td>执行 <code>@OntologyEditFunction()</code> （在操作中）</td><td>最终用户</td><td>用户必须满足 <a href="/docs/foundry/action-types/submission-criteria/">提交条件</a> （针对该操作）。在这种情况下，不会检查对源、webhook 或函数的任何权限。创建和管理操作的用户必须确保提交条件得到适当配置。</td></tr></tbody></table></div>
+<h2 data-pagefind-weight="0.9" id="user-content-monitoring-troubleshooting-and-debugging" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#monitoring-troubleshooting-and-debugging" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>监控、故障排除和调试</h2>
+<p>使用以下平台工具可以更深入地了解函数发起的 webhook 执行情况：</p>
+<ul>
+<li><a href="/docs/foundry/data-connection/webhooks-reference/#webhook-history">Webhook 执行历史记录</a>，可在 <strong>History</strong> 标签页（在 <a href="/docs/foundry/data-connection/overview/">Data Connection</a>中查看单个 webhook 时）中找到。</li>
+<li>函数使用历史可在 <a href="/docs/foundry/ontology-manager/overview/">Ontology Manager</a>中查看，其中记录了函数何时被执行，包括输入、输出以及触发该函数的用户。</li>
+<li><a href="/docs/foundry/functions/function-metrics/">函数指标</a>，可显示函数的近实时成功/失败次数和 P95 执行时长。</li>
+<li><a href="/docs/foundry/functions/foo-getting-started/#test-in-live-preview">函数的代码编写预览</a>，提供性能分析、调试输出等功能。</li>
+</ul>
+<h2 data-pagefind-weight="0.9" id="user-content-best-practices" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#best-practices" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>最佳实践</h2>
+<p>在函数中调用外部源的 webhook 时，我们建议遵循以下最佳实践：</p>
+<ul>
+<li>请先使用 <a href="/docs/foundry/data-connection/webhooks-setup/#test-the-webhook">测试 webhook 侧面板</a> （在 Data Connection 中）对 webhook 进行彻底测试，然后再尝试在函数中使用这些 webhook。</li>
+<li>使用 webhook 输入和输出 <code>record</code> 类型参数（如有可能，请包含预期字段）。使用显式类型而非 JSON，意味着函数代码不太可能抛出意外的运行时错误。</li>
+<li>使用 <code>isOk</code> 和 <code>isErr</code> 内置函数（从 <code>@foundry/functions-api</code> 导出）来检查成功和错误状态，并通过 name 字段进一步确定错误类型。</li>
+<li>如果用户将通过单次函数调用同时写入外部系统和本体论，请记住，即使对外部系统的写入成功，对本体论的写入也可能失败。请确保已制定相应措施来处理此类不一致情况，并在必要时让用户能够查看其对这两个系统所做的修改状态。</li>
+</ul></div>
+</article>
+</body>
+</html>
