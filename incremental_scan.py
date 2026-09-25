@@ -14,14 +14,10 @@ import json, re, os, sys, time, hashlib, urllib.request, argparse, subprocess
 from datetime import datetime, timezone
 from urllib.parse import urljoin, urlparse
 
-# Global import so translate_title() and translate_article_file() can access it
-try:
-    sys.path.insert(0, '/Users/shanfu/cc/Library/Tools/common')
-    from llm_utils import LLMProvider
-except Exception:
-    LLMProvider = None
-
 ROOT = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, ROOT)
+
+from scrapers.translate_parallel import translate_file
 
 def log(msg):
     print(f'[{datetime.now().strftime("%H:%M:%S")}] {msg}', flush=True)
@@ -238,152 +234,69 @@ def scan_docs(dry_run=False):
 
 # === TRANSLATION ===
 
-def translate_new_articles():
-    """Translate any new articles that don't have Chinese versions yet."""
-    log('--- Checking for untranslated articles ---')
-    sys.path.insert(0, '/Users/shanfu/cc/Library/Tools/common')
-    sys.path.insert(0, '/Users/shanfu/cc/Library/Tools/postfdry/agents')
-    try:
-        from llm_utils import get_client, LLMProvider
-        import translator_agent
-        import markdown as md_lib
-        client = get_client()
-    except Exception as e:
-        log(f'  Cannot load translation tools: {e}')
-        return
+def _translate_source_articles(source):
+    """Translate missing source pages with the shared GLM pipeline."""
+    source_json = os.path.join(ROOT, 'data', 'sources', f'{source}.json')
+    with open(source_json, encoding='utf-8') as f:
+        data = json.load(f)
 
-    # Check blog articles
-    blog_json = os.path.join(ROOT, 'data', 'sources', 'blog.json')
-    with open(blog_json) as f:
-        blog_data = json.load(f)
-    for a in blog_data['articles']:
-        zh_path = a.get('hp', '').replace('reader.html', 'reader_zh.html')
-        if not zh_path:
+    translated = 0
+    changed = False
+    for article in data.get('articles', []):
+        if article.get('hidden'):
             continue
-        full_zh = os.path.join(ROOT, zh_path)
-        if not os.path.exists(full_zh):
-            en_path = a.get('hp', '').replace('reader_zh.html', 'reader.html')
-            full_en = os.path.join(ROOT, en_path)
-            if os.path.exists(full_en):
-                log(f'  Translating blog: {a["s"]}')
-                translate_article_file(full_en, full_zh, client, translator_agent, md_lib)
-                # Translate title
-                if a.get('tt') == a.get('t'):
-                    a['tt'] = translate_title(a['t'], client)
-    with open(blog_json, 'w', encoding='utf-8') as f:
-        json.dump(blog_data, f, ensure_ascii=False, indent=2)
-
-    # Check docs articles
-    docs_json = os.path.join(ROOT, 'data', 'sources', 'docs.json')
-    if os.path.exists(docs_json):
-        with open(docs_json) as f:
-            docs_data = json.load(f)
-        for a in docs_data['articles']:
-            zh_path = a.get('hp', '').replace('page.html', 'page_zh.html')
-            if not zh_path:
-                continue
-            full_zh = os.path.join(ROOT, zh_path)
-            if not os.path.exists(full_zh):
-                en_path = a.get('hp', '').replace('page_zh.html', 'page.html')
-                full_en = os.path.join(ROOT, en_path)
-                if os.path.exists(full_en):
-                    log(f'  Translating docs: {a["s"]}')
-                    translate_article_file(full_en, full_zh, client, translator_agent, md_lib)
-        with open(docs_json, 'w', encoding='utf-8') as f:
-            json.dump(docs_data, f, ensure_ascii=False, indent=2)
-
-    # Check website articles
-    ws_json = os.path.join(ROOT, 'data', 'sources', 'website.json')
-    with open(ws_json) as f:
-        ws_data = json.load(f)
-    for a in ws_data['articles']:
-        if a.get('hidden'):
+        source_rel = article.get('hp', '')
+        if not source_rel:
             continue
-        zh_path = a.get('hp', '').replace('page.html', 'page_zh.html')
-        if not zh_path:
-            continue
-        full_zh = os.path.join(ROOT, zh_path)
-        if not os.path.exists(full_zh):
-            en_path = a.get('hp', '').replace('page_zh.html', 'page.html')
-            full_en = os.path.join(ROOT, en_path)
-            if os.path.exists(full_en):
-                log(f'  Translating website: {a["s"]}')
-                translate_article_file(full_en, full_zh, client, translator_agent, md_lib)
-                if a.get('tt') == a.get('t'):
-                    a['tt'] = translate_title(a['t'], client)
-    with open(ws_json, 'w', encoding='utf-8') as f:
-        json.dump(ws_data, f, ensure_ascii=False, indent=2)
-
-
-def translate_title(title, client):
-    """Translate a single title."""
-    prompt = f'''Translate the following English title to Chinese. Keep product names (Palantir, Foundry, Apollo, Gotham, AIP, ShipOS, Warp Speed, Vertex) in English. Output ONLY the Chinese translation.
-
-Title: {title}'''
-    try:
-        resp = client.generate_content(
-            content=prompt, model_name='glm-5.2',
-            provider=LLMProvider.DASHSCOPE, fallback=False
-        )
-        return resp.strip().strip('"').strip('\u201c').strip('\u201d')
-    except:
-        return title
-
-
-def translate_article_file(en_path, zh_path, client, translator_agent, md_lib):
-    """Translate an HTML article file to Chinese, preserving paragraph structure."""
-    with open(en_path, 'r', encoding='utf-8') as f:
-        html = f.read()
-    # Extract only article content (avoid translating nav/menu/footer)
-    art_start = html.find('<article')
-    if art_start >= 0:
-        art_end = html.find('</article>', art_start)
-        if art_end > art_start:
-            html = html[art_start:art_end + len('</article>')]
-    text = re.sub(r'<[^>]+>', '\n', html)
-    text = re.sub(r'\n{3,}', '\n\n', text).strip()
-    if not text or len(text) < 50:
-        return
-    try:
-        # Chunk if long
-        words = text.split()
-        if len(words) > 800:
-            chunks = []
-            paras = text.split('\n\n')
-            current = ''
-            for p in paras:
-                if len(current.split()) + len(p.split()) > 800 and current:
-                    chunks.append(current)
-                    current = p
-                else:
-                    current = current + '\n\n' + p if current else p
-            if current:
-                chunks.append(current)
+        if source == 'blog':
+            zh_rel = source_rel.replace('reader.html', 'reader_zh.html')
         else:
-            chunks = [text]
+            zh_rel = source_rel.replace('page.html', 'page_zh.html')
+        source_path = os.path.join(ROOT, source_rel)
+        zh_path = os.path.join(ROOT, zh_rel)
+        if not os.path.isfile(source_path) or (
+            os.path.isfile(zh_path) and os.path.getsize(zh_path) > 200
+        ):
+            continue
 
-        translated_chunks = []
-        for chunk in chunks:
-            prompt = translator_agent.build_translation_prompt(chunk, style='formal')
-            resp = client.generate_content(
-                content=prompt, model_name='glm-5.2',
-                provider=LLMProvider.DASHSCOPE, fallback=False
-            )
-            translated_chunks.append(resp.strip())
-
-        translated = '\n\n'.join(translated_chunks)
-        # Render as HTML
-        rendered = md_lib.Markdown(extensions=['extra', 'sane_lists', 'nl2br']).convert(translated)
-        # Wrap in basic HTML
-        zh_html = f'''<!DOCTYPE html>
-<html lang="zh"><head><meta charset="UTF-8">
-<style>body{{max-width:800px;margin:0 auto;padding:24px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;line-height:1.8;}}img{{max-width:100%;height:auto;}}pre{{overflow-x:auto;}}table{{max-width:100%;display:block;overflow-x:auto;}}</style>
-</head><body>{rendered}</body></html>'''
-        with open(zh_path, 'w', encoding='utf-8') as f:
-            f.write(zh_html)
+        slug = article.get('s') or os.path.basename(os.path.dirname(source_path))
+        log(f'  Translating {source}: {slug}')
+        cache_path = os.path.join(
+            ROOT, 'data', 'translation_cache', f'{source}-{slug}.json'
+        )
+        title = translate_file(source_path, zh_path, cache_path, slug)
+        if title and article.get('tt', article.get('t')) == article.get('t'):
+            article['tt'] = title
+        translated += 1
+        changed = True
         log(f'    Saved: {os.path.basename(zh_path)}')
-    except Exception as e:
-        log(f'    Translation failed: {e}')
+
+    if changed:
+        with open(source_json, 'w', encoding='utf-8') as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+    return translated
+
+
+def translate_blog_articles():
+    log('--- Checking for untranslated blog articles ---')
+    count = _translate_source_articles('blog')
+    log(f'  Blog translation complete: {count} new pages')
+    return count
+
+
+def translate_website_articles():
+    log('--- Checking for untranslated website pages ---')
+    count = _translate_source_articles('website')
+    log(f'  Website translation complete: {count} new pages')
+    return count
+
+
+def translate_new_articles():
+    """Translate new blog and website pages with the shared pipeline."""
+    return {
+        'blog': translate_blog_articles(),
+        'website': translate_website_articles(),
+    }
 
 
 # === MAIN ===
@@ -406,7 +319,26 @@ def main():
         new_website = scan_website(dry_run=args.dry_run)
     new_docs = []
     if args.source in ('docs', 'all'):
-        new_docs = scan_docs(dry_run=args.dry_run)
+        if args.dry_run:
+            new_docs = scan_docs(dry_run=True)
+        else:
+            updater = os.path.join(ROOT, 'tools', 'update_docs.py')
+            command = [sys.executable, updater, '--workers', '3']
+            if args.no_translate:
+                command.append('--no-translate')
+            result = subprocess.run(command, cwd=ROOT)
+            if result.returncode != 0:
+                log('  Docs update failed')
+            else:
+                try:
+                    with open(os.path.join(ROOT, 'data', 'docs_update_summary.json')) as f:
+                        docs_summary = json.load(f)
+                    new_docs = (
+                        docs_summary.get('new_slugs', [])
+                        + docs_summary.get('changed_slugs', [])
+                    )
+                except Exception:
+                    new_docs = []
 
     total_new = len(new_blog) + len(new_website) + len(new_docs)
     if total_new > 0 and not args.dry_run and not args.no_translate:

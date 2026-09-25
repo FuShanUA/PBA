@@ -1,7 +1,6 @@
-import pathlib
+import os
 
 import streamlit as st
-import streamlit.components.v1 as components
 
 st.set_page_config(
     page_title="Palantir 博客归档",
@@ -9,7 +8,11 @@ st.set_page_config(
     layout="wide",
 )
 
-# Hide Streamlit chrome so the embedded archive fills the viewport.
+# The archive is a static site with relative JSON and content URLs. Streamlit does
+# not serve those repository files, so embed the deployed GitHub Pages site.
+ARCHIVE_URL = os.getenv("ARCHIVE_URL", "https://fushanua.github.io/PBA/index.html")
+
+# Hide Streamlit chrome and make the component iframe use the browser viewport.
 st.markdown(
     """
 <style>
@@ -18,21 +21,19 @@ st.markdown(
     .block-container { padding: 0 !important; max-width: 100% !important; }
     .st-emotion-cache-1wmy9hl { gap: 0; }
     iframe { border: none; }
+    [data-testid="stIFrame"] {
+        display: block;
+        width: 100%;
+        height: calc(100vh - 16px) !important;
+        min-height: 640px;
+    }
 </style>
 """,
     unsafe_allow_html=True,
 )
 
-HTML_PATH = pathlib.Path(__file__).parent / "index.html"
-
-if not HTML_PATH.exists():
-    st.error(f"找不到 index.html：{HTML_PATH}")
-    st.stop()
-
-html_content = HTML_PATH.read_text(encoding="utf-8")
-
-components.html(
-    html_content,
-    height=900,
-    scrolling=True,
+st.iframe(
+    ARCHIVE_URL,
+    width="stretch",
+    height="stretch",
 )

@@ -28,6 +28,14 @@ def build_index(sources):
     tag_zh = {}
     source_meta = {}
 
+    def local_translation_path(source_name, article):
+        slug = article.get("s", "")
+        if not slug:
+            return ""
+        if source_name in ("website", "docs"):
+            return os.path.join("content", source_name, slug, "page_zh.html")
+        return os.path.join("articles", slug, "reader_zh.html")
+
     for source_name, source_data in sources.items():
         articles = source_data.get("articles", [])
         visible = [a for a in articles if not a.get("hidden", False) and not a.get("pending", False)]
@@ -42,6 +50,9 @@ def build_index(sources):
 
         for a in visible:
             a["source"] = source_name
+            local_path = local_translation_path(source_name, a)
+            if local_path and os.path.isfile(local_path):
+                a["hz"] = local_path
             # Map doc_url to short key "du" for the UI
             if a.get("doc_url"):
                 a["du"] = a["doc_url"]
@@ -72,13 +83,27 @@ def build_index(sources):
                         existing.add(sc)
         for k, v in source_data.get("tag_zh", {}).items():
             tag_zh[k] = v
-        for year, months in source_data.get("dt", {}).items():
+        source_dt = source_data.get("dt", {})
+        if source_name == "website":
+            source_dt = {}
+            for a in visible:
+                date = a.get("pd", "")
+                if date:
+                    year, month = date[:4], date[5:7]
+                    source_dt.setdefault(year, {}).setdefault(month, 0)
+                    source_dt[year][month] += 1
+        for year, months in source_dt.items():
             if year not in dt:
                 dt[year] = {}
             for month, count in months.items():
                 dt[year][month] = dt[year].get(month, 0) + count
 
-    all_articles.sort(key=lambda a: a.get("d", ""), reverse=True)
+    def display_date(article):
+        if article.get("source") == "website":
+            return article.get("pd", "")
+        return article.get("d", "")
+
+    all_articles.sort(key=display_date, reverse=True)
 
     index = {
         "total": len(all_articles),

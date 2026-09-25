@@ -15,7 +15,11 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
-也可以直接用浏览器打开 `index.html`（自包含单文件，内联全部数据与脚本，无需后端）。
+也可以在仓库根目录启动静态服务后直接访问 `index.html`：
+
+```bash
+python3 -m http.server 8765
+```
 
 ## 分类体系
 
@@ -32,8 +36,8 @@ streamlit run app.py
 
 | 文件 | 说明 |
 |------|------|
-| `app.py` | Streamlit 包装，通过 iframe 嵌入 index.html |
-| `index.html` | 自包含归档页面（内联数据 + JS） |
+| `app.py` | Streamlit 包装，嵌入已部署的 GitHub Pages 归档 |
+| `index.html` | 归档页面（通过相对路径加载 `data/index.json` 和内容文件） |
 | `requirements.txt` | Python 依赖 |
 | `rebuild_full.py` | 重建 index.html 的脚本（从原始数据生成） |
 | `classified_articles.json` | 按标签分类的文章数据 |

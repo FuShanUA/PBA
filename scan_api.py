@@ -11,22 +11,23 @@ from datetime import datetime, timezone
 from urllib.parse import urlparse
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, os.path.join(ROOT, "scrapers"))
 
-SOURCES = ["blog", "website"]  # docs excluded for now
+SOURCES = ["blog", "website", "docs"]
 
 # Auto-filter patterns for website articles
 import re as _re
 LOCALE_RE = _re.compile(r"/(de|fr|es|ja|zh|ko|pt|it)/?$")
 BAD_TITLE_RE = _re.compile(r"(Untitled|^500 Error|^404|Page Not Found|^Error$)", _re.I)
 DOWNLOAD_RE = _re.compile(r"/download$|/-download$")
+from website_taxonomy import is_non_content_path
 
 def _should_auto_hide(article):
-    """Auto-filter rules: locale variants, error pages, download pages."""
+    """Auto-filter non-content pages and obvious broken pages."""
     url = article.get("u", "")
     title = article.get("t", "")
-    slug = article.get("s", "")
-    if LOCALE_RE.search(url):
-        return "locale variant"
+    if is_non_content_path(urlparse(url).path):
+        return "non-content page"
     if BAD_TITLE_RE.match(title) or not title.strip():
         return "empty/error title"
     if DOWNLOAD_RE.search(url):
@@ -228,10 +229,69 @@ def scan_website(progress=None):
             return {"new": 0, "error": f"exit code {proc.returncode}"}
         progress({"phase": "website:done", "msg": f"[{_ts()}] 官网更新完成"})
         _postprocess_website(progress)
-        return {"new": -1}
+        summary_path = os.path.join(ROOT, "data", "website_update_summary.json")
+        summary = {"new": 0, "changed": 0, "has_updates": False}
+        if os.path.exists(summary_path):
+            try:
+                with open(summary_path, encoding="utf-8") as f:
+                    summary = json.load(f)
+            except Exception:
+                pass
+        return {
+            "new": summary.get("new", 0),
+            "changed": summary.get("changed", 0),
+            "has_updates": bool(summary.get("new", 0) or summary.get("changed", 0)),
+        }
     except Exception as e:
         progress({"phase": "website:error", "msg": f"[{_ts()}] 爬虫启动失败: {e}"})
         return {"new": 0, "error": str(e)}
+
+
+def scan_docs(progress=None, translate=True):
+    """Check and fetch new or changed English documentation pages."""
+    if progress is None:
+        progress = lambda msg: None
+    progress({"phase": "docs:start", "msg": f"[{_ts()}] 检查技术文档更新..."})
+    updater = os.path.join(ROOT, "tools", "update_docs.py")
+    python = _find_python()
+    try:
+        command = [python, updater, "--workers", "3"]
+        if not translate:
+            command.append("--no-translate")
+        result = subprocess.run(
+            command,
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            timeout=86400,
+        )
+        for line in result.stdout.splitlines():
+            if line.strip():
+                progress({"phase": "docs:scan", "msg": line})
+        if result.returncode != 0:
+            message = (result.stderr or result.stdout or "").strip()[-500:]
+            progress({"phase": "docs:error", "msg": f"[{_ts()}] 文档更新失败: {message}"})
+            return {"new": 0, "changed": 0, "error": message}
+    except Exception as e:
+        progress({"phase": "docs:error", "msg": f"[{_ts()}] 文档更新异常: {e}"})
+        return {"new": 0, "changed": 0, "error": str(e)}
+
+    summary_path = os.path.join(ROOT, "data", "docs_update_summary.json")
+    summary = {"new": 0, "changed": 0, "has_updates": False}
+    try:
+        with open(summary_path, encoding="utf-8") as f:
+            summary = json.load(f)
+    except Exception:
+        pass
+    new = int(summary.get("new", 0))
+    changed = int(summary.get("changed", 0))
+    progress({"phase": "docs:done", "msg": f"[{_ts()}] 文档检查完成，新增 {new} 页，变更 {changed} 页"})
+    return {
+        "new": new,
+        "changed": changed,
+        "has_updates": bool(new or changed),
+        "translation": summary.get("translation", {}),
+    }
 
 
 def _postprocess_website(progress=None):
@@ -326,16 +386,62 @@ def rebuild_index(progress=None):
         return False
 
 
-def translate(progress=None):
-    """Run translation for any new articles."""
+def translate_docs(progress=None):
+    """Translate documentation with the shared batch GLM 5.3 pipeline."""
     if progress is None:
         progress = lambda msg: None
-    progress({"phase": "translate", "msg": f"[{_ts()}] 检查并翻译新文章..."})
     python = _find_python()
-    inline = (
-        "import sys; sys.path.insert(0, '" + ROOT + "'); "
-        "import incremental_scan as isc; isc.translate_new_articles()"
-    )
+    supervisor = os.path.join(ROOT, "tools", "translation_forever.py")
+    try:
+        result = subprocess.run(
+            [python, supervisor, "--workers", "3", "--max-rounds", "5"],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            timeout=86400,
+        )
+        for line in result.stdout.splitlines():
+            if line.strip():
+                progress({"phase": "translate:docs", "msg": line})
+        if result.returncode != 0:
+            message = (result.stderr or result.stdout or "").strip()[-500:]
+            progress({"phase": "translate:error", "msg": f"[{_ts()}] 文档翻译失败: {message}"})
+            return False
+        subprocess.run(
+            [python, os.path.join(ROOT, "gen_docs_json.py")],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            timeout=120,
+        )
+        progress({"phase": "translate:done", "msg": f"[{_ts()}] 文档翻译完成"})
+        return True
+    except Exception as e:
+        progress({"phase": "translate:error", "msg": f"[{_ts()}] 文档翻译异常: {e}"})
+        return False
+
+
+def translate(progress=None, sources=None):
+    """Run translation for selected sources."""
+    if progress is None:
+        progress = lambda msg: None
+    progress({"phase": "translate", "msg": f"[{_ts()}] 检查并翻译新内容..."})
+    sources = sources or SOURCES
+    if "docs" in sources:
+        translate_docs(progress)
+
+    if "blog" not in sources and "website" not in sources:
+        return True
+
+    inline_parts = ["import sys; sys.path.insert(0, '" + ROOT + "'); import incremental_scan as isc"]
+    if "blog" in sources and "website" in sources:
+        inline_parts.append("isc.translate_new_articles()")
+    elif "blog" in sources:
+        inline_parts.append("isc.translate_blog_articles()")
+    elif "website" in sources:
+        inline_parts.append("isc.translate_website_articles()")
+    inline = "; ".join(inline_parts)
+    python = _find_python()
     try:
         result = subprocess.run(
             [python, "-c", inline],
@@ -424,13 +530,29 @@ def run_update(sources, progress=None, do_translate=True):
             summary["blog"] = scan_blog(progress)
         elif src == "website":
             summary["website"] = scan_website(progress)
+        elif src == "docs":
+            summary["docs"] = scan_docs(progress, translate=do_translate)
 
     if do_translate:
-        translate(progress)
+        # Docs are translated inside scan_docs so the updater and translator
+        # share one manifest and cannot process the same slugs twice.
+        non_docs_sources = [src for src in sources if src != "docs"]
+        if non_docs_sources:
+            translate(progress, non_docs_sources)
 
     # Rebuild AFTER translate so translated titles (tt) land in index.json
     rebuild_index(progress)
 
     status = source_status()
-    progress({"phase": "complete", "msg": f"[{_ts()}] 更新全部完成", "status": status})
-    return {"summary": summary, "status": status}
+    has_updates = any(
+        bool(item.get("new", 0) or item.get("changed", 0))
+        for item in summary.values()
+    )
+    complete = {
+        "summary": summary,
+        "status": status,
+        "has_updates": has_updates,
+    }
+    message = "没有更新" if not has_updates else "发现内容更新"
+    progress({"phase": "complete", "msg": f"[{_ts()}] 更新全部完成：{message}", **complete})
+    return complete
