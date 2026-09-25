@@ -34,8 +34,10 @@ def _should_auto_hide(article):
         return "download page"
     return None
 
-def _find_python(require_module=None):
-    """Find a python executable that can import the given module (or any python)."""
+def _find_python(require_modules=None):
+    """Find a python executable that can import every required module."""
+    if isinstance(require_modules, str):
+        require_modules = [require_modules]
     candidates = []
     venv = os.path.join(ROOT, ".venv", "bin", "python")
     if os.path.exists(venv):
@@ -44,11 +46,18 @@ def _find_python(require_module=None):
     candidates.append("/opt/homebrew/bin/python3")
     candidates.append("python3")
     for py in candidates:
-        if not require_module:
+        if not require_modules:
             return py
         try:
-            r = subprocess.run([py, "-c", f"import {require_module}"], capture_output=True, timeout=10)
-            if r.returncode == 0:
+            checks = [
+                subprocess.run(
+                    [py, "-c", f"import {module}"],
+                    capture_output=True,
+                    timeout=10,
+                )
+                for module in require_modules
+            ]
+            if all(check.returncode == 0 for check in checks):
                 return py
         except Exception:
             continue
@@ -209,7 +218,7 @@ def scan_website(progress=None):
         progress = lambda msg: None
     progress({"phase": "website:start", "msg": f"[{_ts()}] 启动官网 Playwright 爬虫..."})
     scraper_path = os.path.join(ROOT, "scrapers", "scrape_website.py")
-    python = _find_python("playwright")
+    python = _find_python(["playwright", "bs4"])
     try:
         proc = subprocess.Popen(
             [python, scraper_path],
@@ -253,7 +262,7 @@ def scan_docs(progress=None, translate=True):
         progress = lambda msg: None
     progress({"phase": "docs:start", "msg": f"[{_ts()}] 检查技术文档更新..."})
     updater = os.path.join(ROOT, "tools", "update_docs.py")
-    python = _find_python()
+    python = _find_python(["bs4", "requests"])
     try:
         command = [python, updater, "--workers", "3"]
         if not translate:
@@ -390,7 +399,7 @@ def translate_docs(progress=None):
     """Translate documentation with the shared batch GLM 5.3 pipeline."""
     if progress is None:
         progress = lambda msg: None
-    python = _find_python()
+    python = _find_python(["bs4", "requests"])
     supervisor = os.path.join(ROOT, "tools", "translation_forever.py")
     try:
         result = subprocess.run(
@@ -441,7 +450,7 @@ def translate(progress=None, sources=None):
     elif "website" in sources:
         inline_parts.append("isc.translate_website_articles()")
     inline = "; ".join(inline_parts)
-    python = _find_python()
+    python = _find_python(["bs4", "requests"])
     try:
         result = subprocess.run(
             [python, "-c", inline],
