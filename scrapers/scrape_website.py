@@ -45,9 +45,15 @@ def save_manifest(manifest):
     with open(MANIFEST_PATH, "w", encoding="utf-8") as f:
         json.dump(manifest, f, ensure_ascii=False, indent=2)
 
-def discover_urls(page):
-    """Crawl the sitemap and section pages to discover all URLs."""
+def discover_urls(page, deep=False):
+    """Discover URLs from the sitemap, with section crawl as a fallback.
+
+    The public sitemap is the fast path and is authoritative for newly published
+    pages. Section crawling is reserved for deep refreshes because it loads many
+    navigation pages and previously added roughly two minutes to every update.
+    """
     discovered = set()
+    sitemap_loaded = False
 
     # Try sitemap first
     print("  Trying sitemap...", flush=True)
@@ -65,10 +71,15 @@ def discover_urls(page):
             ):
                 discovered.add(url)
         print(f"    Sitemap: {len(discovered)} URLs", flush=True)
+        sitemap_loaded = bool(discovered)
     except:
         print("    Sitemap failed, using section crawl", flush=True)
 
-    # Also crawl each section page for links
+    if sitemap_loaded and not deep:
+        return discovered
+
+    # Fallback for a failed sitemap, or a deep refresh that may find links not
+    # yet published to the sitemap.
     for section in SECTION_ROOTS:
         url = f"{BASE_URL}/{section}/"
         try:
@@ -326,7 +337,8 @@ def scrape_page(page, url, manifest):
     return article, slug
 
 def main():
-    incremental = "--full" not in sys.argv
+    refresh_existing = "--refresh-existing" in sys.argv or "--full" in sys.argv
+    deep_discovery = "--deep-discovery" in sys.argv or "--full" in sys.argv
     only_arg = None
     for i, arg in enumerate(sys.argv[1:], 1):
         if arg == "--only" and i < len(sys.argv):
@@ -334,8 +346,10 @@ def main():
             break
     
     manifest = load_manifest()
-    print(f"Website scraper - mode: {'incremental' if incremental else 'full'}", flush=True)
+    mode = "full" if refresh_existing and deep_discovery else "new-pages"
+    print(f"Website scraper - mode: {mode}", flush=True)
     print(f"Manifest entries: {len(manifest['entries'])}", flush=True)
+    skipped_existing = 0
     
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
@@ -357,13 +371,26 @@ def main():
         else:
             # Phase 1: Discover URLs
             print("\n=== Phase 1: Discovery ===", flush=True)
-            discovered = discover_urls(page)
+            discovered = discover_urls(page, deep=deep_discovery)
             print(f"Discovered {len(discovered)} candidate URLs (not all new)", flush=True)
-            check_urls = sorted(discovered)
-        
-        # Existing pages are checked too so content changes are detected.
-        if incremental:
-            print(f"Checking {len(check_urls)} candidates against the manifest", flush=True)
+            if refresh_existing:
+                check_urls = sorted(discovered)
+            else:
+                known_slugs = set(manifest["entries"])
+                check_urls = sorted(
+                    url
+                    for url in discovered
+                    if (urlparse(url).path.strip("/").replace("/", "-") or "home")
+                    not in known_slugs
+                )
+                skipped_existing = len(discovered) - len(check_urls)
+                print(
+                    f"Skipping {skipped_existing} previously processed URLs; "
+                    "use --refresh-existing to recheck them",
+                    flush=True,
+                )
+
+        print(f"Checking {len(check_urls)} candidates against the manifest", flush=True)
         
         # Phase 2: Scrape
         print(f"\n=== Phase 2: Checking {len(check_urls)} candidates ===", flush=True)
@@ -380,7 +407,7 @@ def main():
         new_slugs = []
         changed_slugs = []
         ok = 0
-        skip = 0
+        skip = skipped_existing
         err = 0
 
         # Keep pages that are no longer in the sitemap, but are still valid archive pages.

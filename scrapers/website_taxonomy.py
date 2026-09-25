@@ -15,6 +15,8 @@ EXCLUDE_PREFIXES = (
     "/modern-slavery",
     "/store",
     "/contact",
+    "/.well-known",
+    "/assets",
     "/jp",
     "/uk",
     "/us-public-policy",
@@ -85,6 +87,7 @@ CONVERSION_SEGMENTS = {
     "registration",
     "submit",
     "thank-you",
+    "download",
 }
 
 BAD_PATHS = {
@@ -94,6 +97,7 @@ BAD_PATHS = {
     "/japan/",
     "/new-homepage/",
     "/pagenotfound/",
+    "/404/",
     "/search/",
     "/security-advisories/log4j-vulnerability/",
 }
@@ -133,6 +137,8 @@ def is_non_content_path(path):
     if path in NAVIGATION_PATHS:
         return True
     if path in CONVERSION_PATHS or path in BAD_PATHS:
+        return True
+    if any(part.lower() == "404" for part in path_parts(path)):
         return True
     if SHAREHOLDER_SELECTOR_RE.match(path):
         return True
