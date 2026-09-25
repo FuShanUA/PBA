@@ -166,12 +166,20 @@ def save_manifest(manifest, sitemap_entries, pages, unavailable_slugs):
 
 def run_command(command, label):
     log(f"{label}...")
-    process = subprocess.run(command, cwd=ROOT, text=True, capture_output=True)
-    for line in process.stdout.splitlines():
+    process = subprocess.Popen(
+        command,
+        cwd=ROOT,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        bufsize=1,
+    )
+    for line in process.stdout:
         if line.strip():
-            log(line)
+            log(line.rstrip())
+    process.wait()
     if process.returncode != 0:
-        raise RuntimeError(f"{label} failed: {process.stderr[-500:]}")
+        raise RuntimeError(f"{label} failed: exit code {process.returncode}")
 
 
 def missing_translation_count():
