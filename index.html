@@ -959,7 +959,7 @@ var div=document.createElement("div");
 div.className="log-line"+(cls?" "+cls:"");
 div.textContent=msg;
 syncLog.appendChild(div);
-if(syncPanel.classList.contains("show"))syncLog.classList.add("show");
+syncLog.classList.add("show");
 syncLog.scrollTop=syncLog.scrollHeight
 }
 
@@ -999,8 +999,8 @@ appendLog("正在启动更新...");
 var doTranslate=syncTranslate.checked;
 var srcLabels=sources.map(function(s){return s==="blog"?"博客":s==="website"?"官网":s==="docs"?"文档":s}).join("、");
 
-// Close panel immediately, show toast, let update run silently in background
-togglePanel(false);
+// Keep the panel open so SSE progress remains visible during the update.
+togglePanel(true);
 showToast("内容更新已启动","正在更新: "+srcLabels+(doTranslate?"（含翻译）":"")+"，完成后会通知你","info");
 
 fetch("/api/update",{
@@ -1034,8 +1034,7 @@ function handleSSE(d){
 var cls="";
 if(d.phase&&(d.phase.indexOf("error")>=0||d.phase==="fatal"))cls="error";
 if(d.phase==="complete")cls="done";
-// Only append to log if panel is open; otherwise stay silent
-if(syncPanel.classList.contains("show"))appendLog(d.msg||d.phase||"");
+appendLog(d.msg||d.phase||"");
 if(d.phase==="complete")lastUpdateResult=d;
 }
 
