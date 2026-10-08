@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>最新更新 - Palantir知识联邦</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-screen-webfont/style.css" media="print" onload="this.media='all'">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#F8FAFC;--card:#FFFFFF;--border:rgba(15,23,42,.08);
+  --text:#0F172A;--muted:#475569;--accent:#0EA5E9;--accent-soft:rgba(14,165,233,.08);
+  --shadow:0 4px 24px rgba(0,0,0,.06);--thumb-placeholder:#E2E8F0;
+}
+@media(prefers-color-scheme:dark){
+  :root{
+    --bg:#0F172A;--card:#1E293B;--border:rgba(255,255,255,.08);
+    --text:#F8FAFC;--muted:#94A3B8;--accent:#38BDF8;--accent-soft:rgba(56,189,248,.12);
+    --shadow:0 4px 24px rgba(0,0,0,.3);--thumb-placeholder:#334155;
+  }
+}
+body{font-family:'Outfit','LXGW WenKai Screen','STKaiti','Kaiti SC',sans-serif;background:var(--bg);color:var(--text);line-height:1.6}
+header{background:var(--card);border-bottom:1px solid var(--border);padding:18px 24px;position:sticky;top:0;z-index:10}
+.header-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:16px}
+h1{font-size:1.35em;font-weight:700;color:var(--accent)}
+.home-link{color:var(--muted);text-decoration:none;font-size:.86em;white-space:nowrap}
+.home-link:hover{color:var(--accent)}
+main{max-width:1200px;margin:0 auto;padding:28px 24px 48px}
+.page-summary{display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:20px}
+.page-summary p{color:var(--muted);font-size:.92em}
+.count{font-size:.82em;color:var(--muted)}
+.timeline{display:flex;flex-direction:column;gap:30px}
+.month-group{display:flex;flex-direction:column}
+.month-header{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding-bottom:8px;border-bottom:1px solid var(--border);margin-bottom:14px}
+.month-header h2{font-size:1.08em;font-weight:700;color:var(--text)}
+.month-count{font-size:.78em;color:var(--muted);white-space:nowrap}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;text-decoration:none;color:inherit;display:block;transition:transform .15s,border-color .15s,box-shadow .15s}
+.card:hover{transform:translateY(-3px);border-color:var(--accent);box-shadow:var(--shadow)}
+.thumb{width:100%;aspect-ratio:16/9;background:var(--thumb-placeholder);overflow:hidden;display:flex;align-items:center;justify-content:center}
+.thumb img{width:100%;height:100%;object-fit:cover;transition:transform .3s}
+.thumb img[src*="palantir-logo-placeholder"]{width:60%;height:auto;object-fit:contain;padding:20px}
+.card:hover .thumb img{transform:scale(1.05)}
+.body{padding:14px}
+.source-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:.68em;font-weight:600;margin-bottom:6px}
+.source-badge.blog{background:rgba(14,165,233,.12);color:#0EA5E9}
+.source-badge.website{background:rgba(139,92,246,.12);color:#8B5CF6}
+.title{font-size:.94em;font-weight:600;line-height:1.45;margin-bottom:8px}
+.date{font-size:.78em;color:var(--muted)}
+.empty,.error{padding:64px 20px;text-align:center;color:var(--muted)}
+.error{color:#ef4444}
+footer{text-align:center;padding:20px;color:var(--muted);border-top:1px solid var(--border);font-size:.8em}
+@media(max-width:700px){
+  header{padding:14px 16px}
+  main{padding:20px 16px 36px}
+  h1{font-size:1.15em}
+  .page-summary{align-items:flex-start;flex-direction:column;gap:6px}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="header-inner">
+    <h1>最新更新</h1>
+    <a class="home-link" href="/">返回首页</a>
+  </div>
+</header>
+<main>
+  <div class="page-summary">
+    <p>2026年7月1日起，按网页发布时间倒序显示。</p>
+    <span class="count" id="count">正在加载...</span>
+  </div>
+  <div class="timeline" id="timeline" aria-live="polite"></div>
+</main>
+<footer>blog.palantir.com</footer>
+<script>
+(function(){
+  var START_DATE = "2026-07-01";
+  var timeline = document.getElementById("timeline");
+  var count = document.getElementById("count");
+
+  function effectiveDate(article) {
+    var source = article.source || "blog";
+    var value = source === "website" ? article.pd : article.d;
+    return (value || "").slice(0, 10);
+  }
+
+  function formatDate(value) {
+    if (!value) return "";
+    var year = value.slice(0, 4);
+    var month = Number(value.slice(5, 7));
+    var day = Number(value.slice(8, 10));
+    return year + "年" + month + "月" + day + "日";
+  }
+
+  function formatMonth(value) {
+    return value.slice(0, 4) + "年" + Number(value.slice(5, 7)) + "月";
+  }
+
+  function localPath(article) {
+    var source = article.source || "blog";
+    if (source === "website") return "content/website/" + article.s + "/page_zh.html";
+    return "articles/" + article.s + "/reader_zh.html";
+  }
+
+  function createCard(article) {
+    var card = document.createElement("a");
+    card.className = "card";
+    card.href = localPath(article);
+    card.dataset.date = effectiveDate(article);
+
+    var thumb = document.createElement("div");
+    thumb.className = "thumb";
+    var image = document.createElement("img");
+    image.src = article.th || "content/website/images/palantir-logo-placeholder.png";
+    image.alt = "";
+    image.loading = "lazy";
+    thumb.appendChild(image);
+
+    var body = document.createElement("div");
+    body.className = "body";
+    var badge = document.createElement("span");
+    badge.className = "source-badge " + (article.source || "blog");
+    badge.textContent = article.source === "website" ? "Website" : "Blog";
+    var title = document.createElement("div");
+    title.className = "title";
+    title.textContent = article.tt || article.t || "";
+    var date = document.createElement("time");
+    date.className = "date";
+    date.dateTime = effectiveDate(article);
+    date.textContent = formatDate(effectiveDate(article));
+    body.appendChild(badge);
+    body.appendChild(title);
+    body.appendChild(date);
+    card.appendChild(thumb);
+    card.appendChild(body);
+    return card;
+  }
+
+  function createMonthGroup(monthKey, articleCount) {
+    var group = document.createElement("section");
+    group.className = "month-group";
+    var header = document.createElement("div");
+    header.className = "month-header";
+    var title = document.createElement("h2");
+    title.textContent = formatMonth(monthKey);
+    var count = document.createElement("span");
+    count.className = "month-count";
+    count.textContent = articleCount + " 条";
+    header.appendChild(title);
+    header.appendChild(count);
+    var grid = document.createElement("div");
+    grid.className = "grid";
+    group.appendChild(header);
+    group.appendChild(grid);
+    return { group: group, grid: grid };
+  }
+
+  fetch("data/index.json?_=" + Date.now())
+    .then(function(response) {
+      if (!response.ok) throw new Error("HTTP " + response.status);
+      return response.json();
+    })
+    .then(function(index) {
+      var articles = (index.articles || [])
+        .filter(function(article) { return effectiveDate(article) >= START_DATE; })
+        .sort(function(a, b) {
+          return effectiveDate(b).localeCompare(effectiveDate(a));
+        });
+      count.textContent = "共 " + articles.length + " 条";
+      if (!articles.length) {
+        timeline.className = "empty";
+        timeline.textContent = "暂无更新";
+        return;
+      }
+      var monthCounts = {};
+      articles.forEach(function(article) {
+        var monthKey = effectiveDate(article).slice(0, 7);
+        monthCounts[monthKey] = (monthCounts[monthKey] || 0) + 1;
+      });
+      var currentMonth = "";
+      var currentGrid = null;
+      articles.forEach(function(article) {
+        var monthKey = effectiveDate(article).slice(0, 7);
+        if (monthKey !== currentMonth) {
+          currentMonth = monthKey;
+          var group = createMonthGroup(monthKey, monthCounts[monthKey]);
+          currentGrid = group.grid;
+          timeline.appendChild(group.group);
+        }
+        currentGrid.appendChild(createCard(article));
+      });
+    })
+    .catch(function(error) {
+      console.error(error);
+      count.textContent = "";
+      timeline.className = "error";
+      timeline.textContent = "数据加载失败";
+    });
+})();
+</script>
+</body>
+</html>

@@ -7,7 +7,9 @@ and receive structured progress + result data.
 """
 
 import json, re, os, sys, time, subprocess, urllib.request, traceback
+import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
+from html import escape
 from urllib.parse import urlparse
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
@@ -21,6 +23,9 @@ LOCALE_RE = _re.compile(r"/(de|fr|es|ja|zh|ko|pt|it)/?$")
 BAD_TITLE_RE = _re.compile(r"(Untitled|^500 Error|^404|Page Not Found|^Error$)", _re.I)
 DOWNLOAD_RE = _re.compile(r"/download$|/-download$")
 from website_taxonomy import is_non_content_path
+from download_blog_thumbs import download_image
+
+RSS_CONTENT_TAG = "{http://purl.org/rss/1.0/modules/content/}encoded"
 
 def _should_auto_hide(article):
     """Auto-filter non-content pages and obvious broken pages."""
@@ -117,6 +122,55 @@ def _download_blog_article_pw(url, html_path):
             browser.close()
 
 
+def _rss_article_reader_html(title, content_html):
+    """Build a reader page from the full article body carried in RSS."""
+    safe_title = escape(title, quote=False)
+    return f'''<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{safe_title}</title>
+<style>
+body{{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}}
+h1{{font-size:1.8em;margin-bottom:12px}}
+h2{{font-size:1.4em;margin-top:24px}}
+h3{{font-size:1.2em;margin-top:20px}}
+img{{max-width:100%;height:auto}}
+pre{{overflow-x:auto;background:#f5f5f5;padding:16px}}
+code{{background:#f5f5f5;padding:2px 6px;font-size:.9em}}
+a{{color:#1a8917}}
+table{{border-collapse:collapse;width:100%}}
+th,td{{border:1px solid #ddd;padding:8px;text-align:left}}
+</style>
+</head>
+<body>
+<article>
+<h1>{safe_title}</h1>
+{content_html}
+</article>
+</body>
+</html>
+'''
+
+
+def _rss_article_metadata(content_html):
+    """Extract the first meaningful image and paragraph from RSS content."""
+    image_match = re.search(r"<img\b[^>]*\bsrc=[\"']([^\"']+)[\"']", content_html, re.I)
+    image = image_match.group(1) if image_match else ""
+    if image:
+        image = re.sub(r"/max/\d+/", "/max/1024/", image)
+
+    paragraph = ""
+    for match in re.finditer(r"<p\b[^>]*>(.*?)</p>", content_html, re.I | re.S):
+        text = re.sub(r"<[^>]+>", " ", match.group(1))
+        text = re.sub(r"\s+", " ", text).strip()
+        if len(text) >= 40:
+            paragraph = text
+            break
+    return image, paragraph[:220]
+
+
 def scan_blog(progress=None):
     """Scan blog.palantir.com RSS for new articles, download + index them."""
     if progress is None:
@@ -138,36 +192,48 @@ def scan_blog(progress=None):
         progress({"phase": "blog:error", "msg": f"[{_ts()}] RSS 获取失败: {e}"})
         return {"new": 0, "error": str(e)}
 
-    items = re.findall(r"<item>(.*?)</item>", rss, re.DOTALL)
+    try:
+        rss_root = ET.fromstring(rss)
+        items = rss_root.findall("./channel/item")
+    except ET.ParseError as e:
+        progress({"phase": "blog:error", "msg": f"[{_ts()}] RSS 解析失败: {e}"})
+        return {"new": 0, "error": str(e)}
+
     new_articles = []
     for item in items:
-        link_m = re.search(r"<link>(.*?)</link>", item)
-        title_m = re.search(r"<title><!\[CDATA\[(.*?)\]\]></title>|<title>(.*?)</title>", item)
-        date_m = re.search(r"<pubDate>(.*?)</pubDate>", item)
-        if not link_m:
+        url = (item.findtext("link") or "").strip()
+        title = (item.findtext("title") or "").strip()
+        pub_date = (item.findtext("pubDate") or "").strip()
+        content_html = (item.findtext(RSS_CONTENT_TAG) or "").strip()
+        if not url:
             continue
-        url = link_m.group(1).strip()
         path = urlparse(url).path
         slug = path.rstrip("/").split("/")[-1]
         if not slug or slug in existing_slugs:
             continue
-        title = ""
-        if title_m:
-            title = title_m.group(1) or title_m.group(2) or ""
+
         date = ""
-        if date_m:
+        if pub_date:
             try:
-                dt = datetime.strptime(date_m.group(1).strip(), "%a, %d %b %Y %H:%M:%S %Z")
+                dt = datetime.strptime(pub_date, "%a, %d %b %Y %H:%M:%S %Z")
                 date = dt.strftime("%Y-%m-%d")
             except Exception:
                 pass
-        new_articles.append({"s": slug, "u": url, "t": title, "d": date, "source": "blog"})
+        new_articles.append({
+            "s": slug,
+            "u": url,
+            "t": title,
+            "d": date,
+            "content_html": content_html,
+            "source": "blog",
+        })
 
     if not new_articles:
         progress({"phase": "blog:done", "msg": f"[{_ts()}] 博客无新文章"})
         return {"new": 0}
 
     progress({"phase": "blog:download", "msg": f"[{_ts()}] 发现 {len(new_articles)} 篇新博客，开始下载..."})
+    added_count = 0
     for a in new_articles:
         slug = a["s"]
         url = a["u"]
@@ -196,20 +262,32 @@ def scan_blog(progress=None):
             except Exception as e2:
                 progress({"phase": "blog:download", "msg": f"[{_ts()}]   下载失败 {slug}: {e2}"})
                 html = None
+
+        if not html and a.get("content_html"):
+            html = _rss_article_reader_html(a["t"], a["content_html"])
+            with open(html_path, "w", encoding="utf-8") as f:
+                f.write(html)
+            th, desc = _rss_article_metadata(a["content_html"])
+            progress({"phase": "blog:download", "msg": f"[{_ts()}]   使用 RSS 正文: {slug}"})
+
         if html:
+            local_th = download_image(th) if th.startswith("http") else ""
+            if local_th:
+                th = local_th
             entry = {
                 "t": a["t"], "tt": a["t"], "d": a["d"], "s": slug, "u": url,
                 "bc": [], "sc": {}, "th": th, "ds": desc, "sn": desc,
                 "hp": f"articles/{slug}/reader.html",
             }
             blog_data["articles"].append(entry)
+            added_count += 1
             progress({"phase": "blog:download", "msg": f"[{_ts()}]   下载完成: {slug}"})
 
     blog_data["last_scan"] = datetime.now(timezone.utc).isoformat()
     with open(blog_json_path, "w", encoding="utf-8") as f:
         json.dump(blog_data, f, ensure_ascii=False, indent=2)
-    progress({"phase": "blog:done", "msg": f"[{_ts()}] 博客更新完成，新增 {len(new_articles)} 篇"})
-    return {"new": len(new_articles)}
+    progress({"phase": "blog:done", "msg": f"[{_ts()}] 博客更新完成，新增 {added_count} 篇"})
+    return {"new": added_count}
 
 
 def scan_website(progress=None):
