@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Optimize multi-output transforms</title>
+<title>优化多输出转换</title>
 <style>
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
 h1{font-size:1.8em;margin-bottom:8px}
@@ -19,124 +19,110 @@ th,td{border:1px solid #ddd;padding:8px;text-align:left}
 </head>
 <body>
 <article>
-<h1 id="user-content-optimize-multi-output-transforms" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#optimize-multi-output-transforms"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Optimize multi-output transforms</h1>
-<p>There are two ways to derive a set of output datasets from a set of input datasets with transforms:</p>
+<h1 data-pagefind-weight="1" id="user-content-optimize-multi-output-transforms" level="1" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#optimize-multi-output-transforms" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>优化多输出转换</h1>
+<p>有两种方法可以通过转换从一组输入数据集派生出一组输出数据集：</p>
 <ul>
-<li>Make multiple transforms with the same inputs and different outputs.</li>
-<li>Define a multi-output transform that takes multiple inputs and produces multiple outputs.</li>
+<li>创建多个具有相同输入和不同输出的转换。</li>
+<li>定义一个接受多个输入并产生多个输出的多输出转换。</li>
 </ul>
-<p>A hybrid approach is also possible, where you have multi-output transforms, each having the same inputs and different sets of outputs. These options are explored in the following section.</p>
-<h2 id="user-content-multiple-single-output-transforms" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#multiple-single-output-transforms"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Multiple single-output transforms</h2>
-<p>A single output transform has <code>X1, X2, ..., Xn</code> inputs and produces one output <code>Y</code>. To obtain multiple outputs <code>Y1, Y2, ..., Yn</code>, write multiple transforms taking these <code>X</code> inputs, each writing to a different output. Each output has its own transform.</p>
-<h3 id="user-content-benefits-of-multiple-single-output-transforms" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#benefits-of-multiple-single-output-transforms"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Benefits of multiple single-output transforms</h3>
-<p>
-
-以下是一份列表，描述了拥有多个单输出转换的优势。</p>
+<p>也可以采用混合方法，即使用多个多输出转换，每个转换具有相同的输入和不同的输出集。这些选项将在以下部分中进行探讨。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-multiple-single-output-transforms" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#multiple-single-output-transforms" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>多个单输出转换</h2>
+<p>单个输出转换具有 <code>X1, X2, ..., Xn</code> 个输入并产生一个输出 <code>Y</code>。要获取多个输出 <code>Y1, Y2, ..., Yn</code>，请编写多个转换，接收这些 <code>X</code> 输入，每个转换写入不同的输出。每个输出都有其自己的转换。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-benefits-of-multiple-single-output-transforms" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#benefits-of-multiple-single-output-transforms" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>多个单输出转换的优势</h3>
+<p>以下列表描述了使用多个单输出转换的优势。</p>
 <ul>
-<li>每个输出的逻辑都包含在不同的转换中，这使得维护更加容易。</li>
-<li>如果每个输出有不同输入，我们可以为每个转换指定所需的最小输入集。这可以使构建更快，并且在必要时可以使用标记来限制传播范围。</li>
-<li>你可以独立构建每个输出。
+<li>每个输出的逻辑包含在不同的转换中，使其更易于维护。</li>
+<li>如果每个输出具有不同的输入，我们可以为每个转换分配所需的最小输入集。这可以加快构建速度，并允许您在必要时使用标记分隔输入以限制传播。</li>
+<li>您可以独立构建每个输出。
 <ul>
-<li>你不需要等待所有输出完成就可以重新运行其中一个输出。如果你希望以不同的频率构建转换，这将很有用。</li>
-<li>你可以单独构建输出而无需构建所有输出，这可能很昂贵。</li>
+<li>您无需等待所有输出完成即可重新运行单个输出。如果您希望以不同的频率构建转换，这将非常有用。</li>
+<li>您可以仅构建单个输出，而无需构建所有输出，因为构建所有输出的成本可能很高。</li>
 </ul>
 </li>
-<li>你可以为每个输出自定义Spark配置文件，这对于计算成本不同的情况很有用。</li>
-<li>你可以将输出写入不同的项目。这是可能的，因为你可以将转换移动到不同的代码仓库。请注意，也可以通过添加一个步骤将数据复制到不同位置来实现多输出转换。</li>
-<li>你可以为你的转换使用不同的库或框架。例如，一些输出可以使用轻量级的Pandas转换，而其他输出可以使用PySpark。</li>
+<li>您可以为每个输出自定义 Spark 配置文件，这在各输出的计算成本不同时非常有用。</li>
+<li>您可以写入不同的项目。这是因为您可以将转换移动到不同的代码仓库中。请注意，通过添加一个将数据复制到其他位置的步骤，多输出转换也可以实现这一点。</li>
+<li>您可以为转换使用不同的库或框架。例如，某些输出可以使用 Pandas 中的轻量级转换，而其他输出则可以使用 PySpark。</li>
+<li>故障仅局限于单个转换，无论其源于数据、代码还是平台。</li>
+<li>并行化可在转换之间以及转换内部执行。</li>
 </ul>
-
-<li>故障被限制在单个转换中，无论它们来自数据、代码还是平台。</li>
-<li>转换之间以及转换内部都可以进行并行处理。</li>
-</ul>
-<h3 id="user-content-multiple-single-output-transforms-limitations" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#multiple-single-output-transforms-limitations"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>多个单输出转换的限制</h3>
-<p>相反，拥有单输出转换也可能带来以下缺点。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-multiple-single-output-transforms-limitations" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#multiple-single-output-transforms-limitations" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>多个单输出转换的局限性</h3>
+<p>相反，采用单输出转换也可能带来以下缺点。</p>
 <ul>
-<li>可能会有重复逻辑。
+<li>可能存在重复逻辑。
 <ul>
-<li>这意味着维护起来可能更困难；您可能需要将重复逻辑提取到共享库中。</li>
-<li>这可能导致每个输出都有冗余的 PySpark 操作。根据上下文，您可能希望保存一个中间数据集以避免冗余的 Spark 操作。</li>
-<li>如果输出数据集彼此依赖太强，重复逻辑可能需要许多中间数据集。这实际上会转化为一个多输出转换。</li>
+<li>这意味着可维护性可能会更差；您可能需要将重复逻辑提取到共享库中。</li>
+<li>这可能意味着每个输出都要执行冗余的 PySpark 操作。根据具体情况，您可能需要保存一个中间数据集，以避免冗余的 Spark 操作。</li>
+<li>如果输出数据集彼此依赖性过高，重复逻辑可能需要许多中间数据集。这实际上等同于一个多输出转换。</li>
 </ul>
 </li>
-<li>每个转换都会有其自己的 Spark 环境，包括驱动程序和执行器。
+<li>每个转换都将拥有自己的 Spark 环境，包括驱动程序，并且很可能还包括执行器。
 <ul>
-<li>这种计算总和可能会导致排队，如果所有输出同时运行的话。</li>
-<li>
-
-The overhead costs to run transforms are applied across all transforms. This includes Spark initialization and costs to run the drivers.</li>
-<li>Even though Spark profiles are customizable per transform, in practice it is a management cost to fine tune each one, and is not always realistic to do so. If profiles are not customized, then outlier datasets of bigger scale will have fewer executors to work with than in multi-output transforms, leading to longer builds and potential timeouts.</li>
+<li>这些计算量会累积，如果所有输出同时运行，可能会出现排队现象。</li>
+<li>运行转换的开销成本会应用于所有转换。这包括 Spark 初始化以及运行驱动程序的成本。</li>
+<li>尽管可以针对每个转换自定义 Spark 配置文件，但在实践中，逐个微调会带来管理成本，并不总是切实可行。如果不自定义配置文件，那么规模较大的离群数据集可使用的执行器将比多输出转换中的更少，从而导致构建时间延长，并可能出现超时。</li>
 </ul>
 </li>
 </ul>
-<p>Overall, this option comes with the most flexibility, but is less adapted to duplicate operations and might be more computationally expensive.</p>
-<h2 id="user-content-multi-output-transforms" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#multi-output-transforms"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Multi-output transforms</h2>
-<p>A multi-output transform has <code>X1, X2, ... Xn</code> inputs and produces <code>Y1, Y2, ... Yn</code> outputs.
-We have a single transform for all outputs.</p>
-<h3 id="user-content-benefits-of-multi-output-transforms" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#benefits-of-multi-output-transforms"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Benefits of multi-output transforms</h3>
-<p>Consider the advantages of using multi-output transforms below:</p>
+<p>总体而言，此选项具有最大的灵活性，但不太适合重复操作，且计算成本可能更高。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-multi-output-transforms" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#multi-output-transforms" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>多输出转换</h2>
+<p>多输出转换具有 <code>X1, X2, ... Xn</code> 个输入并生成 <code>Y1, Y2, ... Yn</code> 个输出。
+我们对所有输出使用单个转换。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-benefits-of-multi-output-transforms" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#benefits-of-multi-output-transforms" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>多输出转换的优势</h3>
+<p>请考虑以下使用多输出转换的优势：</p>
 <ul>
-<li>No repeated transform overhead costs.
+<li>没有重复的转换开销成本。
 <ul>
-
-
-<li>A single driver and job.</li>
-<li>This can become significant at high scale.</li>
+<li>单一驱动程序和作业。</li>
+<li>在大规模场景下，这可能会变得非常显著。</li>
 </ul>
 </li>
-<li>The logic for all outputs is in a single place.
+<li>所有输出的逻辑都集中在一个位置。
 <ul>
-<li>Intermediate datasets are no longer required, and will be computed in memory.</li>
-<li>No duplicate costs for redundant logic.</li>
+<li>不再需要中间数据集，将在内存中进行计算。</li>
+<li>冗余逻辑不会产生重复成本。</li>
 </ul>
 </li>
 </ul>
-<h3 id="user-content-multi-output-transforms-limitations" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#multi-output-transforms-limitations"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Multi-output transforms limitations</h3>
-<p>Consider the disadvantages of using multi-output transforms below:</p>
+<h3 data-pagefind-weight="0.8" id="user-content-multi-output-transforms-limitations" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#multi-output-transforms-limitations" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>多输出转换的局限性</h3>
+<p>请考虑以下使用多输出转换的缺点：</p>
 <ul>
-<li>If the logic differs too much for each output, it can get unorganized and become harder to maintain.</li>
-<li>Each output cannot be built independently.
+<li>如果各个输出的逻辑差异过大，代码可能会变得杂乱无章，更难维护。</li>
+<li>每个输出无法独立构建。
 <ul>
-<li>You need to wait for the previous build to finish all outputs before triggering a new one. You cannot customize the frequency of outputs within the transform.</li>
+<li>您需要等待上一次构建完成所有输出后，才能触发新的构建。您无法在转换中自定义输出的频率。</li>
 </ul>
 </li>
-<li>A single set of Spark profiles is assigned to the transform. There are considerations to keep in mind given that a single driver will process all operations and attribute tasks to the executors.
+<li>该转换会被分配一组 Spark 配置文件。需要注意的是，由于单个驱动程序（driver）将处理所有操作并将任务分配给执行器（executor），因此存在一些需要考虑的因素。
 <ul>
-<li>This can be mitigated with dynamic allocation profiles, but these profiles will fill resource queues quickly.</li>
-<li>
-
-Tasks that are not parallelizable will generate an overhead on the driver. This includes, but is not limited to collecting to the driver, running user-defined functions (UDFs), and running Python code (for example, calling APIs).</li>
-<li>When the data scale is small compared to the number of executors, the overhead from network inputs and outputs may become more significant than the computational work performed by the executors.</li>
+<li>这可以通过动态分配（dynamic allocation）配置文件来缓解，但这些配置文件会很快填满资源队列。</li>
+<li>不可并行化的任务会给驱动程序带来开销。这包括但不限于：将数据收集到驱动程序、运行用户自定义函数（UDF）以及运行 Python 代码（例如调用 API）。</li>
+<li>当数据规模相对于执行器数量较小时，网络输入和输出带来的开销可能会比执行器所执行的计算工作更为显著。</li>
 </ul>
 </li>
-<li>A build failure affects all outputs.
+<li>构建失败会影响所有输出。
 <ul>
-<li>If the operations of one output take more than 24 hours, or contain an error, it will trigger a failure of all outputs.</li>
-<li>This can make it harder to debug issues.</li>
+<li>如果某一个输出的操作耗时超过 24 小时，或包含错误，将会触发所有输出失败。</li>
+<li>这可能会使问题调试变得更加困难。</li>
 </ul>
 </li>
-<li>Cost usage is split amongst all output datasets equally; if there are 10 outputs, then a tenth of the build's cost is associated with each dataset. This means it is not easy to identify the cost association for each output.</li>
-<li>If the size of the input data varies, the build duration variance will be the sum of the variances introduced by all inputs. This can become significant for incremental transforms, where dynamic allocation profiles would be better suited.</li>
+<li>成本使用量会在所有输出数据集之间平均分摊；如果有 10 个输出，则每个数据集会与构建成本的十分之一相关联。这意味着很难确定每个输出的成本关联。</li>
+<li>如果输入数据的大小存在波动，构建时长的方差将是所有输入引入的方差之和。这对于增量转换而言可能会变得非常显著，此时使用动态分配配置文件会更为合适。</li>
 </ul>
-
-
-<p>Multi-output transforms are less flexible, but they are well suited for repeated logic in outputs.</p>
-<h3 id="user-content-additional-considerations" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#additional-considerations"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Additional considerations</h3>
-<p>Things to consider when you are using multi-output transforms:</p>
+<p>多输出转换的灵活性较低，但非常适合处理输出中重复的逻辑。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-additional-considerations" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#additional-considerations" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>其他注意事项</h3>
+<p>使用多输出转换时需要考虑的事项：</p>
 <ul>
-<li>You can check if the task parallelization matches the number of executors in the Spark details. If builds take too long, or the Spark profile too big, consider splitting the transform.</li>
-<li>The more executors you use for each transform, the less significant the overhead costs. If you are transforming small-scale datasets into a lot of outputs, then network input/output could be more significant than executor work for a multi-output transform. Instead, you could use multiple transforms or lightweight transforms that are parallelized locally.</li>
+<li>您可以在 Spark 详情中检查任务并行化是否与执行器数量相匹配。如果构建时间过长或 Spark 配置文件过大，请考虑拆分转换。</li>
+<li>每个转换使用的执行器越多，开销成本就越不显著。如果您要将小规模数据集转换为大量输出，那么对于多输出转换而言，网络输入/输出可能比执行器的工作量更为显著。这种情况下，您可以改用多个转换，或在本地并行化的轻量级转换。</li>
 </ul>
-<h2 id="user-content-which-approach-to-use" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#which-approach-to-use"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Which approach to use</h2>
-<p>
-
-Single-output transforms are very flexible and well-suited to cases where the logic between outputs varies. Multi-output transforms are less flexible, but they can be more cost-effective under the right conditions. Generally, opt for multi-output transforms if you meet the following criteria:</p>
+<h2 data-pagefind-weight="0.9" id="user-content-which-approach-to-use" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#which-approach-to-use" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>使用哪种方法</h2>
+<p>单输出转换非常灵活，非常适合输出之间的逻辑各不相同的情况。多输出转换的灵活性较低，但在合适的条件下可能更具成本效益。通常，如果满足以下条件，请选择多输出转换：</p>
 <ul>
-<li>The constraints of multi-output transforms satisfy your needs. Review <a href="#multi-output-transforms-limitations">multi-output transforms limitations</a> to see if this option is right for your use case.</li>
-<li>You have similar logic for the outputs.</li>
-<li>Your operations are parallelizable.</li>
+<li>多输出转换的约束满足您的需求。请查阅 <a href="#multi-output-transforms-limitations">多输出转换的限制</a> 以了解此选项是否适合您的用例。</li>
+<li>您对各个输出采用类似的逻辑。</li>
+<li>您的操作可以并行执行。</li>
 </ul>
-<p>If these conditions are met, you should opt for multi-output transforms. Otherwise, decide case by case while keeping in mind that multiple single-output transforms are the fallback option.</p>
+<p>如果满足这些条件，您应选择多输出转换。否则，请根据具体情况逐一决定，同时记住多个单输出转换是备选方案。</p>
 </article>
 </body>
 </html>

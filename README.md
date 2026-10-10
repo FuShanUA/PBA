@@ -15,11 +15,15 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
-也可以在仓库根目录启动静态服务后直接访问 `index.html`：
+也可以在仓库根目录启动本地开发服务。页面会请求 `/api/status` 等接口，因此需要使用 `server.py`：
 
 ```bash
-python3 -m http.server 8765
+python3 server.py --port 8765
 ```
+
+macOS 下也可以直接双击 `start-local.command`。它会检查本地服务是否可用；服务未运行时自动启动，8765 被无关进程占用时自动改用备用端口。保持弹出的 Terminal 窗口打开即可继续访问；关闭窗口会停止服务，再次双击会自动恢复。
+
+也可以双击 `PalantirArchive.app`。它执行同样的启动逻辑，但不会弹出 Terminal 窗口；桌面上只保留一个 `Palantir博客归档.app`，双击即可启动。
 
 ## 分类体系
 

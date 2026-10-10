@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Ontology design: Anti-patterns</title>
+<title>本体论设计:反模式</title>
 <style>
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
 h1{font-size:1.8em;margin-bottom:8px}
@@ -19,137 +19,54 @@ th,td{border:1px solid #ddd;padding:8px;text-align:left}
 </head>
 <body>
 <article>
-<h1 id="user-content-ontology-design-anti-patterns" level="1" node="[object Object]" data-pagefind-weight="1"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#ontology-design-anti-patterns"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>本体论设计：反模式</h1>
-<p>即使是经验丰富的本体论设计师，也可能陷入一些常见的设计陷阱，这些陷阱在最初似乎合理，但随着本体论的增长会带来严重的问题。本节将识别常见的反模式，解释它们为何出现，并提供具体的指导建议以避免或解决这些问题。</p>
-<p>避免这些反模式将有助于您构建一个准确反映您业务领域的本体论，减少维护开销，并实现强大的跨功能工作流。</p>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5">
-
-<table><thead><tr><th>反模式</th><th>描述</th><th>解决方案</th></tr></thead><tbody><tr><td><a href="#anti-pattern-system-silos">系统孤岛</a></td><td>为每个源系统创建单独的对象类型。</td><td>在管道中合并数据；创建统一的对象类型。</td></tr><tr><td><a href="#anti-pattern-the-kitchen-sink">厨房水槽</a></td><td>包括不必要的技术列作为属性。</td><td>有意识地整理属性；排除ETL元数据。</td></tr><tr><td><a href="#anti-pattern-department-silos">部门孤岛</a></td><td>每个部门都创建共享实体的自己版本。</td><td>创建共享的对象类型；使用属性和链接来处理部门特定的数据。</td></tr><tr><td><a href="#anti-pattern-the-god-object">上帝对象</a></td><td>一个对象类型代表多个不同的实体。</td><td>创建不同的对象类型；使用接口表示共享特征。</td></tr><tr><td><a href="#anti-pattern-the-golden-hammer">黄金锤子</a></td><td>过于依赖单一工具（例如操作类型、管道或函数）解决所有问题，而不是选择合适的功能。</td><td>根据任务匹配工具：批量或流式管道用于数据处理，操作用于人工决策，自动化用于事件驱动的反应，函数用于复杂的实时逻辑。</td></tr><tr><td><a href="#anti-pattern-action-sprawl">操作泛滥</a></td><td>创建许多单属性操作，而不是连贯的业务操作。</td><td>围绕业务操作设计操作，将相关更改打包成有意义的工作流程。</td></tr><tr><td><a href="#anti-pattern-the-time-machine">时间机器</a></td><td>将历史版本建模为单独的对象或对象类型。</td><td>对每个实体使用一个对象，通过链接的历史/修订对象和时间序列属性进行管理。</td></tr><tr><td><a href="#anti-pattern-the-misnomer">误称</a></td><td>对本体论元素使用模糊、通用或误导性的名称。</td><td>使用具体、描述性的名称；对含糊的属性进行限定；根据关系命名链接。</td></tr></tbody></table></div>
-<h2 id="user-content-anti-pattern-system-silos" level="2" node="[object Object]" data-pagefind-weight="0.9">
-
-<a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#anti-pattern-system-silos"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Anti-pattern: System Silos</h2>
-<p>System Silos occur when you create separate object types for the same real-world entity based on the source system the data originates from, rather than modeling the entity itself.</p>
-<h3 id="user-content-common-causes" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#common-causes"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Common causes</h3>
+<h1 data-pagefind-weight="1" id="user-content-ontology-design-anti-patterns" level="1" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#ontology-design-anti-patterns" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>本体论设计:反模式</h1>
+<p>即使是经验丰富的本体论设计师,也可能会陷入常见的设计陷阱。这些陷阱起初看似合理,但随着本体论的不断扩展,却会产生严重问题。本节将识别反复出现的反模式,解释其成因,并提供避免或解决这些问题的具体指导。</p>
+<p>避免这些反模式将帮助您构建一个能够准确表示业务领域、降低维护开销并支持强大跨职能工作流的本体论。</p>
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>反模式</th><th>描述</th><th>解决方案</th></tr></thead><tbody><tr><td><a href="#anti-pattern-system-silos">系统孤岛</a></td><td>为每个源系统创建单独的对象类型。</td><td>在管道中合并数据；创建统一的对象类型。</td></tr><tr><td><a href="#anti-pattern-the-kitchen-sink">大杂烩</a></td><td>将不必要的技术列作为属性包含在内。</td><td>有意识地策划属性；排除 ETL 元数据。</td></tr><tr><td><a href="#anti-pattern-department-silos">部门孤岛</a></td><td>每个部门都各自创建共享实体的版本。</td><td>创建共享对象类型；使用属性和关联来处理特定于部门的数据。</td></tr><tr><td><a href="#anti-pattern-the-god-object">上帝对象</a></td><td>一个对象类型表示多个不同的实体。</td><td>创建不同的对象类型；使用接口来处理共享特征。</td></tr><tr><td><a href="#anti-pattern-the-golden-hammer">金锤</a></td><td>过度依赖单一工具（例如操作类型、管道或函数）来解决所有问题，而不是选择合适的能力。</td><td>将工具与任务相匹配：数据处理使用批处理或流式管道，人工决策使用操作，事件驱动的响应使用自动化，复杂实时逻辑使用函数。</td></tr><tr><td><a href="#anti-pattern-action-sprawl">操作蔓延</a></td><td>创建大量单属性操作，而非内聚的业务操作。</td><td>围绕业务操作设计操作，将相关的变更捆绑成有意义的工作流。</td></tr><tr><td><a href="#anti-pattern-the-time-machine">时间机器</a></td><td>将历史版本建模为单独的对象或对象类型。</td><td>每个实体使用单个对象，并配有关联的历史/修订对象和时间序列属性。</td></tr><tr><td><a href="#anti-pattern-the-misnomer">名不副实</a></td><td>为本体论元素使用模糊、泛化或具有误导性的名称。</td><td>使用具体、描述性的名称；限定含义模糊的属性；根据关系命名关联。</td></tr></tbody></table></div>
+<h2 data-pagefind-weight="0.9" id="user-content-anti-pattern-system-silos" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#anti-pattern-system-silos" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>反模式：系统孤岛</h2>
+<p>系统孤岛是指根据数据来源的源系统，为同一现实世界实体创建单独的对象类型，而不是对实体本身进行建模。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-common-causes" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#common-causes" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>常见原因</h3>
 <ul>
-<li>Different teams own different source systems and build independently</li>
-<li>Uncertainty about how to merge data from multiple sources</li>
-<li>Desire to preserve system-specific fields without deciding what's essential</li>
+<li>不同团队拥有不同的源系统，并独立进行构建</li>
+<li>不确定如何合并来自多个数据源的数据</li>
+<li>希望保留系统特有的字段，而不决定哪些字段是必需的</li>
 </ul>
-<h3 id="user-content-example" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#example"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Example</h3>
-<p>Your organization has employee data in three systems: an HR system, a badge access system, and a project management tool. Instead of creating a single <code>Employee</code> object type, you create:</p>
+<h3 data-pagefind-weight="0.8" id="user-content-example" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#example" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>示例</h3>
+<p>您的组织在三个系统中存有员工数据：一个 HR 系统、一个门禁系统和一款项目管理工具。您没有创建单一的 <code>Employee</code> 对象类型，而是创建了：</p>
 <ul>
 <li><code>HR System Employee</code></li>
 <li><code>Badge System Employee</code></li>
 <li><code>Project Management Employee</code></li>
 </ul>
-<h3 id="user-content-problems" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#problems"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Problems</h3>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>Problem</th><th>Impact</th></tr></thead><tbody><tr><td>Fragmented view of reality</td><td>End users cannot see a unified view of an employee; they must navigate multiple object types to understand the full picture.</td></tr><tr><td>Duplicated effort</td><td>Action types, link types, and applications must be built multiple times for what is conceptually the same entity.</td></tr><tr><td>Inconsistent data</td><td>The same employee may have conflicting information across object types with no clear source of truth.</td></tr><tr><td>Complex maintenance</td><td>Changes to business logic must be replicated across all system-specific object types.</td></tr></tbody></table></div>
-<h3 id="user-content-solution" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#solution"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Solution</h3>
-<p>Create a single object type representing the real-world entity and use data pipelines to merge information from multiple source systems into a unified backing dataset.</p>
+<h3 data-pagefind-weight="0.8" id="user-content-problems" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#problems" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>问题</h3>
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>问题</th><th>影响</th></tr></thead><tbody><tr><td>碎片化的现实视图</td><td>最终用户无法看到员工的统一视图；必须浏览多个对象类型才能了解全貌。</td></tr><tr><td>重复工作</td><td>对于概念上相同的实体，操作类型、关联类型和应用程序必须重复构建多次。</td></tr><tr><td>数据不一致</td><td>同一员工的信息在不同对象类型之间可能相互冲突，且没有明确的事实来源。</td></tr><tr><td>复杂的维护</td><td>业务逻辑的变更必须在所有特定于系统的对象类型中进行复制。</td></tr></tbody></table></div>
+<h3 data-pagefind-weight="0.8" id="user-content-solution" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#solution" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>解决方案</h3>
+<p>创建一个表示现实世界实体的单一对象类型，并使用数据管道将来自多个源系统的信息合并到统一的支撑数据集中。</p>
 <pre><code>✗ Avoid                          ✓ Prefer
 ─────────────────────────────    ─────────────────────────────
 HR System Employee               Employee
 Badge System Employee         →  (backed by merged dataset
 Project Management Employee      from all three systems)
 </code></pre>
-<p>To implement this:</p>
+<p>若要实现这一点：</p>
 <ol>
-<li>Identify the primary key that uniquely identifies the entity across systems (for example, employee ID).</li>
-<li>Build a transform that joins data from all source systems.</li>
-<li>Define clear precedence rules for conflicting values (for example, HR system is authoritative for job title).</li>
-<li>
-
-Create a single object type backed by the merged dataset.</li>
+<li>确定在各系统中唯一标识该实体的主键（例如，员工 ID）。</li>
+<li>构建一个联接所有源系统数据的转换。</li>
+<li>为冲突值定义明确的优先级规则（例如，HR 系统是职位的权威来源）。</li>
+<li>创建一个由合并后的数据集支撑的单一对象类型。</li>
 </ol>
-<hr>
-<h2 id="user-content-anti-pattern-the-kitchen-sink" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#anti-pattern-the-kitchen-sink"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Anti-pattern: The Kitchen Sink</h2>
-<p>This anti-pattern (also known as "everything but the kitchen sink") occurs when object types include unnecessary columns from external systems that have no business relevance in the Ontology context, cluttering the data model with technical artifacts.</p>
-<h3 id="user-content-common-causes-1" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#common-causes-1"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Common causes</h3>
+<hr/>
+<h2 data-pagefind-weight="0.9" id="user-content-anti-pattern-the-kitchen-sink" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#anti-pattern-the-kitchen-sink" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>反模式：大杂烩</h2>
+<p>这种反模式（也被称为“什么都往里塞”）出现在以下情况：对象类型中包含来自外部系统的不必要列，而这些列在本体论上下文中与业务毫不相关，导致数据模型被技术性产物弄得杂乱不堪。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-common-causes-1" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#common-causes-1" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>常见原因</h3>
 <ul>
-<li>"Just in case" mentality (keeping fields that might be useful later)</li>
-<li>Lack of clarity on what fields are meaningful</li>
-<li>Direct mapping from source systems without curation</li>
-<li>Fear of losing data by excluding columns</li>
+<li>“以防万一”的心态（保留日后可能派上用场的字段）</li>
+<li>不清楚哪些字段是有意义的</li>
+<li>未经整理就直接从源系统映射</li>
+<li>担心因排除列而丢失数据</li>
 </ul>
-<h3 id="user-content-example-1" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#example-1"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Example</h3>
-<p>When creating a <code>Customer</code> object type from a CRM system integration, you include all available columns:</p>
+<h3 data-pagefind-weight="0.8" id="user-content-example-1" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#example-1" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>示例</h3>
+<p>创建 <code>Customer</code> 对象类型（来自 CRM 系统集成）时，您会包含所有可用列：</p>
 <ul>
 <li>customer_id ✓</li>
 <li>customer_name ✓</li>
@@ -157,124 +74,47 @@ Create a single object type backed by the merged dataset.</li>
 <li>_crm_extracted_at ✗</li>
 <li>_crm_received_at ✗</li>
 <li>_crm_batched_at ✗</li>
-
-
 <li>_crm_sequence ✗</li>
 <li>_crm_table_version ✗</li>
 <li>_crm_internal_record_id ✗</li>
 <li>last_etl_update_timestamp ✗</li>
 </ul>
-<h3 id="user-content-problems-1" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#problems-1"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Problems</h3>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>Problem</th><th>Impact</th></tr></thead><tbody><tr><td>Confusion</td><td>End users see irrelevant technical fields alongside business data.</td></tr><tr><td>Performance degradation</td><td>Unnecessary properties increase data scale, compute, index size, and slow down searches.</td></tr><tr><td>Obscured insights</td><td>Important business properties are buried among system metadata.</td></tr></tbody></table></div>
-<h3 id="user-content-solution-1" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#solution-1"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Solution</h3>
-<p>Curate properties intentionally. Only include columns that have clear business meaning and will be useful for workflows.</p>
-<p>Use these guidelines when deciding which properties to include:</p>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>Include</th><th>Exclude</th></tr></thead><tbody><tr><td>Business identifiers (customer ID, order number)</td><td>Pipeline metadata</td></tr><tr><td>Human-readable attributes (name, description)</td><td>Internal system IDs with no business meaning</td></tr><tr><td>Dates relevant to business processes</td><td>Timestamps only relevant to data engineering</td></tr><tr><td>Status fields needed for filtering or actions</td><td>Audit columns for pipeline debugging</td></tr></tbody></table></div>
-<p>To implement this:</p>
+<h3 data-pagefind-weight="0.8" id="user-content-problems-1" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#problems-1" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>问题</h3>
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>问题</th><th>影响</th></tr></thead><tbody><tr><td>混淆</td><td>最终用户会在业务数据旁看到不相关的技术字段。</td></tr><tr><td>性能下降</td><td>不必要的属性会增加数据规模、计算量和索引大小，并降低搜索速度。</td></tr><tr><td>洞察被掩盖</td><td>重要的业务属性被埋没在系统元数据中。</td></tr></tbody></table></div>
+<h3 data-pagefind-weight="0.8" id="user-content-solution-1" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#solution-1" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>解决方案</h3>
+<p>有意识地甄选属性。仅纳入具有明确业务含义且对工作流有用的列。</p>
+<p>在决定包含哪些属性时，请参考以下准则：</p>
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>包含</th><th>排除</th></tr></thead><tbody><tr><td>业务标识符（客户 ID、订单号）</td><td>管道元数据</td></tr><tr><td>人类可读的属性（名称、描述）</td><td>无业务含义的内部系统 ID</td></tr><tr><td>与业务流程相关的日期</td><td>仅与数据工程相关的时间戳</td></tr><tr><td>用于筛选或操作的状态字段</td><td>用于管道调试的审计列</td></tr></tbody></table></div>
+<p>若要实现这一点：</p>
 <ol>
-<li>Review each column and ask: "Would someone ever need to see, search, or filter by this?"</li>
-<li>Keep technical metadata in the backing dataset for debugging, but do not expose it as properties.</li>
-<li>
-
-Use property visibility settings to hide any borderline properties that must exist but are rarely needed.</li>
-<li>Document why each property exists and who uses it.</li>
+<li>审查每一列并问："是否有人会需要查看、搜索或按此列进行筛选？"</li>
+<li>将技术元数据保留在支撑数据集中以供调试，但不要将其作为属性公开。</li>
+<li>使用属性可见性设置来隐藏那些必须存在但很少用到的边缘属性。</li>
+<li>记录每个属性存在的原因及其使用者。</li>
 </ol>
-<hr>
-<h2 id="user-content-anti-pattern-department-silos" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#anti-pattern-department-silos"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Anti-pattern: Department Silos</h2>
-<p>Department Silos occur when different departments create their own versions of the same object type, leading to a fragmented Ontology that mirrors organizational structure rather than business reality.</p>
-<h3 id="user-content-common-causes-2" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#common-causes-2"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Common causes</h3>
+<hr/>
+<h2 data-pagefind-weight="0.9" id="user-content-anti-pattern-department-silos" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#anti-pattern-department-silos" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>反模式：部门孤岛</h2>
+<p>当不同部门为同一对象类型创建各自的版本时，就会产生部门孤岛，导致本体论碎片化，映射的是组织结构而非业务现实。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-common-causes-2" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#common-causes-2" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>常见原因</h3>
 <ul>
-<li>Departments work in isolation without cross-functional coordination</li>
-<li>Each team believes their view of the customer is unique</li>
-<li>Lack of governance or central Ontology design authority</li>
-<li>Teams want autonomy and control over "their" data</li>
+<li>各部门孤立工作，缺乏跨职能协调</li>
+<li>各团队都认为自己对客户的视角是独一无二的</li>
+<li>缺乏治理或集中式本体论设计权威</li>
+<li>各团队希望对“他们的”数据拥有自主权和控制权</li>
 </ul>
-<h3 id="user-content-example-2" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#example-2"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Example</h3>
-<p>Multiple departments need to work with customer data, and each creates their own object type:</p>
+<h3 data-pagefind-weight="0.8" id="user-content-example-2" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#example-2" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>示例</h3>
+<p>多个部门都需要处理客户数据，并且各自创建了自己的对象类型：</p>
 <ul>
-<li>Sales team creates <code>Sales Customer</code></li>
-<li>Support team creates <code>Support Customer</code></li>
-
-
-<li>Finance team creates <code>Billing Customer</code></li>
-<li>Marketing team creates <code>Marketing Contact</code></li>
+<li>销售团队创建 <code>Sales Customer</code></li>
+<li>支持团队创建 <code>Support Customer</code></li>
+<li>财务团队创建 <code>Billing Customer</code></li>
+<li>营销团队创建 <code>Marketing Contact</code></li>
 </ul>
-<p>All four object types represent the same real-world entity: a customer.</p>
-<h3 id="user-content-problems-2" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#problems-2"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Problems</h3>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>Problem</th><th>Impact</th></tr></thead><tbody><tr><td>No single source of truth</td><td>Different departments have conflicting information about the same customer.</td></tr><tr><td>Impossible cross-functional workflows</td><td>Cannot easily answer questions like "Show me all interactions with this customer across sales, support, and billing".</td></tr><tr><td>Duplicated development</td><td>Each department builds redundant actions, links, and applications.</td></tr><tr><td>Governance nightmare</td><td>Data quality issues multiply; fixes in one object type do not propagate to others.</td></tr></tbody></table></div>
-<h3 id="user-content-solution-2" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#solution-2"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Solution</h3>
-<p>Create shared object types that serve multiple departments, using properties and links to capture department-specific information where needed.</p>
+<p>这四个对象类型代表的是同一个现实世界实体：客户。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-problems-2" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#problems-2" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>问题</h3>
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>问题</th><th>影响</th></tr></thead><tbody><tr><td>没有单一事实来源</td><td>不同部门对同一客户的信息存在冲突。</td></tr><tr><td>无法实现跨职能工作流</td><td>无法轻松回答诸如"显示该客户在销售、支持和计费方面的所有交互"之类的问题。</td></tr><tr><td>重复开发</td><td>每个部门都在构建冗余的操作、关联和应用程序。</td></tr><tr><td>治理噩梦</td><td>数据质量问题会成倍增加;在一个对象类型中所做的修复无法传播到其他对象类型。</td></tr></tbody></table></div>
+<h3 data-pagefind-weight="0.8" id="user-content-solution-2" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#solution-2" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>解决方案</h3>
+<p>创建服务于多个部门的共享对象类型,并在需要时使用属性和关联来捕获特定部门的信息。</p>
 <pre><code>✗ Avoid                          ✓ Prefer
 ─────────────────────────────    ─────────────────────────────
 Sales Customer                   Customer
@@ -286,81 +126,46 @@ Marketing Contact                  ├── billingAccountId (property)
                                        ├── Support Tickets
                                        └── Invoices
 </code></pre>
-<p>To implement this:</p>
+<p>要实现这一点:</p>
 <ol>
-<li>Identify entities that exist across departmental boundaries.</li>
-<li>
-
-Establish a cross-functional working group to define shared object types.</li>
-<li>Use properties to capture department-specific attributes on shared objects.</li>
-<li>Use link types to connect shared objects to department-specific objects (such as <code>Customer</code> → <code>Support Ticket</code>).</li>
-<li>Leverage object views or curated Workshop and OSDK applications if departments need different "views" of the same underlying entity.</li>
-<li>Use restricted views if specific properties can only be accessible by a specific team.</li>
+<li>识别跨越部门边界存在的实体。</li>
+<li>建立一个跨职能工作组来定义共享对象类型。</li>
+<li>使用属性在共享对象上捕获特定部门的特性。</li>
+<li>使用关联类型将共享对象连接到特定部门的对象(例如 <code>Customer</code> → <code>Support Ticket</code>).</li>
+<li>如果不同部门需要同一底层实体的不同"视图"，请利用对象视图或精选的 Workshop 和 OSDK 应用。</li>
+<li>如果特定属性只能由特定团队访问，请使用受限视图。</li>
 </ol>
-<hr>
-<h2 id="user-content-anti-pattern-the-god-object" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#anti-pattern-the-god-object"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Anti-pattern: The God Object</h2>
-<p>The God Object anti-pattern occurs when a single object type is overloaded to represent multiple distinct real-world entities, resulting in a bloated, confusing, and unmaintainable object type.</p>
-<h3 id="user-content-common-causes-3" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#common-causes-3"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Common causes</h3>
+<hr/>
+<h2 data-pagefind-weight="0.9" id="user-content-anti-pattern-the-god-object" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#anti-pattern-the-god-object" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>反模式：上帝对象</h2>
+<p>当单一对象类型被过度使用来表示多个不同的现实世界实体时，就会出现上帝对象反模式，导致对象类型臃肿、混乱且难以维护。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-common-causes-3" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#common-causes-3" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>常见原因</h3>
 <ul>
-<li>Over-abstraction driven by superficial similarities ("they are all assets")</li>
-<li>Desire to minimize the number of object types</li>
-<li>Lack of clear entity definitions before building</li>
-<li>Scope creep as more use cases are added to an existing object type</li>
+<li>由表面相似性驱动的过度抽象（"它们都是资产"）</li>
+<li>希望尽量减少对象类型的数量</li>
+<li>在开始构建之前缺乏清晰的实体定义</li>
+<li>随着更多用例被添加到现有对象类型中而导致的范围蔓延</li>
 </ul>
-
-
-<h3 id="user-content-indicators" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#indicators"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Indicators</h3>
+<h3 data-pagefind-weight="0.8" id="user-content-indicators" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#indicators" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>迹象</h3>
 <ul>
-<li>An object type has many properties that are frequently null</li>
-<li>Property meanings change based on another property's value (such as type or category)</li>
-<li>You find yourself asking "What kind of <code>[Object]</code> is this?" when viewing an object</li>
-<li>Business rules and validations require extensive conditional logic based on object "type"</li>
+<li>某个对象类型有许多属性经常为 null</li>
+<li>属性的含义会根据另一个属性的值（例如类型或类别）而变化</li>
+<li>在查看对象时，你会发现自己会问“这是哪种 <code>[Object]</code> ？”</li>
+<li>业务规则和验证需要基于对象"type"的大量条件逻辑</li>
 </ul>
-<h3 id="user-content-example-3" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#example-3"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Example</h3>
-<p>You create an <code>Asset</code> object type intended to represent "anything valuable," which ends up including:</p>
+<h3 data-pagefind-weight="0.8" id="user-content-example-3" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#example-3" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>示例</h3>
+<p>你创建一个 <code>Asset</code> 旨在表示“任何有价值的东西”的对象类型，最终包括：</p>
 <ul>
-<li>Physical equipment (trucks, machinery)</li>
-<li>Software licenses</li>
-<li>Real estate properties</li>
-<li>Financial instruments</li>
-<li>Employees (as "human assets")</li>
+<li>实体设备（卡车、机械）</li>
+<li>软件许可证</li>
+<li>房地产</li>
+<li>金融工具</li>
+<li>员工（作为“人力资产”）</li>
 </ul>
-<p>The object type has 150+ properties, most of which are null for any given object, and the meaning of properties like value, location, and status varies completely depending on what kind of "asset" the object represents.</p>
-<h3 id="user-content-problems-3" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#problems-3"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Problems</h3>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>Problem</th><th>Impact</th></tr></thead><tbody><tr><td>Semantic confusion</td><td>End users cannot understand what an <code>Asset</code> actually represents.</td></tr><tr><td>Sparse data</td><td>Most properties are null for most objects, making the data hard to interpret.</td></tr><tr><td>Impossible validation</td><td>Cannot enforce business rules because rules differ by entity type.</td></tr><tr><td>Poor search experience</td><td>Searching for <code>Assets</code> returns a mix of unrelated things.</td></tr><tr><td>Action type complexity</td><td>Actions must handle wildly different entity types with complex conditional logic.</td></tr></tbody></table></div>
-<h3 id="user-content-solution-3" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#solution-3"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Solution</h3>
-<p>Create distinct object types for distinct real-world entities. Use interfaces to model shared characteristics when entities genuinely share common properties or behaviors.</p>
+<p>该对象类型拥有 150 多个属性，对于任何给定对象，其中大部分属性的值均为 null，并且 value、location 和 status 等属性的含义会因对象所代表的“资产”类型而完全不同。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-problems-3" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#problems-3" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>问题</h3>
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>问题</th><th>影响</th></tr></thead><tbody><tr><td>语义混淆</td><td>最终用户无法理解一个 <code>Asset</code> 实际代表什么。</td></tr><tr><td>稀疏数据</td><td>大多数对象的大多数属性为空值，导致数据难以解读。</td></tr><tr><td>无法进行验证</td><td>由于规则因实体类型而异，无法强制执行业务规则。</td></tr><tr><td>搜索体验不佳</td><td>搜索 <code>Assets</code> 返回的结果混杂着不相关的内容。</td></tr><tr><td>操作类型复杂性</td><td>操作必须通过复杂的条件逻辑来处理截然不同的实体类型。</td></tr></tbody></table></div>
+<h3 data-pagefind-weight="0.8" id="user-content-solution-3" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#solution-3" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>解决方案</h3>
+<p>为不同的现实世界实体创建各自独立的对象类型。当实体确实共享共同的属性或行为时，使用接口来建模这些共享特征。</p>
 <pre><code>✗ Avoid                          ✓ Prefer
 ─────────────────────────────    ─────────────────────────────
 Asset                            Equipment
@@ -374,118 +179,39 @@ Asset                            Equipment
                                    - purchaseValue
                                    - depreciationSchedule
 </code></pre>
-<p>To implement this:</p>
+<p>要实现这一点：</p>
 <ol>
-<li>List the distinct real-world entities currently represented by the object type.</li>
-<li>Create separate object types for each distinct entity.</li>
-<li>Identify genuinely shared properties and behaviors.</li>
-<li>Use interfaces to model shared characteristics across object types.</li>
-<li>Migrate existing objects to appropriate new object types.</li>
+<li>列出该对象类型当前所表示的各个不同的现实世界实体。</li>
+<li>为每个不同的实体创建单独的对象类型。</li>
+<li>识别真正共享的属性和行为。</li>
+<li>使用接口来建模各对象类型之间的共享特征。</li>
+<li>将现有对象迁移到适当的新对象类型。</li>
 </ol>
-
-
-<hr>
-<h2 id="user-content-anti-pattern-the-golden-hammer" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#anti-pattern-the-golden-hammer"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Anti-pattern: The Golden Hammer</h2>
-<p>The Golden Hammer anti-pattern occurs when you rely too heavily on a single tool to solve every problem, even when other approaches are more appropriate. The name comes from the saying: <a href="https://en.wikipedia.org/wiki/Law_of_the_instrument">"If all you have is a hammer, everything looks like a nail" ↗</a>.</p>
-<p>This anti-pattern manifests in the overuse of action types in work better suited for pipelines, building pipelines for logic that should be event-driven automations, or writing functions for calculations that are better pre-computed in a transform.</p>
-<h3 id="user-content-common-causes-4" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#common-causes-4"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Common causes</h3>
+<hr/>
+<h2 data-pagefind-weight="0.9" id="user-content-anti-pattern-the-golden-hammer" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#anti-pattern-the-golden-hammer" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>反模式：金锤</h2>
+<p>金锤反模式是指过度依赖单一工具来解决所有问题的情况，即使其他方法其实更为合适。这个名称来源于一句俗语： <a href="https://en.wikipedia.org/wiki/Law_of_the_instrument">“如果你手里只有一把锤子，看什么都像钉子” ↗</a>。</p>
+<p>这种反模式表现为：在更适合使用管道的工作中过度使用操作类型，为本应采用事件驱动自动化的逻辑构建管道，或者编写函数来处理本应在转换中预先计算的计算任务。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-common-causes-4" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#common-causes-4" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>常见原因</h3>
 <ul>
-<li>Overreliance on a tool due to familiarity and visibility within the team</li>
-<li>Desire to give end users "control" over when computations happen</li>
-<li>Lack of familiarity with the full platform (including pipelines, automations, functions, and scheduled builds)</li>
-<li>Thinking exclusively in one layer (Ontology-first, pipeline-first, or code-first) without considering the full toolkit</li>
+<li>由于对该工具的熟悉度及其在团队中的可见性而对其过度依赖</li>
+<li>希望让最终用户能够“控制”计算发生的时间</li>
+<li>对整个平台不够熟悉（包括管道、自动化、函数和定时构建）</li>
+<li>仅从单一层面进行思考（本体论优先、管道优先或代码优先），而不考虑完整的工具集</li>
 </ul>
-
-
-<h3 id="user-content-examples" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#examples"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Examples</h3>
-<p><strong>Overreliance on action types:</strong></p>
-<p>You need to calculate aggregate metrics for a dashboard showing total sales by region. Instead of using a data pipeline to pre-compute these metrics, you create an action type called <code>Calculate Regional Sales Totals</code> that end users must manually trigger. Results are written back to objects via the action.</p>
-<p><strong>Overreliance on pipelines:</strong></p>
-<p>An alert object is created by a pipeline when sensor readings exceed a threshold. You want to automatically assign that alert to the on-call engineer and send a notification. Instead of using an automation that reacts to the new object, you build additional pipeline logic that tries to resolve the assignee and write the assignment into the backing dataset, mixing operational workflow logic into data integration.</p>
-<p><strong>Overreliance on functions:</strong></p>
-<p>You implement a simple property derivation like <code>fullName</code> = <code>firstName</code> + <code>lastName</code> as a function-backed column, adding runtime overhead and a code repository to maintain, when a single pipeline <code>concat</code> expression would suffice.</p>
-<h3 id="user-content-problems-4" level="3" node="[object Object]" data-pagefind-weight="0.8">
-
-<a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#problems-4"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Problems</h3>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>Problem</th><th>Impact</th></tr></thead><tbody><tr><td>Scalability limits</td><td>Each tool has different execution limits; using the wrong one hits ceilings early.</td></tr><tr><td>Unnecessary complexity</td><td>Maintaining logic in the wrong layer increases the number of moving parts.</td></tr><tr><td>User burden</td><td>End users must perform steps that the platform could handle automatically.</td></tr><tr><td>Performance issues</td><td>Real-time calculations via actions or functions are slower than pre-computed pipeline results. Conversely, scheduled pipelines are too slow for event-driven reactions.</td></tr><tr><td>Difficult debugging</td><td>When logic lives in the wrong layer, failures are harder to diagnose and resolve.</td></tr></tbody></table></div>
-<h3 id="user-content-solution-4" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#solution-4"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Solution</h3>
-<p>Choose the right tool for the job based on your use case:</p>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5">
-
-<table><thead><tr><th>Tool</th><th>Best for</th><th>Not ideal for</th></tr></thead><tbody><tr><td>Action types</td><td>Human decisions, user-initiated edits to one or a few objects, input-driven changes that should apply immediately.</td><td>Batch calculations, scheduled updates, event-driven reactions with no human involvement.</td></tr><tr><td>Pipelines (batch)</td><td>Batch data processing, aggregations, cleansing, enrichment, pre-computing derived values on a schedule or on data arrival.</td><td>Real-time reactions to individual object changes, logic that requires human input.</td></tr><tr><td>Pipelines (streaming)</td><td>Continuous, low-latency data processing where results must stay current as source data arrives (real-time dashboards, live status tracking, continuous enrichment).</td><td>Infrequent updates where batch is sufficient, logic that requires human input, reacting to Ontology-level events (use automations).</td></tr><tr><td>Automations</td><td>Event-driven reactions to Ontology changes (object created, property updated, schedule triggered), orchestrating actions or notifications without user involvement.</td><td>Heavy data processing, complex multi-dataset joins, logic that requires human judgment.</td></tr><tr><td>Functions</td><td>Complex real-time computations across multiple objects, validation logic, derived values that depend on live Ontology state and cannot be pre-computed.</td><td>Simple derivations computable in a pipeline, batch processing of large datasets.</td></tr><tr><td>Schedules</td><td>Recurring pipeline builds, time-based or event-based orchestration of data refresh.</td><td>Reacting to individual object-level changes in real time.</td></tr></tbody></table></div>
-<p>Examples of applying this guidance:</p>
-<pre>
-
-<code>✗ Avoid                                          ✓ Prefer
+<h3 data-pagefind-weight="0.8" id="user-content-examples" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#examples" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>示例</h3>
+<p><strong>过度依赖操作类型：</strong></p>
+<p>您需要为显示各区域总销售额的仪表板计算聚合指标。您没有使用数据管道预先计算这些指标，而是创建了一个名为 <code>Calculate Regional Sales Totals</code> 的操作类型，必须由最终用户手动触发。结果会通过该操作写回对象。</p>
+<p><strong>过度依赖管道：</strong></p>
+<p>当传感器读数超过阈值时,管道会创建一个警报对象。您希望自动将该警报分配给值班工程师并发送通知。此时,您没有使用对新对象做出反应的自动化,而是构建了额外的管道逻辑来尝试确定被分配人并将分配信息写入支撑数据集,从而将运营工作流逻辑混入了数据集成之中。</p>
+<p><strong>过度依赖函数:</strong></p>
+<p>您将类似以下内容的简单属性派生 <code>fullName</code> = <code>firstName</code> + <code>lastName</code> 实现为函数支撑的列,增加了运行时开销和需要维护的代码仓库,而实际上单个管道 <code>concat</code> 表达式就足够了。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-problems-4" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#problems-4" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>问题</h3>
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>问题</th><th>影响</th></tr></thead><tbody><tr><td>可扩展性限制</td><td>每种工具都有不同的执行限制；使用错误的工具会过早触及上限。</td></tr><tr><td>不必要的复杂性</td><td>在错误的层级维护逻辑会增加需要管理的部件数量。</td></tr><tr><td>用户负担</td><td>最终用户必须执行本可由平台自动处理的步骤。</td></tr><tr><td>性能问题</td><td>通过操作或函数进行的实时计算比预计算的管道结果更慢。相反,对于事件驱动的响应,定时调度的管道又太慢。</td></tr><tr><td>调试困难</td><td>当逻辑位于错误的层时,故障更难诊断和解决。</td></tr></tbody></table></div>
+<h3 data-pagefind-weight="0.8" id="user-content-solution-4" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#solution-4" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>解决方案</h3>
+<p>根据您的使用场景选择合适的工具:</p>
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>工具</th><th>最适用于</th><th>不适用于</th></tr></thead><tbody><tr><td>操作类型</td><td>人工决策、用户对单个或少数几个对象发起的编辑、需要立即生效的输入驱动变更。</td><td>批量计算、定时更新、无需人工参与的事件驱动响应。</td></tr><tr><td>管道（批量）</td><td>批量数据处理、聚合、清洗、数据富化、按计划或在数据到达时预计算派生值。</td><td>对单个对象变更的实时响应、需要人工输入的逻辑。</td></tr><tr><td>管道（流式）</td><td>持续的低延迟数据处理，其结果必须随源数据的到达而保持最新（实时仪表板、实时状态跟踪、持续富化）。</td><td>更新频率较低、批处理即可满足需求的场景，需要人工输入的逻辑，以及对本体论级别事件做出响应（使用自动化）。</td></tr><tr><td>自动化</td><td>对本体论变更的事件驱动响应（对象创建、属性更新、计划触发），在无需用户参与的情况下编排操作或通知。</td><td>繁重的数据处理、复杂的多数据集联接，以及需要人工判断的逻辑。</td></tr><tr><td>函数</td><td>跨多个对象的复杂实时计算、验证逻辑，以及依赖于本体论实时状态且无法预先计算的派生值。</td><td>可在管道中完成的简单派生计算，以及大型数据集的批处理。</td></tr><tr><td>计划任务</td><td>定期管道构建，基于时间或事件的数据刷新编排。</td><td>实时响应单个对象级别的变更。</td></tr></tbody></table></div>
+<p>应用此指导的示例：</p>
+<pre><code>✗ Avoid                                          ✓ Prefer
 ──────────────────────────────────────────────   ──────────────────────────────────────────────
 Action: "Calculate Regional Sales"          →    Pipeline that aggregates sales data daily
                                                  into a "Regional Sales Summary" object type.
@@ -513,40 +239,34 @@ fullName = firstName + " " + lastName         + " " + lastName in the backing da
 Scheduled pipeline running every minute     →    Automation that reacts to the specific object
 to check for objects needing follow-up           change and triggers the follow-up immediately.
 </code></pre>
-
-
-<p>To implement this:</p>
+<p>要实现这一点：</p>
 <ol>
-<li><strong>Before creating an action type</strong>, ask: "Does this require human judgment or user input?" If not, it likely belongs in a pipeline or automation.</li>
-<li><strong>Before adding logic to a pipeline</strong>, ask: "Is this a data transformation, or is it an operational workflow?" Data cleansing, aggregation, and enrichment belong in pipelines. Assigning work, sending notifications, and reacting to individual changes belong in automations.</li>
-<li><strong>Before writing a function</strong>, ask: "Can this be pre-computed in the backing pipeline?" If the result only depends on source data columns and does not need live Ontology traversal, compute it upstream.</li>
-<li><strong>Before building a polling pipeline</strong> (running every N minutes to detect changes), ask: "Can an automation react to this event directly?" Automations respond to Ontology changes in near-real-time without the overhead of scheduled builds. If the need is for continuous data processing from a source system, consider a streaming pipeline instead.</li>
-<li><strong>Before defaulting to a batch pipeline</strong>, ask: "Does this data need to be continuously current?" If consumers depend on low-latency freshness, a streaming pipeline avoids the compromise of a batch schedule.</li>
-<li>
-
-<strong>Use automations</strong> to bridge the gap between "something changed" and "something should happen", without requiring a user to click a button or poll a pipeline.</li>
+<li><strong>在创建操作类型之前</strong>，请先问："这是否需要人工判断或用户输入？"如果不需要，则它很可能应归入管道或自动化。</li>
+<li><strong>在向管道添加逻辑之前</strong>，请问：“这是数据转换，还是运营工作流？”数据清洗、聚合和富化应放在管道中处理；分配工作、发送通知以及对单个变更做出响应则应交给自动化。</li>
+<li><strong>在编写函数之前</strong>，请问：“这能否在支撑管道中预先计算？”如果结果仅依赖于源数据列，且无需实时遍历本体论，请在上游进行计算。</li>
+<li><strong>在构建轮询管道之前</strong> （每 N 分钟运行一次以检测变更），请问：“自动化能否直接响应此事件？”自动化能够近实时地响应本体论变更，而无需承担定时构建的开销。如果需要对来自源系统的数据进行持续处理，请考虑改用流式管道。</li>
+<li><strong>在默认使用批处理管道之前</strong>，请问：“这些数据是否需要持续保持最新？”如果使用者依赖低延迟的数据时效性，流式管道可以避免批处理调度带来的折衷。</li>
+<li><strong>使用自动化</strong> 在</li>
 </ol>
-<hr>
-<h2 id="user-content-anti-pattern-action-sprawl" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#anti-pattern-action-sprawl"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Anti-pattern: Action Sprawl</h2>
-<p>Action Sprawl occurs when you create many narrowly-scoped action types that each modify a single property, rather than designing cohesive actions that represent meaningful business operations.</p>
-<h3 id="user-content-common-causes-5" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#common-causes-5"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Common causes</h3>
+<hr/>
+<h2 data-pagefind-weight="0.9" id="user-content-anti-pattern-action-sprawl" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#anti-pattern-action-sprawl" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>反模式：操作蔓延</h2>
+<p>当您创建许多作用范围狭窄、每个仅修改单个属性的操作类型，而不是设计能够代表有意义业务操作的内聚操作时，就会发生操作蔓延。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-common-causes-5" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#common-causes-5" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>常见原因</h3>
 <ul>
-<li>Thinking of actions as database column updates rather than business operations</li>
-<li>Building actions incrementally without considering the overall user experience</li>
-<li>Lack of understanding of how actions can bundle multiple property changes</li>
-<li>Mimicking CRUD operations from traditional application development</li>
+<li>将操作视为数据库列更新，而非业务操作</li>
+<li>在不考虑整体用户体验的情况下逐步构建操作</li>
+<li>对操作如何捆绑多个属性更改缺乏理解</li>
+<li>模仿传统应用程序开发中的 CRUD 操作</li>
 </ul>
-<h3 id="user-content-indicators-1" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#indicators-1"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Indicators</h3>
+<h3 data-pagefind-weight="0.8" id="user-content-indicators-1" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#indicators-1" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>指标</h3>
 <ul>
-<li>More than 10 action types for a single object type</li>
-<li>Multiple actions that are always performed in sequence</li>
-<li>
-
-Action names that read like <code>Set [Property]</code> or <code>Update [Property]</code></li>
-<li>End users complaining about too many steps to complete a task</li>
+<li>单个对象类型拥有超过 10 种操作类型</li>
+<li>多个始终按顺序执行的操作</li>
+<li>操作名称读起来像 <code>Set [Property]</code> 或 <code>Update [Property]</code></li>
+<li>最终用户抱怨完成一项任务需要太多步骤</li>
 </ul>
-<h3 id="user-content-example-4" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#example-4"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Example</h3>
-<p>For an <code>Employee</code> object type, instead of creating meaningful business actions, you create:</p>
+<h3 data-pagefind-weight="0.8" id="user-content-example-4" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#example-4" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>示例</h3>
+<p>对于 <code>Employee</code> 对象类型，您创建的不是有意义的业务操作，而是：</p>
 <ul>
 <li><code>Update Employee First Name</code></li>
 <li><code>Update Employee Last Name</code></li>
@@ -554,39 +274,12 @@ Action names that read like <code>Set [Property]</code> or <code>Update [Propert
 <li><code>Update Employee Phone</code></li>
 <li><code>Update Employee Department</code></li>
 <li><code>Update Employee Manager</code></li>
-<li>...and 20 more single-property actions</li>
+<li>……以及另外 20 个单属性操作</li>
 </ul>
-<h3 id="user-content-problems-5" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#problems-5"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Problems</h3>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>Problem</th><th>Impact</th></tr></thead><tbody><tr><td>Overwhelming experience</td><td>End users face a long, cluttered list of actions and struggle to find the right one.</td></tr><tr><td>Fragmented workflows</td><td>Simple updates require multiple action submissions to complete a single business task.</td></tr><tr><td>No cohesive business representation</td><td>Actions do not map to real-world processes, making the Ontology unintuitive.</td></tr><tr><td>Fragmented audit trails</td><td>History of changes is scattered across many small actions, making it difficult to understand what happened and why.</td></tr></tbody></table></div>
-<h3 id="user-content-solution-5" level="3" node="[object Object]" data-pagefind-weight="0.8">
-
-<a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#solution-5"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Solution</h3>
-<p>Design action types around business operations, not database updates. Create actions that bundle related changes into meaningful workflows.</p>
+<h3 data-pagefind-weight="0.8" id="user-content-problems-5" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#problems-5" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>问题</h3>
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>问题</th><th>影响</th></tr></thead><tbody><tr><td>令人不知所措的体验</td><td>最终用户面对冗长而杂乱的操作列表，难以找到合适的操作。</td></tr><tr><td>碎片化的工作流</td><td>简单的更新需要多次提交操作才能完成单个业务任务。</td></tr><tr><td>缺乏统一的业务呈现</td><td>操作无法映射到真实世界的流程，导致本体论不够直观。</td></tr><tr><td>碎片化的审计记录</td><td>变更历史分散在许多小操作中，导致难以理解发生了什么及其原因。</td></tr></tbody></table></div>
+<h3 data-pagefind-weight="0.8" id="user-content-solution-5" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#solution-5" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>解决方案</h3>
+<p>围绕业务操作而非数据库更新来设计操作类型。创建能够将相关变更捆绑为有意义工作流的操作。</p>
 <pre><code>✗ Avoid                                    ✓ Prefer
 ────────────────────────────────────────   ────────────────────────────────────────
 Update Employee First Name                 Update Employee Contact Information
@@ -606,73 +299,42 @@ Set Employee Start Date              →       - All required fields for a new h
 Assign Employee Badge                        - Triggers downstream workflows
 Assign Employee Equipment                    (badge assignment, equipment request)
 </code></pre>
-<p>To implement this:</p>
+<p>要实现这一点：</p>
 <ol>
-<li>Map out the real business processes that involve changing object data.</li>
-<li>Group related property changes into single actions that represent those processes.</li>
-<li>Use action parameters to allow optional fields within a cohesive action.</li>
-<li>Name actions after the business operation: <code>Transfer Employee</code>, <code>Approve Purchase Order</code>, <code>Escalate Support Ticket</code>.</li>
-<li>Use action rules and validation logic to enforce business constraints within the action.</li>
+<li>梳理涉及更改对象数据的实际业务流程。</li>
+<li>将相关的属性更改归入代表这些流程的单个操作中。</li>
+<li>使用操作参数，在内聚的操作中支持可选字段。</li>
+<li>根据业务操作为操作命名： <code>Transfer Employee</code>, <code>Approve Purchase Order</code>, <code>Escalate Support Ticket</code>.</li>
+<li>使用操作规则和验证逻辑在操作中强制执行业务约束。</li>
 </ol>
-<hr>
-
-
-<h2 id="user-content-anti-pattern-the-time-machine" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#anti-pattern-the-time-machine"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Anti-pattern: The Time Machine</h2>
-<p>The Time Machine anti-pattern occurs when you model historical versions of an entity as separate objects or object types rather than using time series data, snapshots, or proper versioning strategies.</p>
-<h3 id="user-content-common-causes-6" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#common-causes-6"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Common causes</h3>
+<hr/>
+<h2 data-pagefind-weight="0.9" id="user-content-anti-pattern-the-time-machine" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#anti-pattern-the-time-machine" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>反模式：时间机器</h2>
+<p>当您将实体的历史版本建模为单独的对象或对象类型，而不是使用时间序列数据、快照或适当的版本控制策略时，就会出现时间机器反模式。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-common-causes-6" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#common-causes-6" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>常见原因</h3>
 <ul>
-<li>Desire to preserve a complete history of every change</li>
-<li>Misunderstanding of how to model temporal data in the Ontology</li>
-<li>Applying file-versioning mental models (v1, v2, v3) to object design</li>
-<li>Lack of awareness of time series properties or linked history patterns</li>
+<li>希望保留每次变更的完整历史记录</li>
+<li>对如何在本体论中建模时态数据存在误解</li>
+<li>将文件版本控制的心智模型(v1, v2, v3)应用于对象设计</li>
+<li>对时间序列属性或关联历史模式缺乏认识</li>
 </ul>
-<h3 id="user-content-indicators-2" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#indicators-2"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Indicators</h3>
+<h3 data-pagefind-weight="0.8" id="user-content-indicators-2" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#indicators-2" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>迹象</h3>
 <ul>
-<li>Object type contains multiple objects representing the same real-world entity at different points in time</li>
-<li>Properties like <code>version</code>, <code>revision</code>, or <code>isCurrent</code> exist to distinguish copies</li>
-<li>Object counts grow proportionally with the number of changes rather than the number of entities</li>
-<li>
-
-End users are confused about which object to reference or link to</li>
+<li>对象类型包含多个对象，表示同一现实世界实体在不同时间点的情况</li>
+<li>诸如 <code>version</code>、 <code>revision</code>或 <code>isCurrent</code> 之类的属性用于区分副本</li>
+<li>对象数量的增长与更改次数成正比，而非与实体数量成正比</li>
+<li>最终用户不清楚应引用或关联到哪个对象</li>
 </ul>
-<h3 id="user-content-example-5" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#example-5"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Example</h3>
-<p>To track changes to a <code>Contract</code>, you create:</p>
+<h3 data-pagefind-weight="0.8" id="user-content-example-5" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#example-5" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>示例</h3>
+<p>要跟踪对 <code>Contract</code>的更改，您可以创建：</p>
 <ul>
-<li><code>Contract v1</code>, <code>Contract v2</code>, <code>Contract v3</code> as separate objects within the same object type</li>
-<li>Or worse: <code>Contract 2023</code>, <code>Contract 2024</code>, <code>Contract 2025</code> as separate object types for each year</li>
+<li><code>Contract v1</code>、 <code>Contract v2</code>、 <code>Contract v3</code> 作为同一对象类型中的单独对象</li>
+<li>或者更糟： <code>Contract 2023</code>、 <code>Contract 2024</code>、 <code>Contract 2025</code> 作为每年单独的对象类型</li>
 </ul>
-<p>Each "version" is a full copy of the contract with slightly different property values, and links to other objects (such as <code>Vendor</code> or <code>Department</code>) are duplicated across all versions.</p>
-<h3 id="user-content-problems-6" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#problems-6"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Problems</h3>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>Problem</th><th>Impact</th></tr></thead><tbody><tr><td>Object count explosion</td><td>Every change creates a new object, rapidly inflating the Ontology with redundant data.</td></tr><tr><td>Ambiguous current state</td><td>It is difficult to identify which version is the "current" or authoritative version.</td></tr><tr><td>Ambiguous links</td><td>Links to contracts become unclear; which version should a <code>Vendor</code> or <code>Department</code> link to?</td></tr><tr><td>Complex reporting</td><td>Reporting across time periods requires filtering and deduplication logic that is error-prone.</td></tr></tbody></table></div>
-<h3 id="user-content-solution-6" level="3" node="[object Object]" data-pagefind-weight="0.8">
-
-<a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#solution-6"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Solution</h3>
-<p>Use a single object per entity with properties for current state. Store historical changes in a separate linked object type, enable edits history, or leverage time series properties.</p>
+<p>每个"版本"都是合同的完整副本，属性值略有不同，并且与其他对象（如 <code>Vendor</code> 或 <code>Department</code>）的关联会在所有版本中重复。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-problems-6" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#problems-6" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>问题</h3>
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>问题</th><th>影响</th></tr></thead><tbody><tr><td>对象数量爆炸</td><td>每次更改都会创建一个新对象，导致本体论因冗余数据而迅速膨胀。</td></tr><tr><td>当前状态不明确</td><td>很难确定哪个版本是“当前”版本或权威版本。</td></tr><tr><td>关联不明确</td><td>与合同的关联变得不明确；一个 <code>Vendor</code> 或 <code>Department</code> 应该关联到哪个版本？</td></tr><tr><td>报告复杂</td><td>跨时间段的报告需要筛选和去重逻辑，而这类逻辑容易出错。</td></tr></tbody></table></div>
+<h3 data-pagefind-weight="0.8" id="user-content-solution-6" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#solution-6" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>解决方案</h3>
+<p>为每个实体使用单一对象，其属性反映当前状态。将历史变更存储在单独的关联对象类型中，启用编辑历史，或利用时间序列属性。</p>
 <pre><code>✗ Avoid                                    ✓ Prefer
 ────────────────────────────────────────   ────────────────────────────────────────
 Contract v1 (object)                       Contract (single object per contract)
@@ -686,76 +348,45 @@ Contract 2024 (object type)                        - previousValue
 Contract 2025 (object type)                        - newValue
                                                    - changeReason
 </code></pre>
-<p>To implement this:</p>
+<p>要实现这一点：</p>
 <ol>
-<li>Use a single object per real-world entity with properties reflecting the current state.</li>
-<li>Create a separate linked object type (such as <code>Contract Amendment</code> or <code>Contract History</code>) to capture historical changes.</li>
-<li>Leverage time series properties for values that change frequently and need temporal tracking.</li>
-<li>Use the backing dataset or edits history to maintain full historical records for audit trails if needed.</li>
+<li>为每个现实世界实体使用单一对象，其属性反映当前状态。</li>
+<li>创建单独的关联对象类型（例如 <code>Contract Amendment</code> 或 <code>Contract History</code>）来记录历史变更。</li>
+<li>对于频繁变化且需要时间跟踪的值，请利用时间序列属性。</li>
+<li>如有需要，可使用支撑数据集或编辑历史来维护完整的审计追踪历史记录。</li>
 </ol>
-<hr>
-<h2 id="user-content-anti-pattern-the-misnomer" level="2" node="[object Object]" data-pagefind-weight="0.9">
-
-<a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#anti-pattern-the-misnomer"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Anti-pattern: The Misnomer</h2>
-<p>The Misnomer anti-pattern occurs when you use vague, generic, or misleading names for object types, properties, and link types that do not clearly communicate their meaning, leading to confusion and misinterpretation across the Ontology.</p>
-<h3 id="user-content-common-causes-7" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#common-causes-7"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Common causes</h3>
+<hr/>
+<h2 data-pagefind-weight="0.9" id="user-content-anti-pattern-the-misnomer" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#anti-pattern-the-misnomer" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>反模式：命名不当</h2>
+<p>当您为对象类型、属性和关联类型使用含糊、笼统或具有误导性的名称，导致其含义无法清晰传达，从而在整个本体论中造成混淆和误解时，就会出现命名不当反模式。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-common-causes-7" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#common-causes-7" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>常见原因</h3>
 <ul>
-<li>Using shorthand names that make sense to you but not to others</li>
-<li>Names are carried over directly from source system column names without translation</li>
-<li>Desire for brevity over clarity</li>
-<li>Lack of naming conventions or governance standards</li>
-<li>Assumption that context will make meaning obvious</li>
+<li>使用只有自己能理解而他人无法理解的简称</li>
+<li>名称直接沿用源系统的列名，未经转换</li>
+<li>为追求简洁而牺牲清晰性</li>
+<li>缺乏命名规范或治理标准</li>
+<li>假设上下文会使含义显而易见</li>
 </ul>
-<h3 id="user-content-indicators-3" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#indicators-3"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Indicators</h3>
+<h3 data-pagefind-weight="0.8" id="user-content-indicators-3" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#indicators-3" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>迹象</h3>
 <ul>
-<li>End users frequently ask "What does this property mean?" or "What kind of <code>[Object]</code> is this?"</li>
-<li>The same name could reasonably refer to multiple different concepts</li>
-<li>Property names are single generic words like <code>value</code>, <code>type</code>, <code>status</code>, <code>date</code>, or <code>name</code> without qualification</li>
-<li>
-
-Link types use generic labels like "related to" without specifying the nature of the relationship</li>
+<li>最终用户经常问“这个属性是什么意思？”或“这是什么样的 <code>[Object]</code> ？”</li>
+<li>同一个名称可能合理地指代多个不同的概念</li>
+<li>属性名称是单个的通用词，例如 <code>value</code>, <code>type</code>， <code>status</code>， <code>date</code>，或 <code>name</code> 未加限定</li>
+<li>关联类型使用诸如“相关”之类的通用标签，而未指明关系的性质</li>
 </ul>
-<h3 id="user-content-example-6" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#example-6"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Example</h3>
-<p>You create the following Ontology elements with ambiguous names:</p>
+<h3 data-pagefind-weight="0.8" id="user-content-example-6" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#example-6" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>示例</h3>
+<p>您创建了以下名称含义模糊的本体论元素：</p>
 <ul>
-<li>Object type: <code>Item</code> (What kind of item? Product? Line item? Inventory item?)</li>
-<li>Property: <code>value</code> (Monetary value? Quantity? Score? Rating?)</li>
-<li>Property: <code>type</code> (Type of what? What are valid values?)</li>
-<li>Property: <code>date</code> (Created date? Modified date? Due date? Effective date?)</li>
-<li>Link type: <code>Item</code> → <code>Related Item</code> (How are they related? Parent-child? Substitute? Accessory?)</li>
+<li>对象类型： <code>Item</code> （哪种类型的条目？产品？明细条目？库存条目？）</li>
+<li>属性： <code>value</code> （货币价值？数量？分数？评级？）</li>
+<li>属性： <code>type</code> （是什么的类型？有效值有哪些？）</li>
+<li>属性： <code>date</code> （创建日期？修改日期？到期日期？生效日期？）</li>
+<li>关联类型： <code>Item</code> → <code>Related Item</code> （它们之间是什么关系？父子关系？替代关系？附属关系？）</li>
 </ul>
-<p>End users encountering these names must guess at their meaning or dig into documentation to understand what the data actually represents.</p>
-<h3 id="user-content-problems-7" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#problems-7"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Problems</h3>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5">
-
-<table><thead><tr><th>Problem</th><th>Impact</th></tr></thead><tbody><tr><td>Misinterpretation</td><td>End users cannot understand the Ontology without additional context, leading to incorrect analysis and decisions.</td></tr><tr><td>Steep learning curve</td><td>New team members must spend significant time learning what vague names actually mean.</td></tr><tr><td>Documentation dependency</td><td>Documentation becomes essential rather than supplementary, and falls out of date quickly.</td></tr><tr><td>Cross-team confusion</td><td>Different teams interpret the same vague names differently, leading to inconsistent usage.</td></tr></tbody></table></div>
-<h3 id="user-content-solution-7" level="3" node="[object Object]" data-pagefind-weight="0.8"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#solution-7"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Solution</h3>
-<p>Use specific, descriptive names for all Ontology elements. Names should be self-documenting so that anyone can understand meaning without additional context.</p>
+<p>最终用户在遇到这些名称时，只能猜测其含义，或深入研究文档才能理解数据实际代表的内容。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-problems-7" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#problems-7" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>问题</h3>
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>问题</th><th>影响</th></tr></thead><tbody><tr><td>误解</td><td>最终用户在没有额外上下文的情况下无法理解本体论，从而导致错误的分析和决策。</td></tr><tr><td>学习曲线陡峭</td><td>新团队成员必须花费大量时间学习模糊名称的实际含义。</td></tr><tr><td>文档依赖</td><td>文档从辅助性变为必不可少，而且很快就会过时。</td></tr><tr><td>跨团队混淆</td><td>不同团队对相同模糊名称的理解各不相同，导致用法不一致。</td></tr></tbody></table></div>
+<h3 data-pagefind-weight="0.8" id="user-content-solution-7" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#solution-7" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>解决方案</h3>
+<p>为本体论中的所有元素使用具体、描述性的名称。名称应具有自解释性，使任何人都无需额外上下文即可理解其含义。</p>
 <pre><code>✗ Avoid                                    ✓ Prefer
 ────────────────────────────────────────   ────────────────────────────────────────
 Object type: Item                    →     Object type: Product
@@ -776,20 +407,18 @@ Link: Item → Related Item            →     Link: Product → Purchasing Cust
                                            Link: Employee → Supervisor
                                            Link: Equipment → Manufacturing Facility
 </code></pre>
-<p>To implement this:</p>
+<p>要实现这一点：</p>
 <ol>
-<li>Establish naming conventions before building and enforce them through governance reviews.</li>
-<li>Use specific, descriptive names: <code>Product</code>, <code>Sales Order Line Item</code>, <code>Warehouse Inventory Record</code>.</li>
-<li>
-
-Qualify ambiguous properties: <code>monetaryValue</code>, <code>quantityOnHand</code>, <code>riskScore</code>.</li>
-<li>Name links explaining the relationship: <code>Purchasing Customers</code>, <code>Manufacturing Facility</code>, <code>Supervisor</code>.</li>
-<li>Add descriptions to all Ontology elements explaining their meaning and valid values.</li>
-<li>Review names with end users to ensure they are intuitive and unambiguous.</li>
+<li>在构建之前建立命名规范，并通过治理审查来强制执行。</li>
+<li>使用具体、描述性的名称： <code>Product</code>, <code>Sales Order Line Item</code>, <code>Warehouse Inventory Record</code>.</li>
+<li>限定模糊的属性： <code>monetaryValue</code>, <code>quantityOnHand</code>， <code>riskScore</code>。</li>
+<li>为关联命名，以说明其关系： <code>Purchasing Customers</code>， <code>Manufacturing Facility</code>， <code>Supervisor</code>。</li>
+<li>为本体论中的所有元素添加描述，说明其含义和有效值。</li>
+<li>与最终用户一起审查名称，确保其直观且无歧义。</li>
 </ol>
-<h2 id="user-content-building-a-successful-ontology" level="2" node="[object Object]" data-pagefind-weight="0.9"><a class="autolink-header" aria-hidden="true" tabindex="-1" aria-label="Copy link to section" href="#building-a-successful-ontology"><svg class="autolink-img" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Building a successful Ontology</h2>
-<p>The anti-patterns described in this guide are common but avoidable. By focusing on the fundamental best practices (modeling reality rather than systems, curating properties intentionally, collaborating across teams, and choosing the right tools for each task), you can build an Ontology that scales with your organization's needs.</p>
-<p>Remember that effective Ontology design is iterative. Start with clear entity definitions, involve stakeholders early, and refine your model as you learn what works. When you encounter challenges, revisit the principles in this guide to identify whether an anti-pattern may be emerging and course-correct before it becomes difficult to change.</p>
+<h2 data-pagefind-weight="0.9" id="user-content-building-a-successful-ontology" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#building-a-successful-ontology" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>构建成功的本体论</h2>
+<p>本指南中描述的反模式虽然常见，但可以避免。通过专注于基本的最佳实践（对现实进行建模而非对系统建模、有意识地精心管理属性、跨团队协作，以及为每项任务选择合适的工具），您可以构建一个能够随组织需求不断扩展的本体论。</p>
+<p>请记住，有效的本体论设计是一个迭代过程。从清晰的实体定义开始，尽早让利益相关者参与进来，并在了解哪些方法行之有效的过程中不断优化您的模型。当您遇到挑战时，请重新审视本指南中的原则，以判断是否正在出现反模式，并在问题变得难以更改之前及时纠正。</p>
 </article>
 </body>
 </html>
