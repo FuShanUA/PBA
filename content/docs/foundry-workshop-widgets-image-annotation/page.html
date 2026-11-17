@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Image Annotation</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<div class="ptcom-design__markdownDoc__1uarhel" data-pagefind-body="true"><h1 data-pagefind-weight="1" id="user-content-image-annotation" level="1" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#image-annotation" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Image Annotation</h1>
+<p>The <strong>Image Annotation</strong> widget is used to annotate images by drawing rectangles around areas of interest.</p>
+<p>The screenshot below shows an example of a configured <strong>Image annotation</strong> widget in the process of creating an annotation:</p>
+<p><img alt="Example of an image annotation that marks a break in a pattern." height="600" node="[object Object]" src="/docs/resources/foundry/workshop/image_annotation_example.png" style="aspect-ratio:1726 / 1157" width="895.0734658599827"/></p>
+<p>Annotations are not stored inside the widget. To persist a rectangle, save it as an <strong>object in your <a href="/docs/foundry/ontology/overview/">Ontology</a></strong>. Persisted annotations behave like any other object: they can be searched, filtered, linked to other objects, secured with <a href="/docs/foundry/security/overview/">permissions</a>, and reused across applications.</p>
+<p>The widget performs two distinct roles:</p>
+<ul>
+<li><strong>Displaying existing annotations.</strong> The widget reads an object set of annotation objects and superimposes each stored bounding box onto the image.</li>
+<li><strong>Capturing new annotations.</strong> When a user draws a rectangle, the widget writes the coordinates into a Workshop variable. You then persist that variable to the Ontology through an <a href="/docs/foundry/workshop/actions-use/">Action</a>.</li>
+</ul>
+<p>Writing back to the Ontology is always performed by an Action; a <a href="/docs/foundry/workshop/scenarios-overview/">Scenario</a> is not required. Scenarios are only needed for "what-if" analysis, where edits are staged in an isolated fork of the Ontology rather than committed. Involve a Scenario only if you specifically want annotations to be provisional and reviewed before being written to the live Ontology. Because writeback relies on an Action, before you configure the widget you need two things in place:</p>
+<ol>
+<li>An <strong>annotation object type</strong> in the Ontology to store each bounding box.</li>
+<li>An <strong>Action</strong> that creates (and optionally deletes or modifies) those annotation objects.</li>
+</ol>
+<p>The end-to-end flow, from a user drawing a rectangle to a persisted, linked annotation object, proceeds as follows:</p>
+<ol>
+<li>A user draws a rectangle on the image.</li>
+<li>The widget writes the coordinates of the rectangle into the <strong>Current bounding box selection</strong> variable.</li>
+<li>The <strong>On annotation create</strong> setting triggers a Workshop event that submits an Action, or the user selects a "Save" button that submits the Action.</li>
+<li>The Action creates an annotation object, sets the bounding box property, and links the new object to the subject object that owns the image.</li>
+<li>The widget reloads the annotation object set and draws the saved box on the image.</li>
+</ol>
+<h2 data-pagefind-weight="0.9" id="user-content-set-up-annotation-writeback" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#set-up-annotation-writeback" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Set up annotation writeback</h2>
+<p>The following steps walk through the most basic annotation workflow: letting a user draw a box on an image and save it as an object linked to the object the image belongs to. The example uses an <code>Inspection Photo</code> object (which holds the image) and an <code>Image Annotation</code> object (which holds each box), but you should substitute the object types and property names from your own Ontology.</p>
+<p>This example is illustrative. Because your Ontology is customized to your data, the object and action types referenced below may not exist in your enrollment. Create equivalents that match your data model.</p>
+<ol>
+<li><a href="#step-1-model-the-annotation-object-type">Model the annotation object type</a></li>
+<li><a href="#step-2-create-the-actions">Create the Actions</a></li>
+<li><a href="#step-3-configure-the-widget-inputs">Configure the widget inputs</a></li>
+<li><a href="#step-4-save-new-annotations-to-the-ontology">Save new annotations to the Ontology</a></li>
+</ol>
+<h3 data-pagefind-weight="0.8" id="user-content-step-1-model-the-annotation-object-type" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#step-1-model-the-annotation-object-type" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Step 1: Model the annotation object type</h3>
+<p>In <a href="/docs/foundry/ontology-manager/overview/">Ontology Manager</a>, create an object type to store annotations. At minimum it needs:</p>
+<ul>
+<li><strong>Primary key:</strong> A value such as an <code>Annotation ID</code> string.</li>
+<li><strong>Bounding box property:</strong> A string property that stores the box coordinates as <code>"x1, y1, x2, y2"</code>, where <code>(x1, y1)</code> is the upper-left corner and <code>(x2, y2)</code> is the lower-right corner, using pixel coordinates. This is the value the widget reads and writes.</li>
+<li><strong>Color property (optional):</strong> A string property holding a hex color code, such as <code>#FF0000</code>, used to draw the box.</li>
+<li><strong>Link:</strong> A link to the object that owns the image, for example a many-to-one link from <code>Image Annotation</code> to <code>Inspection Photo</code>. This link is what associates each annotation with the correct image so that only the relevant boxes are displayed.</li>
+</ul>
+<h3 data-pagefind-weight="0.8" id="user-content-step-2-create-the-actions" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#step-2-create-the-actions" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Step 2: Create the Actions</h3>
+<p>Create an <a href="/docs/foundry/workshop/actions-use/">Action</a> that creates a new <code>Image Annotation</code> object. Its parameters should include:</p>
+<ul>
+<li>The <strong>bounding box</strong> string, which the widget supplies.</li>
+<li>A reference to the <strong>subject object</strong> (the <code>Inspection Photo</code>), so the Action can set the link created in Step 1.</li>
+<li>(Optional) The <strong>color</strong> string.</li>
+</ul>
+<p>You can also create Actions to <strong>delete</strong> an annotation (for a "Remove" control) and to <strong>modify</strong> an existing annotation if you want users to adjust a box after it has been saved. For a full walkthrough of defining Action types, see <a href="/docs/foundry/workshop/actions-use/">Use Actions in Workshop</a>.</p>
+<h3 data-pagefind-weight="0.8" id="user-content-step-3-configure-the-widget-inputs" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#step-3-configure-the-widget-inputs" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Step 3: Configure the widget inputs</h3>
+<p>Add the Image Annotation widget to your module and configure the fields described in <a href="#configuration-options">Configuration options</a>:</p>
+<ul>
+<li>Set the <strong>Image source</strong> to the media reference or media URL for the current image.</li>
+<li>Set <strong>Annotation objects</strong> to an object set of your <code>Image Annotation</code> objects, filtered to the current <code>Inspection Photo</code>. Filtering by the current subject object ensures the widget only draws boxes that belong to the displayed image.</li>
+<li>Set <strong>Bounding box property</strong> to the string property you created in Step 1.</li>
+<li>(Optional) Set <strong>Color property</strong> to your hex color property.</li>
+<li>Set <strong>Current bounding box selection</strong> to a string variable. The widget writes the coordinates of the box the user is currently drawing into this variable; this is the value you pass to your create Action.</li>
+<li>Set <strong>Active annotation object</strong> to an object set variable. The widget populates this variable with the existing annotation object a user selects.</li>
+</ul>
+<h3 data-pagefind-weight="0.8" id="user-content-step-4-save-new-annotations-to-the-ontology" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#step-4-save-new-annotations-to-the-ontology" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Step 4: Save new annotations to the Ontology</h3>
+<p>When a user finishes drawing a rectangle, the coordinates are held in the <strong>Current bounding box selection</strong> variable. To persist them, trigger your create Action from Step 2:</p>
+<ul>
+<li>Use the <strong>On annotation create</strong> setting to trigger a Workshop <a href="/docs/foundry/workshop/concepts-events/">event</a> at the moment a rectangle is drawn, or add a "Save" button using the <a href="/docs/foundry/workshop/widgets-button-group/">Button Group widget</a> that lets the user confirm before saving.</li>
+<li>In the Action's parameter defaults, set the <strong>bounding box</strong> parameter to the <strong>Current bounding box selection</strong> variable, and set the <strong>subject object</strong> parameter to the object currently displayed (for example, the active <code>Inspection Photo</code>). Setting the subject object is what links the new annotation to the correct image.</li>
+<li>(Optional) Set the color parameter to a variable or a static hex code.</li>
+</ul>
+<p>After the Action submits, the new <code>Image Annotation</code> object is written to the Ontology and linked to its subject object. Because the widget's <strong>Annotation objects</strong> input is an object set, it reloads to include the new object and draws the saved box on the image.</p>
+<h2 data-pagefind-weight="0.9" id="user-content-configuration-options" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#configuration-options" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Configuration options</h2>
+<p>Here is a screenshot of the initial state of a newly-added Image Annotation widget alongside its initial configuration panel:</p>
+<p><img alt="The initial Image Annotation widget configuration." height="600" node="[object Object]" src="/docs/resources/foundry/workshop/image_annotation_config.png" style="aspect-ratio:927 / 1213" width="458.53256389117894"/></p>
+<ul>
+<li><strong>Input data</strong>
+<ul>
+<li><strong>Image source:</strong> The image can be displayed from either a media URL or media reference. Currently this widget accepts the following image file types:
+<ul>
+<li><strong>Media URL:</strong> Select a string variable with a valid media URL to render a preview of the media. If referencing a media URL from a dataset, the URL should be in either of the following formats: <code>.png</code>, <code>.jpg</code>, <code>.jpeg</code>, <code>.bmp</code>, or <code>.webp</code>,
+<ul>
+<li><code>https://{my-foundry-url}/foundry-data-proxy/api/web/dataproxy/datasets/{dataset rid}/transactions/{transaction rid}/{filename}</code></li>
+<li><code>https://{my-foundry-url}/foundry-data-proxy/api/web/dataproxy/datasets/{dataset rid}/views/{branch name}/{filename}</code>.</li>
+<li>Otherwise, if referencing an external media URL, configure access in your enrollment's <a href="/docs/foundry/administration/embed-foundry-externally/">Content Security Policy</a> settings.</li>
+</ul>
+</li>
+<li><strong>Media reference:</strong> Define an object set with a single object and select the <a href="/docs/foundry/media-sets-advanced-formats/media-overview/#media-references">media reference</a> typed property to render a preview of the media for that object.</li>
+</ul>
+</li>
+<li><strong>Current bounding box selection:</strong> A string variable that tracks the active bounding box selection coordinate stored as "x1, y1, x2, y2", where (x1, y1) are the pixel coordinates for the upper-left corner of the box, and (x2, y2) are the pixel coordinates for the lower-right corner of the box. Pass this variable to your create Action to save the box a user has drawn.</li>
+<li><strong>Active annotation object:</strong> The object representing the currently selected annotation.</li>
+</ul>
+</li>
+<li><strong>Annotations</strong>
+<ul>
+<li><strong>Annotation objects:</strong> The object set representing the annotations to be superimposed on the image. Filter this object set to the current image's subject object so that only the relevant annotations are displayed. Currently, up to 1000 annotations per image is supported.</li>
+<li><strong>Bounding box property:</strong> The annotation object set's string property that represents the point vector.</li>
+<li><strong>Color property:</strong> The annotation object set's string property that represents the color to be drawn as a hex code. This field is optional.</li>
+<li><strong>On annotation create:</strong> Enable module builders to configure Workshop events to trigger when an annotation is created by a user. Use this to trigger the Action that saves the drawn box to the Ontology.</li>
+</ul>
+</li>
+</ul></div>
+</article>
+</body>
+</html>

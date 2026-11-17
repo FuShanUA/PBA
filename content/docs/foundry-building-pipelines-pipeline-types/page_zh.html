@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>管道的类型</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<article>
+<div class="ptcom-design__markdownDoc__1uarhel" data-pagefind-body="true"><h1 data-pagefind-weight="1" id="user-content-types-of-pipelines" level="1" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#types-of-pipelines" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>管道的类型</h1>
+<p>在 Foundry 中，您可以创建三种主要类型的管道，每种类型在以下几个标准方面提供了不同的权衡：</p>
+<ul>
+<li><strong>延迟</strong>。管道端到端运行需要多长时间？</li>
+<li><strong>复杂度</strong>。编写和维护管道的难度有多大？</li>
+<li><strong>计算成本</strong>。就计算小时数而言，管道实际成本是多少？</li>
+<li><strong>对数据规模变化的适应性</strong>。随着时间的推移，会有多少额外的数据流入您的管道？</li>
+</ul>
+<p>三种类型的管道分别是：</p>
+<ul>
+<li><strong>批量</strong> 管道在每次运行时都会完全重新计算每个已更改的数据集。</li>
+<li><strong>增量</strong> 管道仅处理自上次运行以来发生更改的新数据。</li>
+<li><strong>流式处理</strong> 管道持续运行，并在新数据到达平台时对其进行处理。</li>
+</ul>
+<p>下面，我们将讨论每种类型的管道、其权衡，以及如何开始编写这种类型的管道。为方便起见，以下是按上述权衡标准对管道类型进行汇总的表格。</p>
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>标准</th><th><a href="#batch">批量</a></th><th><a href="#incremental">增量</a></th><th><a href="#streaming">流式处理</a></th></tr></thead><tbody><tr><td>延迟</td><td>高</td><td>低</td><td>极低</td></tr><tr><td>复杂度</td><td>低</td><td>中</td><td>高</td></tr><tr><td>计算成本</td><td>中</td><td>低</td><td>高</td></tr><tr><td>对数据规模变化的适应性</td><td>低</td><td>高</td><td>高</td></tr></tbody></table></div>
+<p>Foundry 还提供 <a href="#faster">更快速</a> 版本的批量管道和增量管道，它们可以提升性能，但代价是不支持标准管道中可用的所有表达式和转换。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-batch" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#batch" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>批量</h2>
+<p>在 <strong>批处理管道</strong>中，只要上游数据发生变化，管道中的所有数据集都会被完全重新计算。由于所有内容都会被重新计算，管道的端到端性能随时间推移非常稳定，并且管道的代码和维护复杂度极低。为了让更多用户能够参与批量管道的构建，Foundry 提供了广泛的语言和工具用于批量管道编写，包括 SQL。</p>
+<p>根据上述标准来分析批量管道：</p>
+<ul>
+<li><em>延迟</em> 批量管道的延迟可能非常高，因为所有数据在进入平台时都必须被处理，即使自上次同步以来并未发生变化。但是，如果整体数据规模较小，延迟可能较低。</li>
+<li><em>复杂度</em> 批量管道的复杂度非常低。虽然通常仍需理解筛选、连接和聚合等表操作概念，但除此之外所需的知识极少。</li>
+<li><em>计算成本</em> 批量管道的计算成本可能较高，因为每次构建管道时都会发生大量重复计算。同样，如果整体数据规模较小，则可以忽略此因素。</li>
+<li><em>对数据规模变化的适应性</em> 较低。如果有大量新数据流入管道，例如当输入数据集代表高容量事件时，批量管道将变得成本过高且运行时间过长，难以管理。</li>
+</ul>
+<p>在大多数情况下，您应该在 Foundry 中通过创建批量管道来开始管道开发，并在管道的用例得到验证后，将其扩展以支持增量计算。在许多情况下，您可以无限期地继续使用批量管道，尤其是当您的数据规模较小时（例如，少于数千万行）。</p>
+<p>如果您预计将来需要将管道改为增量式，我们建议使用 Python 或 Java 进行批量管道开发，因为这些语言支持增量计算。</p>
+<p>开始使用，请 <a href="/docs/foundry/building-pipelines/create-batch-pipeline-pb/">了解如何在 Pipeline Builder 中创建批量管道</a>，或按照其他语言的教程操作：</p>
+<ul>
+<li><a href="/docs/foundry/transforms-python/getting-started/">使用 Python 创建批量管道</a></li>
+<li><a href="/docs/foundry/transforms-java/getting-started/">使用 Java 创建批量管道</a></li>
+<li><a href="/docs/foundry/building-pipelines/create-batch-pipeline-cr/">使用 SQL 创建批量管道</a></li>
+</ul>
+<h2 data-pagefind-weight="0.9" id="user-content-faster" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#faster" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>更快速</h2>
+<p>Pipeline Builder 现在支持更快速的管道，可在特定条件下提供更快的执行速度。它使用由 <a href="https://datafusion.apache.org/">DataFusion ↗</a>驱动的后端，这是一个用 <a href="https://www.rust-lang.org/">Rust ↗</a>编写的开源查询引擎。与传统的基于 Spark 的管道相比，更快速的管道可以显著加速中小型数据集的计算过程。</p>
+<p>更快的管道以前被称为 <em>轻量级管道</em>，因为“轻量级”一词指的是执行这些管道所需的时间和计算资源的减少，而不是它们所处理的数据的大小。名称的变更反映了更快的管道可以减少执行时间和计算资源的使用，即使对于大规模数据集也是如此。</p>
+<p>您可以从头开始创建更快的管道，也可以将现有的批处理或增量管道转换为更快的管道。了解更多关于 <a href="/docs/foundry/building-pipelines/create-faster-pipeline-pb/">Pipeline Builder 中的更快管道</a></p>
+<h2 data-pagefind-weight="0.9" id="user-content-incremental" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#incremental" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>增量</h2>
+<p>在 <strong>增量管道</strong>中，仅计算自上次构建以来已更改的数据行或文件。这适用于处理事件数据以及其他随时间变化的大量数据的数据集。除了减少总体计算量之外，与批处理管道相比，管道的端到端延迟也可以显著降低。增量计算仅支持 Python 和 Java API。</p>
+<p>根据上述标准对增量管道进行分析：</p>
+<ul>
+<li><em>延迟</em> 增量管道的延迟可以做到非常低——大约为分钟级别。根据我们的经验，这种低延迟足以满足绝大多数组织的需求。</li>
+<li><em>复杂度</em> 增量管道的复杂度为中等到高。编写和维护增量管道不仅需要操作表格数据帧这一高级概念，还需要理解数据如何流入 Foundry <a href="/docs/foundry/data-integration/datasets/#transactions">数据集事务</a>、如何处理输入数据集以非增量方式更新的情况，以及如何长期保持高性能。</li>
+<li><em>计算成本</em> 对于大规模数据集，增量管道的计算成本可以低于批处理管道，因为实际发生的计算量可以降至最低。</li>
+<li><em>对数据规模变化的适应性</em> 增量管道的效率很高。由于仅处理新数据，增量管道避免了在大部分数据未发生变化的大型数据集上重新进行计算。</li>
+</ul>
+<p>要了解有关增量管道的更多信息，请参阅以下资源：</p>
+<ul>
+<li><a href="/docs/foundry/building-pipelines/incremental-overview/">增量管道概述</a></li>
+<li><a href="/docs/foundry/building-pipelines/create-incremental-pipeline-pb/">在 Pipeline Builder 中创建增量管道</a></li>
+<li><a href="/docs/foundry/transforms-python/incremental-overview/">使用 Python 的增量管道</a></li>
+<li><a href="/docs/foundry/building-pipelines/maintaining-incremental-performance/">保持高增量性能</a></li>
+</ul>
+<h2 data-pagefind-weight="0.9" id="user-content-streaming" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#streaming" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>流式处理</h2>
+<p>在 <strong>流式管道</strong>中，您的代码会持续运行以处理流入 Foundry 的任何新数据，从而实现最低级别的延迟，但会带来最高的复杂度和计算成本。一般来说，可以将流式管道理解为更接近于管理微服务而非管理计算作业——您需要非常仔细地考虑正常运行时间、弹性和有状态操作，才能成功运行流式管道。</p>
+<p>根据上述标准对流式管道进行分析：</p>
+<ul>
+<li><em>延迟</em> 流式管道的延迟可以做到非常低。如果您强烈要求用例中的数据在一分钟内可用，那么流式管道可能是一个不错的选择。</li>
+<li><em>复杂度</em> 流式管道的复杂度非常高。编写这些管道需要避免一系列广泛的模式，例如有状态操作，这些模式可能会在未来意外地导致不稳定。此外，流式管道对故障的容忍度往往低于批处理或增量管道，因为停机可能导致依赖持续新鲜数据的用例将任何中断视为服务中断。</li>
+<li><em>计算成本</em> 流式管道的计算成本可能非常高，因为流式管道的性质要求计算资源始终可用于处理新的输入数据。</li>
+<li><em>对数据规模变化的适应性</em> 流式管道的吞吐量很高。流式管道旨在支持高吞吐量，通常可以处理比批处理甚至增量管道更高的数据规模变化。</li>
+</ul>
+<p>在大多数情况下，除非您的用例有非常低的延迟要求，否则最好避免创建流式管道。增量管道通常可以实现低至分钟级别的端到端延迟，以满足大多数需求，而不会带来流式管道的额外复杂度和计算成本。</p>
+<p>要了解有关流式管道的更多信息，请参阅以下资源：</p>
+<ul>
+<li><a href="/docs/foundry/building-pipelines/create-stream-pipeline-pb/">在 Pipeline Builder 中创建流式管道</a></li>
+</ul>
+<p>有关流式管道的更多文档即将推出。如果您有兴趣构建流式管道，请联系您的 Palantir 代表。</p></div>
+</article>
+</article>
+</body>
+</html>

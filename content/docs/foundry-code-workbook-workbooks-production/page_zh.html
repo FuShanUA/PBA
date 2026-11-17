@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>迁移到生产环境</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<article>
+<div class="ptcom-design__markdownDoc__1uarhel" data-pagefind-body="true"><h1 data-pagefind-weight="1" id="user-content-moving-to-production" level="1" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#moving-to-production" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>迁移到生产环境</h1>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__success__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>我们建议使用 Code Workbook 或 Code Workspaces 进行基于代码的分析和管道原型开发。对于稳健的生产管道以及需要额外治理和审查、高数据量或优化性能的工作流，我们建议使用 Pipeline Builder 和 Code Repositories。</p><p>有关在哪里编写管道的更多信息，请查阅我们的 <a href="/docs/foundry/code-workbook/code-products-comparison/">Code Workbook、Code Workspaces 和 Code Repositories 的对比</a>.</p></div>
+<p>当您对在 Workbook 中得出的输出结果感到满意后，您应该强化您的逻辑和输出数据集，使其更加可靠。在 Code Workbook 中执行此操作非常简单。以下步骤可以帮助您使您的工作更加稳健并达到生产就绪状态：</p>
+<ul>
+<li><a href="#protecting-branches">保护分支</a></li>
+<li><a href="#using-batch-builds">使用批量构建</a></li>
+<li><a href="#data-health-checks">数据健康检查</a></li>
+<li><a href="#organizing-outputs">组织输出</a></li>
+<li><a href="#organizing-the-graph">组织图表</a></li>
+<li><a href="#exporting-to-code-repository">导出到 Code Repository</a></li>
+</ul>
+<h2 data-pagefind-weight="0.9" id="user-content-protecting-branches" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#protecting-branches" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>保护分支</h2>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>要保护 Workbook 中的分支，您必须拥有该 Workbook 的所有者权限。</p></div>
+<p><strong>分支保护</strong> 允许锁定 Workbook 中的分支，防止任何人直接编辑该分支中的逻辑。相反，逻辑更改必须在另一个分支中创建，然后合并到受保护的分支中。通常，用户会保护 Workbook 中的 <code>master</code> 分支，但您也可以保护任何其他分支。</p>
+<p>要保护分支，请点击分支菜单右上角的设置图标（<img alt="Gear icon" height="50" node="[object Object]" src="/docs/resources/foundry/code-workbook/gear-icon.png" style="aspect-ratio:50 / 50" width="50"/>），如下图所示。</p>
+<p><img alt="pipeline-branch-menu" height="247" node="[object Object]" src="/docs/resources/foundry/code-workbook/pipeline-branch-menu.png" style="aspect-ratio:334 / 247" width="334"/></p>
+<p>默认启用预览确认 <strong>保护此分支</strong> 以启用分支保护，如下图所示。默认情况下，受保护的分支不允许任何用户使用 <strong>运行</strong> 按钮在该分支上计算输出数据集。这可以防止 Workbook 运行与计划构建发生冲突，计划构建将在下一节中介绍。</p>
+<p><img alt="pipeline-branch-protection" height="332" node="[object Object]" src="/docs/resources/foundry/code-workbook/pipeline-branch-protection.png" style="aspect-ratio:498 / 332" width="498"/></p>
+<p>保存后，您的分支将被保护并变为只读。</p>
+<p><img alt="pipeline-readonly" height="127" node="[object Object]" src="/docs/resources/foundry/code-workbook/pipeline-readonly.png" style="aspect-ratio:1230 / 127" width="1230"/></p>
+<h2 data-pagefind-weight="0.9" id="user-content-using-batch-builds" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#using-batch-builds" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>使用批量构建</h2>
+<p>您可能希望定期刷新在 Code Workbook 中创建的输出数据集，可以基于输入数据集的更新，也可以基于时间周期。您可以通过在这些输出数据集上安排定期构建来实现。</p>
+<ul>
+<li>要在单个输出数据集上安排定期构建，请打开数据集操作并点击 <strong>管理调度</strong>.</li>
+<li>要在多个输出数据集上安排定期构建，请点击工作簿顶部的齿轮图标并选择 <strong>探索数据血缘</strong>。您现在应该能看到工作簿中的所有输入数据集和已保存的输出数据集。</li>
+</ul>
+<p>这两个操作都会将您带到 Data Lineage 应用。点击右侧窗格中的日历图标以打开 <strong>管理调度</strong> 界面。按照提示设置定期计划。在下图中，显示了一个每天构建 <code>dataset_1</code> 和 <code>dataset_2</code> 的计划。</p>
+<p><img alt="Build schedules panel" height="600" node="[object Object]" src="/docs/resources/foundry/code-workbook/workbooks-build-schedules.png" style="aspect-ratio:2456 / 1384" width="1064.7398843930637"/></p>
+<p><a href="/docs/foundry/data-lineage/manage-schedules/">了解有关在 Data Lineage 中创建计划的更多信息。</a></p>
+<p>批量构建不会更新未保存为数据集的转换（例如未持久化的转换）。具体来说，考虑未持久化转换 A 是持久化转换 B 的父级的情况。如果我使用批量构建来构建转换 B，转换 B 将使用来自转换 A 的最新逻辑，以及来自上游输入数据集的最新数据。但是，工作簿中为转换 A 显示的预览以及转换 A 中创建的任何可视化，都不会由此批量构建更新。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-data-health-checks" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#data-health-checks" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>数据健康检查</h2>
+<p>输出数据集的另一个最佳实践是添加 <strong>Data Health 检查</strong>。打开您的输出数据集并点击 Health 标签页以访问 Data Health 页面。设置健康检查后，如果数据集的构建失败、数据过期或不符合您指定的其他要求，您将收到通知。</p>
+<p><a href="/docs/foundry/health-checks/overview/">了解有关 Foundry 中 Data Health 的更多信息。</a></p>
+<p><img alt="pipeline-data-health" height="600" node="[object Object]" src="/docs/resources/foundry/code-workbook/pipeline-data-health.png" style="aspect-ratio:1950 / 650" width="1800"/></p>
+<h2 data-pagefind-weight="0.9" id="user-content-organizing-outputs" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#organizing-outputs" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>组织输出</h2>
+<p>在项目中使用 Workbook 时，我们建议在项目中创建以下文件夹结构：</p>
+<ul>
+<li><strong>/data</strong></li>
+<li><strong>/workbooks</strong></li>
+<li><strong>/templates</strong></li>
+</ul>
+<p>设置好此文件夹结构后，您可以轻松地从您的主文件夹共享新的 Workbook：</p>
+<ol>
+<li>将您的 Workbook 移动到 <code>/workbooks</code> directory.</li>
+<li>如果您在 Workbook 中创建了任何模板，请将它们移动到 <code>/templates</code> directory.</li>
+<li>要移动数据集，请点击 Workbook 左上角的 Output 下拉菜单，然后点击“更改文件夹…”以选择一个新输出数据集将添加到的文件夹。选择您项目中的 <code>/data</code> 文件夹。默认情况下，您在 Workbook 中派生的所有数据集都将移动到您选择的新文件夹。</li>
+</ol>
+<img alt="pipeline-folder-management" node="[object Object]" src="/docs/resources/foundry/code-workbook/pipeline-folder-management.png?width=400" style="aspect-ratio:682 / 362" width="400"/>
+<img alt="pipeline-move-datasets" node="[object Object]" src="/docs/resources/foundry/code-workbook/pipeline-move-datasets.png?width=400" style="aspect-ratio:1006 / 336" width="400"/>
+<h2 data-pagefind-weight="0.9" id="user-content-organizing-the-graph" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#organizing-the-graph" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>组织图表</h2>
+<p>您可能需要整理和组织您的图表，以便其他用户能够轻松理解转换流程。Code Workbook 中提供的两种组织功能是节点着色和自动布局。</p>
+<p>您可以使用节点着色在图表上对节点进行视觉分组。点击 <strong>颜色</strong> 按钮（位于右上角）可创建新的颜色分组，选中节点并使用 <strong>+</strong> 颜色分组上的按钮可将节点添加到该颜色分组。在工作簿内容助手（workbook contents helper）中，您还可以按颜色分组对数据集列表进行排序。</p>
+<p><img alt="node-coloring" height="600" node="[object Object]" src="/docs/resources/foundry/code-workbook/node_coloring.png" style="aspect-ratio:2346 / 954" width="1475.4716981132074"/></p>
+<p>您还可以通过点击右上角的布局按钮对图表的各个部分进行自动布局。默认情况下，自动布局会排列整个图表，但您也可以选择特定节点并点击自动布局，仅排列这些节点。</p>
+<p><img alt="graph-autolayout" height="600" node="[object Object]" src="/docs/resources/foundry/code-workbook/graph_autolayout.png" style="aspect-ratio:1426 / 602" width="1421.2624584717607"/></p>
+<h2 data-pagefind-weight="0.9" id="user-content-exporting-to-code-repository" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#exporting-to-code-repository" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>导出到 Code Repository</h2>
+<p>如果您已在 Code Workbook 中完成管道的原型设计，并希望将代码移动到 Code Repositories，您可以使用 <strong>导出到 Code Repository</strong> 助手。 <a href="/docs/foundry/code-workbook/code-repositories-export/">了解更多关于导出到 Code Repositories 的信息。</a></p>
+<p>您可能出于多种原因希望将代码移动到 Code Repositories：</p>
+<ul>
+<li>Code Repositories 提供完整的 Git 支持，允许用户查看和回退到之前的提交。</li>
+<li>Code Repositories 支持增量转换和多输出转换。</li>
+<li>Code Repositories 支持 <a href="/docs/foundry/building-pipelines/remove-inherited-markings/">取消标记工作流</a> ，并通过 <a href="/docs/foundry/code-repositories/branch-settings/">分支设置</a>.</li>
+</ul></div>
+</article>
+</article>
+</body>
+</html>

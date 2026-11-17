@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>故障排除参考</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<article>
+<div class="ptcom-design__markdownDoc__1uarhel" data-pagefind-body="true"><h1 data-pagefind-weight="1" id="user-content-troubleshooting-reference" level="1" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#troubleshooting-reference" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>故障排除参考</h1>
+<p>本页面包含以下相关信息： <a href="#configure-agent-logs">如何配置代理日志</a>，描述若干 <a href="#common-issues-with-agent-configuration">代理配置的常见问题</a>，并提供调试指导。</p>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>Agent Manager 在其安装的服务器上被称为 "bootvisor"。</p></div>
+<p>所描述的步骤必须在通过 SSH 登录到已安装代理的主机之后执行。
+在探索其他故障排除主题之前，我们建议先检查 <code>./var/diagnostic/launch.yml</code> 以确认代理已成功连接到 Foundry。如果连接失败，请按照以下字段中描述的说明操作 <code>enhancedMessage</code>.</p>
+<p><a href="#recover-agent-connectivity-after-a-certificate-expires">在证书过期后恢复代理连接</a></p>
+<p><a href="#common-issues-with-agent-configuration">代理配置的常见问题</a></p>
+<ul>
+<li>
+<p><a href="#agent-and-agent-manager-shows-offline-status-but-returns-running-on-the-agent-host">代理和代理管理器显示 "offline" 状态，但在代理主机上返回 "running"</a></p>
+</li>
+<li>
+<p><a href="#agent-manager-shows-offline-status">代理管理器显示 "offline" 状态</a></p>
+</li>
+<li>
+<p><a href="#bootstrapper-shows-never-reported-status">引导程序显示 "never reported" 状态</a></p>
+</li>
+<li>
+<p><a href="#agent-shows-online-but-is-not-responding-to-restarts">代理显示 "online" 但不响应重启</a></p>
+</li>
+<li>
+<p><a href="#agent-status-shows-unhealthy">代理状态显示 "Unhealthy"</a></p>
+</li>
+<li>
+<p><a href="#unable-to-download-agent-package">无法下载代理安装包</a></p>
+</li>
+<li>
+<p><a href="#unable-to-administer-an-agent">无法管理代理</a></p>
+</li>
+<li>
+<p><a href="#unable-to-create-an-agent-due-to-permission_denied-error">由于 PERMISSION_DENIED 错误而无法创建代理</a></p>
+</li>
+</ul>
+<p><a href="#agent-configuration-reference">代理配置参考</a></p>
+<ul>
+<li><a href="#connect-to-data-sources-using-the-insecure-tlsv10-and-tlsv11-protocols">使用不安全的 TLSv1.0 和 TLSv1.1 协议连接到数据源</a></li>
+<li><a href="#configure-agent-logs">配置代理日志</a></li>
+<li><a href="#what-happens-to-cached-files-when-the-host-where-the-agent-is-installed-crashes">当安装代理的主机崩溃时，缓存文件会发生什么？</a></li>
+</ul>
+<h2 data-pagefind-weight="0.9" id="user-content-recover-agent-connectivity-after-a-certificate-expires" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#recover-agent-connectivity-after-a-certificate-expires" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>在证书过期后恢复代理连接</h2>
+<p>如果连接 Foundry 所需的证书在替换证书安装之前过期或被轮换，Agent Manager 可能会失去与 Foundry 的连接。这包括用于信任 Foundry 的证书以及用于检查 TLS 流量的代理的证书。通过 <strong>管理代理证书</strong> 单独添加替换证书无法修复已断开连接的 Agent Manager：它需要一个正常工作的连接来获取更新。</p>
+<p>检查主机上的 Agent Manager 日志中是否存在证书验证错误，例如 <code>SSLHandshakeException</code>, <code>PKIX path building failed</code>，或 <code>CertificateExpiredException</code>。从 Palantir Support 获取 Foundry 的当前证书颁发机构 (CA) 证书，或从网络管理员处获取代理的证书。如果 Foundry 或代理仍在提供过期的服务器证书，其管理员必须先续订证书，然后才能恢复代理连接。</p>
+<p>在 Data Connection 中使用以下方法将所需的证书添加到受影响的代理 <a href="/docs/foundry/data-connection/agent-configuration-reference/#add-certificates-to-an-agent"><strong>管理代理证书</strong></a>，然后选择以下恢复方法之一。对每个受影响的代理重复此过程。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-update-the-truststore-on-the-host" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#update-the-truststore-on-the-host" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>更新主机上的信任库</h3>
+<p>当你可以访问主机和 Agent Manager 信任库时，对默认 Linux 安装使用这些步骤。这会修复现有安装并保留其源凭据。</p>
+<ol>
+<li>
+<p>以运行 Agent Manager 的用户身份连接到主机。导航到其安装目录，如果配置了自动重启则将其禁用，停止 Agent Manager，并备份其信任库：</p>
+<pre><div class="ptcom-design__wrapper__12wpwnx" data-pagefind-weight="0.5"><span class="ptcom-design__clipboard__1l1gb20 ptcom-design__clipboard__12wpwnx"><span class="ptcom-design__confirmation__1l1gb20" data-pagefind-ignore="true">Copied!</span><svg aria-hidden="true" aria-label="clipboard" data-view-component="true" height="16" version="1.1" viewbox="0 0 16 16" width="16"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z" fill="currentColor" fill-rule="evenodd"></path><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z" fill="currentColor" fill-rule="evenodd"></path></svg></span><div style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;overflow:auto;position:relative;margin:0;padding:0.75em"><code style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;float:left;padding-right:10px"><span class="react-syntax-highlighter-line-number">1
+</span><span class="react-syntax-highlighter-line-number">2
+</span><span class="react-syntax-highlighter-line-number">3
+</span><span class="react-syntax-highlighter-line-number">4
+</span></code><code class="language-bash" style="white-space:pre;text-align:left;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none">cd &lt;agent-manager-install-directory&gt;
+./service/bin/auto_restart.sh clear
+./service/bin/init.sh stop
+cp var/security/truststore.jks var/security/truststore.jks.bak</code></div></div></pre>
+</li>
+<li>
+<p>将每个所需的 CA 证书保存到主机上的单独 PEM 文件中。使用捆绑的 Java 安装将每个证书导入 Agent Manager 信任库，为每个证书选择一个未使用的别名：</p>
+<pre><div class="ptcom-design__wrapper__12wpwnx" data-pagefind-weight="0.5"><span class="ptcom-design__clipboard__1l1gb20 ptcom-design__clipboard__12wpwnx"><span class="ptcom-design__confirmation__1l1gb20" data-pagefind-ignore="true">Copied!</span><svg aria-hidden="true" aria-label="clipboard" data-view-component="true" height="16" version="1.1" viewbox="0 0 16 16" width="16"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z" fill="currentColor" fill-rule="evenodd"></path><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z" fill="currentColor" fill-rule="evenodd"></path></svg></span><div style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;overflow:auto;position:relative;margin:0;padding:0.75em"><code style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;float:left;padding-right:10px"><span class="react-syntax-highlighter-line-number">1
+</span><span class="react-syntax-highlighter-line-number">2
+</span></code><code class="language-bash" style="white-space:pre;text-align:left;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none">cd jdk/amazon-corretto*
+./bin/keytool -importcert -alias &lt;CERT_ALIAS&gt; -file /path/to/certificate.pem -keystore ../../var/security/truststore.jks</code></div></div></pre>
+<p>此信任库的默认密码为 <code>truststore</code>。在接受导入之前，与证书提供方核实证书指纹。如果信任库使用你无法获取的其他密码，请按照 <a href="#reinstall-with-the-current-certificates">步骤重新安装代理</a>.</p>
+</li>
+<li>
+<p>返回 Agent Manager 安装目录并启动它：</p>
+<pre><div class="ptcom-design__wrapper__12wpwnx" data-pagefind-weight="0.5"><span class="ptcom-design__clipboard__1l1gb20 ptcom-design__clipboard__12wpwnx"><span class="ptcom-design__confirmation__1l1gb20" data-pagefind-ignore="true">Copied!</span><svg aria-hidden="true" aria-label="clipboard" data-view-component="true" height="16" version="1.1" viewbox="0 0 16 16" width="16"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z" fill="currentColor" fill-rule="evenodd"></path><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z" fill="currentColor" fill-rule="evenodd"></path></svg></span><div style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;overflow:auto;position:relative;margin:0;padding:0.75em"><code style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;float:left;padding-right:10px"><span class="react-syntax-highlighter-line-number">1
+</span><span class="react-syntax-highlighter-line-number">2
+</span></code><code class="language-bash" style="white-space:pre;text-align:left;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none">cd &lt;agent-manager-install-directory&gt;
+./service/bin/init.sh start</code></div></div></pre>
+</li>
+<li>
+<p>在 Data Connection 中，确认 Agent Manager 重新连接。选择 <strong>重启代理</strong> 以应用通过 <strong>管理代理证书</strong>添加的证书，然后确认 Agent Manager 和代理均已连接。如果之前启用了自动重启， <a href="/docs/foundry/data-connection/set-up-agent/#set-up-automatic-restarts">请再次启用</a>.</p>
+</li>
+</ol>
+<h3 data-pagefind-weight="0.8" id="user-content-reinstall-with-the-current-certificates" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#reinstall-with-the-current-certificates" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>使用当前证书重新安装</h3>
+<p>如果无法更新本地信任库，请使用包含当前证书的新软件包重新安装现有代理：</p>
+<ol>
+<li>在 Data Connection 中添加证书后，选择 <strong>重新安装代理</strong> 在现有代理的概览页面上，获取新的下载 URL。下载新的软件包；旧软件包仍将包含之前的证书。</li>
+<li>请按照 <a href="/docs/foundry/data-connection/agent-configuration-reference/#reinstall-an-agent">重新安装代理</a>，包括停止旧安装并保留其源加密密钥。保留 <code>var/data/source-encryption-key</code> and <code>var/data/source-encryption-key.private</code> 来自旧安装，以便现有的源凭据仍然可用。</li>
+<li>确认 Agent Manager 和代理均在 Data Connection 中重新连接。</li>
+</ol>
+<h2 data-pagefind-weight="0.9" id="user-content-common-issues-with-agent-configuration" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#common-issues-with-agent-configuration" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>代理配置的常见问题</h2>
+<h4 id="user-content-agent-and-agent-manager-shows-offline-status-but-returns-running-on-the-agent-host"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#agent-and-agent-manager-shows-offline-status-but-returns-running-on-the-agent-host" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>代理和代理管理器显示 "offline" 状态，但在代理主机上返回 "running"</h4>
+<ul>
+<li>第一步是检查从安装代理的主机是否可以访问 Foundry。为此，请运行 <code>curl -s https://&lt;your domain name&gt;/magritte-coordinator/api/ping &gt; /dev/null &amp;&amp; echo pass || echo fail</code> 在安装代理的主机上。
+<ul>
+<li>如果一切正常，您应该会看到 <code>pass</code> 作为输出。在这种情况下，您应该：
+<ul>
+<li>确定是否需要代理服务器才能访问 Foundry，如果需要，请检查代理是否已配置为使用该代理服务器（有关如何配置代理以使用代理服务器的说明，请参阅 <a href="/docs/foundry/data-connection/agent-configuration-reference/#proxy-configuration">代理服务器配置</a> 页面）。您可以通过运行以下命令来验证是否正在使用代理服务器 <code>echo $http_proxy</code> 在基于 Unix 的机器的命令行上。</li>
+<li>如果您认为不需要代理服务器，或者已经配置了代理服务器，请联系您的 Palantir 代表。</li>
+</ul>
+</li>
+<li>如果无法从主机访问 Foundry，您可能会看到如下错误： <code>curl: (6) Could not resolve host: ...</code>。在这种情况下，很可能是某些东西阻止了连接（例如防火墙或代理服务器），您应该联系您的 Palantir 代表。</li>
+</ul>
+</li>
+</ul>
+<h4 id="user-content-agent-manager-shows-offline-status"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#agent-manager-shows-offline-status" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>代理管理器显示 "offline" 状态</h4>
+<ul>
+<li>检查以下内容 <code>&lt;agent-manager-install-location&gt;/var/log/startup.log</code> file.
+<ul>
+<li>
+<p>如果您看到以下错误： <code>Caused by: java.net.BindException: {} Address already in use</code>，则表示已有进程正在使用代理管理器尝试绑定的端口。</p>
+<ul>
+<li>要解决此问题，您应首先确定代理管理器尝试绑定的端口。可以通过检查以下内容来完成 <code>&lt;agent-manager-directory&gt;/var/conf/install.yml</code> 文件并查找 <code>port</code> 参数（例如 <code>port: 1234</code>  - 此处 1234 即为端口号）。请注意，如果未定义端口参数，代理管理器将使用默认端口 7032。</li>
+<li>一旦您知道了代理管理器尝试绑定的端口，就应该识别已在该端口上运行的进程。可以通过运行以下命令来实现： <code>ps aux | grep $(lsof -i:&lt;PORT&gt; |awk 'NR&gt;1 {print $2}' |sort -n |uniq)</code> where <code>&lt;PORT&gt;</code> 是代理管理器尝试绑定的端口。
+<ul>
+<li>如果上述命令返回的响应包含： <code>com.palantir.magritte.bootvisor.BootvisorApplication</code> 则表示另一个代理管理器已在运行。</li>
+<li>在这种情况下，您应该确定这是否是有意为之；如果是，您需要按照以下步骤更改配置中的端口，以避免两个代理管理器发生冲突。否则，您需要确定要在此主机上使用哪个特定的代理管理器安装，停止其他正在运行的实例，并仅启动您今后打算使用的那个。</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p>要修复 <code>BindException</code> 错误，您需要为代理管理器找到一个当前未被使用的新端口。</p>
+<ul>
+<li>端口号应介于 1025 和 65536 之间（端口号 0 到 1024 保留给特权服务，并被指定为知名端口）。</li>
+<li>您可以通过执行以下命令来检查某个端口上是否已有进程在运行： <code>lsof -i :&lt;PORT&gt;</code> where <code>&lt;PORT&gt;</code> 是所选的端口号。</li>
+</ul>
+</li>
+<li>
+<p>找到可用端口后，您需要添加（或更新） <code>port</code> 参数，该参数位于以下路径的配置中： <code>&lt;agent-manager-directory&gt;/var/conf/install.yml</code></p>
+</li>
+<li>
+<p>下面是一个示例 <strong>Agent Manager</strong> 配置片段，其中端口设置为 <code>7032</code>:</p>
+<pre><div class="ptcom-design__wrapper__12wpwnx" data-pagefind-weight="0.5"><span class="ptcom-design__clipboard__1l1gb20 ptcom-design__clipboard__12wpwnx"><span class="ptcom-design__confirmation__1l1gb20" data-pagefind-ignore="true">Copied!</span><svg aria-hidden="true" aria-label="clipboard" data-view-component="true" height="16" version="1.1" viewbox="0 0 16 16" width="16"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z" fill="currentColor" fill-rule="evenodd"></path><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z" fill="currentColor" fill-rule="evenodd"></path></svg></span><div style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;overflow:auto;position:relative;margin:0;padding:0.75em"><code style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;float:left;padding-right:10px"><span class="react-syntax-highlighter-line-number">1
+</span><span class="react-syntax-highlighter-line-number">2
+</span><span class="react-syntax-highlighter-line-number">3
+</span></code><code class="language-yaml" style="white-space:pre;text-align:left;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none">...
+port: 7032
+auto-start-agent: true</code></div></div></pre>
+</li>
+<li>
+<p>保存上述配置后，运行以下命令重启 Agent Manager： <code>&lt;agent-manager-root&gt;/service/bin/init.sh stop &amp;&amp; &lt;agent-manager-root&gt;/service/bin/init.sh start</code>.</p>
+</li>
+</ul>
+</li>
+</ul>
+<h4 id="user-content-bootstrapper-shows-never-reported-status"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#bootstrapper-shows-never-reported-status" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>引导程序显示 "never reported" 状态</h4>
+<ul>
+<li>
+<p>检查以下内容 <code>&lt;agent-manager-directory&gt;/var/data/processes/&lt;latest-bootstrapper-directory&gt;/var/log/startup.log</code> 文件。</p>
+<ul>
+<li>
+<p>如果您看到以下错误： <code>Caused by: java.net.BindException: {} Address already in use</code>，则表示 Bootstrapper 尝试绑定的端口上已有进程在运行。</p>
+<ul>
+<li>要解决此问题，您首先需要确定 Bootstrapper 尝试绑定到哪个端口。这可以通过在 Data Connection 应用中导航到代理概览页面来完成。在该页面中，您需要选择“高级”配置按钮，然后点击“Bootstrapper”选项卡。Bootstrapper 将尝试绑定的端口定义在 <code>port</code> 参数中（例如， <code>port: 1234</code>  ——此处 1234 即为端口号）。请注意，Bootstrapper 的默认端口为 7002。</li>
+<li>知道 Bootstrapper 尝试绑定的端口后，您应确定已在该端口上运行的进程。可以通过运行以下命令来实现： <code>ps aux | grep $(lsof -i:$PORT |awk 'NR&gt;1 {print $2}' |sort -n |uniq)</code> where <code>$PORT</code> 是 Bootstrapper 尝试绑定的端口。
+<ul>
+<li>如果上述命令返回的响应中包含 <code>com.palantir.magritte.bootstrapper.MagritteBootstrapperApplication</code> 则表示另一个 Bootstrapper 已在运行。</li>
+<li>在这种情况下，您应确定这是否是有意为之；如果是，您需要按照以下步骤更改配置中的端口，以避免两个 Bootstrapper 冲突。否则，您需要确定要在此主机上使用哪个特定的 Bootstrapper 安装，停止其他正在运行的实例，并仅启动您今后打算使用的那个。</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p>要修复 <code>BindException</code> 错误，您需要为 Bootstrapper 找一个当前未被使用的新端口。</p>
+<ul>
+<li>端口号应介于 1025 和 65536 之间（端口号 0 到 1024 保留给特权服务，并被指定为知名端口）。</li>
+<li>您可以通过执行以下命令来检查某个端口上是否已有进程在运行： <code>lsof -i :&lt;PORT&gt;</code> where <code>&lt;PORT&gt;</code> 是所选的端口号。</li>
+</ul>
+</li>
+<li>
+<p>找到可用端口后，您需要设置 <code>port</code> 参数，该参数位于 Bootstrapper 的配置中。这可以通过在 Data Connection 应用中导航到代理概览页面来完成。在该页面中选择高级配置按钮，然后导航到“Bootstrapper”选项卡。</p>
+</li>
+<li>
+<p>下面是一个示例 <strong>Bootstrapper</strong> 配置片段，其中端口设置为 <code>7002</code>:</p>
+<pre><div class="ptcom-design__wrapper__12wpwnx" data-pagefind-weight="0.5"><span class="ptcom-design__clipboard__1l1gb20 ptcom-design__clipboard__12wpwnx"><span class="ptcom-design__confirmation__1l1gb20" data-pagefind-ignore="true">Copied!</span><svg aria-hidden="true" aria-label="clipboard" data-view-component="true" height="16" version="1.1" viewbox="0 0 16 16" width="16"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z" fill="currentColor" fill-rule="evenodd"></path><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z" fill="currentColor" fill-rule="evenodd"></path></svg></span><div style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;overflow:auto;position:relative;margin:0;padding:0.75em"><code style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;float:left;padding-right:10px"><span class="react-syntax-highlighter-line-number">1
+</span><span class="react-syntax-highlighter-line-number">2
+</span><span class="react-syntax-highlighter-line-number">3
+</span><span class="react-syntax-highlighter-line-number">4
+</span></code><code class="language-yaml" style="white-space:pre;text-align:left;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none">server:
+  adminConnectors:
+    ...
+    port: 7002 #This is the port value</code></div></div></pre>
+</li>
+<li>
+<p>更新配置后，您需要保存更改并重启代理，以使更改生效。</p>
+</li>
+</ul>
+</li>
+</ul>
+<h4 id="user-content-agent-shows-online-but-is-not-responding-to-restarts"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#agent-shows-online-but-is-not-responding-to-restarts" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>代理显示 "online" 但不响应重启</h4>
+<p>多数情况下，这是由另一个正在运行的代理“幽灵”实例导致的，您需要找到并将其关闭。</p>
+<p>要查找并终止旧进程，请按照以下步骤操作：</p>
+<ol>
+<li>通过运行以下命令停止 Agent Manager： <code>&lt;agent-manager-install-location&gt;/service/bin/init.sh stop</code>.</li>
+<li>删除 <code>&lt;agent-manager-install-location&gt;/var/data/processes/index.json</code> file.</li>
+<li>运行 <code>for folder in $(ls -d &lt;agent-manager-root&gt;/var/data/processes/*/); do $folder/service/bin/init.sh stop; done</code> 以关闭旧进程。</li>
+<li>返回 Data Connection 并检查代理是否不再报告（需要 2-3 分钟）。</li>
+<li>启动 Agent Manager（<code>&lt;agent-manager-install-location&gt;/service/bin/init.sh start</code>).</li>
+</ol>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>在安装代理的主机上手动启动代理（而不是通过 Data Connection 启动）可能会导致产生“幽灵”进程。</p></div>
+<h4 id="user-content-agent-status-shows-unhealthy"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#agent-status-shows-unhealthy" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>代理状态显示 "Unhealthy"</h4>
+<p>代理进程显示为“不健康”时，通常是因为它已崩溃，或被操作系统或其他软件（如防病毒软件）关闭。</p>
+<p>操作系统关闭该进程的原因有多种，但最常见的原因是操作系统没有足够的内存来运行它，这被称为 OOM（内存耗尽）终止。</p>
+<p>要检查是否有任何 agent 或 Explorer 子进程被操作系统因 OOM（内存不足）而终止，你可以运行以下命令： <code>grep "exited with return code 137" -r &lt;agent-manager-directory&gt; --include=*.log</code>。这将在 Agent Manager 目录中的所有日志文件里搜索包含 'exited with return code 137' 的条目（返回码 137 表示进程因 OOM 被终止）。</p>
+<p>以下是上述命令生成的示例输出，显示 agent 子进程正在因 OOM 被终止： <code>./var/data/processes/bootstrapper~&lt;&gt;/var/log/magritte-bootstrapper.log:ERROR [timestamp] com.palantir.magritte.bootstrapper.ProcessMonitor: magritte-agent exited with return code 137</code>。如果你看到类似这样的输出，你应该按照以下步骤调整堆大小。</p>
+<p>你还可以通过运行以下命令来检查操作系统日志中的 OOM 终止条目： <code>dmesg -T | egrep -i 'killed process'</code>。此命令将在内核环形缓冲区中搜索 'killed process' 日志条目，这表示进程因 OOM 被终止。</p>
+<p>被 OOM 终止的进程的实际日志条目如下所示：</p>
+<ul>
+<li><code>[timestamp] Out of memory: Killed process 9423 (java) total-vm:2928192kB, anon-rss:108604kB, file-rss:0kB, shmem-rss:0kB, UID:0 pgtables:1232kB oom_score_adj:0</code></li>
+<li>上面的日志行显示被终止的进程的 PID 为 9423（注意：你的日志信息可能因 Linux 发行版和系统配置而异）。</li>
+<li>在这种情况下，你应该尝试验证被终止的进程是否与你的 agent 相关。最简单的方法是对齐时间戳，即如果某个条目的时间戳与你的 agent 变得不健康的时间相吻合，则两者很可能是相关的。注意，任何不包含 <code>(java)</code> 的条目都可以忽略，因为它们与你的 agent 无关。</li>
+</ul>
+<h5 id="user-content-tuning-heap-sizes"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#tuning-heap-sizes" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>调整堆大小</h5>
+<p>在更改任何堆分配之前，你应该首先：</p>
+<ul>
+<li>计算主机有多少可用内存。</li>
+<li>要查看主机有多少可用内存，你可以运行 <code>free -h</code>。在一个 6 GB 的系统上，输出可能如下所示：</li>
+</ul>
+<pre><div class="ptcom-design__wrapper__12wpwnx" data-pagefind-weight="0.5"><span class="ptcom-design__clipboard__1l1gb20 ptcom-design__clipboard__12wpwnx"><span class="ptcom-design__confirmation__1l1gb20" data-pagefind-ignore="true">Copied!</span><svg aria-hidden="true" aria-label="clipboard" data-view-component="true" height="16" version="1.1" viewbox="0 0 16 16" width="16"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z" fill="currentColor" fill-rule="evenodd"></path><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z" fill="currentColor" fill-rule="evenodd"></path></svg></span><div style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;overflow:auto;position:relative;margin:0;padding:0.75em"><code style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;float:left;padding-right:10px"><span class="react-syntax-highlighter-line-number">1
+</span><span class="react-syntax-highlighter-line-number">2
+</span><span class="react-syntax-highlighter-line-number">3
+</span></code><code class="language-bash" style="white-space:pre;text-align:left;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none">                total        used        free      shared  buff/cache   available
+Mem:          5.8Gi       961Mi       2.8Gi       9.0Mi       2.1Gi       4.6Gi
+Swap:         1.0Gi          0B       1.0Gi</code></div></div></pre>
+<p>在 <code>free</code> 命令生成的输出中， <code>available</code> 列显示了可以用于启动新应用程序的内存量。要确定可以分配给 agent 多少内存，我们建议你停止 agent 并运行 <code>free -h</code> ，同时使系统处于正常到高负载状态。available 值将告诉你可以为所有 agent 进程（合计）分配的最大内存量。如果可能，我们建议你预留大约 2 - 4GB 的缓冲区，以应对系统上其他进程需要更多内存的情况，以及 agent 进程的堆外内存使用。并非所有版本的 <code>free</code> 都会显示 available 列，因此你可能需要查阅你系统上版本的文档以找到等效的信息。</p>
+<p>确定分配给以下每个子进程的内存量：Agent Manager、Bootstrapper、agent 和 Explorer。</p>
+<p>要了解分配给 agent 和 Explorer 子进程的内存量，你应该导航到 Data Connection 中的 agent 配置页面，选择高级配置按钮，然后选择 "Bootstrapper" 标签页。在那里你会看到每个子进程都有自己的配置块；在每个配置块中，你应该会看到一个 <code>jvmHeapSize</code> 参数，它定义了分配给相关进程的内存量。</p>
+<p>默认情况下，Bootstrapper 子进程被分配 <code>512mb</code> 的内存。可以通过首先导航到 <code>&lt;agent-manager-directory&gt;/var/data/processes/</code> 目录来确认这一点；然后你需要运行 <code>ls -lrt</code> 来找到最近创建的 <code>bootstrapper~&lt;uuid&gt;</code> 目录。进入最近创建的 <code>bootstrapper~&lt;uuid&gt;</code> 目录后，你可以检查 <code>./var/conf/launcher-custom.yml</code> 文件的内容。其中， <code>Xmx</code> 值就是分配给 Bootstrapper 的内存量。</p>
+<p>默认情况下，Agent Manager 子进程也被分配 <code>512mb</code> 的内存。可以通过检查文件 <code>&lt;agent-manager-directory&gt;/var/conf/launcher-custom.yml</code>的内容来确认这一点。其中， <code>Xmx</code> 值就是分配给 Agent Manager 的内存量。</p>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>安装在 Windows 机器上的代理不使用 <code>launcher-custom.yml</code> 文件，因此默认情况下，Java 会为 Agent Manager 和 Bootstrapper 进程各分配系统可用总内存的 25%。要解决此问题，您需要手动设置 Agent Manager 和 Bootstrapper 的堆大小，可按照以下步骤操作：</p><ol>
+<li>确保您已终止所有代理进程，即：（Agent Manager、Bootstrapper、agent 和 Explorer）。</li>
+<li>设置 JAVA_HOME： <code>setx -m JAVA_HOME "{BOOTVISOR_INSTALL_DIR}\jdk\{JDK_VERSION}-win_x64\"</code></li>
+<li>设置 Agent Manager 堆大小： <code>setx -m MAGRITTE_BOOTVISOR_WIN_OPTS "-Xmx512M -Xms512M"</code></li>
+<li>设置 Bootstrapper 堆大小： <code>setx -m MAGRITTE_BOOTSTRAPPER_OPTS "-Xmx512M -Xms512M"</code></li>
+<li>关闭命令提示符并打开一个新的命令提示符窗口。这是使上述设置生效所必需的。</li>
+<li>启动 Agent Manager： <code>.\service\bin\magritte-bootvisor-win</code></li>
+</ol></div>
+<p>确定主机有多少可用内存以及分配给上述各子进程多少内存后，您应决定：减少分配给上述进程的内存量，或增加主机的可用内存量。</p>
+<p>能否安全地减少代理进程使用的内存量，取决于您的代理设置（例如，最大并发同步数和文件上传并行度）、正在同步的数据类型以及代理的典型负载。减少堆大小会降低操作系统终止进程的可能性，但会增加 Java 进程耗尽堆空间的可能性。您可能需要测试不同的值以找到合适的配置。如果您在调整此值时需要帮助，请联系您的 Palantir 代表。</p>
+<p>要减少分配给一个（或多个）子进程的内存量，请执行以下操作：</p>
+<ol>
+<li>决定应为上述各子进程分配多少内存。
+<ul>
+<li><em>注意：我们不建议将堆大小降低到低于下面列出的默认值。</em></li>
+</ul>
+</li>
+<li>接下来，在 Data Connection 中导航到该代理，选择高级配置按钮，然后选择 <strong>Bootstrapper</strong> tab.</li>
+<li>在此，您可以为每个单独的子进程设置 <code>jvmHeapSize</code> 参数。</li>
+<li>下面是一个示例 <strong>Bootstrapper 配置片段</strong> 使用 <strong>代理</strong> 的 jvmHeapSize 设置为 3gb：
+<pre><div class="ptcom-design__wrapper__12wpwnx" data-pagefind-weight="0.5"><span class="ptcom-design__clipboard__1l1gb20 ptcom-design__clipboard__12wpwnx"><span class="ptcom-design__confirmation__1l1gb20" data-pagefind-ignore="true">Copied!</span><svg aria-hidden="true" aria-label="clipboard" data-view-component="true" height="16" version="1.1" viewbox="0 0 16 16" width="16"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z" fill="currentColor" fill-rule="evenodd"></path><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z" fill="currentColor" fill-rule="evenodd"></path></svg></span><div style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;overflow:auto;position:relative;margin:0;padding:0.75em"><code style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;float:left;padding-right:10px"><span class="react-syntax-highlighter-line-number">1
+</span><span class="react-syntax-highlighter-line-number">2
+</span><span class="react-syntax-highlighter-line-number">3
+</span></code><code class="language-yaml" style="white-space:pre;text-align:left;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none">agent:
+    ....
+    jvmHeapSize: 3g #This is jvm heap size value</code></div></div></pre>
+</li>
+<li>更新配置后，您需要保存更改并重启代理，以使更改生效。</li>
+</ol>
+<p><strong>默认堆分配</strong></p>
+<p>默认情况下，一个代理需要约 3gb 的内存，分配如下：</p>
+<ul>
+<li>agent 子进程 1gb</li>
+<li>Explorer 子进程 1gb</li>
+<li>Bootstrapper 子进程 512mb</li>
+<li>agent Manager 子进程 512mb</li>
+</ul>
+<p>Java 进程还会使用一定量的堆外内存；因此，我们建议您确保至少留有 ≥ 4gb 的空闲内存供其使用。</p>
+<h4 id="user-content-unable-to-download-agent-package"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#unable-to-download-agent-package" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>无法下载代理安装包</h4>
+<p>代理下载失败主要有两个原因：网络连接和链接过期。</p>
+<p>如果您可以连接到 Foundry，但在下载时收到无效的 <code>tar.gz</code> 文件或错误消息，则您的链接可能已过期或失效。</p>
+<ul>
+<li><em>过期链接：</em> 下载链接在十分钟后过期。</li>
+<li><em>失效链接：</em> 下载链接受一次性下载密钥保护。将代理下载链接粘贴到 Microsoft Teams 等应用程序中可能会使链接失效，因为这些应用程序会尝试扫描链接以查看是否可以预览；此扫描会使一次性下载密钥失效。如果您的链接无效，请尝试在 UI 中重新生成链接，并手动输入两个密钥词，而不是复制整个链接。</li>
+</ul>
+<p>如果您在下载代理安装包时遇到 <code>disconnected unexpectedly</code> 错误，请尝试强制 <code>curl</code> 使用 HTTP 1.0，方法是在下载命令中添加 <code>--http1.0</code> 标志。这可以解决在某些网络环境中可能出现的协议协商问题。</p>
+<h4 id="user-content-unable-to-administer-an-agent"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#unable-to-administer-an-agent" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>无法管理代理</h4>
+<p>用户必须是 Project 的编辑者才能在该 Project 中创建代理，但必须是该 Project 的所有者才能管理该 Project 中的代理。这意味着用户可以创建代理，但随后可能无法生成下载链接或对该代理执行其他管理任务。有关代理权限的更多信息，请查阅我们 <a href="/docs/foundry/data-connection/permissions/">权限参考</a> 文档。</p>
+<h4 id="user-content-unable-to-create-an-agent-due-to-permission_denied-error"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#unable-to-create-an-agent-due-to-permission_denied-error" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>由于 PERMISSION_DENIED 错误而无法创建代理</h4>
+<p>如果您收到 <code>PERMISSION_DENIED</code> 错误（在尝试创建代理时），请验证以下内容：</p>
+<ul>
+<li><strong>组织级角色：</strong> 您必须拥有 <code>Organization administrator</code>, <code>Data flows administrator</code>，或分配了 <strong>创建数据连接代理</strong> 工作流的自定义角色。组织角色在 <strong>组织权限</strong> 页面（位于 Control Panel 中）进行管理。</li>
+<li><strong>Project 级角色：</strong> 您必须是 <code>Editor</code> or <code>Owner</code> 您想在其中保存新创建代理的 Project 的相应权限。</li>
+</ul>
+<p>如果您仅在现有 Project 上拥有 <code>Editor</code> 权限，但缺少所需的组织级角色，请尝试在其他您拥有相应权限的 Project 中创建代理，或向管理员申请必要的角色。</p>
+<p>有关代理权限的更多详细信息，请查阅我们 <a href="/docs/foundry/data-connection/permissions/">权限参考</a> 文档。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-agent-configuration-reference" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#agent-configuration-reference" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>代理配置参考</h3>
+<h4 id="user-content-connect-to-data-sources-using-the-insecure-tlsv10-and-tlsv11-protocols"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#connect-to-data-sources-using-the-insecure-tlsv10-and-tlsv11-protocols" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>使用不安全的 TLSv1.0 和 TLSv1.1 协议连接到数据源</h4>
+<p>Palantir 不支持 TLSv.1.0 和 TLSv1.1，因为它们是过时且不安全的协议。Data Connection 代理所使用的 OpenJDK 的 Amazon Corretto 构建版本在 <code>jdk.tls.disabledAlgorithms</code> 安全属性（位于 <code>java.security</code> 文件。</p>
+<p>尝试连接到仅支持 TLSv1.0 和 TLSv1.1 的数据源系统时将失败，并出现各种错误，包括 <code>Error: The server selected protocol version TLS10 is not accepted by client preferences</code>.</p>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__danger__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>我们强烈不建议使用已弃用的 TLS 版本。Palantir 对使用这些版本所带来的安全风险不承担责任。</p></div>
+<p>如果确实存在临时支持 TLSv1.0 和 TLSv1.1 的关键需求，请执行以下步骤：</p>
+<ol>
+<li>在代理概览页面中，导航至 <strong>代理设置</strong> 并选择 <strong>高级</strong> 菜单中选择 <strong>管理配置</strong> 部分。然后，选择 <code>Bootstrapper</code> tab.</li>
+<li>将 <code>tlsProtocols</code> 条目添加到两个 <code>agent</code> and <code>explorer</code> 配置块中，后跟您要启用的协议。请务必同时包含 TLSv1.2，以免使用该协议的数据源中断。例如：</li>
+</ol>
+<pre><div class="ptcom-design__wrapper__12wpwnx" data-pagefind-weight="0.5"><span class="ptcom-design__clipboard__1l1gb20 ptcom-design__clipboard__12wpwnx"><span class="ptcom-design__confirmation__1l1gb20" data-pagefind-ignore="true">Copied!</span><svg aria-hidden="true" aria-label="clipboard" data-view-component="true" height="16" version="1.1" viewbox="0 0 16 16" width="16"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z" fill="currentColor" fill-rule="evenodd"></path><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z" fill="currentColor" fill-rule="evenodd"></path></svg></span><div style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;overflow:auto;position:relative;margin:0;padding:0.75em"><code style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;float:left;padding-right:10px"><span class="react-syntax-highlighter-line-number">1
+</span><span class="react-syntax-highlighter-line-number">2
+</span><span class="react-syntax-highlighter-line-number">3
+</span><span class="react-syntax-highlighter-line-number">4
+</span><span class="react-syntax-highlighter-line-number">5
+</span><span class="react-syntax-highlighter-line-number">6
+</span><span class="react-syntax-highlighter-line-number">7
+</span><span class="react-syntax-highlighter-line-number">8
+</span><span class="react-syntax-highlighter-line-number">9
+</span><span class="react-syntax-highlighter-line-number">10
+</span><span class="react-syntax-highlighter-line-number">11
+</span><span class="react-syntax-highlighter-line-number">12
+</span></code><code class="language-yaml" style="white-space:pre;text-align:left;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none">agent:
+    tlsProtocols:
+      - TLSv1
+      - TLSv1.1
+      - TLSv1.2
+...
+explorer:
+    tlsProtocols:
+      - TLSv1
+      - TLSv1.1
+      - TLSv1.2
+...</code></div></div></pre>
+<p><img alt="Agent with custom legacy TLS protocols configured" height="600" node="[object Object]" src="/docs/resources/foundry/data-connection/agent-tls.png" style="aspect-ratio:3584 / 1948" width="1103.9014373716632"/></p>
+<ol start="3">
+<li>选择 <strong>重启代理</strong>.</li>
+</ol>
+<p>使用此配置后，代理将在升级和重启后继续允许 TLSv1.0 和 TLSv1.1。一旦数据源迁移到新的 TLS 版本，请撤销对代理高级配置所做的所有更改。</p>
+<h4 id="user-content-configure-agent-logs"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#configure-agent-logs" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>配置代理日志</h4>
+<p>要调整代理在其主机上的日志存储设置，请按照以下步骤操作：</p>
+<ol>
+<li>在 Data Connection 中，导航到 <strong>代理</strong> 页面。选择您要配置的代理的名称。</li>
+<li>在配置面板中，选择 <strong>高级</strong>.</li>
+<li>日志的配置选项可在 <strong>日志记录</strong> 块下找到。在此处，您可以配置何时开始丢弃日志的限制、是否以及如何归档日志，以及其他设置。
+<ul>
+<li>该配置应考虑分配给代理主机的资源、您对日志级别粒度的偏好，以及您对日志保留的偏好。有关更多信息和指导，请查阅 <a href="https://www.dropwizard.io/en/latest/manual/configuration.html#logging">Dropwizard 配置参考 ↗</a>.</li>
+</ul>
+</li>
+<li>在 Foundry 中重启代理，方法是选择 <strong>重启代理</strong> （位于屏幕右上角）。</li>
+</ol>
+<p>您的新配置现在应该已生效。</p>
+<h4 id="user-content-how-long-has-my-agent-been-down-unavailable"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#how-long-has-my-agent-been-down-unavailable" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>我的代理已停机（不可用）多长时间了？</h4>
+<p>代理不可用可能有多种原因；例如，代理可能正在重启，或者运行代理的底层硬件可能处于离线状态或正在重启。</p>
+<p>有两种方法可以确定代理首次变为不可用的时间：</p>
+<ul>
+<li>在 Data Connection UI 中选择您的代理后，您可以在 <code>Metrics</code> tab.</li>
+<li>在监听器设置向导的 <strong>概述</strong> 部分（位于 Data Connection UI 中）查看代理的状态，以及代理状态上次报告的日期和时间。</li>
+</ul>
+<h4 id="user-content-what-happens-to-cached-files-when-the-host-where-the-agent-is-installed-crashes"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#what-happens-to-cached-files-when-the-host-where-the-agent-is-installed-crashes" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>当安装代理的主机崩溃时，缓存文件会发生什么？</h4>
+<p>这些文件将保留在磁盘上，直到 Bootvisor 清理旧的进程文件夹（30 天或 10 个旧文件夹会触发清理）。这些文件已加密，而解密它们的密钥仅存在于已终止进程的内存中。</p></div>
+</article>
+</article>
+</body>
+</html>

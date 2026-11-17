@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>使用 OAuth 2.0 的用户归属 SAP 写回</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<article>
+<div class="ptcom-design__markdownDoc__1uarhel" data-pagefind-body="true"><h1 data-pagefind-weight="1" id="user-content-user-attributed-sap-writeback-with-oauth-20" level="1" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#user-attributed-sap-writeback-with-oauth-20" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>使用 OAuth 2.0 的用户归属 SAP 写回</h1>
+<p>本页面包含以下操作的说明： <a href="#setting-up-the-oauth-20-server-in-sap">在 SAP 中设置 OAuth 2.0 服务器</a> 和 <a href="#setting-up-the-oauth-20-client-in-foundry">在 Foundry 中设置 OAuth 2.0 客户端</a>.</p>
+<h2 data-pagefind-weight="0.9" id="user-content-setting-up-the-oauth-20-server-in-sap" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#setting-up-the-oauth-20-server-in-sap" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>在 SAP 中设置 OAuth 2.0 服务器</h2>
+<h3 data-pagefind-weight="0.8" id="user-content-prerequisites" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#prerequisites" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>前提条件</h3>
+<ul>
+<li>Palantir Foundry Connector 2.0 for SAP Applications（"Connector"）的 SP21 或更高版本</li>
+<li>SAP 中的 Foundry 技术用户应为 <code>SYSTEM</code> user</li>
+<li><code>/PALANTIR/OAUTH_CLIENT</code> 应分配给 Foundry 技术用户以及任何希望从 Foundry 回写至 SAP 的最终用户</li>
+<li><code>/PALANTIR/CONTENT_FUNCTION_ALL</code> 应分配给最终用户</li>
+<li>以下所有服务 <code>/sap/public/bc</code>  节点需要激活（用于 OAuth 2.0 配置）
+<ul>
+<li><code>/sap/bc/sec/oauth2*</code></li>
+<li><code>/default_host/sap/bc/webdynpro/sap/oauth2_authority</code></li>
+</ul>
+</li>
+<li>SAP Gateway 已激活</li>
+<li>SAP_BASIS（技术组件版本，适用于 SAP NetWeaver 和 SAP S/4HANA 系统）7.4 SP09 或更高版本（支持 OAuth 2.0 和 OData）</li>
+</ul>
+<h3 data-pagefind-weight="0.8" id="user-content-reference" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#reference" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>请参阅</h3>
+<ul>
+<li><a href="https://me.sap.com/notes/1688545">Note 1688545 - AS ABAP 中 OAuth 2.0 服务器的故障排除 ↗</a> （需要 SAP 登录）</li>
+<li><a href="https://help.sap.com/viewer/3c4e8fc004cb4401a4fdd737f02ac2b9/7.5.9/en-US/4bd73e2050e84ce99b2d781687e0c62d.html">帮助：AS ABAP 的 OAuth 2.0 服务器 ↗</a></li>
+</ul>
+<h3 data-pagefind-weight="0.8" id="user-content-oauth-20-configuration" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#oauth-20-configuration" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>OAuth 2.0 配置</h3>
+<ol>
+<li>运行 <code>SOAUTH2</code> transaction.</li>
+<li>选择 <strong>创建...</strong>.</li>
+<li>输入 Foundry 技术用户的用户名作为 <strong>OAuth 2.0 客户端 ID</strong>.</li>
+<li>选择 <strong>下一步 &gt;</strong>.</li>
+<li>输入 Foundry 技术用户的用户名作为 <strong>用户 ID</strong>.</li>
+<li>确保 <strong>客户端用户 ID 和密码</strong> and <strong>SSL 客户端证书</strong> 均已勾选。</li>
+<li>选择 <strong>下一步 &gt;</strong>.</li>
+<li>设置 <strong>重定向 URI</strong> as <code>https://&lt;FOUNDRY_DOMAIN&gt;/workspace/oauth2-clients/callback</code>.</li>
+<li>选择 <strong>下一步 &gt;</strong>.</li>
+<li>添加一个 <strong>作用域分配</strong> 并带有 <strong>OAuth 2.0 作用域 ID</strong> of <code>/PALANTIR/SRV_0001</code> 以及描述，例如 <code>Palantir Foundry writeback using SAP functions</code>.</li>
+<li>选择 <strong>下一步 &gt;</strong> 用户偏好 <strong>完成</strong>.</li>
+</ol>
+<h3 data-pagefind-weight="0.8" id="user-content-odata-configuration" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#odata-configuration" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>OData 配置</h3>
+<ol>
+<li>在监听器设置向导的 <strong>维护服务</strong> 页面，按照服务层级结构找到 <strong>opu &gt; odata &gt; palantir</strong>.</li>
+<li>右键点击 <strong>palantir</strong> 并选择 <strong>激活服务</strong>.</li>
+<li>选择 <strong>是</strong> 出现提示时。</li>
+<li>在 <strong>创建/更改服务</strong> 标签页中，选择 <strong>GUI 配置</strong> under <strong>交互式选项</strong>.</li>
+<li>添加名称为以下内容的参数 <code>~CHECK_CSRF_TOKEN</code> 以及值 <code>0</code> (zero).</li>
+<li>按照此处说明禁用 CSRF_TOKEN 验证： <a href="https://help.sap.com/doc/saphelp%5C_hba/1.0/de-DE/e6/cae27d5e8d4996add4067280c8714e/content.htm">https://help.sap.com/doc/saphelp\_hba/1.0/de-DE/e6/cae27d5e8d4996add4067280c8714e/content.htm</a></li>
+<li>运行 <code>/IWFND/MAINT_SERVICE</code> transaction.</li>
+<li>选择 <strong>添加系统别名</strong> under <strong>系统别名</strong>.</li>
+<li>添加具有以下值的系统别名：
+<ul>
+<li><strong>服务文档标识符：</strong> <code>/PALANTIR/SRV_0001</code></li>
+<li><strong>用户角色：</strong> blank</li>
+<li><strong>主机名：</strong> blank</li>
+<li><strong>SAP 系统别名：</strong> <code>LOCAL</code></li>
+<li><strong>元数据默认值：</strong> unchecked</li>
+<li><strong>默认系统：</strong> checked</li>
+<li><strong>技术服务名称：</strong> <code>/PALANTIR/SRV</code></li>
+<li><strong>外部服务名称：</strong> <code>ODATA_SRV</code></li>
+<li><strong>版本：</strong> <code>1</code></li>
+<li><strong>用户名：</strong> blank</li>
+</ul>
+</li>
+</ol>
+<h2 data-pagefind-weight="0.9" id="user-content-setting-up-the-oauth-20-client-in-foundry" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#setting-up-the-oauth-20-client-in-foundry" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>在 Foundry 中设置 OAuth 2.0 客户端</h2>
+<p>这遵循了以下内容中概述的通用方法 <a href="/docs/foundry/administration/configure-outbound-applications/">配置出站应用程序</a> 但已针对 SAP 系统进行了专门调整。</p>
+<p>选择与您的 SAP 连接相匹配的设置：</p>
+<ul>
+<li>如果您的 SAP ERP 源使用 <strong>（如果使用代理 worker）。</strong>，请按照 <a href="#outbound-application-setup-with-sap-data-accelerator">使用 SAP Data Accelerator 的出站应用程序设置</a>.</li>
+<li>对于使用代理出口策略的连接，请按照 <a href="#outbound-application-setup">出站应用程序设置</a>.</li>
+</ul>
+<h3 data-pagefind-weight="0.8" id="user-content-outbound-application-setup" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#outbound-application-setup" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>出站应用程序设置</h3>
+<ol>
+<li>导航到控制面板并选择 <strong>Outbound 应用程序</strong> under <strong>组织设置</strong>.</li>
+<li>选择 <strong>新建应用</strong>.</li>
+<li>提供一个 <strong>应用程序名称</strong>，例如您的 SAP 系统的名称。</li>
+<li>设置 <strong>批准提示</strong> 来描述授权操作，例如， <code>Allow Foundry to act on your behalf in SAP?</code>.</li>
+<li>自动预览行为 <strong>OAuth 2.0 服务器连接</strong>，请选择 <strong>Foundry Worker</strong> option.</li>
+<li>设置 <strong>授权页面 URL</strong> 到 SAP OAuth 2.0 授权端点，包括 SAP HTTPS 端口。请将 <code>&lt;SAP_DOMAIN&gt;</code> 替换为您的 SAP 主机名，并将 <code>&lt;SAP_PORT&gt;</code> 替换为其 HTTPS 端口：</li>
+</ol>
+<pre><code>https://&lt;SAP_DOMAIN&gt;:&lt;SAP_PORT&gt;/sap/bc/sec/oauth2/authorize
+</code></pre>
+<ol start="7">
+<li>设置 <strong>令牌端点 URL</strong> 到 SAP OAuth 2.0 令牌端点，包括 SAP HTTPS 端口：</li>
+</ol>
+<pre><code>https://&lt;SAP_DOMAIN&gt;:&lt;SAP_PORT&gt;/sap/bc/sec/oauth2/token
+</code></pre>
+<ol start="8">
+<li>自动预览行为 <strong>出站策略</strong>，选择一个 <a href="/docs/foundry/administration/configure-egress/#agent-proxy-egress-policies">代理出口策略</a> 通过 <a href="/docs/foundry/data-connection/core-concepts/#agents">Data Connection 代理</a> 路由流量，该代理安装在您的网络中并可访问 SAP 系统。</li>
+</ol>
+<p><img alt="An outbound application configured with the Foundry Worker option, SAP authorization and token endpoint URLs, and an agent proxy egress policy." height="600" node="[object Object]" src="/docs/resources/foundry/sap/sap-outbound-app-foundry-worker.png" style="aspect-ratio:749 / 910" width="493.8461538461538"/></p>
+<ol start="9">
+<li>自动预览行为 <strong>OAuth 2.0 设置</strong>，设置 <strong>客户端 ID</strong> 为 SAP OAuth 2.0 服务器配置中的客户端 ID。在 <strong>作用域</strong>获取资源，请将 <code>/PALANTIR/SRV_0001</code>.</li>
+<li>保存该出站应用程序。</li>
+<li>现在，创建 SAP webhook 时即可使用此出站应用程序。</li>
+</ol>
+<p>有关出站应用程序配置选项的更多详细信息，请参阅 <a href="/docs/foundry/administration/configure-outbound-applications/#configuration-options">配置出站应用程序</a>.</p>
+<h3 data-pagefind-weight="0.8" id="user-content-outbound-application-setup-with-sap-data-accelerator" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#outbound-application-setup-with-sap-data-accelerator" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>使用 SAP Data Accelerator 的出站应用程序设置</h3>
+<p>要通过 SAP Data Accelerator 启用用户归属回写，请在您的 <strong>SAP ERP</strong> 源上创建两个 webhook：一个 <strong>获取令牌 webhook</strong> 以及一份 <strong>刷新令牌 webhook</strong>。然后，在出站应用程序中同时选择这两个 webhook。这些 webhook 使用源的认证和 SAP Data Accelerator 连接设置来交换和刷新令牌。</p>
+<p>在开始之前，请完成 <a href="#setting-up-the-oauth-20-server-in-sap">SAP OAuth 2.0 服务器设置</a> 和 <a href="/docs/foundry/sap/data-accelerator/#configure-the-foundry-source">将您的 SAP ERP 源配置为使用 SAP Data Accelerator</a>。您还需要 <a href="/docs/foundry/administration/configure-outbound-applications/#create-an-outbound-application">管理出站应用程序</a>.</p>
+<h4 id="user-content-create-the-get-token-and-refresh-token-webhooks"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#create-the-get-token-and-refresh-token-webhooks" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>创建获取令牌和刷新令牌 webhook</h4>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><div class="ptcom-design__title__19o1cwu">为两个 webhook 关闭函数配置</div><p>创建获取令牌 webhook 和刷新令牌 webhook 时，请关闭 <strong>函数配置</strong>。如果启用此设置，webhook 将作为函数发布，无法在出站应用程序中使用。</p></div>
+<p>用途 <strong>在选择每个 webhook 的</strong> 后，为其插入示例 <strong>任务类型</strong>。它会自动填充任务主体模板，并创建输入和输出参数，包括其类型以及到响应字段的映射。使用下方的参数表检查生成的配置。</p>
+<p><img alt="The Insert example button beside Task body template, with the SAP ERP get token webhook task type selected." height="442" node="[object Object]" src="/docs/resources/foundry/sap/sap-data-accelerator-insert-example.png" style="aspect-ratio:776 / 442" width="776"/></p>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><div class="ptcom-design__title__19o1cwu">获取令牌和刷新令牌 webhook 的授权</div><p>对于这两个 webhook，请将 <strong>出站应用程序</strong> 设置为 <strong>保持为未选择状态</strong> 位于 <strong>Request configuration &gt; Authorization</strong>。它们使用 SAP 源的认证来为出站应用程序获取和刷新令牌。如果在此处选择该应用程序，将产生循环依赖。</p></div>
+<p>对于这两个 webhook，请将 <strong>Webhook 安全性</strong> 设置为默认值 <strong>Write API</strong>.</p>
+<p>请按照以下说明在同一个 SAP ERP 源上创建两个 webhook：</p>
+<ol>
+<li>首先，创建获取令牌 webhook。在 Data Connection 中打开该源并选择 <strong>创建 webhook</strong>.</li>
+<li>为 webhook 输入名称，例如 <code>Get OAuth Token</code>，并关闭 <strong>函数配置</strong>.</li>
+<li>在您的终端会话中将 <strong>任务类型</strong> to <code>sap-erp-oauth2-token-webhook-task</code> in <strong>请求配置</strong>,</li>
+<li>选择 <strong>在选择每个 webhook 的</strong> 在空的 <strong>任务主体模板</strong> 旁边，以生成获取令牌 webhook 配置。对照下方的参考检查生成的参数，然后保存该 webhook。</li>
+<li>接下来，在同一个源上创建刷新令牌 webhook。输入名称，例如 <code>Refresh OAuth Token</code>.</li>
+<li>关闭 <strong>函数配置</strong> 并设置 <strong>任务类型</strong> to <code>sap-erp-oauth2-refresh-webhook-task</code>.</li>
+<li>选择 <strong>在选择每个 webhook 的</strong> 以生成刷新令牌 webhook 配置。对照下方的参考检查生成的参数，然后保存该 webhook。</li>
+</ol>
+<p>获取令牌 webhook 需要以下输入参数：</p>
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>输入参数</th><th>类型</th><th>必需</th></tr></thead><tbody><tr><td><code>client_id</code></td><td>字符串</td><td>是</td></tr><tr><td><code>redirect_uri</code></td><td>字符串</td><td>是</td></tr><tr><td><code>authorization_code</code></td><td>字符串</td><td>是</td></tr><tr><td><code>code_verifier</code></td><td>可选字符串</td><td>当 <strong>启用 PKCE</strong> 在出站应用程序中开启时为必填项。</td></tr></tbody></table></div>
+<p>生成的任务主体按如下方式映射这些输入：</p>
+<pre><div class="ptcom-design__wrapper__12wpwnx" data-pagefind-weight="0.5"><span class="ptcom-design__clipboard__1l1gb20 ptcom-design__clipboard__12wpwnx"><span class="ptcom-design__confirmation__1l1gb20" data-pagefind-ignore="true">Copied!</span><svg aria-hidden="true" aria-label="clipboard" data-view-component="true" height="16" version="1.1" viewbox="0 0 16 16" width="16"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z" fill="currentColor" fill-rule="evenodd"></path><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z" fill="currentColor" fill-rule="evenodd"></path></svg></span><div style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;overflow:auto;position:relative;margin:0;padding:0.75em"><code style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;float:left;padding-right:10px"><span class="react-syntax-highlighter-line-number">1
+</span><span class="react-syntax-highlighter-line-number">2
+</span><span class="react-syntax-highlighter-line-number">3
+</span><span class="react-syntax-highlighter-line-number">4
+</span><span class="react-syntax-highlighter-line-number">5
+</span><span class="react-syntax-highlighter-line-number">6
+</span></code><code class="language-json" style="white-space:pre;text-align:left;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none">{
+    "client_id": {{json client_id}},
+    "redirect_uri": {{json redirect_uri}},
+    "authorization_code": {{json authorization_code}},
+    "code_verifier": {{json code_verifier}}
+}</code></div></div></pre>
+<p>刷新令牌 webhook 需要以下输入参数：</p>
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>输入参数</th><th>类型</th><th>必需</th></tr></thead><tbody><tr><td><code>client_id</code></td><td>字符串</td><td>是</td></tr><tr><td><code>refresh_token</code></td><td>字符串</td><td>是</td></tr></tbody></table></div>
+<p>生成的任务主体按如下方式映射这些输入：</p>
+<pre><div class="ptcom-design__wrapper__12wpwnx" data-pagefind-weight="0.5"><span class="ptcom-design__clipboard__1l1gb20 ptcom-design__clipboard__12wpwnx"><span class="ptcom-design__confirmation__1l1gb20" data-pagefind-ignore="true">Copied!</span><svg aria-hidden="true" aria-label="clipboard" data-view-component="true" height="16" version="1.1" viewbox="0 0 16 16" width="16"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z" fill="currentColor" fill-rule="evenodd"></path><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z" fill="currentColor" fill-rule="evenodd"></path></svg></span><div style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;overflow:auto;position:relative;margin:0;padding:0.75em"><code style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;float:left;padding-right:10px"><span class="react-syntax-highlighter-line-number">1
+</span><span class="react-syntax-highlighter-line-number">2
+</span><span class="react-syntax-highlighter-line-number">3
+</span><span class="react-syntax-highlighter-line-number">4
+</span></code><code class="language-json" style="white-space:pre;text-align:left;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none">{
+    "client_id": {{json client_id}},
+    "refresh_token": {{json refresh_token}}
+}</code></div></div></pre>
+<p>Foundry 会在授权和令牌刷新期间提供这些输入值。请保留任务主体中的参数引用，以便每个请求都能收到相应的值。</p>
+<p><strong>在选择每个 webhook 的</strong> 还会为这两个 webhook 创建以下输出参数。在 <strong>响应</strong>中，验证每个变量都有其自己的输出参数，并具有指定的名称、类型和响应键。如果手动配置 webhook，请为每一行创建一个输出参数，并按照下表所述将其映射到相应的响应键：</p>
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>输出参数</th><th>类型</th><th>响应键</th></tr></thead><tbody><tr><td><code>access_token</code></td><td>字符串</td><td><code>access_token</code></td></tr><tr><td><code>scope</code></td><td>字符串</td><td><code>scope</code></td></tr><tr><td><code>token_type</code></td><td>可选字符串</td><td><code>token_type</code></td></tr><tr><td><code>expires_in</code></td><td>可选字符串</td><td><code>expires_in</code></td></tr><tr><td><code>refresh_token</code></td><td>可选字符串</td><td><code>refresh_token</code></td></tr></tbody></table></div>
+<p>以下示例展示了获取令牌 webhook 的已配置输入和输出映射：</p>
+<p><img alt="A get token webhook with four input parameters, including an optional code verifier, and output parameters extracted by their JSON response keys." height="600" node="[object Object]" src="/docs/resources/foundry/sap/sap-data-accelerator-token-webhook-parameters.png" style="aspect-ratio:2165 / 1180" width="1100.8474576271185"/></p>
+<p>刷新令牌 webhook 使用相同的输出映射及其两个输入参数：</p>
+<p><img alt="A refresh token webhook with client ID and refresh token inputs, and output parameters extracted from matching JSON response fields." height="600" node="[object Object]" src="/docs/resources/foundry/sap/sap-data-accelerator-refresh-webhook-parameters.png" style="aspect-ratio:1205 / 855" width="845.6140350877192"/></p>
+<h4 id="user-content-configure-the-outbound-application"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#configure-the-outbound-application" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>配置出站应用程序</h4>
+<p>请按照以下说明使用两个已保存的 webhook 来配置 OAuth 2.0 连接：</p>
+<ol>
+<li>在 Control Panel 中，打开 <strong>Organization settings &gt; Outbound applications</strong> 并选择 <strong>新建应用</strong>.</li>
+<li>提供一个 <strong>应用程序名称</strong> 以及一个 <strong>批准提示</strong>的源（例如 <code>Allow Foundry to act on your behalf in SAP?</code>.</li>
+<li>自动预览行为 <strong>OAuth 2.0 服务器连接</strong>中，选择 <strong>本地部署的 webhook</strong>，其标记为 <strong>遗留版</strong>。此选项允许出站应用使用 SAP 源的 Data Accelerator 连接。源本身继续在 Foundry worker 上运行。</li>
+<li>自动预览行为 <strong>源连接</strong>，选择您创建 webhook 时所用的 SAP ERP 源。</li>
+<li>在您的终端会话中将 <strong>令牌 Webhook</strong> 使用以下方式连接到 webhook <code>sap-erp-oauth2-token-webhook-task</code> and <strong>刷新令牌 Webhook</strong> 使用以下方式连接到 webhook <code>sap-erp-oauth2-refresh-webhook-task</code>.</li>
+<li>在您的终端会话中将 <strong>授权页面 URL</strong> to <code>https://&lt;SAP_DOMAIN&gt;/sap/bc/sec/oauth2/authorize</code>。请使用用户可以从其浏览器访问的 SAP URL。此交互式授权步骤需要从用户的计算机进行访问，即使令牌交换和刷新使用 SAP Data Accelerator。</li>
+<li>自动预览行为 <strong>OAuth 2.0 设置</strong>，设置 <strong>客户端 ID</strong> 导出到 <strong>OAuth 2.0 客户端 ID</strong> 在以下位置创建的 <a href="#oauth-20-configuration">SAP OAuth 2.0 配置</a>。按照这些说明，这是 Foundry 技术用户的 SAP 用户名。</li>
+<li>将 <code>/PALANTIR/SRV_0001</code> under <strong>作用域</strong>.</li>
+<li>保存该出站应用程序。</li>
+</ol>
+<p><img alt="An outbound application using On-premise webhook (Legacy), with an SAP ERP source, get token and refresh token webhooks, the SAP authorization URL, an example client ID of PALANTIR, and the /PALANTIR/SRV_0001 scope." height="600" node="[object Object]" src="/docs/resources/foundry/sap/sap-data-accelerator-outbound-application.png" style="aspect-ratio:645 / 942" width="410.828025477707"/></p>
+<h4 id="user-content-use-the-outbound-application-for-writeback"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#use-the-outbound-application-for-writeback" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>使用出站应用进行回写</h4>
+<p>在同一个 SAP ERP 源上，创建或编辑 <a href="/docs/foundry/available-connectors/sap-erp/#webhooks">调用您的 BAPI 的 webhook</a>。对于此 BAPI webhook，请在以下位置下选择已保存的应用 <strong>Request configuration &gt; Authorization &gt; Outbound application</strong>。当用户运行回写工作流时，如果用户尚未持有有效令牌，Foundry 会提示其授权访问 SAP。随后回写将使用该用户的 SAP 授权，并在需要时由刷新令牌 webhook 获取新的访问令牌。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-legacy-webhook-based-oauth-20-configuration" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#legacy-webhook-based-oauth-20-configuration" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>（旧版）基于 Webhook 的 OAuth 2.0 配置</h3>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><div class="ptcom-design__title__19o1cwu">遗留版</div><p>下述 REST API webhook 配置处于 <a href="/docs/foundry/platform-overview/development-life-cycle/">遗留</a> 开发阶段，预计不会再进行额外开发。对于新配置，请选择以下位置下的相应连接设置 <a href="#setting-up-the-oauth-20-client-in-foundry">在 Foundry 中设置 OAuth 2.0 客户端</a>。有关旧方法的更多信息，请参阅 <a href="/docs/foundry/administration/configure-outbound-applications/#legacy-custom-webhook-based-oauth-20-handshakes">（旧版）基于自定义 Webhook 的 OAuth 2.0 握手</a>.</p></div>
+<p>此前，为 SAP 配置 OAuth 2.0 需要创建一个带有 webhook 的专用 REST API 源，以手动处理令牌和刷新流程。如果您现有的 SAP 集成使用此方法，它将继续正常工作。</p>
+<h4 id="user-content-source-connection-setup"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#source-connection-setup" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>源连接设置</h4>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>确保 SAP 源 URL 使用 HTTPS，否则在使用 OAuth 流程时 webhook 将失败。</p></div>
+<ol>
+<li>创建一个新的 <strong>REST API</strong> source.</li>
+</ol>
+<p><img alt="Create REST API source" height="580" node="[object Object]" src="/docs/resources/foundry/sap/create-rest-source.png" style="aspect-ratio:2178 / 580" width="2178"/></p>
+<ol start="2">
+<li>使用 SAP 源所使用的基础域名 URL 和端口配置该源。</li>
+<li>选择 <strong>基本</strong> 身份验证，并添加用于连接 SAP 的用户名和密码。</li>
+</ol>
+<p><img alt="Configure REST API source" height="600" node="[object Object]" src="/docs/resources/foundry/sap/configure-rest-source.png" style="aspect-ratio:1432 / 1370" width="627.1532846715329"/></p>
+<ol start="4">
+<li>保存源。</li>
+</ol>
+<h4 id="user-content-oauth-20-authorization-flow-webhook-setup"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#oauth-20-authorization-flow-webhook-setup" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>OAuth 2.0 授权流程 webhook 设置</h4>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><div class="ptcom-design__title__19o1cwu">以函数形式发布的 Webhook 不兼容</div><p>以函数形式发布的 Webhook 不能用于旧版基于自定义 Webhook 的 OAuth 2.0 出站应用程序。在创建令牌和刷新 Webhook 时，请确保已禁用函数发布。</p></div>
+<ol>
+<li>
+<p>在新 <strong>REST API</strong> 源，选择 <strong>创建 webhook</strong>.</p>
+</li>
+<li>
+<p>为 webhook 命名（例如 <code>SAP OAuth2 authorization code flow webhook</code>）。确保 <strong>函数配置</strong> 已关闭。</p>
+</li>
+<li>
+<p>进入 <strong>请求配置</strong> 步骤中丢弃已添加的属性。</p>
+</li>
+<li>
+<p>自动预览行为 <strong>调用</strong>中，选择 <strong>POST</strong> 作为请求类型，并输入 <code>sap/bc/sec/oauth2/token</code> 作为路径。</p>
+</li>
+<li>
+<p>自动预览行为 <strong>查询参数</strong>, <code>sap-client</code> 如果所使用的客户端不是默认客户端，则可能需要设置。</p>
+</li>
+</ol>
+<p><img alt="Webhook calls" height="600" node="[object Object]" src="/docs/resources/foundry/sap/webhook-calls.png" style="aspect-ratio:1430 / 884" width="970.5882352941177"/></p>
+<ol start="6">
+<li>向下滚动到 <strong>输入参数</strong> 并添加以下三个参数（均为字符串类型）：</li>
+</ol>
+<ul>
+<li><code>redirect_uri</code></li>
+<li><code>client_id</code></li>
+<li><code>authorization_code</code></li>
+</ul>
+<p><img alt="Webhook input parameters" height="600" node="[object Object]" src="/docs/resources/foundry/sap/webhook-input-parameters.png" style="aspect-ratio:712 / 739" width="578.0784844384303"/></p>
+<ol start="7">
+<li>向上滚动回到 <strong>调用</strong> 代码仓库 <strong>请求体</strong> tab.</li>
+<li>选择 <strong>Form URL 编码</strong> 并添加以下四个条目：</li>
+</ol>
+<ul>
+<li><code>grant_type</code> → <code>authorization_code</code></li>
+<li><code>redirect_uri</code> → 映射到 <code>redirect_uri</code> 输入参数（具体操作方法见下文）</li>
+<li><code>client_id</code> → 映射到 <code>client_id</code> 输入参数</li>
+<li><code>code</code> → 映射到 <code>authorization_code</code> 输入参数</li>
+</ul>
+<ol start="9">
+<li>要映射输入参数，请输入 <strong>@</strong> 到该字段中，然后选择 <strong>输入参数</strong>。找到相关参数，选中它，然后选择 <strong>将</strong> beneath.</li>
+</ol>
+<p><img alt="Input parameter mappings" height="322" node="[object Object]" src="/docs/resources/foundry/sap/webhook-mappings.png" style="aspect-ratio:543 / 322" width="543"/></p>
+<ol start="10">
+<li>完成的 <strong>请求体</strong> 配置应如下所示：</li>
+</ol>
+<p><img alt="Webhook body" height="600" node="[object Object]" src="/docs/resources/foundry/sap/webhook-body.png" style="aspect-ratio:711 / 613" width="695.9216965742252"/></p>
+<ol start="11">
+<li>进入 <strong>响应</strong> step.</li>
+<li>创建以下五个 <strong>输出参数</strong>。所有参数均应为字符串类型，并应通过键从响应中提取。</li>
+</ol>
+<ul>
+<li><code>access_token</code></li>
+<li><code>token_type</code></li>
+<li><code>expires_in</code></li>
+<li><code>refresh_token</code></li>
+<li><code>scope</code></li>
+</ul>
+<p>这是创建 <code>access_token</code>的一个示例。所有输出参数都应遵循此模式。</p>
+<p><img alt="Webhook output parameter" height="600" node="[object Object]" src="/docs/resources/foundry/sap/webhook-output.png" style="aspect-ratio:1360 / 1156" width="705.8823529411765"/></p>
+<ol start="13">
+<li>通过选择以下选项保存 webhook： <strong>创建 webhook 并继续</strong>.</li>
+</ol>
+<h4 id="user-content-oauth-20-refresh-flow-webhook-setup"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#oauth-20-refresh-flow-webhook-setup" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>OAuth 2.0 刷新流程 webhook 设置</h4>
+<ol>
+<li>从以下位置创建新的 webhook： <strong>REST API</strong> source.</li>
+<li>为 webhook 指定一个独特的名称（例如 <code>SAP OAuth2 refresh flow webhook</code>）。确保 <strong>函数配置</strong> 已关闭。</li>
+<li>请求方法应再次设置为 <strong>POST</strong> 并且应使用相同的路径（<code>sap/bc/sec/oauth2/token</code> ）。</li>
+<li>与之前的 webhook 一样，设置 <code>sap-client</code> 作为 <strong>查询参数</strong> （如有需要）。</li>
+<li>在 <strong>请求头</strong> 选项卡中，添加以下标头：</li>
+</ol>
+<ul>
+<li><code>Content-Type</code> → <code>application/x-www-form-urlencoded</code></li>
+</ul>
+<p><img alt="Refresh webhook header" height="600" node="[object Object]" src="/docs/resources/foundry/sap/refresh-webhook-header.png" style="aspect-ratio:1342 / 732" width="1100"/></p>
+<ol start="6">
+<li>设置这两个 <strong>输入参数</strong> （均为字符串）：</li>
+</ol>
+<ul>
+<li><code>client_id</code></li>
+<li><code>refresh_token</code></li>
+</ul>
+<ol start="7">
+<li>然后在 <strong>请求体</strong> 选项卡下，添加这三个条目：</li>
+</ol>
+<ul>
+<li><code>grant_type</code> → <code>refresh_token</code></li>
+<li><code>client_id</code> → 映射到 <code>client_id</code> 输入参数</li>
+<li><code>refresh_token</code> → 映射到 <code>refresh_token</code> 输入参数
+<img alt="Refresh webhook body" height="600" node="[object Object]" src="/docs/resources/foundry/sap/refresh-webhook-body.png" style="aspect-ratio:1410 / 1152" width="734.375"/></li>
+</ul>
+<ol start="8">
+<li>创建与授权码流程 webhook 完全相同的五个 <strong>输出参数</strong> 。所有参数均应为字符串类型，并应通过键从响应中提取。</li>
+</ol>
+<ul>
+<li><code>access_token</code></li>
+<li><code>token_type</code></li>
+<li><code>expires_in</code></li>
+<li><code>refresh_token</code></li>
+<li><code>scope</code></li>
+</ul>
+<ol start="9">
+<li>通过选择以下选项保存 webhook： <strong>创建 webhook 并继续</strong>.</li>
+</ol>
+<h4 id="user-content-legacy-outbound-application-setup"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#legacy-outbound-application-setup" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>旧版出站应用设置</h4>
+<ol>
+<li>在 Data Connection 中导航至 <strong>Foundry Control Panel</strong> 并选择 <strong>Outbound 应用程序</strong>.</li>
+<li>为应用命名，然后按照以下部分中概述的步骤操作： <a href="/docs/foundry/administration/configure-outbound-applications/#legacy-custom-webhook-based-oauth-20-handshakes">（旧版）基于自定义 Webhook 的 OAuth 2.0 握手</a>.</li>
+<li>之前创建的两个 webhook 应用作 <strong>令牌 Webhook</strong> and <strong>刷新令牌 Webhook</strong> respectively.</li>
+<li>直方图 <strong>授权页面 URL</strong> 应采用以下形式：</li>
+</ol>
+<pre><code>https://&lt;SAP_DOMAIN&gt;/sap/bc/sec/oauth2/authorize
+</code></pre>
+<ol start="5">
+<li>自动预览行为 <strong>OAuth 2.0 设置</strong>Workshop <strong>客户端 ID</strong> 应设置为 SAP OAuth 2.0 服务器配置中的客户端 ID。在 <strong>作用域</strong>获取资源，请将 <code>/PALANTIR/SRV_0001</code>.</li>
+<li>保存该出站应用程序。</li>
+<li>现在，创建 SAP webhook 时即可使用此出站应用程序。</li>
+</ol></div>
+</article>
+</article>
+</body>
+</html>

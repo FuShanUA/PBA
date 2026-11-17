@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>安装适用于 SAP 应用程序的 Palantir Foundry Connector 2.0</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<article>
+<div class="ptcom-design__markdownDoc__1uarhel" data-pagefind-body="true"><h1 data-pagefind-weight="1" id="user-content-install-the-palantir-foundry-connector-20-for-sap-applications" level="1" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#install-the-palantir-foundry-connector-20-for-sap-applications" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>安装适用于 SAP 应用程序的 Palantir Foundry Connector 2.0</h1>
+<p>适用于 SAP 应用程序的 Palantir Foundry Connector 2.0（"Connector"）以 SAP 附加组件的形式交付，需通过以下方式安装 <code>SAINT</code> （SAP 附加组件安装工具）。该附加组件以 SAR 格式交付，文件名模式如下： <code>FOUNDRY-SAPCONN-INST-SP00SPXX.SAR</code></p>
+<p><code>SP00SPXX</code> 表示来自以下位置的安装文件 <code>SP00</code> to <code>SPXX</code> 其中 <code>XX</code> 是支持包级别。</p>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>如果 Connector 安装在 <strong>BW/4HANA</strong> or <strong>S/4HANA</strong>上，请在安装中包含属性变更包（Attribute Change Packages）。自 SP22 起，这些包已包含在安装文件中。</p></div>
+<p>以下是设置 Connector 所需的高层级步骤：</p>
+<ol>
+<li><a href="/docs/foundry/sap/download-sap-addon/">下载安装包</a>.</li>
+<li><a href="#install-the-connector-add-on">安装 Connector 附加组件</a> via <code>SAINT</code>.</li>
+<li>在以下系统中为 Foundry 创建一个 System 类型（类型 <code>B</code>）的技术用户 <code>SU01</code>。该用户由 Foundry 代理用于系统间调用，不用于登录 SAP GUI。如果您计划稍后启用 <a href="/docs/foundry/sap/oauth2-writeback/">通过 OAuth 2.0 进行的用户归属回写</a> ，则用户类型 <strong>必须</strong> be <code>System</code>.</li>
+<li><a href="#run-the-post-installation-wizard">运行安装后向导</a>.</li>
+</ol>
+<p>安装过程中涉及两个不同的 SAP 用户。在本页面中，它们的称呼如下：</p>
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>术语</th><th>定义</th></tr></thead><tbody><tr><td><strong>执行用户</strong> （Basis 管理员）</td><td>以交互方式登录以运行以下操作的人工 SAP 管理员（Dialog 用户） <code>SAINT</code>、安装后向导以及 <code>PFCG</code>。需要 <code>SAINT</code> / <code>PFCG</code> / <code>SU01</code> authorizations.</td></tr><tr><td><strong>Foundry 技术用户</strong></td><td>一个 System 类型（类型 <code>B</code>）用户，无交互式登录，由 Foundry 代理用于 RFC/HTTPS 调用。接收 <code>/PALANTIR/*</code> 由安装后向导分配的角色。</td></tr></tbody></table></div>
+<h2 data-pagefind-weight="0.9" id="user-content-prerequisites" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#prerequisites" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>前提条件</h2>
+<ul>
+<li>SAP_BASIS（技术组件版本，适用于 SAP NetWeaver 和 SAP S/4HANA 系统）7.4 SP5 或更高版本</li>
+</ul>
+<p>or</p>
+<ul>
+<li>SAP_BASIS 7.5(无最低 SP 级别要求)</li>
+</ul>
+<p>这些均为最低版本。连接器支持所有更高的 SAP_BASIS 版本,包括基于 SAP_BASIS 8.x 的 SAP S/4HANA 版本(例如 SAP_BASIS 816)。</p>
+<p>请确保已阅读以下 SAP 说明，并在适用的情况下遵循相关步骤：</p>
+<ul>
+<li>SAP OSS 说明 <code>2645739</code> - <em>ABAP 附加组件 OCS 包未经过数字签名</em></li>
+</ul>
+<h2 data-pagefind-weight="0.9" id="user-content-install-the-connector-add-on" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#install-the-connector-add-on" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>安装 Connector 附加组件</h2>
+<ol>
+<li>登录 SAP 系统客户端 <code>000</code> 使用有权使用以下工具的用户 <code>SAINT</code>.</li>
+<li>运行 <code>SAINT</code> transaction.</li>
+<li>导入 <code>FOUNDRY-SAPCONN-INST-SP00SPXX.SAR</code> 到 SAP 服务器；选择 <strong>安装包</strong> &gt; <strong>加载包</strong> &gt; <strong>从前端</strong>.</li>
+</ol>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>对于某些 SAINT/SPAM 版本，SPAM 或 SAINT 设置可能会影响安装过程。请禁用 <strong>无法进行签名检查，未实施 SAP 说明 2520826</strong> 项，位于 <strong>导入期间的检查</strong> 部分下。在某些 SPAM 版本中，此项完全没有描述，但仍应禁用。</p></div>
+<ol start="4">
+<li>选择 <strong>开始时间</strong> 以进行安装。</li>
+<li>可用包会被列出。如果没有列出，请点击筛选器图标以取消激活筛选器。</li>
+<li>选择 <strong>继续</strong> 以进入下一步。</li>
+<li>对于 Connector 安装，请选择 <code>PALANTIR</code> and <code>PALCONN</code>.</li>
+<li>选择 <strong>继续</strong> 以进入支持包选择。</li>
+<li>从列表中选择可用的最高支持包，并确保两个组件选择了相同的 SP 级别。</li>
+<li>确认安装队列并点击 <strong>继续</strong>.</li>
+<li>选择 <strong>在对话框模式下继续</strong> 用于准备阶段， <strong>立即在后台继续</strong> 用于其他阶段，然后开始安装。</li>
+</ol>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__success__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>如果安装过程中出现警告，请按照警告消息中描述的步骤进行解决。在大多数情况下，对于 Connector 和远程代理安装，警告消息可以忽略。特别是标题为"打开的数据提取请求"的警告消息可以忽略，因为安装不会对 DDIC 结构进行更改，因此不会导致打开的数据提取请求终止。</p></div>
+<ol start="12">
+<li>选择 <strong>完成</strong> 以完成安装。</li>
+</ol>
+<h2 data-pagefind-weight="0.9" id="user-content-run-the-post-installation-wizard" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#run-the-post-installation-wizard" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>运行安装后向导</h2>
+<p>Connector 安装后向导简化了 Connector 附加组件安装后的设置活动。要执行安装后配置，Basis 管理员（即执行用户， <strong>不</strong> Foundry 技术用户）需通过 SAP GUI 登录主客户端（而非 <code>000</code>）。安装后向导在该管理员的会话下运行，并 <em>配置</em> Foundry 技术用户；Foundry 技术用户本身从不进行交互式登录。可以通过事务代码访问安装后向导 <code>/n/PALANTIR/POST_INST</code> 或从 Connector 菜单（事务代码： <code>/n/PALANTIR/</code>).</p>
+<h3 data-pagefind-weight="0.8" id="user-content-wizard-steps" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#wizard-steps" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>向导步骤</h3>
+<p>共有 10 个步骤，可以一起运行，也可以单独运行。要完成安装，所有步骤都需要启用。如果这不是 SLT 安装，请禁用 <strong>创建 SLT 配置</strong>。SLT 配置在第 7 步中详细说明。</p>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>执行用户（运行向导的 Basis 管理员）需要拥有足够的权限，才能将所需的授权角色分配给 Foundry 技术用户。此过程类似于通过 <code>SU01</code> 事务代码维护用户。如果用户分配单独完成，请禁用 <code>Assign Roles to Foundry User</code> 和 <code>Perform Healthcheck</code>.</p></div>
+<h4 id="user-content-1-run-uninstall-corrections"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#1-run-uninstall-corrections" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>1. 运行卸载修正</h4>
+<p>此步骤运行一个后台程序，用于修复 Connector 对象目录中的 SAP 软件包。此修正程序可随时运行，不会产生不良副作用。</p>
+<h4 id="user-content-2-activate-sicf-services"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#2-activate-sicf-services" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>2. 激活 SICF 服务</h4>
+<p>此步骤激活数据传输所需的两个 Connector 服务。如有需要，也可以通过 <code>SICF</code> 事务代码手动完成。这两个服务是：</p>
+<ul>
+<li><code>/default_host/sap/palantir</code></li>
+<li><code>/default_host/sap/opu/odata/palantir</code></li>
+</ul>
+<h4 id="user-content-3-generate-roles"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#3-generate-roles" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>3. 生成角色</h4>
+<p>Connector 拥有自己的一套角色，这些角色在安装过程中导入。安装后，这些角色处于未生成状态。如有需要，可以通过 <code>PFCG</code> 事务代码使用 <code>Utilities &gt; Mass Generation</code>.</p>
+<ul>
+<li><code>/PALANTIR/CONTENT_BEX_ALL</code></li>
+<li><code>/PALANTIR/CONTENT_CDS_ALL</code></li>
+<li><code>/PALANTIR/CONTENT_HANA_ALL</code></li>
+<li><code>/PALANTIR/CONTENT_DM_ALL</code></li>
+<li><code>/PALANTIR/CONTENT_EXT_ALL</code></li>
+<li><code>/PALANTIR/CONTENT_FUNCTION_ALL</code></li>
+<li><code>/PALANTIR/CONTENT_INFOPROV_ALL</code></li>
+<li><code>/PALANTIR/CONTENT_SLT_ALL</code></li>
+<li><code>/PALANTIR/CONTENT_TABLE_ALL</code></li>
+<li><code>/PALANTIR/CONTENT_TCODE_ALL</code></li>
+<li><code>/PALANTIR/DEBUG_USER</code></li>
+<li><code>/PALANTIR/MONITORING</code></li>
+<li><code>/PALANTIR/OAUTH_CLIENT</code></li>
+<li><code>/PALANTIR/SERVICE_SLT</code></li>
+<li><code>/PALANTIR/SERVICE_SLT_740</code></li>
+<li><code>/PALANTIR/SERVICE_USER</code></li>
+</ul>
+<h4 id="user-content-4-assign-roles-to-the-foundry-technical-user"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#4-assign-roles-to-the-foundry-technical-user" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>4. 将角色分配给 Foundry 技术用户</h4>
+<p>步骤 3 中的所有 Palantir 角色将分配给在选择屏幕中定义的 SAP 用户。这应该是上述高级步骤第 3 步中创建的 System 类型的 Foundry 技术用户，而不是执行用户。</p>
+<p>如果此步骤生成有关角色分配、无法检索用户详细信息或缺少权限的错误消息，则表明执行用户没有足够的权限。在这种情况下，请按照错误消息中的建议更正执行用户的授权，然后重新运行该程序。</p>
+<p>如果此步骤生成的错误消息表明 Foundry 技术用户已被锁定，请联系锁定所有者解除锁定，然后重新运行该程序。</p>
+<h4 id="user-content-5-maintain-default-parameters"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#5-maintain-default-parameters" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>5. 维护默认参数</h4>
+<p>可以通过这些选择设置资源检查和连续资源检查参数。默认值显示在选择屏幕中，可根据您的要求进行更改。当程序运行并选中此项时，Connector 参数将根据所选参数进行修改。这些参数也可以使用事务代码进行维护 <code>/n/PALANTIR/PARAM</code>.</p>
+<p>了解 <a href="#performance-parameters">性能参数</a>.</p>
+<h4 id="user-content-6-check-icm-settings"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#6-check-icm-settings" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>6. 检查 ICM 设置</h4>
+<p>此步骤验证 ICM 设置、主机名和端口（用于 HTTP 和 HTTPS），并创建可用于测试连接的 URL。</p>
+<h4 id="user-content-7-create-slt-configuration"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#7-create-slt-configuration" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>7. 创建 SLT 配置</h4>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>此步骤仅在连接为 <a href="/docs/foundry/sap/architecture/#connecting-to-an-sap-erp-system-via-an-sap-slt-replication-server">通过 SAP SLT 复制服务器进行连接</a>.</p></div>
+<p>时才相关。如果 Connector 安装在 SAP SLT 实例之上，安装后向导可以创建新的 SLT 配置（ODP）。您也可以使用 <code>LTRC</code> 事务代码创建 SLT 配置。</p>
+<p>SLT 配置的参数如下：</p>
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>参数</th><th>描述</th></tr></thead><tbody><tr><td><code>Context Name</code></td><td>唯一的配置名称。</td></tr><tr><td><code>Context Description</code></td><td>上下文描述，将显示给 SAP 事务中的用户 <code>LTRC</code> 以及 Foundry 中的用户。</td></tr><tr><td><code>Data Transfer Jobs</code></td><td>数据传输作业的数量。</td></tr><tr><td><code>Initial Load Jobs</code></td><td>初始加载作业的数量。</td></tr><tr><td><code>Calculation Jobs</code></td><td>用于初始加载范围计算的计算作业数量。</td></tr><tr><td><code>Authorization Group</code></td><td>默认情况下无授权组。</td></tr><tr><td><code>Replication Mode</code></td><td>1 - 实时（默认）；2 - 时间间隔；3 - 时间计划；4 - 按需。</td></tr><tr><td><code>Source RFC Destination</code></td><td>逻辑目标 - 源系统的 RFC 目标名称。</td></tr><tr><td><code>Read from Single Client</code></td><td>如果将从单个客户端读取数据，请启用。</td></tr><tr><td><code>Allow Multiple Usage</code></td><td>如果允许多重使用，请启用。</td></tr></tbody></table></div>
+<h4 id="user-content-8-perform-health-checks"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#8-perform-health-checks" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>8. 执行健康检查</h4>
+<p>Connector 拥有多种指标来衡量其在已安装的 SAP 系统中的健康状况。Connector 在以下类别中执行健康检查：</p>
+<ul>
+<li><code>AGENT</code>：检查 RFC 连接和源系统授权。 <strong>仅适用于 <a href="/docs/foundry/sap/architecture/#connecting-to-a-remote-sap-erp-system-via-a-gateway">通过网关的远程连接</a>.</strong></li>
+<li><code>AUTHORIZATION</code>：检查 Foundry 用户是否存在缺失的授权 <code>SM53</code>.</li>
+<li><code>CONNECTOR</code>：检查系统中是否已安排 Connector 清理作业。</li>
+<li><code>ROLE</code>：检查 Foundry 用户的角色和授权配置文件。</li>
+<li><code>SLT</code>：检查 SLT 配置是否正确且健康；例如，BADI_Implementation 是否处于活动状态、Context 是否处于活动状态、是否已安排 SLT 清理作业，或源系统连接是否正常。</li>
+</ul>
+<h4 id="user-content-9-browser-test-urls"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#9-browser-test-urls" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>9. 浏览器测试 URL</h4>
+<p>安装完成后，务必通过 Web 浏览器进行连接测试，以检查 Connector 是否正常运行。所需的 URL 由安装后向导生成。</p>
+<p>有多种不同的测试可用。第一个和第二个测试是对 Connector 服务的同步调用；第三个和第四个用于批量提取。</p>
+<ul>
+<li><strong>关于：</strong> Connector 的“关于”页面。</li>
+<li><strong>T000 表：</strong> 使用以下对象类型直接提取 T000 表 <code>table</code> 对象类型。</li>
+<li><strong>T000 与 Paging-Init：</strong> 使用以下方式初始化 T000 表的后台提取 <code>table</code> 对象类型。</li>
+<li><strong>T000 与 Paging-Read 第 1 页：</strong> 将检索由上一个 URL 初始化的进程的第一页。</li>
+</ul>
+<h4 id="user-content-10-source-definition-template-for-foundry"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#10-source-definition-template-for-foundry" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>10. Foundry 的源定义模板</h4>
+<p>在运行程序并勾选 Foundry 中的 Source Definition 后，将显示一个新标签页“Source Definition”，其中包含 Foundry 中源配置的详细信息。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-security-and-authorization-roles" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#security-and-authorization-roles" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>安全和授权角色</h3>
+<p>更多详细信息请参见 <a href="/docs/foundry/sap/authorization-roles/">授权角色</a>.</p>
+<h3 data-pagefind-weight="0.8" id="user-content-performance-parameters" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#performance-parameters" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>性能参数</h3>
+<p>Connector 具有以下性能参数，以在系统资源不足以服务 Foundry 时避免不必要的系统负载。这些设置会与 ST06 的值进行比较。下面列出的默认参数值适用于最新 Connector 版本的全新安装。</p>
+<ul>
+<li><strong><code>MEMORY_FREE</code>:</strong> 空闲内存百分比。如果该百分比低于系统默认值或用户定义的值，提取将停止。Connector 默认值为 <code>5%</code>.</li>
+<li><strong><code>CPU_IDLE</code>:</strong>  CPU 空闲百分比。Connector 默认值为 <code>5%</code>.</li>
+<li><strong><code>CPU_USER</code>:</strong> 用户事务占用的 CPU 利用率。Connector 默认值为 <code>80%</code>.</li>
+<li><strong><code>CPU_LOAD</code>:</strong> CPU 总利用率。Connector 默认值为 <code>80%</code>.</li>
+</ul>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>ST06 关键指标由 SAP 提供给 Connector。如果 <strong>虚拟化的增强监控</strong> 已激活，则操作系统特定的信息会补充虚拟化特定的信息。这可能会影响 ST06 指标并误导 Connector。详情请参阅 SAP OSS 文章 2266266。</p></div>
+<p>初始系统默认值特意设置得较为保守。如果您希望将其覆盖为更宽松的值，请通过 <strong><code>/n/PALANTIR/PARAM</code></strong> 事务进行维护。</p>
+<p>以下参数用于启用或禁用资源检查：</p>
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>参数 ID</th><th>参数名称</th><th>参数值</th><th>默认值</th><th>描述</th></tr></thead><tbody><tr><td><code>SYSTEM</code></td><td><code>CPU_CHECK</code></td><td><code>TRUE</code> / <code>FALSE</code></td><td><code>TRUE</code></td><td>启用或禁用 CPU 检查。</td></tr><tr><td><code>SYSTEM</code></td><td><code>MEMORY_CHECK</code></td><td><code>TRUE</code> / <code>FALSE</code></td><td><code>TRUE</code></td><td>启用或禁用 MEMORY 检查。</td></tr><tr><td><code>SYSTEM</code></td><td><code>RESOURCE_CHECK</code></td><td><code>TRUE</code> / <code>FALSE</code></td><td><code>TRUE</code></td><td>启用或禁用 RESOURCE 检查。如果为 FALSE， <em>所有</em> 则禁用检查；如果为 TRUE，则检查其他参数（CPU_CHECK 和 MEMORY_CHECK）。</td></tr><tr><td><code>SYSTEM</code></td><td><code>CONTINUOUS_RESOURCE_CHECK</code></td><td><code>TRUE</code> / <code>FALSE</code></td><td><code>TRUE</code></td><td>对所有请求（init 和所有分页请求）启用资源检查。如果为 FALSE，则仅对 init 请求执行资源检查。</td></tr><tr><td><code>SYSTEM</code></td><td><code>PROCESS_CHECK</code></td><td><code>TRUE</code> / <code>FALSE</code></td><td><code>TRUE</code></td><td>对允许的最小工作进程数启用检查；与 PROCESS_MIN_BG 和 PROCESS_MIN_DIA 配合使用。</td></tr><tr><td><code>SYSTEM_THRESHOLD</code></td><td><code>PROCESS_MIN_BG</code></td><td>numeric</td><td><code>1</code></td><td>SAP 应用服务器上可用的后台进程的最少要求数量。</td></tr><tr><td><code>SYSTEM_THRESHOLD</code></td><td><code>PROCESS_MIN_DIA</code></td><td>numeric</td><td><code>1</code></td><td>SAP 应用服务器上可用的对话进程的最少要求数量。</td></tr></tbody></table></div>
+<p>要检查实际值和参数值，您可以在浏览器中使用系统对象和资源函数：</p>
+<pre><code>https://&lt;sap-server&gt;:&lt;port&gt;/sap/palantir/system?obj=resource
+</code></pre>
+<p>此 URL 是一个 SAP 系统 URL；您应确保此资源可访问。</p>
+<p>输出将采用以下格式：</p>
+<pre><code>MSGTYP	MSGTXT
+S	Current CPU_LOAD value : 0,01 | system threshold value : 95,00
+S	Current CPU_USER value : 1,00 | system threshold value : 0,01
+S	Current CPU_IDLE value : 99,00 | system threshold value : 5,00
+S	Current free memory percentage : 24,22 | system threshold value : 11,00
+S	Current PROCESS_MIN_BG value : 5 | system threshold value : 2
+S	Current PROCESS_MIN_DIA value : 9 | system threshold value : 2
+S	Resource check is Active
+S	CPU Load check is Active
+S	Memory consumption check is Active
+S	Process availability check is Active
+</code></pre></div>
+</article>
+</article>
+</body>
+</html>

@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>流式键</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<article>
+<div class="ptcom-design__markdownDoc__1uarhel" data-pagefind-body="true"><h1 data-pagefind-weight="1" id="user-content-streaming-keys" level="1" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#streaming-keys" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>流式键</h1>
+<p>Foundry 流允许您指定一个或多个列作为键列，并指定一个主键来标识已解析的记录。以下部分将说明如何为您的流式管道设置和维护分区键和主键。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-partition-keys" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#partition-keys" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>分区键</h2>
+<p>通常， <a href="/docs/foundry/transforms-python/data-expectations-reference/#primary-key"><em>主</em> 键</a> 在 Palantir 平台中用于唯一标识数据库记录。但是， <em>分区</em> Foundry 流中的键会对 <em>记录</em> 具有相同 <strong>键</strong>的记录进行分组，例如某个特定 <em>读数</em> 设备 <strong>的所有</strong>，或所有 <em>事务</em> 设备 <strong>增长，</strong>。与批处理管道中的主键不同，流中的分区键不会对记录进行去重，因为它们不能唯一标识记录。</p>
+<p>Foundry 中的键允许用户确保某个特定键的所有记录保持顺序。当记录进入 Foundry 时，它会被内部存储在 Kafka 中。Kafka 保证写入同一分区的记录在读取和写入时保持顺序。如果发送到 Foundry 的记录没有键，该记录将以轮询（round-robin）方式写入内部 Kafka 主题的任意分区。但是，如果用户为记录指定了键，该记录将被写入该键的专用分区，从而在下游消费时保持顺序。</p>
+<p>类似地，Flink 流式作业会根据输入源上设置的分区键列自动维护排序。Flink 转换作业在执行每个转换操作时可以使用一个或多个并行分区。对于按分区键分组的输入流，Flink 作业会自动将所有键列值相同的记录发送到同一个并行算子实例。除非特意重新指定键（例如使用 <a href="/docs/foundry/pb-functions-transform/keyByV3/"><code>Key by</code> 和构建数据的方法是应用一个联合操作。联合操作将两个数据集合并，以包含每个数据集的所有行。在Pipeline Builder中，联合操作会保留所有行，包括重复的行。</a>），否则整个管道长度上的分区和排序都由源上的键列和行值决定，即使转换逻辑删除了列或覆盖了值。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-primary-keys-change-data-capture-cdc-mode" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#primary-keys-change-data-capture-cdc-mode" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>主键：变更数据捕获（CDC）模式</h2>
+<p>Foundry 流中的主键与关系数据库和批处理数据集中使用的主键类似。但是，流式主键由一组唯一标识已解析记录的去重列组成，并且不指定排序列。</p>
+<p>主键是 Foundry 中流 schema 里的一段元数据。该键不会影响存储数据的内容，也不会影响流式数据管道和转换的应用方式。主键控制某些 Foundry 消费者读取数据的方式；完整的 <em>数据</em> 可以被视为一个 <strong>变更日志（changelog）</strong>，而 <em>主键</em> 告诉消费者如何计算去重后的 <strong>当前视图</strong> （在应用所有变更之后）。</p>
+<p>当前视图是数据的一个筛选视图，仅包含每个键最近流式传输的记录。某个键的完整最新记录将始终被保留，即使它包含 <code>nulls</code>。如果指定了已删除列，并且某个键最近流式传输的记录将该值设置为 <code>true</code>，则该记录将被过滤掉。</p>
+<p>以下示例展示了一个主键和数据流，其中最近流式传输的行在表中位于更上方。</p>
+<p>主键： <code>{Dedeuplication column(s): [Key], isDeletedColumn: Optional[isDeleted]}</code></p>
+<p>| Key  | Value     | isDeleted |<br/>
+|------|-----------|-----------|<br/>
+| Key2 | <code>null</code>    | <code>false</code>   |
+| Key1 | thirdVal  | <code>true</code>    |
+| Key2 | secondVal | <code>false</code>   |
+| Key1 | firstVal  | <code>false</code>   |</p>
+<p>当支持 CDC 的消费者读取这个变更日志流时，将被读取为以下当前视图：</p>
+<p>| Key  | Value     | isDeleted |<br/>
+|------|-----------|-----------|<br/>
+| Key2 | <code>null</code>    | <code>false</code>   |</p>
+<p>如果您选择为流式数据设置主键，则还必须将相同的列设置为分区键，以维护排序并正确解析去重后的数据视图。在流式设置界面中设置主键后，相同的列将自动添加为分区键列。</p>
+<p>以下两个支持 CDC 的作业将自动把带主键的流式数据作为当前视图读取：</p>
+<ol>
+<li><strong>使用带主键的流为本体论（Ontology）填充数据：</strong> 新的更新记录将根据需要导致新对象的创建、更新或删除。</li>
+<li><strong>流的归档数据集可由任何 Spark 转换作业读取：</strong> 在进行任何转换之前，源数据将被去重。值得注意的是，几乎所有与归档数据集的交互都会运行 Spark 作业，包括数据集预览和 Contour 分析。查看归档数据集时，它始终显示为去重后的当前视图，即使数据本身包含完整的变更日志（如果您将数据下载为文件）。完整的变更日志将由任何不运行 Spark 的流式作业处理，包括重放。</li>
+</ol>
+<h2 data-pagefind-weight="0.9" id="user-content-key-propagation" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#key-propagation" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>键传播</h2>
+<p>Pipeline Builder 会通过管道转换跟踪分区键列和主键列的演变，并将任何有效的键写入输出流的 schema 中。如果您的转换不会使任何键列失效，则在任意数量的下游管道序列中，将自动维护相同的分区和去重指令。</p>
+<p>如果您重命名某个键列，该键将更新为包含新的列名。同样，如果您应用某个转换来删除或覆盖键列，该列将从键中移除。由于键列内容的任何覆盖都可能表示新的排序保证或新的去重策略，Pipeline Builder 会将该列从键中完全移除。您必须应用 <code>Key by</code> 转换，才能保留之前被覆盖的键列。即使分区键列因删除或覆盖而被丢弃，除非您重新设置键，否则相同的排序保证将在管道的其余部分持续有效。</p>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>如果所有分区键或去重 CDC 键被删除或覆盖，该键将被完全丢弃。在删除或覆盖键列内容时请务必谨慎；这样做可能导致意外结果，包括失去排序保证或去重策略。</p></div>
+<p>目前，键 <strong>绝不会</strong> 在用户自定义函数（UDF）中传播。由于该函数是用户自定义的，无法推断用户意图采用哪种键传播策略（如果有的话）。如果您打算传播键，请务必在 UDF 之后应用 <code>Key by</code> 转换。</p>
+<p>此外，主键不会在有状态转换中传播（大多数转换是无状态的）。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-use-a-streaming-key" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#use-a-streaming-key" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>使用流式键</h2>
+<p>在 Pipeline Builder 应用程序的流式管道中，将 <code>Key by</code> 转换添加到您的图中。值得注意的是，您在此处设置的任何键都将覆盖并替换输入数据上的任何现有键。</p>
+<p>如果您只想设置分区键，请关闭 <code>CDC mode</code> 选项，仅提供 <code>Key by columns</code> 列表。除非您处于 CDC 模式，否则其他参数不是必需的，也不允许使用。</p>
+<p>要同时设置主键和分区键，请开启 <strong>CDC 模式</strong> 选项。如果你有 <code>isDeleted</code> 列，可以选择在 <strong>主键已删除</strong> 字段中指定它。对于流式处理用例，我们强烈建议将可选的 <strong>主键排序列</strong> 参数留空。转换将同时设置分区键和主键，其中分区键列与主键去重列相同。 <strong>主键排序列</strong> 参数仅在批处理作业中消费归档数据集时才有意义，绝不会影响流式处理进行去重的方式。指定排序列的选项是为了向后兼容、供批处理转换用户或打算以特定仅批处理方式消费流归档的用户使用。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-check-current-keys" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#check-current-keys" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>检查当前键</h2>
+<p>以下部分介绍如何在 Foundry 流中查找和验证流式键逻辑。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-check-partition-keys" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#check-partition-keys" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>检查分区键</h3>
+<p>打开你的流式数据集，导航到 <strong>详情</strong> 标签页，然后打开 <strong>模式</strong> 标签页以查看 JSON 格式的数据架构。</p>
+<p>搜索 <code>includeInParitioning</code>，它将出现在 <code>fieldSchemaList</code> 中作为主键一部分的每个列所对应的元素中：</p>
+<pre><code>"customMetadata": {
+"includeInPartitioning": true
+}
+</code></pre>
+<p>如果你没有看到任何带有 <code>includeInParitioning</code>的架构字段，则你的流没有键，并且无法保证数据存储或处理的顺序。要手动添加键，请以 JSON 文本形式编辑架构，并将自定义元数据（如上文所述）插入到你想要设置为分区键列的每个架构字段（列）中。</p>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>如果流已经有一个或多个分区键，添加新的分区键列将导致 <em>较弱</em> 的顺序保证，因为分区会更多；只有当所有分区键列的值都相同的行，才能保证维持其顺序。</p></div>
+<p>在部署之前，如果在管道的输入流上设置了分区键列，则将为该源及其所有转换在整个管道中保证顺序，除非你有意重新设置键。分区键列在数据预览中可能会显示一个键符号。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-check-primary-keys" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#check-primary-keys" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>检查主键</h3>
+<p>打开你的流式数据集，导航到 <strong>详情</strong> 标签页，然后打开 <strong>模式</strong> 标签页以查看 JSON 格式的数据架构。</p>
+<p>你将看到一个名为 <code>primaryKey</code>的 JSON 属性。如果你的流有名为 <code>uniqueCol1</code> 和 <code>uniqueCol2</code>，而 <code>isDeleted</code> 列是 <code>isDeletedCol</code>，则架构应如下所示：</p>
+<pre><code>  "primaryKey": {
+    "columns": [
+      "uniqueCol1",
+      "uniqueCol2"
+    ],
+    "resolution": {
+      "type": "duplicate",
+      "duplicate": {
+        "resolutionStrategy": {
+          "type": "customStrategy",
+          "customStrategy": {}
+        },
+        "deletionColumn": "isDeletedCol"
+      }
+    }
+  }
+</code></pre>
+<p>如果未设置主键，架构将显示 <code>null</code>:</p>
+<pre><code>"primaryKey": null
+</code></pre>
+<p>要手动设置或删除主键，你可以编辑架构 JSON 以按上述格式指定键，或使用 <code>null</code> 来删除键。如果你手动设置主键，我们强烈建议将相同的列设置为分区键列。</p>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>保证顺序的唯一方法是在整个流式数据血缘上设置分区键列。设置完成后，分区键列将自动向下游传播。即使流被配置为只有一个分区，由于 Flink 应用程序以非确定性方式扩展和处理记录，顺序也不一定能够得到保证。</p></div>
+<h2 data-pagefind-weight="0.9" id="user-content-streaming-key-best-practices" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#streaming-key-best-practices" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>流式键最佳实践</h2>
+<p>请谨慎选择分区键，因为导致记录分布低效的键会人为地增加负载并限制吞吐量。如果顺序对你的用例很重要，请将分区键设置为你想要维持顺序的通用分组标识符，例如电子邮件 ID、客户 ID 或组织 ID。如果顺序对你的用例不重要，你可以选择使用唯一 ID 作为键，或者根本不为你的流使用键。</p>
+<p>最终流式输出的排序保证强度将与您的 <em>最弱</em> 流式系列（由 Kafka 主题支撑）以及通往输出的转换（Flink 作业）中的保证相同。因此，请确保在整个数据血缘中保持所需的排序，并设置正确的分区键，从最初将记录提取到 Foundry 的流式提取开始。排序保证不会强于您从中提取数据到 Foundry 的系统。例如，如果您使用 Kafka 连接器从 Kafka 提取数据，请将分区键列设置为与 Kafka 键列相同，以便 Foundry 在您的系统上保持同等的排序保证。</p>
+<p>此外，如果在一系列数据转换过程中完全更改分区列（以及排序保证），也可能会出现问题。如果在应用新的 <code>Key by</code> 转换之前保证了不同的排序，则该转换将接收到相对于新添加的键列而言顺序错乱的记录；这些记录在整个转换系列中将保持错误的顺序。</p></div>
+</article>
+</article>
+</body>
+</html>

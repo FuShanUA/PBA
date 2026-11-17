@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>故障排除参考</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<article>
+<div class="ptcom-design__markdownDoc__1uarhel" data-pagefind-body="true"><h1 data-pagefind-weight="1" id="user-content-troubleshooting-reference" level="1" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#troubleshooting-reference" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>故障排除参考</h1>
+<p>本页面描述了同步（Sync）的若干常见问题及调试步骤：</p>
+<ul>
+<li><a href="#pkix-and-ssl-exceptions">PKIX 和 SSL 异常</a></li>
+<li><a href="#egress-proxy-issues">出口代理问题</a></li>
+<li><a href="#incremental-jdbc-sync-issues">增量 JDBC 同步</a></li>
+<li><a href="#intermittent-sync-failures-or-hangs">间歇性同步失败或挂起</a></li>
+<li><a href="#a-sync-started-failing">某个同步开始失败</a></li>
+<li><a href="#unexpected-data-was-synced">同步了意外的数据</a></li>
+</ul>
+<p>如果网络吞吐量限制了数据摄取速度，请参阅 <a href="/docs/foundry/data-connection/troubleshooting/#optimize-network-throughput">优化网络吞吐量</a>.</p>
+<h2 data-pagefind-weight="0.9" id="user-content-pkix-and-ssl-exceptions" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#pkix-and-ssl-exceptions" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>PKIX 和 SSL 异常</h2>
+<p>有关证书和 TLS 的故障排除，包括 <code>PKIX</code> 和 <code>SSLHandshakeException</code> 错误，请参阅 <a href="/docs/foundry/data-connection/troubleshooting/#certificates-and-tls">证书和 TLS</a>.</p>
+<p>如果您的同步失败并出现错误 <code>Response 421 received. Server closed connection</code>，这表明您可能正在使用不受支持的 SSL 协议/端口组合进行连接。例如，通过端口 991 的隐式 FTPS，这是一个过时且不受支持的标准。在这种情况下，首选方法是通过端口 21 使用显式 SSL。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-egress-proxy-issues" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#egress-proxy-issues" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>出口代理问题</h2>
+<h3 data-pagefind-weight="0.8" id="user-content-ftp-syncs" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#ftp-syncs" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>FTP 同步</h3>
+<p>如果您的同步是 FTP/S 同步，请确保您没有使用出口代理负载均衡器。FTP 是一种有状态协议，因此如果连续的请求不是来自同一 IP，使用负载均衡器可能会导致同步失败。</p>
+<p>由于负载均衡的特性，故障将是不确定性的；即使负载均衡代理已就位，同步和预览有时也可能会成功。</p>
+<p>此外，HTTP 代理不支持 FTP 和 FTPS 的主动模式传输。主动模式要求 FTP 服务器回连到客户端，而这无法通过 HTTP 代理实现。在 FTP/FTPS 连接中使用 HTTP 代理时，仅支持被动模式传输。请确保在通过 HTTP 代理连接时，您的 FTP 源配置为使用被动模式。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-s3-syncs" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#s3-syncs" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>S3 同步</h3>
+<p>如果您的同步或数据探索失败并出现错误 <code>com.amazonaws.services.s3.model.AmazonS3Exception:Forbidden (Service: Amazon S3; Status Code: 403; Error Code: 403 Forbidden; Request ID: null; S3 Extended Request ID: null)</code>，这表示该命令在通过出口代理时遇到了错误。如果您收到此错误，应检查以下哪些场景适用：</p>
+<ul>
+<li>Region 字段为空。当您连接的 S3 存储桶与代理位于不同的区域时，此字段为必填项。</li>
+<li>STS 由于未被加入允许列表而无法访问。</li>
+<li>S3 URL 由于未被加入允许列表而无法访问。</li>
+<li>STS 凭证无效，或者您无法担任 IAM 角色。</li>
+<li>该同步需要使用 VPC 而非代理；要解析 S3 端点，必须通过添加以下配置将地址从代理中排除：
+<ul>
+<li>
+<p>在 S3 源的 proxyConfiguration 块中添加：</p>
+<pre><div class="ptcom-design__wrapper__12wpwnx" data-pagefind-weight="0.5"><span class="ptcom-design__clipboard__1l1gb20 ptcom-design__clipboard__12wpwnx"><span class="ptcom-design__confirmation__1l1gb20" data-pagefind-ignore="true">Copied!</span><svg aria-hidden="true" aria-label="clipboard" data-view-component="true" height="16" version="1.1" viewbox="0 0 16 16" width="16"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z" fill="currentColor" fill-rule="evenodd"></path><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z" fill="currentColor" fill-rule="evenodd"></path></svg></span><div style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;overflow:auto;position:relative;margin:0;padding:0.75em"><code style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;float:left;padding-right:10px"><span class="react-syntax-highlighter-line-number">1
+</span><span class="react-syntax-highlighter-line-number">2
+</span><span class="react-syntax-highlighter-line-number">3
+</span><span class="react-syntax-highlighter-line-number">4
+</span></code><code class="language-yaml" style="white-space:pre;text-align:left;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none">host: &lt;address of deployment gateway or egress NLB&gt;
+port: 8888
+protocol: http
+nonProxyHosts: &lt;bucket&gt;.s3.&lt;region&gt;.amazonaws.com,s3.&lt;region&gt;.amazonaws.com,s3-&lt;region&gt;.amazonaws.com</code></div></div></pre>
+<p>例如：将所有 VPC 存储桶加入允许列表需要添加如下配置：</p>
+<pre><div class="ptcom-design__wrapper__12wpwnx" data-pagefind-weight="0.5"><span class="ptcom-design__clipboard__1l1gb20 ptcom-design__clipboard__12wpwnx"><span class="ptcom-design__confirmation__1l1gb20" data-pagefind-ignore="true">Copied!</span><svg aria-hidden="true" aria-label="clipboard" data-view-component="true" height="16" version="1.1" viewbox="0 0 16 16" width="16"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z" fill="currentColor" fill-rule="evenodd"></path><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z" fill="currentColor" fill-rule="evenodd"></path></svg></span><div style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;overflow:auto;position:relative;margin:0;padding:0.75em"><code style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;float:left;padding-right:10px"><span class="react-syntax-highlighter-line-number">1
+</span><span class="react-syntax-highlighter-line-number">2
+</span><span class="react-syntax-highlighter-line-number">3
+</span><span class="react-syntax-highlighter-line-number">4
+</span><span class="react-syntax-highlighter-line-number">5
+</span><span class="react-syntax-highlighter-line-number">6
+</span></code><code class="language-yaml" style="white-space:pre;text-align:left;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none">clientConfiguration:
+     proxyConfiguration:
+        host: &lt;color&gt;-egress-proxy.palantirfoundry.com
+        port: 8888
+        protocol: http
+        nonProxyHosts: *.s3.&lt;region&gt;.amazonaws.com, s3.&lt;region&gt;.amazonaws.com, s3-&lt;region&gt;.amazonaws.com</code></div></div></pre>
+</li>
+</ul>
+</li>
+</ul>
+<p>如果您的同步或数据探索失败并出现错误 <code>Could not list objects in bucket</code>，请检查是否同时配置了 region 和 signing region。同时设置这两个值可能会导致此错误；仅配置 signing region 即可解决该问题。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-incremental-jdbc-sync-issues" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#incremental-jdbc-sync-issues" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>增量 JDBC 同步问题</h2>
+<p>要查看针对您的源系统运行的确切查询，请参阅 <code>_data-ingestion.log</code>.</p>
+<p>如果您的同步是增量同步，请确保您已提供一个单调递增的列（例如时间戳或 id）以及该列的初始值。</p>
+<p>选择增量列后，您需要确保已将 <code>?</code> 运算符添加到 <code>SQL</code> 同步配置页面中的查询（ <code>?</code> 会被替换为“增量”值，并且只能使用一个 <code>?</code> ）。例如， <code>SELECT * FROM table WHERE id &gt; ?</code>.</p>
+<h4 id="user-content-missing-rows-and-rows-not-being-updated"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#missing-rows-and-rows-not-being-updated" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>缺失行和行未更新</h4>
+<p>如果您认为同步的数据集中缺少某些行，或者之前同步的行未被正确更新，请检查以下内容：</p>
+<ul>
+<li>如果向现有数据集添加了新行，并且新行在增量列中存储的值小于当前游标，则这些新行将不会被同步。
+<ul>
+<li>例如，如果您使用 <code>ID</code> 作为单调递增列，并且上次同步中最后同步的 <code>ID</code> 值为 10，然后您添加了一行 <code>ID</code> 5，那么该值为 <code>ID</code> 5 的行将不会被同步。</li>
+</ul>
+</li>
+<li>如果由于上述原因某些行未被同步，您仍可以通过以下方式同步这些行：
+<ul>
+<li>执行快照同步而非增量同步，或</li>
+<li>调整查询以针对缺失的行，并将其作为一次性任务运行。</li>
+</ul>
+</li>
+</ul>
+<h4 id="user-content-duplicate-rows"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#duplicate-rows" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>重复行</h4>
+<p>如果您认为现有行正在被重新同步，请检查以下内容：</p>
+<ul>
+<li>如果源数据库中的现有行被更新，并且这些行的增量列发生更改，使其大于当前游标，则这些行将被重新同步，从而导致重复。例如，如果您用作增量列的列是一个时间戳，表示行的插入时间或最后更新时间，而您在数据集同步之间更新了某一行，则该更新后的行将被重新同步。
+<ul>
+<li>如果由于上述原因存在重复行，您可以通过以下方式将其删除：
+<ul>
+<li>执行快照同步而非增量同步，或</li>
+<li>使用下游转换来删除重复行。</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>如果您选择的增量列的数据类型是时间戳且使用亚毫秒精度，则重复行将被重新同步。这是因为目前增量 JDBC 同步仅将时间戳值序列化到毫秒精度，并且增量值随后总是向下舍入到最接近的毫秒。因此，具有微秒和/或纳秒精度的行将始终被重新同步，因为与当前（向下舍入的）增量值的比较结果始终为“正”。</li>
+<li>如果由于上述原因存在重复行，您需要将增量列转换为 <code>LONG</code> 或 <code>STRING</code> （采用 ISO-8601 格式）。</li>
+</ul>
+<h4 id="user-content-nullpointerexception-thrown-on-incremental-sync"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#nullpointerexception-thrown-on-incremental-sync" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>增量同步时抛出 NullPointerException</h4>
+<p>如果增量同步时抛出 NullPointerException，这可能表明 SQL 查询正在从数据库中检索会导致增量列包含空值的行。</p>
+<ul>
+<li>例如，以查询 <code>SELECT * FROM table WHERE col &gt; ? OR timestamp &gt; 1</code>，其中 <code>col</code> 为例，其中 <code>OR</code> 是用于同步的增量列。使用 <code>col</code> 意味着该查询不保证 <code>col</code> 仅包含非空值。如果任何行的</li>
+<li>空值被同步，则同步将在 Data Connection 尝试更新同步的增量状态时失败，因为当前状态将与同步的空值进行比较并抛出错误。 <code>SELECT * FROM table WHERE (col &gt; ? OR timestamp &gt; 1) AND col IS NOT NULL</code>.</li>
+</ul>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__success__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>要解决此类情况，请选择其他增量列，或确保当前增量列不会同步空值。对于上述查询，我们可以通过如下重写来避免错误</p></div>
+<h2 data-pagefind-weight="0.9" id="user-content-intermittent-sync-failures-or-hangs" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#intermittent-sync-failures-or-hangs" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>间歇性同步失败或挂起</h2>
+<h4 id="user-content-check-if-your-agent-is-running-out-of-resources"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#check-if-your-agent-is-running-out-of-resources" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>如果您希望更改用于同步的增量列，我们建议您创建新的同步。</h4>
+<p>检查您的代理是否资源不足 <code>&lt;bootvisor-directory&gt;/var/data/processes</code> 在代理主机上的 <code>ls -lrt</code> 来找到最近创建的 <code>bootstrapper~&lt;uuid&gt;</code> 以查找最近创建的</p>
+<ul>
+<li><code>cd</code> 目录。 <code>/var/log/</code>.</li>
+<li>进入该目录并导航到 <code>magritte-agent-output.log</code>.</li>
+</ul>
+<p>查看 <code>OutOfMemory Exception</code>的内容。如果您看到错误</p>
+<ul>
+<li>，则表示代理无法处理分配给它的负载。 <a href="/docs/foundry/data-connection/agents-troubleshooting/#agent-status-shows-unhealthy">要解决此问题，您可能需要增大“代理堆大小”参数，这可以在代理概览页面中完成。但是，在此之前，我们建议您阅读</a> 调整堆大小</li>
+<li>的相关说明，详见代理故障排除参考指南。</li>
+</ul>
+<h4 id="user-content-hanging-syncs"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#hanging-syncs" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>如果您无法增大代理的堆大小，则可能需要减小“最大并发同步数”参数。这也可以在代理概览页面中完成。</h4>
+<p>同步挂起</p>
+<p><strong>以下是同步挂起的一些常见原因及其相应的解决方法：</strong></p>
+<p>所有同步：在获取阶段挂起</p>
+<ul>
+<li>要检查数据源是否可用，请尝试连接该数据源并与之交互（不使用您的代理或其他 Foundry 产品）。如果您能够成功连接且查询按预期运行，请联系您的 Palantir 代表以获取进一步帮助。</li>
+<li>如果您发现无法连接到数据源，或者发送到数据源的查询响应缓慢，则该数据源可能正在承受高于正常水平的流量或已宕机。为了减轻繁忙数据源的影响，我们建议采取以下措施：
+<ul>
+<li>将您的同步拆分为多个较小的同步。</li>
+<li>使用增量同步（如适用）。</li>
+<li>在您知道数据源不繁忙的时间段安排同步。</li>
+</ul>
+</li>
+</ul>
+<p><strong>JDBC 同步：在获取阶段挂起</strong></p>
+<p>如果您的同步完成获取阶段所需的时间超出预期，可能是因为代理正在进行大量的网络和数据库调用。要调整同步期间进行的网络和数据库调用次数，您可以更改 <code>Fetch Size</code> 参数：</p>
+<ul>
+<li>直方图 <code>Fetch Size</code> 参数位于数据源配置的“高级选项”部分，用于定义给定查询每次数据库往返期间获取的行数。因此：
+<ul>
+<li>减小 <code>Fetch Size</code> 参数将导致每次调用数据库时返回较少的行，并且需要更多的调用。但是，这意味着代理将使用更少的内存，因为在给定时间内代理堆中存储的行数会更少。</li>
+<li>增大 <code>Fetch Size</code> 参数将导致每次调用数据库时返回更多的行，并且需要更少的调用。但是，这意味着代理将使用更多的内存，因为在给定时间内代理堆中存储的行数会更多。</li>
+<li>我们建议从 <code>Fetch Size</code>: 500 开始，并据此进行调整。</li>
+</ul>
+</li>
+</ul>
+<p><strong>JDBC 同步：在上传阶段挂起</strong></p>
+<p>如果您的同步上传文件耗时很长或在上传阶段失败，则可能是网络链路过载。在这种情况下，我们建议调整 <code>Max file size</code> 参数：</p>
+<ul>
+<li>直方图 <code>Max file size</code> 参数位于数据源配置的“高级选项”部分，用于定义上传到 Foundry 的输出文件的最大大小（以字节或行数为单位）。因此：
+<ul>
+<li>减小 <code>Max file size</code> 参数可能会增加网络压力，因为较小的文件会更频繁地上传；如果文件上传失败，重新上传的成本较低。</li>
+<li>增大 <code>Max file size</code> 参数将需要更少的总带宽，但此类上传更有可能失败。</li>
+<li>我们推荐 <code>Max file size</code>: 120mb。</li>
+</ul>
+</li>
+</ul>
+<p><strong>FTP / SFTP / Directory / 同步：在获取阶段挂起</strong></p>
+<p>基于文件的同步在获取阶段挂起的最常见原因是代理正在遍历一个大型文件系统。</p>
+<p>遍历文件系统的同步将对文件系统进行两次完整遍历（除非另行配置）。这是为了确保同步不会上传当前正在写入或以任何方式被更改的文件。</p>
+<ul>
+<li>为了避免较长的遍历时间，请确保您已在数据源配置页面中指定要遍历的子文件夹。
+<ul>
+<li>注意：任何正则表达式过滤器都将在文件相对于数据源根目录的路径上运行。</li>
+</ul>
+</li>
+<li>如果未指定子文件夹，同步将遍历数据源根目录。</li>
+</ul>
+<h4 id="user-content-large-file-based-syncs-are-vulnerable-to-transient-failures"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#large-file-based-syncs-are-vulnerable-to-transient-failures" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>大型基于文件的同步容易受到瞬时故障的影响</h4>
+<p>基于文件的同步是事务性的。如果同步在任何时刻失败，事务将被中止，该次运行中的所有文件都不会提交到数据集。例如，如果同步配置为上传一百万个文件，而在上传除最后一个文件之外的所有文件后发生网络错误，则整个事务将被中止。所有已上传的文件都不会被提交，数据集视图也不会被修改。</p>
+<p>由于这种事务性行为，在单次运行中处理大量文件的同步更容易受到瞬时网络问题或源系统问题的影响。要减少同步失败的影响：</p>
+<ul>
+<li>用途 <a href="/docs/foundry/data-connection/file-based-syncs/#optimize-file-based-syncs">增量式 <code>APPEND</code> 同步</a> 而非 <code>SNAPSHOT</code> syncs.</li>
+<li>应用文件数量限制过滤器，使每次运行处理较小的文件批次。</li>
+</ul>
+<p>这样，失败时只需重新同步当前批次，而不是所有文件。</p>
+<p>更多详情，请参阅 <a href="/docs/foundry/data-connection/file-based-syncs/#sync-failure-behavior">同步失败行为</a> 和 <a href="/docs/foundry/data-connection/file-based-syncs/#optimize-file-based-syncs">优化基于文件的同步</a>.</p>
+<h4 id="user-content-if-your-sync-fails-with-the-request_entity_too_large-error"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#if-your-sync-fails-with-the-request_entity_too_large-error" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>如果您的同步失败并出现 <code>REQUEST_ENTITY_TOO_LARGE</code> 错误</h4>
+<p>下载、处理和上传大文件容易出错且速度缓慢。 <code>REQUEST_ENTITY_TOO_LARGE</code> 如果单个文件超过为代理上传目标配置的最大大小，则会发生服务异常。对于 <code>data-proxy</code> 上传策略，默认设置为 100GB。</p>
+<p>不建议覆盖该限制；如果可能，请寻找一种以较小文件集合的形式访问这些数据的方法。但是，如果您希望覆盖此限制作为临时解决方案，请按照以下步骤操作： <strong>不</strong> 不建议覆盖该限制；如果可能，请寻找一种以较小文件集合的形式访问这些数据的方法。但是，如果您希望覆盖此限制作为临时解决方案，请按照以下步骤操作：</p>
+<ol>
+<li>
+<p>在 Data Connection 中，导航到您的代理并选择 <strong>高级</strong> 配置选项卡。</p>
+</li>
+<li>
+<p>选择 "Agent" 选项卡。</p>
+</li>
+<li>
+<p>在目标（destinations）配置块下，添加以下内容以将限制提高到 150Gb：</p>
+<pre><div class="ptcom-design__wrapper__12wpwnx" data-pagefind-weight="0.5"><span class="ptcom-design__clipboard__1l1gb20 ptcom-design__clipboard__12wpwnx"><span class="ptcom-design__confirmation__1l1gb20" data-pagefind-ignore="true">Copied!</span><svg aria-hidden="true" aria-label="clipboard" data-view-component="true" height="16" version="1.1" viewbox="0 0 16 16" width="16"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z" fill="currentColor" fill-rule="evenodd"></path><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z" fill="currentColor" fill-rule="evenodd"></path></svg></span><div style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;overflow:auto;position:relative;margin:0;padding:0.75em"><code style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;float:left;padding-right:10px"><span class="react-syntax-highlighter-line-number">1
+</span><span class="react-syntax-highlighter-line-number">2
+</span><span class="react-syntax-highlighter-line-number">3
+</span></code><code class="language-yaml" style="white-space:pre;text-align:left;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none">uploadStrategy:
+    type: data-proxy
+    maximumUploadedFileSizeBytes: 161061273600</code></div></div></pre>
+</li>
+</ol>
+<h2 data-pagefind-weight="0.9" id="user-content-a-sync-started-failing" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#a-sync-started-failing" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>某个同步开始失败</h2>
+<h4 id="user-content-if-your-sync-fails-with-the-badpaddingexception-error"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#if-your-sync-fails-with-the-badpaddingexception-error" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>如果您的同步失败并出现 <code>BadPaddingException</code> 错误</h4>
+<p><code>BadPaddingException</code> 出现异常是因为存储在代理中的源凭据加密密钥与预期不符。这通常发生在手动升级代理管理器时，但旧的 <code>/var/data</code> 目录未被复制到新的安装位置。</p>
+<p>解决此问题的最简单方法是使用受影响的代理为每个源重新输入凭据。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-unexpected-data-was-synced" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#unexpected-data-was-synced" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>同步了意外的数据</h2>
+<h4 id="user-content-if-timestamp-columns-in-your-jdbc-sync-show-up-as-long-columns-in-foundry"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#if-timestamp-columns-in-your-jdbc-sync-show-up-as-long-columns-in-foundry" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>如果 JDBC 同步中的时间戳列在 Foundry 中显示为 Long 列</h4>
+<p>当从 JDBC 源同步包含时间戳列的行时，这些时间戳列将在 Foundry 中被转换为 long 列。此行为的存在是出于向后兼容性的原因。</p>
+<p>要修复这些列的数据类型，我们建议使用 <a href="/docs/foundry/transforms-python/overview/">Python 转换</a> 环境来执行此清理操作。以下是将该列 <code>"mytimestamp"</code> 转换回时间戳格式的示例代码片段：</p>
+<pre><div class="ptcom-design__wrapper__12wpwnx" data-pagefind-weight="0.5"><span class="ptcom-design__clipboard__1l1gb20 ptcom-design__clipboard__12wpwnx"><span class="ptcom-design__confirmation__1l1gb20" data-pagefind-ignore="true">Copied!</span><svg aria-hidden="true" aria-label="clipboard" data-view-component="true" height="16" version="1.1" viewbox="0 0 16 16" width="16"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z" fill="currentColor" fill-rule="evenodd"></path><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z" fill="currentColor" fill-rule="evenodd"></path></svg></span><div style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;overflow:auto;position:relative;margin:0;padding:0.75em"><code style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;float:left;padding-right:10px"><span class="react-syntax-highlighter-line-number">1
+</span></code><code class="language-python" style="white-space:pre;text-align:left;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none">df = df.withColumn("mytimestamp", (F.col("mytimestamp") / 1000).cast("timestamp"))</code></div></div></pre></div>
+</article>
+</article>
+</body>
+</html>

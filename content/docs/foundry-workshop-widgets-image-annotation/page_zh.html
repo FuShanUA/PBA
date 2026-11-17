@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>《图像标注》：</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<article>
+<div class="ptcom-design__markdownDoc__1uarhel" data-pagefind-body="true"><h1 data-pagefind-weight="1" id="user-content-image-annotation" level="1" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#image-annotation" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>《图像标注》：</h1>
+<p>直方图 <strong>《图像标注》：</strong> 小部件用于通过在感兴趣区域周围绘制矩形来标注图像。</p>
+<p>下面的截图展示了一个已配置的 <strong>图像注释</strong> 小部件正在创建标注的示例：</p>
+<p><img alt="Example of an image annotation that marks a break in a pattern." height="600" node="[object Object]" src="/docs/resources/foundry/workshop/image_annotation_example.png" style="aspect-ratio:1726 / 1157" width="895.0734658599827"/></p>
+<p>标注不会存储在小部件内部。要持久化一个矩形，请将其保存为 <strong>对象，保存在您的 <a href="/docs/foundry/ontology/overview/">本体论</a></strong>中。持久化的标注与其他对象的行为相同：可以被搜索、筛选、关联到其他对象、通过 <a href="/docs/foundry/security/overview/">权限</a>进行保护，并在应用程序之间重用。</p>
+<p>该小部件执行两种不同的角色：</p>
+<ul>
+<li><strong>显示现有标注。</strong> 小部件读取标注对象的对象集，并将每个存储的边界框叠加显示在图像上。</li>
+<li><strong>捕获新标注。</strong> 当用户绘制一个矩形时，小部件会将坐标写入 Workshop 变量。然后，您可以通过 <a href="/docs/foundry/workshop/actions-use/">操作</a>.</li>
+</ul>
+<p>将该变量持久化到本体论中。写回本体论的操作始终由操作执行； <a href="/docs/foundry/workshop/scenarios-overview/">加载对象数据。</a> 并非必需。只有在进行“假设分析”时才需要场景，此时编辑内容会被暂存在本体论的一个隔离分支中，而不是直接提交。仅当您明确希望标注是临时的、并在写入正式本体论之前需要审核时，才使用场景。由于写回依赖于操作，在配置小部件之前，您需要准备好以下两项内容：</p>
+<ol>
+<li>An <strong>标注对象类型</strong> ，用于存储每个边界框。</li>
+<li>An <strong>操作</strong> ，用于创建（以及可选地删除或修改）这些标注对象。</li>
+</ol>
+<p>从用户绘制矩形到持久化、关联的标注对象的端到端流程如下：</p>
+<ol>
+<li>用户在图像上绘制一个矩形。</li>
+<li>小部件将矩形的坐标写入 <strong>当前边界框选择</strong> variable.</li>
+<li>直方图 <strong>在创建标注时</strong> 设置会触发一个提交操作的 Workshop 事件，或者用户选择“保存”按钮来提交该操作。</li>
+<li>该操作创建一个标注对象，设置边界框属性，并将新对象关联到拥有该图像的主体对象。</li>
+<li>小部件重新加载标注对象集，并在图像上绘制已保存的框。</li>
+</ol>
+<h2 data-pagefind-weight="0.9" id="user-content-set-up-annotation-writeback" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#set-up-annotation-writeback" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>设置标注写回</h2>
+<p>以下步骤演示了最基本的标注工作流：让用户在图像上绘制一个框，并将其保存为关联到图像所属对象的对象。该示例使用一个 <code>Inspection Photo</code> 对象（持有图像）和一个 <code>Image Annotation</code> 对象（持有每个框），但您应替换为您自己本体论中的对象类型和属性名称。</p>
+<p>此示例仅用于说明。由于您的本体论是根据您的数据定制的，下文引用的对象和操作类型可能不存在于您的租户中。请创建与您的数据模型相匹配的等效项。</p>
+<ol>
+<li><a href="#step-1-model-the-annotation-object-type">对标注对象类型建模</a></li>
+<li><a href="#step-2-create-the-actions">创建操作</a></li>
+<li><a href="#step-3-configure-the-widget-inputs">配置小部件输入</a></li>
+<li><a href="#step-4-save-new-annotations-to-the-ontology">将新标注保存到本体论</a></li>
+</ol>
+<h3 data-pagefind-weight="0.8" id="user-content-step-1-model-the-annotation-object-type" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#step-1-model-the-annotation-object-type" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>步骤 1：对标注对象类型建模</h3>
+<p>In <a href="/docs/foundry/ontology-manager/overview/">本体论管理器</a>中，创建一个用于存储标注的对象类型。它至少需要：</p>
+<ul>
+<li><strong>主键：</strong> 一个值，例如 <code>Annotation ID</code> string.</li>
+<li><strong>边界框属性：</strong> 一个字符串属性，将框坐标存储为 <code>"x1, y1, x2, y2"</code>，其中 <code>(x1, y1)</code> 是左上角， <code>(x2, y2)</code> 是右下角，使用像素坐标。这是小部件读取和写入的值。</li>
+<li><strong>颜色属性（可选）：</strong> 一个保存十六进制颜色代码的字符串属性，例如 <code>#FF0000</code>，用于绘制该框。</li>
+<li><strong>关联：</strong> 指向拥有该图像的对象的关联，例如从 <code>Image Annotation</code> to <code>Inspection Photo</code>的多对一关联。此关联将每个标注与正确的图像相关联，从而只显示相关的框。</li>
+</ul>
+<h3 data-pagefind-weight="0.8" id="user-content-step-2-create-the-actions" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#step-2-create-the-actions" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>步骤 2：创建操作</h3>
+<p>创建一个 <a href="/docs/foundry/workshop/actions-use/">操作</a> ，用于创建一个新的 <code>Image Annotation</code> 对象。其参数应包括：</p>
+<ul>
+<li>直方图 <strong>边界框</strong> 字符串，由小部件提供。</li>
+<li>对 <strong>主体对象</strong> (the <code>Inspection Photo</code>）的引用，以便操作可以设置在步骤 1 中创建的关联。</li>
+<li>（可选） <strong>颜色</strong> string.</li>
+</ul>
+<p>您还可以创建操作来 <strong>删除</strong> 标注（用于“移除”控件），以及 <strong>修改</strong> 现有标注（如果您希望用户在保存后调整框）。有关定义操作类型的完整演练，请参阅 <a href="/docs/foundry/workshop/actions-use/">在 Workshop 中使用操作</a>.</p>
+<h3 data-pagefind-weight="0.8" id="user-content-step-3-configure-the-widget-inputs" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#step-3-configure-the-widget-inputs" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>步骤 3：配置小部件输入</h3>
+<p>将图像标注小部件添加到您的模块中，并配置 <a href="#configuration-options">配置选项</a>:</p>
+<ul>
+<li>将 <strong>图像源</strong> 设置为当前图像的媒体引用或媒体 URL。</li>
+<li>在您的终端会话中将 <strong>标注对象</strong> 设置为您的 <code>Image Annotation</code> 对象的对象集，并筛选为当前的 <code>Inspection Photo</code>。按当前主体对象进行筛选可确保小部件仅绘制属于所显示图像的框。</li>
+<li>在您的终端会话中将 <strong>边界框属性</strong> 设置为您在步骤 1 中创建的字符串属性。</li>
+<li>（可选）将 <strong>颜色属性</strong> 设置为您的十六进制颜色属性。</li>
+<li>在您的终端会话中将 <strong>当前边界框选择</strong> 设置为一个字符串变量。小部件会将用户当前正在绘制的框的坐标写入此变量；这是您传递给创建操作的值。</li>
+<li>在您的终端会话中将 <strong>活动标注对象</strong> 设置为一个对象集变量。当用户选择某个现有标注对象时，小部件会使用该对象填充此变量。</li>
+</ul>
+<h3 data-pagefind-weight="0.8" id="user-content-step-4-save-new-annotations-to-the-ontology" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#step-4-save-new-annotations-to-the-ontology" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>步骤 4：将新标注保存到本体论</h3>
+<p>当用户完成矩形的绘制后，坐标将保存在 <strong>当前边界框选择</strong> 变量中。要持久化这些坐标，请触发您在步骤 2 中创建的创建操作：</p>
+<ul>
+<li>使用直方图中的 <strong>在创建标注时</strong> 设置，以便在绘制矩形时触发 Workshop <a href="/docs/foundry/workshop/concepts-events/">事件（event）</a> ，或者使用 <a href="/docs/foundry/workshop/widgets-button-group/">按钮组小部件</a> 添加一个“保存”按钮，让用户在保存前进行确认。</li>
+<li>在操作的参数默认值中，将 <strong>边界框</strong> 参数设置为 <strong>当前边界框选择</strong> 变量，并将 <strong>主体对象</strong> 参数设置为当前显示的对象（例如，活动的 <code>Inspection Photo</code>）。设置主体对象是将新标注关联到正确图像的关键。</li>
+<li>（可选）将颜色参数设置为变量或静态十六进制代码。</li>
+</ul>
+<p>操作提交后，新的 <code>Image Annotation</code> 对象将被写入本体论并关联到其主体对象。由于小部件的 <strong>标注对象</strong> 输入是一个对象集，它会重新加载以包含新对象，并在图像上绘制已保存的框。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-configuration-options" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#configuration-options" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>配置选项</h2>
+<p>以下是新添加的图像标注小部件的初始状态及其初始配置面板的截图：</p>
+<p><img alt="The initial Image Annotation widget configuration." height="600" node="[object Object]" src="/docs/resources/foundry/workshop/image_annotation_config.png" style="aspect-ratio:927 / 1213" width="458.53256389117894"/></p>
+<ul>
+<li><strong>输入数据</strong>
+<ul>
+<li><strong>图像源：</strong> 图像可以通过媒体 URL 或媒体引用来显示。目前此小部件支持以下图像文件类型：
+<ul>
+<li><strong>媒体 URL：</strong> 选择一个包含有效媒体 URL 的字符串变量以渲染媒体预览。如果引用来自数据集的媒体 URL，该 URL 应采用以下任一格式： <code>.png</code>, <code>.jpg</code>, <code>.jpeg</code>, <code>.bmp</code>，或 <code>.webp</code>,
+<ul>
+<li><code>https://{my-foundry-url}/foundry-data-proxy/api/web/dataproxy/datasets/{dataset rid}/transactions/{transaction rid}/{filename}</code></li>
+<li><code>https://{my-foundry-url}/foundry-data-proxy/api/web/dataproxy/datasets/{dataset rid}/views/{branch name}/{filename}</code>.</li>
+<li>否则，如果引用外部媒体 URL，请在您注册的 <a href="/docs/foundry/administration/embed-foundry-externally/">内容安全策略</a> settings.</li>
+</ul>
+</li>
+<li><strong>媒体引用：</strong> 定义一个包含单个对象的对象集，并选择 <a href="/docs/foundry/media-sets-advanced-formats/media-overview/#media-references">媒体引用</a> 类型的属性，以渲染该对象的媒体预览。</li>
+</ul>
+</li>
+<li><strong>当前边界框选择：</strong> 一个字符串变量，用于跟踪以 "x1, y1, x2, y2" 格式存储的活动边界框选择坐标，其中 (x1, y1) 是框左上角的像素坐标，(x2, y2) 是框右下角的像素坐标。将此变量传递给您的创建操作，以保存用户绘制的框。</li>
+<li><strong>活动标注对象：</strong> 表示当前所选标注的对象。</li>
+</ul>
+</li>
+<li><strong>标注</strong>
+<ul>
+<li><strong>标注对象：</strong> 表示要叠加到图像上的标注的对象集。将此对象集筛选为当前图像的主体对象，以便仅显示相关的标注。目前，每张图像最多支持 1000 个标注。</li>
+<li><strong>边界框属性：</strong> 标注对象集的字符串属性，表示点向量。</li>
+<li><strong>颜色属性：</strong> 标注对象集的字符串属性，表示要绘制的颜色（以十六进制代码表示）。此字段为可选。</li>
+<li><strong>在创建标注时：</strong> 使模块构建者能够配置 Workshop 事件，以便在用户创建标注时触发。使用此功能可触发将绘制的框保存到本体论的 Action。</li>
+</ul>
+</li>
+</ul></div>
+</article>
+</article>
+</body>
+</html>

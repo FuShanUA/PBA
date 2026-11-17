@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>变更数据捕获（CDC）</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<article>
+<div class="ptcom-design__markdownDoc__1uarhel" data-pagefind-body="true"><h1 data-pagefind-weight="1" id="user-content-change-data-capture-cdc" level="1" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#change-data-capture-cdc" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>变更数据捕获（CDC）</h1>
+<p><a href="https://en.wikipedia.org/wiki/Change_data_capture">变更数据捕获 ↗</a> （CDC）是一种企业数据集成模式，通常用于将关系型数据库的实时更新流式传输给其他消费者。</p>
+<p>Foundry 支持从产生变更数据捕获流的系统同步、处理和存储数据。平台中的各个组件，包括 <a href="/docs/foundry/data-connection/set-up-source/">数据连接器</a>, <a href="/docs/foundry/data-integration/streams/">流</a>, <a href="/docs/foundry/building-pipelines/overview/">管道</a>，而 <a href="/docs/foundry/ontology/overview/">Foundry 本体论</a> 都可以使用在底层数据上配置的元数据原生地处理这些变更日志数据，配置位置为 <a href="/docs/foundry/data-integration/datasets/#schemas">模式</a> 底层数据的元数据。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-change-data-capture-support-in-foundry" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#change-data-capture-support-in-foundry" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Foundry 中的变更数据捕获支持</h2>
+<p>Foundry 为变更数据捕获更新提供以下支持：</p>
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>应用程序</th><th>CDC 支持</th></tr></thead><tbody><tr><td><a href="#change-data-capture-in-data-connection">数据连接</a></td><td>支持同步的 CDC（取决于源系统）</td></tr><tr><td><a href="#change-data-capture-in-the-ontology">本体论</a></td><td>支持批处理和流支撑对象的 CDC 索引</td></tr><tr><td><a href="#change-data-capture-in-pipeline-builder">如果希望用户在每次运行预览前手动确认，请开启</a></td><td>完整的 CDC 流处理以及带回填的部分 CDC 流</td></tr><tr><td><a href="#change-data-capture-in-streams">流</a></td><td>对实时视图和归档视图的完整 CDC 支持</td></tr><tr><td>转换</td><td>仅追加 <a href="/docs/foundry/transforms-python/incremental-overview/">增量式</a> 适用于数据集，完整的 <a href="/docs/foundry/iceberg/changelogs/">变更日志增量</a> 适用于 <a href="/docs/foundry/data-integration/iceberg-tables/">Iceberg 表</a></td></tr><tr><td><a href="#change-data-capture-in-workshop">来运行该专业代码代理。你还可以通过</a></td><td>频繁更新的对象支持自动刷新</td></tr></tbody></table></div>
+<h2 data-pagefind-weight="0.9" id="user-content-changelog-metadata" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#changelog-metadata" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>变更日志元数据</h2>
+<p>变更日志元数据要求数据具有以下属性：</p>
+<ul>
+<li>一个或多个主键列
+<ul>
+<li>变更日志数据将包含许多主键列相同的条目，因为变更日志旨在传达具有该主键的记录上发生的每一次单独变更。变更数据捕获对于正在被编辑的数据特别有用，而不是不可变的或仅追加的数据流。</li>
+</ul>
+</li>
+<li>一个或多个排序列
+<ul>
+<li>排序列必须是数值型，用于确定具有给定主键集合的记录变更的相对顺序。排序列通常是以长整型表示的时间戳，但情况并非总是如此。即使排序列不是时间戳，最大值也被理解为最新的。</li>
+</ul>
+</li>
+<li>一个删除列
+<ul>
+<li>删除列用于确定给定更新是否删除了具有给定主键集合的记录。该列必须是布尔值，如果记录被删除则为 true，否则应为 false。</li>
+</ul>
+</li>
+</ul>
+<p>此变更日志元数据用于指定一种解析策略，将变更日志解析为源系统中数据的当前视图。变更数据捕获的解析策略工作方式如下：</p>
+<ol>
+<li>根据主键列对数据进行分组。</li>
+<li>找到排序列中值最大的条目。</li>
+<li>如果该条目在删除列中的值为 <code>true</code> 则将其删除。</li>
+</ol>
+<p>完成这些步骤后，变更日志应被折叠为与生成变更日志的上游源系统中所见相同的视图。变更日志元数据和解析策略被各种 Palantir 组件以不同的方式使用，如下所述。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-change-data-capture-in-data-connection" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#change-data-capture-in-data-connection" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Data Connection 中的变更数据捕获</h2>
+<p>Data Connection 中可用的源可能支持将系统数据作为应用了变更日志元数据的流进行同步。源实现同步变更日志数据能力的前提是源系统能够产生具有所需属性（主键列、排序列和删除列）的日志数据。</p>
+<p>许多常用的数据库（包括 MySQL、PostgreSQL、Oracle、Db2 和 SQL Server）都可以产生 CDC 变更日志数据。Foundry 中针对这些系统的数据连接器可能支持也可能不支持直接同步这些变更日志。即使连接器目前不支持 CDC 同步，您仍然可以通过 Kafka 或其他流式中间件同步数据，并在数据到达 Foundry 后将其用作变更日志。</p>
+<p>Data Connection 中目前支持 CDC 同步的以下源类型：</p>
+<ul>
+<li>按照后续配置提示继续使用以下部分中的信息设置您的连接器。</li>
+<li>进行表批量同步的配置</li>
+<li>Oracle</li>
+<li>PostgreSQL</li>
+</ul>
+<p>如果您有来自其他源（如 Kafka、Kinesis、Amazon SQS 或基于推送的流集成）的变更日志形式数据，请阅读如何在以下位置使用 key-by 面板手动配置变更日志元数据 <a href="#change-data-capture-in-pipeline-builder">如果希望用户在每次运行预览前手动确认，请开启</a>.</p>
+<h3 data-pagefind-weight="0.8" id="user-content-enable-change-data-capture-on-an-external-database" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#enable-change-data-capture-on-an-external-database" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>在外部数据库上启用变更数据捕获</h3>
+<p>要从受支持的源类型同步变更日志数据流，您必须为相关表启用正确的设置，在某些情况下，还必须为整个数据库启用正确的设置。</p>
+<p>例如，要为 Microsoft SQL Server 启用变更数据捕获，您必须运行命令在数据库上启用 CDC：</p>
+<pre><code>USE &lt;database&gt;
+GO
+EXEC sys.sp_cdc_enable_db
+GO
+</code></pre>
+<p>然后，在需要记录变更日志的每个表上运行另一条命令：</p>
+<pre><code>EXEC sys.sp_cdc_enable_table
+    @source_schema = N'&lt;schema&gt;'
+  , @source_name = N'&lt;table_name&gt;'
+  , @role_name = NULL
+  , @capture_instance = NULL
+  , @supports_net_changes = 0
+  , @filegroup_name = N'PRIMARY';
+GO
+</code></pre>
+<p>以上示例从较高层面说明了启用源系统生成变更日志数据可能需要哪些操作。有关如何为特定系统启用变更数据捕获日志的具体信息，请参阅该系统提供的文档。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-set-up-a-source-connection-for-change-data-capture" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#set-up-a-source-connection-for-change-data-capture" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>为变更数据捕获设置源连接</h3>
+<p>现在，您可以在 Data Connection 中配置一个源，连接到您希望从中捕获变更日志的系统。继续我们的示例，使用 Microsoft SQL Server 连接器设置连接，如下所示：</p>
+<p><img alt="A new source page for CDC data in Data Connection." height="600" node="[object Object]" src="/docs/resources/foundry/data-integration/cdc-new-sql-server-source.png" style="aspect-ratio:2880 / 1582" width="1092.2882427307206"/></p>
+<h3 data-pagefind-weight="0.8" id="user-content-create-a-change-data-capture-sync" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#create-a-change-data-capture-sync" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>创建变更数据捕获同步</h3>
+<p>在源概览页面上，您会看到一个空的 <strong>CDC 同步</strong>.</p>
+<p><img alt="The CDC Syncs section on the overview page of an example Microsoft SQL Server source, outlined in a red rectangle. " height="600" node="[object Object]" src="/docs/resources/foundry/data-integration/cdc-data-connection-source-overview.png" style="aspect-ratio:2880 / 1582" width="1092.2882427307206"/></p>
+<p>选择 <strong>创建 CDC 同步</strong> 表，用于添加新的变更数据捕获同步。指定您希望同步的表，连接器将自动推导出以下信息：</p>
+<ul>
+<li>输出流式数据集的 schema。</li>
+<li>变更日志元数据，包括主键列、排序列和删除列。</li>
+</ul>
+<p><img alt="The new sync configuration page, with sections to edit the tables, schema, and primary key." height="600" node="[object Object]" src="/docs/resources/foundry/data-integration/cdc-data-connection-new-sync.png" style="aspect-ratio:2880 / 1502" width="1150.4660452729693"/></p>
+<p>与其他流一样，您必须在创建时指定预期的 <a href="/docs/foundry/data-integration/streams/#partitions">吞吐量</a> 。吞吐量在同步创建后无法更改；请确保您的流配置为支持预期的变更日志数据量。默认数据量为 5MB/s，对于大多数变更数据捕获工作流而言通常绰绰有余。由于关系型数据库中的变更通常以“人类规模”产生，因此变更的数据量和频率远小于“机器规模”的传感器或设备数据。</p>
+<p>保存同步配置，以在指定的输出位置创建新流。</p>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>目前，CDC 作业在任何更改后必须手动（重新）启动。所有 CDC 同步作为单个多输出提取作业运行，这意味着每当添加或删除数据流时，来自同一源的现有 CDC 流必须短暂停止。这些流将自动补齐流式同步作业停止期间发生的所有数据变更。</p></div>
+<p>启动输出流后，变更日志数据应开始流动，并显示在输出流式数据集的实时视图中。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-configure-custom-cdc-settings-per-source" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#configure-custom-cdc-settings-per-source" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>为每个源配置自定义 CDC 设置</h3>
+<p>Foundry 的 CDC 实现利用了开源平台 <a href="https://debezium.io/">Debezium ↗</a> 来读取数据源日志。您可以直接在 Data Connection 界面中为单个源配置 Debezium 连接和引擎属性。首先，导航到您要配置的已创建源。然后选择右上角的 <strong>CDC 同步</strong> 。选择 <strong>CDC 设置</strong> 部分以展开配置选项。</p>
+<p><img alt="The CDC settings section on the CDC syncs page of a Microsoft SQL Server source." height="600" node="[object Object]" src="/docs/resources/foundry/data-integration/cdc-settings.png" style="aspect-ratio:3352 / 1982" width="1014.7325933400605"/></p>
+<p>Foundry 的默认 CDC 配置旨在提供无摩擦的设置体验，并最大限度地减少对源系统的干扰。但是，我们强烈建议您查看连接器的 <a href="#default-cdc-behavior">特定默认行为</a> ，尤其是其 <a href="#snapshot-mode-considerations">快照模式</a>，以确保这些默认设置符合您的数据要求。</p>
+<p>每种数据源类型都有推荐的可配置设置。例如，上图显示了 Microsoft SQL Server 连接器的 <strong>事务隔离级别</strong> 。此外，您还可以使用 <strong>高级 Debezium 配置</strong> 选项配置任意 Debezium 属性。这种灵活性使您能够根据每个数据源的具体需求自定义设置。</p>
+<p>为数据连接器自定义 CDC 设置在多种情况下都很有用，包括以下示例：</p>
+<ol>
+<li><strong>高事务量：</strong> 对于经历快速事务突发的数据连接器，默认的 <code>max.batch.size</code> 设置可能导致过多的小批量处理，增加开销并延迟数据传播。通过提高 <code>max.batch.size</code>，您可以将变更合并到更大的批次中，从而提高效率和数据流。</li>
+<li><strong>网络不稳定：</strong> 对于容易出现瞬时网络问题或临时错误的数据连接器，增加 <code>error.max.retries</code> 可为连接器提供更多自主恢复的机会，降低数据丢失的风险。</li>
+<li><strong>实时更新：</strong> 在近乎实时更新至关重要的高事务环境中，降低 <code>offset.flush.interval.ms</code> 可确保更频繁地刷新偏移量，从而最大限度地缩短恢复窗口并提高变更传播的及时性。</li>
+</ol>
+<p>审查 <a href="https://debezium.io/documentation/reference/stable/connectors/index.html">Debezium 文档 ↗</a> 以了解每种数据连接器类型可以配置哪些属性。</p>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>配置任意 Debezium 属性时，您有责任确保兼容性和功能性。不当的配置可能导致意外行为或数据丢失。请谨慎操作，并查阅 Debezium 文档以获取指导。</p></div>
+<h2 data-pagefind-weight="0.9" id="user-content-change-data-capture-in-streams" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#change-data-capture-in-streams" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>流中的变更数据捕获</h2>
+<p>带有变更日志元数据的流将显示数据的两种视图：</p>
+<ul>
+<li>A <strong>实时视图</strong> 显示完整展开的变更日志条目列表。</li>
+<li>An <strong>归档视图</strong> 其中数据根据解析策略进行解析，并折叠为数据的当前最新视图。</li>
+</ul>
+<p><img alt="The dropdown menu to switch between live and archive views, located in the upper left corner of the page." height="522" node="[object Object]" src="/docs/resources/foundry/data-integration/cdc-live-archive-view-on-stream.png" style="aspect-ratio:724 / 522" width="724"/></p>
+<p>架构将在详细信息视图中将变更日志元数据显示为主键解析策略。</p>
+<p><img alt="Streaming change data capture schema with resolution strategy. " height="600" node="[object Object]" src="/docs/resources/foundry/data-integration/cdc-dataset-schema-primary-key-resolution.png" style="aspect-ratio:2308 / 1024" width="1352.34375"/></p>
+<p>流使用提供的排序列解析归档视图，即使数据是乱序接收的。此行为与 Foundry 本体论中的变更日志数据不同，后者根据数据在用于支撑对象类型的流中的到达顺序对数据进行索引。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-change-data-capture-in-pipeline-builder" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#change-data-capture-in-pipeline-builder" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Pipeline Builder 中的变更数据捕获</h2>
+<p>Pipeline Builder 为处理和配置变更数据捕获（CDC）流提供了强大的功能。本节介绍两种场景：处理完整的 CDC 流，以及处理需要回填的部分 CDC 流。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-process-full-cdc-streams" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#process-full-cdc-streams" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>处理完整的 CDC 流</h3>
+<p>在 Pipeline Builder 中处理流式转换时，您可以在保留元数据的同时处理变更日志数据。只要元数据列（主键、排序和删除）在转换过程中保持不变，变更日志元数据就会自动传播到任何输出。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-configure-partial-cdc-streams-with-a-backfill-dataset" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#configure-partial-cdc-streams-with-a-backfill-dataset" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>使用回填数据集配置部分 CDC 流</h3>
+<p>在某些情况下，CDC 流可能不包含所有历史数据，而仅包含从特定时间点开始的变更。要创建完整的数据集，您必须将回填数据集与正在进行的 CDC 流相结合。请使用以下步骤实现此目的：</p>
+<ol>
+<li>
+<p><strong>准备回填数据集：</strong></p>
+<ul>
+<li>使用与 CDC 流相同的 Data Connection 源摄取数据快照。</li>
+<li>确保回填数据集包含时间戳列。如果源数据中不存在，请使用 SQL 函数生成一个（<code>CURRENT_TIMESTAMP()</code>，例如）来引用它们。</li>
+</ul>
+</li>
+<li>
+<p><strong>在 Pipeline Builder 中合并数据集：</strong></p>
+<ul>
+<li>使用 <strong>第一个选中的数据集是</strong> 转换将回填数据集与正在进行的 CDC 流合并。</li>
+</ul>
+</li>
+<li>
+<p><strong>配置 CDC 元数据：</strong></p>
+<ul>
+<li>使用直方图中的 <strong>Key By</strong> 转换面板来准备合并后的数据，以便同步到本体论中。</li>
+<li>将主键列设置为与源系统中的主键列一致。</li>
+<li>选择时间戳列作为排序列。</li>
+<li>如果适用，请指定删除列。</li>
+</ul>
+</li>
+<li>
+<p><strong>处理删除和排序：</strong></p>
+<ul>
+<li>或 <strong>Key By</strong> 面板配置为按时间戳列对数据进行排序。</li>
+<li>如果源数据不包含显式的删除信息，您可能需要实现推断删除的逻辑（例如，通过比较连续的快照）。</li>
+</ul>
+</li>
+</ol>
+<p>直方图 <strong>Key By</strong> 转换面板将向流附加必要的 CDC 元数据，包括以下内容：</p>
+<ul>
+<li>主键解析策略</li>
+<li>排序列</li>
+<li>一个删除列</li>
+</ul>
+<p>此配置为数据同步到本体论后的正确解析做好准备，确保根据时间戳排序维护每条记录的最新状态。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-apply-cdc-metadata-to-non-cdc-data" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#apply-cdc-metadata-to-non-cdc-data" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>将 CDC 元数据应用于非 CDC 数据</h3>
+<p>如果您的输入流缺少变更日志元数据，或者在转换过程中修改了元数据列，您仍然可以使用 <strong>Key By</strong> 面板将变更日志元数据应用于您的输出。这允许您将任何数据集视为 CDC 流，从而实现强大的数据集成和实时更新功能。</p>
+<p><img alt="The Key By board in Pipeline Builder. " height="600" node="[object Object]" src="/docs/resources/foundry/data-integration/cdc-builder-key-by-board.png" style="aspect-ratio:1978 / 602" width="1971.4285714285713"/></p>
+<h2 data-pagefind-weight="0.9" id="user-content-change-data-capture-in-the-ontology" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#change-data-capture-in-the-ontology" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>本体论中的变更数据捕获</h2>
+<p>本体论使用变更日志元数据将数据索引到由流式数据源支撑的对象类型中 <a href="/docs/foundry/object-backend/overview/">对象存储 v2</a> 。流中到达的数据会被解析并索引到最新的当前视图中，该视图在查询本体论时可用（例如，在 Workshop 模块中显示）。</p>
+<p>If <a href="/docs/foundry/retention/overview/">保留期</a> 在具有变更日志元数据的数据源上配置了保留期时，在保留窗口时间内未收到更新的任何记录将从本体论中消失。</p>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>本体论目前会忽略变更日志元数据中指定的排序列。相反，Object Storage v2 会根据数据到达支撑数据源的顺序对数据进行索引。具体而言，这意味着对于给定的主键，如果一条排序值为 <code>2</code> 的日志条目在 <code>t1</code> 和 <code>data_column=foo</code>到达，随后另一条排序值为 <code>1</code> 的日志条目在 <code>t2</code> ，使用 <code>data_column=bar</code>到达，则该记录将显示为 <code>data_column=bar</code> ，即使在源系统中最新值为 <code>data_column=foo</code>。因此，如果数据乱序到达，本体论可能会错误地反映源系统中的数据。</p><p>由于与 Palantir 配合使用的连接器保证按顺序交付数据，且 Foundry 流保持顺序，因此本体论的这种行为很可能仅影响自定义设置，或在同步前未重新排序而手动回填的较旧流式变更日志。如果您遇到这种情况，我们建议在同步到本体论之前，在 Pipeline Builder 中应用转换来对数据重新排序。</p></div>
+<h2 data-pagefind-weight="0.9" id="user-content-change-data-capture-in-workshop" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#change-data-capture-in-workshop" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Workshop 中的变更数据捕获</h2>
+<p>Workshop 支持 <a href="/docs/foundry/workshop/auto-refresh/">自动刷新</a> ，以便在数据一进入本体论后立即显示频繁更新的数据。自动刷新与 CDC 兼容，可用于确保通过变更数据捕获流入的任何数据在 Workshop 应用程序中及时可用。其用途不限于 CDC 数据：在 Workshop 模块打开期间预期会频繁更新的任何数据都可以使用自动刷新，无论支撑数据源是否具有变更日志元数据。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-considerations-when-using-change-data-capture" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#considerations-when-using-change-data-capture" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>使用变更数据捕获时的注意事项</h2>
+<p>在使用 CDC 工作流之前，我们建议您查看以下有关回填、中断和其他已知限制的信息。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-backfill" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#backfill" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>回填</h3>
+<p>所有变更日志同步均仅以“仅向前”的方式处理；不会执行自动回填。</p>
+<p>通常，无法对变更日志进行完整回填，因为大多数系统默认不启用 CDC。即使启用了变更日志，大多数系统也包含保留期，超过该期限后变更日志将被永久删除且无法恢复。</p>
+<p>如果需要完整回填，我们建议采取以下步骤：</p>
+<ol>
+<li>以“仅向前”的方式设置 CDC 流。</li>
+<li>执行批量同步以提取所需的历史数据。</li>
+<li>将历史批量数据转换为每个主键的“创建”记录流，然后将该流合并到 CDC 流中。</li>
+</ol>
+<p>回填可能导致数据乱序，您可能需要手动重新排序或重放流，以便正确准备数据以同步到本体论。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-outages" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#outages" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>中断</h3>
+<p>使用 CDC 工作流时，您可能会遇到以下中断情况：</p>
+<ul>
+<li>源数据库与 Foundry 代理之间的网络连接中断</li>
+<li>Foundry 代理主机与 Foundry 之间的网络连接中断</li>
+<li>Foundry 中断</li>
+<li>数据库中断</li>
+<li>代理中断</li>
+</ul>
+<p>如果数据库中复制日志和变更日志的保留窗口配置为长于预期的最长中断时间，则中断将得到妥善处理。</p>
+<p>例如，如果与 Foundry 的连接中断数小时，而 Microsoft SQL Server 上的日志保留窗口设置为一天，数据库将继续记录变更日志条目。Foundry 在恢复在线并重新连接到 Microsoft SQL Server 后，将平稳地完成追赶。由于在变更日志条目队列清空之前不会有新数据流入，因此在变更再次以近实时方式流入 Palantir 之前可能会有一些延迟。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-use-changelog-shaped-data-from-non-changelog-sources" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#use-changelog-shaped-data-from-non-changelog-sources" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>使用来自非变更日志源的变更日志形式数据</h3>
+<p>数据不需要以变更日志的形式摄取才能使用 CDC 工作流。Palantir 中的任何流式数据都可以使用变更日志元数据进行“键控”，然后在同步到本体论后在工作流中用作 CDC 数据。</p>
+<p>这意味着，例如，可以使用流代理进行基于推送的摄取，手动将变更日志形式的记录推送到流中。</p>
+<p>类似地，如果变更日志数据在 Kafka 主题中可用，可以使用标准（非 CDC）同步进行摄取。然后，可以使用 Pipeline Builder 对其进行“键控”，并在本体论及后续环节中使用。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-remove-changelog-metadata" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#remove-changelog-metadata" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>移除变更日志元数据</h3>
+<p>有时，移除变更日志元数据可能很有用。例如，您可能希望移除元数据以分析变更日志所捕获的流程。要移除变更日志元数据，请使用以下方法之一：</p>
+<ul>
+<li>对元数据列执行任何转换</li>
+<li>手动从流式数据集的 schema 中移除解析策略</li>
+</ul>
+<h3 data-pagefind-weight="0.8" id="user-content-enabling-access-to-your-cdc-tables" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#enabling-access-to-your-cdc-tables" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>启用对 CDC 表的访问</h3>
+<p>连接到源系统时，您必须在 <strong>连接详情</strong>中提供用户凭据。这些凭据与在源端设置的权限绑定。对于基本的数据摄取，该用户需要 <code>SELECT</code> 您计划摄取的数据集的权限。但是，CDC 连接可能要求用户同时具有 <code>SELECT</code> 和 <code>EXECUTE</code> 您希望从中摄取的表及其 schema 的权限。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-default-cdc-behavior" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#default-cdc-behavior" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>默认 CDC 行为</h3>
+<p>以下是 CDC 连接的一些通用默认设置：</p>
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>属性</th><th>默认值</th><th>说明</th></tr></thead><tbody><tr><td><code>tombstones.on.delete</code></td><td><code>false</code></td><td>删除行时不生成墓碑记录。</td></tr><tr><td><code>decimal.handling.mode</code></td><td><code>string</code></td><td>十进制列转换为字符串。</td></tr><tr><td><code>include.schema.changes</code></td><td><code>false</code></td><td>DDL 事件（schema 变更）不会转发到输出主题。</td></tr><tr><td><code>offset.flush.interval.ms</code></td><td><code>60000</code> （1 分钟）</td><td>Debezium 尝试每分钟刷新一次偏移量。</td></tr><tr><td><code>error.max.retries</code></td><td><code>5</code></td><td>引擎在失败之前将尝试从瞬时错误中恢复五次。</td></tr></tbody></table></div>
+<h4 id="user-content-connector-specific-defaults"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#connector-specific-defaults" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>连接器特定的默认设置</h4>
+<p>大多数数据库连接器还具有快照模式和其他参数的默认设置。下表包含最重要设置的摘要。您可以从 <strong>CDC 同步</strong> 页面覆盖这些配置。选择 <strong>编辑</strong> 菜单中选择 <strong>CDC 设置</strong> 下拉部分，然后选择 <strong>添加属性</strong> 位于 <strong>高级 Debezium 配置</strong>.</p>
+<h4 id="user-content-oracle"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#oracle" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Oracle</h4>
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>属性</th><th>默认值</th></tr></thead><tbody><tr><td><code>snapshot.mode</code></td><td><code>schema_only</code></td></tr><tr><td><code>schema.history.internal.store.only.captured.tables.ddl</code></td><td><code>true</code></td></tr><tr><td><code>internal.log.mining.log.query.max.retries</code></td><td><code>10</code></td></tr><tr><td><code>log.mining.strategy</code></td><td><code>online_catalog</code></td></tr><tr><td><code>log.mining.query.filter.mode</code></td><td><code>in</code></td></tr><tr><td><code>log.mining.batch.size.default</code></td><td><code>50000</code></td></tr><tr><td><code>database.connection.adapter</code></td><td><code>logminer</code></td></tr></tbody></table></div>
+<h4 id="user-content-postgresql"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#postgresql" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>PostgreSQL</h4>
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>属性</th><th>默认值</th></tr></thead><tbody><tr><td><code>snapshot.mode</code></td><td><code>never</code></td></tr><tr><td><code>plugin.name</code></td><td><code>pgoutput</code></td></tr></tbody></table></div>
+<h4 id="user-content-db2"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#db2" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>按照后续配置提示继续使用以下部分中的信息设置您的连接器。</h4>
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>属性</th><th>默认值</th></tr></thead><tbody><tr><td><code>snapshot.mode</code></td><td><code>no_data</code></td></tr><tr><td><code>snapshot.isolation.mode</code></td><td><code>none</code></td></tr></tbody></table></div>
+<h4 id="user-content-microsoft-sql-server"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#microsoft-sql-server" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>进行表批量同步的配置</h4>
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>属性</th><th>默认值</th></tr></thead><tbody><tr><td><code>snapshot.mode</code></td><td><code>schema_only</code></td></tr><tr><td><code>offset.flush.interval.ms</code></td><td><code>1000</code></td></tr></tbody></table></div>
+<h3 data-pagefind-weight="0.8" id="user-content-snapshot-mode-considerations" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#snapshot-mode-considerations" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>快照模式注意事项</h3>
+<p>默认情况下，Foundry 会配置 <code>snapshot.mode</code> to <code>schema_only</code> （Oracle、SQL Server）、 <code>no_data</code> （Db2）或 <code>never</code> （PostgreSQL），以避免影响数据库的可用性；这些配置避免了在快照过程中锁定表，从而确保对正在进行的数据库操作造成的中断最小。尽管这些模式避免了表锁定，但如果归档日志在 Debezium 处理之前被清除，它们仍然存在数据丢失风险。例如，Oracle 可能会随时间删除较旧的重做日志；如果 Debezium 尝试读取已删除的日志，则无法在不进行完整快照的情况下恢复丢失的数据。</p>
+<h4 id="user-content-alternative-configurations"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#alternative-configurations" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>替代配置</h4>
+<p>如果您希望防止日志清除或确保基础数据集，请考虑使用更完整的快照配置：</p>
+<ul>
+<li>
+<p><strong><code>recovery</code></strong></p>
+<ul>
+<li><strong>行为：</strong> 如果 schema 历史主题丢失或损坏，恢复已在捕获变更的连接器；如果自上次关闭以来未发生 schema 变更，则在重启时重置并重建数据库 schema 历史。</li>
+<li><strong>限制：</strong> 要求 schema 历史主题具有无限保留期。</li>
+</ul>
+</li>
+<li>
+<p><strong><code>always</code></strong></p>
+<ul>
+<li><strong>行为：</strong> 每次连接器重启时都进行完整快照，确保数据的副本完全最新。</li>
+<li><strong>限制：</strong> 每次启动时可能导致表锁定和额外开销。</li>
+</ul>
+</li>
+</ul>
+<ol start="3">
+<li><strong><code>when_needed</code></strong>
+<ul>
+<li><strong>行为：</strong> 仅当 Debezium 无法检测到有效偏移量时才进行快照；例如，偏移量不存在或已过期。</li>
+<li><strong>限制：</strong> 触发快照时仍可能锁定表。</li>
+</ul>
+</li>
+</ol></div>
+</article>
+</article>
+</body>
+</html>

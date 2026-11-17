@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Funnel 流式管道</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<article>
+<div class="ptcom-design__markdownDoc__1uarhel" data-pagefind-body="true"><h1 data-pagefind-weight="1" id="user-content-funnel-streaming-pipelines" level="1" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#funnel-streaming-pipelines" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Funnel 流式管道</h1>
+<p>除 <a href="/docs/foundry/object-indexing/funnel-batch-pipelines/">批量本体论数据索引</a>，对象存储 v2 支持通过使用 <a href="/docs/foundry/data-integration/streams/">Foundry 流</a> as <a href="/docs/foundry/object-permissioning/managing-object-security/#object-input-data-sources">输入数据源</a>，实现低延迟的流式数据索引到本体论中。与用于非流式 Foundry 数据集的批量基础设施不同，流能够在数秒或数分钟内将数据索引到 Foundry 本体论中，以支持对延迟敏感的运营工作流。</p>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>如果您对本体论流式行为有更多疑问，请查阅我们的 <a href="/docs/foundry/object-indexing/faq/#can-i-backfill-large-scale-historical-data-for-object-types-with-streaming-datasources">常见问题</a> 文档。</p><p>有关流式管道性能和延迟的指导，请查阅我们的 <a href="/docs/foundry/building-pipelines/streaming-performance-considerations/">流式性能注意事项</a> 文档。</p></div>
+<h2 data-pagefind-weight="0.9" id="user-content-current-product-limitations-of-streaming-object-types" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#current-product-limitations-of-streaming-object-types" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>流式对象类型的当前产品限制</h2>
+<p>对象存储 v2 中的流式处理采用“最新更新优先”策略，即每个流都被视为变更日志流。如果您的事件从源端乱序到达，则本体论中的数据将不正确。如果您可以保证输入流中的顺序，对象存储 v2 的流式处理将以相同的顺序处理您的更新。</p>
+<p>本体论流式行为及其功能集仍在积极开发中；以下是在使用本体论流式处理之前需要考虑的一些当前产品限制：</p>
+<ul>
+<li>流式对象类型不支持用户编辑。作为一种变通方法，您可以将用户编辑作为数据变更推送到输入流中，或者配置一个使用非流式输入数据源的附加对象类型，让用户在该辅助对象类型上进行编辑。或者，您可以通过将对象切换为由以下内容支撑，来启用对流支撑对象类型的编辑： <a href="/docs/foundry/object-indexing/direct-datasources/">直接数据源</a>.</li>
+<li><a href="/docs/foundry/object-permissioning/multi-datasource-objects/">多数据源对象类型（MDO）</a> 在流式对象类型上不受支持。</li>
+<li>除 <a href="/docs/foundry/workshop/overview/">来运行该专业代码代理。你还可以通过</a>之外，没有其他 Foundry 前端应用程序支持实时数据刷新，因为从历史上看，它们并不期望接收流式更新。尽管流式对象类型的底层本体论数据在不断变化，但在 Workshop 之外，您需要在需要新数据时手动刷新。</li>
+<li>在监听器设置向导的 <strong>数据源</strong> 选项卡中，用户可以配置 <a href="/docs/foundry/object-indexing/funnel-batch-pipelines/#monitor-funnel-pipelines">监控器</a> ，用于监控 Funnel 批量管道故障和无效记录。目前，不支持为使用流数据源的对象类型提供监控器或指标（例如，管道延迟）。</li>
+<li>记录大小不能超过 1MB，且对象类型不能包含超过 250 个属性。如果您需要将更大的记录流式传输到本体论中，应考虑采用对象类型更小的其他本体论模型。</li>
+</ul>
+<h2 data-pagefind-weight="0.9" id="user-content-configuring-streaming-object-types" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#configuring-streaming-object-types" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>配置流式对象类型</h2>
+<p>使用流输入数据源的对象类型可直接在 <a href="/docs/foundry/pipeline-builder/outputs-add-ontology-output/">如果希望用户在每次运行预览前手动确认，请开启</a> 或 <a href="/docs/foundry/ontology-manager/overview/">本体论管理器</a>中进行配置，与任何其他 Foundry 本体论对象类型类似。</p>
+<p>流数据源还可以配置用于 <a href="/docs/foundry/object-link-types/create-link-type/">多对多关联类型</a>.</p>
+<p>如果您尚未配置输入流，可以通过 <a href="/docs/foundry/data-connection/set-up-streaming-sync/">在 Data Connection 应用程序中与现有流集成</a> 或通过 <a href="/docs/foundry/building-pipelines/create-stream-pipeline-pb/">在 Pipeline Builder 中构建流管道</a>来创建一个。
+:::</p>
+<p>创建新对象类型（或使用现有对象类型）后，导航到 <strong>数据源</strong> 选项卡，在 Ontology Manager 中的 <strong>支撑数据源</strong> 部分中选择一个流输入数据源（如下所示），并将您的更改保存到 Foundry 本体论中。</p>
+<p><img alt="An Ontology streaming configuration" height="600" node="[object Object]" src="/docs/resources/foundry/object-indexing/stream_pipeline.png" style="aspect-ratio:720 / 786" width="549.6183206106871"/></p>
+<p>如需对输入数据源流进行其他配置，请选择省略号按钮以查看更多选项（如下所示）。</p>
+<p><img alt="Additional streaming configurations" height="294" node="[object Object]" src="/docs/resources/foundry/object-indexing/stream_config.png" style="aspect-ratio:624 / 294" width="624"/>
+<img alt="Additional streaming configurations" height="600" node="[object Object]" src="/docs/resources/foundry/object-indexing/stream_datasource_configuration.png" style="aspect-ratio:1552 / 1076" width="865.4275092936804"/></p>
+<p>直方图 <strong>流配置</strong> 部分提供了用于优化对象类型流式作业的选项。</p>
+<ul>
+<li><strong>流计算配置文件：</strong> 默认情况下，对象类型的流式作业使用适用于大多数输入流的计算配置文件。但是，由超高吞吐量流支撑的对象类型可能需要更多资源，以防止管道滞后。或者，由低吞吐量流支撑的对象类型可以使用较小的配置文件，以节省计算资源成本。如果没有合适的可用选项，请联系您的 Palantir 代表。</li>
+<li><strong>流一致性保证：</strong> 默认情况下，对象类型的流式处理作业使用 exactly-once 一致性保证，与 at-least-once 相比会产生额外的延迟，但可确保 Foundry 应用程序恰好接收一次对象集更新。启用 at-least-once 一致性保证可以降低延迟；但在极少数情况下，当对象集发生更改时，Foundry 应用程序可能会收到重复的更新。例如，基于对象集的自动化操作可能会被触发多次。对于延迟敏感的对象类型，请考虑启用 at-least-once。</li>
+</ul>
+<p><img alt="The Stream configuration section." height="327" node="[object Object]" src="/docs/resources/foundry/object-indexing/stream-configuration.png" style="aspect-ratio:1059 / 327" width="1059"/></p>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>修改对象类型的流配置将重启其关联的流式处理作业，导致新流式记录的处理出现短暂延迟。</p></div>
+<h2 data-pagefind-weight="0.9" id="user-content-debugging-streaming-pipelines" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#debugging-streaming-pipelines" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>调试流式管道</h2>
+<p>流与本体论之间的接口在概念上可以被视为类似于 <a href="/docs/foundry/object-indexing/funnel-batch-pipelines/#changelog">变更日志数据集</a>输入流中的每条记录都包含要写入本体论的每个属性的数据。每条记录将更新给定对象的所有属性，由主键指定。可以通过在输入流上设置元数据，在输入记录上指定删除操作。</p>
+<p>Funnel 将按照记录写入数据源流的顺序对其进行索引，因此这些流应按主键分区，并按事件时间戳排序，这可以在上游 <a href="/docs/foundry/pipeline-builder/core-concepts/#pipeline-outputs">如果希望用户在每次运行预览前手动确认，请开启</a> 管道中完成。</p>
+<p>如果您的流管道遇到问题，请查看 <a href="/docs/foundry/optimizing-pipelines/debug-stream/">调试失败的流</a> 文档。</p>
+<p>要查看对象类型流式处理作业的详细信息和指标，请选择管道图中的 <strong>Stream</strong> 气泡。</p>
+<p><img alt="Access streaming job details and metrics." height="476" node="[object Object]" src="/docs/resources/foundry/object-indexing/stream-details-metrics.gif" style="aspect-ratio:1150 / 476" width="1150"/></p></div>
+</article>
+</article>
+</body>
+</html>

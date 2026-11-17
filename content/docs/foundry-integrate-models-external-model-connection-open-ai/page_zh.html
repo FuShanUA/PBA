@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>示例：集成 Open AI 模型</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<article>
+<div class="ptcom-design__markdownDoc__1uarhel" data-pagefind-body="true"><h1 data-pagefind-weight="1" id="user-content-example-integrate-an-open-ai-model" level="1" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#example-integrate-an-open-ai-model" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>示例：集成 Open AI 模型</h1>
+<p>以下文档提供了连接 Open AI 模型的自定义连接的示例配置和模型适配器。请查看 <a href="/docs/foundry/integrate-models/external-model-connection/#benefits-of-wrapping-an-externally-hosted-model-in-foundry">外部模型集成的优势</a> 以确保这适合您的使用场景。</p>
+<p>如需分步指南，请参阅我们关于 <a href="/docs/foundry/integrate-models/model-adapter-creation/">如何创建模型适配器</a> 和 <a href="/docs/foundry/integrate-models/external-model-connection/">如何创建与外部托管模型的连接</a>.</p>
+<h2 data-pagefind-weight="0.9" id="user-content-example-open-ai-model-adapter" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#example-open-ai-model-adapter" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Open AI 模型适配器示例</h2>
+<p>要在 Foundry 中使用此示例，请使用 <a href="/docs/foundry/integrate-models/model-adapter-creation/#model-adapter-library-template">模型适配器库</a> 在 Code Repositories 应用中发布并标记模型适配器。</p>
+<p>此模型适配器配置了与我们 Azure 托管的 Open AI 实例的连接。已使用 <code>Python 3.8.17</code>,  <code>pandas 1.5.3</code>日 <code>openai 1.1.0</code>进行测试。构建 OpenAI 客户端需要以下五个输入：</p>
+<ul>
+<li><code>base_url</code> - 以 <strong>base_url</strong></li>
+<li><code>api_type</code> - 在 <strong>连接配置</strong></li>
+<li><code>api_version</code> - 在 <strong>连接配置</strong></li>
+<li><code>engine</code> - 在 <strong>连接配置</strong></li>
+<li><code>api_key</code> - 以 <strong>resolved_credentials</strong></li>
+</ul>
+<pre><div class="ptcom-design__wrapper__12wpwnx" data-pagefind-weight="0.5"><span class="ptcom-design__clipboard__1l1gb20 ptcom-design__clipboard__12wpwnx"><span class="ptcom-design__confirmation__1l1gb20" data-pagefind-ignore="true">Copied!</span><svg aria-hidden="true" aria-label="clipboard" data-view-component="true" height="16" version="1.1" viewbox="0 0 16 16" width="16"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z" fill="currentColor" fill-rule="evenodd"></path><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z" fill="currentColor" fill-rule="evenodd"></path></svg></span><div style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;overflow:auto;position:relative;margin:0;padding:0.75em"><code style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;float:left;padding-right:10px"><span class="react-syntax-highlighter-line-number">1
+</span><span class="react-syntax-highlighter-line-number">2
+</span><span class="react-syntax-highlighter-line-number">3
+</span><span class="react-syntax-highlighter-line-number">4
+</span><span class="react-syntax-highlighter-line-number">5
+</span><span class="react-syntax-highlighter-line-number">6
+</span><span class="react-syntax-highlighter-line-number">7
+</span><span class="react-syntax-highlighter-line-number">8
+</span><span class="react-syntax-highlighter-line-number">9
+</span><span class="react-syntax-highlighter-line-number">10
+</span><span class="react-syntax-highlighter-line-number">11
+</span><span class="react-syntax-highlighter-line-number">12
+</span><span class="react-syntax-highlighter-line-number">13
+</span><span class="react-syntax-highlighter-line-number">14
+</span><span class="react-syntax-highlighter-line-number">15
+</span><span class="react-syntax-highlighter-line-number">16
+</span><span class="react-syntax-highlighter-line-number">17
+</span><span class="react-syntax-highlighter-line-number">18
+</span><span class="react-syntax-highlighter-line-number">19
+</span><span class="react-syntax-highlighter-line-number">20
+</span><span class="react-syntax-highlighter-line-number">21
+</span><span class="react-syntax-highlighter-line-number">22
+</span><span class="react-syntax-highlighter-line-number">23
+</span><span class="react-syntax-highlighter-line-number">24
+</span><span class="react-syntax-highlighter-line-number">25
+</span><span class="react-syntax-highlighter-line-number">26
+</span><span class="react-syntax-highlighter-line-number">27
+</span><span class="react-syntax-highlighter-line-number">28
+</span><span class="react-syntax-highlighter-line-number">29
+</span><span class="react-syntax-highlighter-line-number">30
+</span><span class="react-syntax-highlighter-line-number">31
+</span><span class="react-syntax-highlighter-line-number">32
+</span><span class="react-syntax-highlighter-line-number">33
+</span><span class="react-syntax-highlighter-line-number">34
+</span><span class="react-syntax-highlighter-line-number">35
+</span><span class="react-syntax-highlighter-line-number">36
+</span><span class="react-syntax-highlighter-line-number">37
+</span><span class="react-syntax-highlighter-line-number">38
+</span><span class="react-syntax-highlighter-line-number">39
+</span><span class="react-syntax-highlighter-line-number">40
+</span><span class="react-syntax-highlighter-line-number">41
+</span><span class="react-syntax-highlighter-line-number">42
+</span><span class="react-syntax-highlighter-line-number">43
+</span><span class="react-syntax-highlighter-line-number">44
+</span><span class="react-syntax-highlighter-line-number">45
+</span><span class="react-syntax-highlighter-line-number">46
+</span><span class="react-syntax-highlighter-line-number">47
+</span><span class="react-syntax-highlighter-line-number">48
+</span><span class="react-syntax-highlighter-line-number">49
+</span><span class="react-syntax-highlighter-line-number">50
+</span><span class="react-syntax-highlighter-line-number">51
+</span><span class="react-syntax-highlighter-line-number">52
+</span><span class="react-syntax-highlighter-line-number">53
+</span><span class="react-syntax-highlighter-line-number">54
+</span><span class="react-syntax-highlighter-line-number">55
+</span><span class="react-syntax-highlighter-line-number">56
+</span><span class="react-syntax-highlighter-line-number">57
+</span><span class="react-syntax-highlighter-line-number">58
+</span><span class="react-syntax-highlighter-line-number">59
+</span><span class="react-syntax-highlighter-line-number">60
+</span><span class="react-syntax-highlighter-line-number">61
+</span><span class="react-syntax-highlighter-line-number">62
+</span><span class="react-syntax-highlighter-line-number">63
+</span><span class="react-syntax-highlighter-line-number">64
+</span><span class="react-syntax-highlighter-line-number">65
+</span><span class="react-syntax-highlighter-line-number">66
+</span><span class="react-syntax-highlighter-line-number">67
+</span><span class="react-syntax-highlighter-line-number">68
+</span><span class="react-syntax-highlighter-line-number">69
+</span><span class="react-syntax-highlighter-line-number">70
+</span><span class="react-syntax-highlighter-line-number">71
+</span><span class="react-syntax-highlighter-line-number">72
+</span><span class="react-syntax-highlighter-line-number">73
+</span><span class="react-syntax-highlighter-line-number">74
+</span><span class="react-syntax-highlighter-line-number">75
+</span><span class="react-syntax-highlighter-line-number">76
+</span></code><code class="language-python" style="white-space:pre;text-align:left;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none">import palantir_models as pm
+import models_api.models_api_executable as executable_api
+
+from typing import Optional
+
+import openai
+import logging
+
+logger = logging.getLogger(__name__)
+
+
+class OpenAIModelAdapter(pm.ExternalModelAdapter):
+  def __init__(self, base_url, api_type, api_version, engine, api_key):
+    # Define engine to be used for completions
+    self.engine = engine
+
+    # Setup OpenAI Variables
+    openai.api_type = api_type
+    openai.api_key = api_key
+    openai.api_base = base_url
+    openai.api_version = api_version
+
+  @classmethod
+  def init_external(cls, external_context) -&gt; "pm.ExternalModelAdapter":
+    base_url = external_context.base_url
+    api_type = external_context.connection_config["api_type"]
+    api_version = external_context.connection_config["api_version"]
+    engine = external_context.connection_config["engine"]
+    api_key = external_context.resolved_credentials["api_key"]
+    return cls(
+      base_url,
+      api_type,
+      api_version,
+      engine,
+      api_key
+    )
+
+  @classmethod
+  def api(cls):
+    inputs = {"df_in": pm.Pandas(columns=[("prompt", str)])}
+    outputs = {"df_out": pm.Pandas(columns=[("prompt", str), ("prediction", str)])}
+    return inputs, outputs
+
+  def predict(self, df_in):
+    predictions = []
+    for _, row in df_in.iterrows():
+      messages = [{"role": "user", "content": row['prompt']}]
+      try:
+        response = openai.ChatCompletion.create(
+          engine=self.engine,
+          messages=messages,
+        )
+      except openai.error.Timeout as e:
+        logger.error(f"OpenAI API request timed out: {e}")
+        raise e
+      except openai.error.APIError as e:
+        logger.error(f"OpenAI API returned an API Error: {e}")
+        raise e
+      except openai.error.APIConnectionError as e:
+        logger.error(f"OpenAI API request failed to connect: {e}")
+        raise e
+      except openai.error.InvalidRequestError as e:
+        logger.error(f"OpenAI API request was invalid: {e}")
+        raise e
+      except openai.error.AuthenticationError as e:
+        logger.error(f"OpenAI API request was not authorized: {e}")
+        raise e
+      except openai.error.PermissionError as e:
+        logger.error(f"OpenAI API request was not permitted: {e}")
+        raise e
+      except openai.error.RateLimitError as e:
+        logger.error(f"OpenAI API request exceeded rate limit: {e}")
+        raise e
+      predictions.append(response.choices[0].message.content)
+    df_in['prediction'] = predictions
+    return df_in</code></div></div></pre>
+<h2 data-pagefind-weight="0.9" id="user-content-open-ai-model-configuration" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#open-ai-model-configuration" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Open AI 模型配置</h2>
+<p>接下来， <a href="/docs/foundry/integrate-models/external-model-connection/">配置外部托管模型</a> 以使用此模型适配器，并按模型适配器的预期提供所需的配置和凭证。</p>
+<p>URL 以及配置和凭证映射使用与模型适配器中定义相同的键来完成。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-select-an-egress-policy" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#select-an-egress-policy" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>选择出口策略</h3>
+<p>以下示例使用的是已为您的 Open AI API 端点主机（端口 443）配置的出口策略。</p>
+<p><img alt="Egress Policy Open AI in the modeling objectives application" height="600" node="[object Object]" src="/docs/resources/foundry/integrate-models/external-open-ai-egress-configuration.png" style="aspect-ratio:801 / 601" width="799.6672212978369"/></p>
+<h3 data-pagefind-weight="0.8" id="user-content-configure-model-adapter" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#configure-model-adapter" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>配置模型适配器</h3>
+<p>在 <strong>连接外部托管模型</strong> 对话框中选择已发布的模型适配器。</p>
+<p><img alt="Model Adapter configuration panel for Open AI in Palantir Foundry" height="542" node="[object Object]" src="/docs/resources/foundry/integrate-models/external-open-ai-adapter-configuration.png" style="aspect-ratio:721 / 542" width="721"/></p>
+<h3 data-pagefind-weight="0.8" id="user-content-configure-url-and-connection-configuration" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#configure-url-and-connection-configuration" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>配置 URL 和连接配置</h3>
+<p>根据 <a href="#example-open-ai-model-adapter">Open AI 模型适配器示例</a>.</p>
+<p>的要求定义连接配置。</p>
+<p>此适配器需要您的 Open AI API 端点的 URL。</p>
+<ul>
+<li><strong>api_type</strong> 此适配器需要以下连接配置：</li>
+<li><strong>api_version</strong> - 要对其进行推理的 Open AI 模型类型。</li>
+<li><strong>引擎</strong> - 要使用的 API 版本。</li>
+</ul>
+<p><img alt="Connection configuration panel for Open AI." height="595" node="[object Object]" src="/docs/resources/foundry/integrate-models/external-open-ai-connection-configuration.png" style="aspect-ratio:801 / 595" width="801"/></p>
+<h3 data-pagefind-weight="0.8" id="user-content-configure-credential-configuration" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#configure-credential-configuration" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>- 要使用的模型引擎。</h3>
+<p>配置凭证配置 <a href="#example-open-ai-model-adapter">Open AI 模型适配器示例</a>.</p>
+<p>根据</p>
+<ul>
+<li><strong>api_key</strong> 的要求定义凭证配置。</li>
+</ul>
+<p><img alt="Credentials configuration panel for Open AI." height="597" node="[object Object]" src="/docs/resources/foundry/integrate-models/external-open-ai-credentials-configuration.png" style="aspect-ratio:796 / 597" width="796"/></p>
+<h2 data-pagefind-weight="0.9" id="user-content-open-ai-model-usage" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#open-ai-model-usage" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>此适配器需要以下凭证配置：</h2>
+<p>- 查询 Open AI 所需的密钥。 <a href="/docs/foundry/manage-models/set-up-live/">Open AI 模型使用</a> or <a href="/docs/foundry/transforms-python/overview/">Python 转换</a>.</p>
+<p>现在 Open AI 模型已配置完成，该模型可以托管在</p>
+<p><img alt="Example query using OpenAIAdapter" height="600" node="[object Object]" src="/docs/resources/foundry/integrate-models/external-open-ai-example-query.png" style="aspect-ratio:2892 / 1718" width="1010.011641443539"/></p></div>
+</article>
+</article>
+</body>
+</html>

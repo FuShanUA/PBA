@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HyperAuto V2 架构</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<article>
+<div class="ptcom-design__markdownDoc__1uarhel" data-pagefind-body="true"><h1 data-pagefind-weight="1" id="user-content-hyperauto-v2-architecture" level="1" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#hyperauto-v2-architecture" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>HyperAuto V2 架构</h1>
+<p>本页面介绍 HyperAuto V2 的架构。有关 HyperAuto V1 架构的说明，请访问 <a href="/docs/foundry/hyperauto/v1-overview/#architecture">HyperAuto V1 概述</a>.</p>
+<p>HyperAuto V2 围绕数据集成工作流的三个主要组件提供编排和自动化功能—— <a href="/docs/foundry/data-connection/core-concepts/#syncs">数据同步</a>, <a href="/docs/foundry/pipeline-builder/overview/">Builder 管道</a>日 <a href="/docs/foundry/ontology/overview/">本体论</a> ——以便从支持的源自动生成可直接使用的输出。</p>
+<p>HyperAuto 利用数据源的元数据，实时查询源，从而对如何构建同步、应应用何种转换逻辑以及如何设计合适的本体论得出意见。</p>
+<p>HyperAuto 管道是指由单个 HyperAuto 实例管理的所有资源，从同步到对象。每个管道以用户提供的源表列表作为输入，将其同步到 Foundry（如有需要），并将其转换为有价值的、可直接使用的输出数据集以及（可选的） <a href="/docs/foundry/ontology/overview/">本体论对象</a>。用户可以针对每个源创建多个 HyperAuto 管道，以满足其个性化需求。</p>
+<p><img alt="Graph of HyperAuto V2's architecture" height="459" node="[object Object]" src="/docs/resources/foundry/hyperauto/hyperauto-v2-architecture-graph.png" style="aspect-ratio:1242 / 459" width="1242"/></p>
+<h2 data-pagefind-weight="0.9" id="user-content-data-syncs" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#data-syncs" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>数据同步</h2>
+<p>当不存在与源的直接连接时，HyperAuto 也支持使用静态文件，在这种情况下本节不适用。请参阅 <a href="/docs/foundry/hyperauto/folder-based-sap/">基于文件夹的 SAP 文档</a> 以了解更多信息。</p>
+<p>HyperAuto 提供对源上全部可见表的访问。如果用户选择的源表未映射到现有数据同步，则会自动生成新的数据同步。</p>
+<p>如果所选源表已存在一个或多个数据同步，默认将选择最新的同步。你可以在 <strong>输入配置</strong> 页面上通过悬停在 <strong>配置输入表</strong> 按钮上进行更改。在那里，你可以选择使用其他现有同步，或选择创建新的同步。</p>
+<p><img alt="HyperAuto Input Configuration Map Existing Syncs" height="600" node="[object Object]" src="/docs/resources/foundry/hyperauto/hyperauto-v2-map-existing-syncs.png" style="aspect-ratio:1256 / 800" width="942"/></p>
+<p>根据数据规模的不同，如果 HyperAuto 创建了新的数据同步，生成过程可能会显著延长。这是因为数据同步需要在 HyperAuto 其余流程（例如 builder 管道生成）开始之前完成一次初始运行。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-data-transformation-pipeline-builder" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#data-transformation-pipeline-builder" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>数据转换（Pipeline Builder）</h2>
+<p>HyperAuto 管道中的数据转换可以将难以使用的源数据转换为经过清洗和丰富的输出，可直接用于分析和应用构建。</p>
+<p>HyperAuto 管道由自动生成的 <a href="/docs/foundry/pipeline-builder/overview/">builder 管道</a> 驱动——这是 Foundry 中主要的数据转换方法。</p>
+<p>HyperAuto 根据源类型和用户偏好动态生成有主见的转换逻辑。用户可以通过选择 <strong>查看管道</strong> 在 HyperAuto 管道概述页面中查看此 builder 管道。对该管道的编辑需通过 <a href="/docs/foundry/hyperauto/proposals/">提案</a>.</p>
+<p>HyperAuto 中可用的转换功能类型如下：</p>
+<ul>
+<li><strong>清洗：</strong> 源系统导出的数据通常存在常见的“清洁度”问题，例如数据类型不正确、对 null / 空值处理不当，或字符串值中存在多余的空格。HyperAuto 提供有主见的转换选项来修复这些问题（以及更多）。</li>
+<li><strong>重命名：</strong> 通过使用源的元数据，HyperAuto 可以将输出表和列重命名为具有描述性且易于理解的名称，而不是沿用通常难以人工阅读的 schema。</li>
+<li><strong>连接（Join）：</strong> 源系统通常将相关信息（例如元数据）存储在单独的表中，例如在遵循“规范”数据模型时。HyperAuto 利用其对源数据模型的理解将这些表连接在一起，提供一套去规范化的、内容丰富的输出数据集，便于分析，并为本体论奠定坚实基础。</li>
+<li><strong>过滤：</strong> HyperAuto 可以自动过滤掉不需要的行（例如重复数据），例如对变更数据捕获（CDC）输入进行去重。</li>
+</ul>
+<p>同时支持 <strong>批处理</strong> 和实时 <strong>流式</strong> 两种管道模式，请参阅 <a href="/docs/foundry/hyperauto/configuration-options/#pipeline-modes">配置选项</a> 以了解更多详情。</p>
+<p><img alt="Generated Pipeline Builder graph" height="600" node="[object Object]" src="/docs/resources/foundry/hyperauto/hyperauto-v2-builder-pipeline.png" style="aspect-ratio:1845 / 947" width="1168.9545934530095"/></p>
+<h2 data-pagefind-weight="0.9" id="user-content-ontology" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#ontology" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>本体论</h2>
+<p>HyperAuto 可以使用源的数据模型，基于生成的输出数据集动态生成 <a href="/docs/foundry/ontology/overview/">本体论</a> ，包括定义对象之间的语义关联。</p>
+<p>启用此设置后，您可以在几分钟内从新的（受支持的）数据源直接生成完全定义的本体论，无需任何手动干预。</p>
+<p>如果您对此功能感兴趣，请联系您的 Palantir 代表。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-resource-management" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#resource-management" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>资源管理</h2>
+<p>HyperAuto 管道旨在完全控制其创建的所有资源，使用户能够持续获得系统的好处和升级，包括性能升级和错误修复。这些管道的设计也便于调整已生成的资源，例如向管道添加新的转换步骤或输入。</p>
+<p>对底层资源（例如同步或 builder 管道）的任何编辑都必须通过 HyperAuto 应用程序进行管理，以避免变更冲突。</p>
+<p>如有需要，删除 HyperAuto 管道资源将解除其对相应 builder 管道的所有权，从而可以像平常一样直接编辑 builder 管道。</p></div>
+</article>
+</article>
+</body>
+</html>

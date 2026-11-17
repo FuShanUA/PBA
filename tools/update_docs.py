@@ -2,6 +2,7 @@
 """Incremental updater for the English Palantir documentation archive."""
 
 import argparse
+import hashlib
 import json
 import os
 import re
@@ -24,6 +25,7 @@ CONTENT_DIR = os.path.join(ROOT, "content", "docs")
 ANNOUNCEMENTS_SLUG = "foundry-announcements"
 ANNOUNCEMENTS_URL = "https://www.palantir.com/docs/foundry/announcements/"
 PRODUCT_PREFIXES = ("/docs/foundry/", "/docs/apollo/", "/docs/gotham/")
+STASH_SUFFIX = ".prev"
 EXCLUDED_PATHS = {
     "/docs/foundry/",
     "/docs/apollo/",
@@ -105,6 +107,94 @@ def local_pages():
     return pages
 
 
+def file_digest(path):
+    if not os.path.isfile(path):
+        return None
+    digest = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(65536), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def recover_stashed_pages():
+    """Put back any page left in a stash by an interrupted run."""
+    if not os.path.isdir(CONTENT_DIR):
+        return 0
+    recovered = 0
+    for slug in os.listdir(CONTENT_DIR):
+        page_dir = os.path.join(CONTENT_DIR, slug)
+        if not os.path.isdir(page_dir):
+            continue
+        for filename in ("page.html", "page_zh.html"):
+            stash = os.path.join(page_dir, filename + STASH_SUFFIX)
+            if not os.path.isfile(stash):
+                continue
+            live = os.path.join(page_dir, filename)
+            if os.path.isfile(live):
+                os.remove(stash)
+            else:
+                os.replace(stash, live)
+                recovered += 1
+    return recovered
+
+
+def stash_changed_pages(slugs):
+    """Move the current copies aside so the fetcher treats them as missing.
+
+    Returns {slug: digest of the previous page.html}. Deleting the files
+    outright lost every page whose re-fetch failed, and forced a full
+    re-translation even when the page body had not moved.
+    """
+    stashed = {}
+    for slug in slugs:
+        page = os.path.join(CONTENT_DIR, slug, "page.html")
+        zh = os.path.join(CONTENT_DIR, slug, "page_zh.html")
+        digest = file_digest(page)
+        moved = False
+        if os.path.isfile(page):
+            os.replace(page, page + STASH_SUFFIX)
+            moved = True
+        if os.path.isfile(zh):
+            os.replace(zh, zh + STASH_SUFFIX)
+            moved = True
+        if moved or digest:
+            stashed[slug] = digest
+    return stashed
+
+
+def resolve_stashed_pages(stashed):
+    """Compare each re-fetched page against its stash and clean up.
+
+    Identical bodies keep the existing translation, so a sitemap-wide
+    lastmod bump no longer costs a full re-translation. A page that did not
+    come back is restored from the stash instead of being left empty.
+    """
+    identical = set()
+    restored = set()
+    for slug, digest in stashed.items():
+        page = os.path.join(CONTENT_DIR, slug, "page.html")
+        zh = os.path.join(CONTENT_DIR, slug, "page_zh.html")
+        page_prev = page + STASH_SUFFIX
+        zh_prev = zh + STASH_SUFFIX
+        if not os.path.isfile(page):
+            if os.path.isfile(page_prev):
+                os.replace(page_prev, page)
+                restored.add(slug)
+            if os.path.isfile(zh_prev):
+                os.replace(zh_prev, zh)
+            continue
+        if digest and file_digest(page) == digest:
+            identical.add(slug)
+            if os.path.isfile(zh_prev) and not os.path.isfile(zh):
+                os.replace(zh_prev, zh)
+        if os.path.isfile(page_prev):
+            os.remove(page_prev)
+        if os.path.isfile(zh_prev):
+            os.remove(zh_prev)
+    return identical, restored
+
+
 def load_manifest():
     if not os.path.exists(MANIFEST_PATH):
         return {"source": "docs", "last_scan": "", "entries": {}}
@@ -137,16 +227,22 @@ def load_unavailable_slugs(max_age_seconds=86400):
     return unavailable
 
 
-def save_manifest(manifest, sitemap_entries, pages, unavailable_slugs):
+def save_manifest(manifest, sitemap_entries, pages, unavailable_slugs, stale_slugs=()):
     now = datetime.now(timezone.utc).isoformat()
     entries = manifest.setdefault("entries", {})
     for slug, url in pages.items():
         info = sitemap_entries.get(slug, {})
         entry = entries.setdefault(slug, {})
+        # A page restored from its stash after a failed fetch still holds the
+        # older revision, so keep the older lastmod and retry it on a later run.
+        if slug in stale_slugs:
+            lastmod = entry.get("lastmod", "")
+        else:
+            lastmod = info.get("lastmod", entry.get("lastmod", ""))
         entry.update(
             {
                 "url": url,
-                "lastmod": info.get("lastmod", entry.get("lastmod", "")),
+                "lastmod": lastmod,
                 "status": "ok",
                 "last_checked": now,
             }
@@ -299,6 +395,9 @@ def collect_new_announcements():
 
 
 def update_docs(workers=3, translate=True):
+    recovered = recover_stashed_pages()
+    if recovered:
+        log(f"Recovered {recovered} page(s) left in a stash by an earlier run")
     xml = fetch_sitemap()
     sitemap_entries = parse_sitemap(xml)
     before = local_pages()
@@ -334,11 +433,10 @@ def update_docs(workers=3, translate=True):
             if new_lastmod and old_lastmod and new_lastmod != old_lastmod:
                 changed_candidates.append(slug)
 
-    for slug in changed_candidates:
-        for filename in ("page.html", "page_zh.html"):
-            path = os.path.join(CONTENT_DIR, slug, filename)
-            if os.path.exists(path):
-                os.remove(path)
+    # Palantir rewrites <lastmod> across the whole sitemap on every docs
+    # release, so a lastmod diff says nothing about the page body. Stash the
+    # current files rather than deleting them, then compare after the fetch.
+    stashed = stash_changed_pages(changed_candidates)
 
     log(
         f"Docs sitemap: {len(sitemap_entries)} English pages; "
@@ -354,6 +452,19 @@ def update_docs(workers=3, translate=True):
         run_command([sys.executable, os.path.join(ROOT, "gen_docs_json.py")], "Rebuilding docs index")
     else:
         log("No documentation updates found.")
+
+    restored = set()
+    if stashed:
+        identical, restored = resolve_stashed_pages(stashed)
+        changed_candidates = [
+            slug for slug in changed_candidates if slug not in identical and slug not in restored
+        ]
+        log(
+            f"Re-checked {len(stashed)} changed candidate(s): "
+            f"{len(identical)} byte-identical (translation kept), "
+            f"{len(restored)} restored after a failed fetch, "
+            f"{len(changed_candidates)} genuinely changed"
+        )
 
     missing_before = missing_translation_count()
     translation = {
@@ -416,7 +527,7 @@ def update_docs(workers=3, translate=True):
     changed_slugs = [slug for slug in changed_candidates if slug in after]
     unavailable_slugs = load_unavailable_slugs()
     announcement_updates = collect_new_announcements()
-    save_manifest(manifest, sitemap_entries, after, unavailable_slugs)
+    save_manifest(manifest, sitemap_entries, after, unavailable_slugs, restored)
 
     summary = {
         "new": len(new_slugs),

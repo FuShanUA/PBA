@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>进行表批量同步的配置</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<article>
+<div class="ptcom-design__markdownDoc__1uarhel" data-pagefind-body="true"><h1 data-pagefind-weight="1" id="user-content-microsoft-sql-server" level="1" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#microsoft-sql-server" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>进行表批量同步的配置</h1>
+<p>将 Foundry 连接到 Microsoft SQL Server，以在 SQL Server 数据库和 Foundry 之间读取和同步数据。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-supported-capabilities" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#supported-capabilities" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>受支持的功能</h2>
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>功能</th><th>状态</th></tr></thead><tbody><tr><td>探索</td><td>🟢 正式可用</td></tr><tr><td>批量同步</td><td>🟢 正式可用</td></tr><tr><td>增量</td><td>🟢 正式可用</td></tr><tr><td><a href="/docs/foundry/iceberg/syncs/">Iceberg 同步</a></td><td>🟢 正式可用</td></tr><tr><td>变更数据捕获同步</td><td>🟢 正式可用</td></tr><tr><td><a href="/docs/foundry/data-connection/export-overview/#table-exports">表导出</a></td><td>🟢 正式可用</td></tr></tbody></table></div>
+<h2 data-pagefind-weight="0.9" id="user-content-setup" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#setup" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>设置</h2>
+<ol>
+<li>打开 <a href="/docs/foundry/data-connection/overview/">数据连接</a> 应用程序，然后选择 <strong>源</strong> （位于屏幕右上角）。</li>
+<li>选择 <strong>MS SQL Server</strong> （从可用的连接器类型中选择）。</li>
+<li>的信息。</li>
+</ol>
+<p>了解更多关于 <a href="/docs/foundry/data-connection/set-up-source/">设置连接器</a> （在 Foundry 中）的更多信息。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-authentication" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#authentication" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>身份验证</h2>
+<p>您可以通过以下方式向 SQL Server 进行身份验证：</p>
+<ol>
+<li><strong>用户名和密码：</strong> 提供用户名和密码。我们建议使用服务凭证而非个人用户凭证。</li>
+<li><strong>Active Directory Msi</strong>*：此选项将使用 <code>authentication=ActiveDirectoryMSI</code> JDBC 设置。 <code>msiClientId</code> 可以选择提供。</li>
+<li><strong>Active Directory Password</strong>*：此选项将使用 <code>authentication=ActiveDirectoryPassword</code> JDBC 设置。必须提供 Active Directory 用户的用户名和密码才能使用此设置。</li>
+<li><strong>Active Directory Service Principal</strong>*：此选项将使用 <code>authentication=ActiveDirectoryServicePrincipal</code> JDBC 设置。必须指定主体 ID（有时称为应用程序 ID 或客户端 ID），并提供该主体 ID 的密钥。</li>
+</ol>
+<p>有关这些身份验证模式的更多信息，请参阅 <a href="https://learn.microsoft.com/sql/connect/jdbc/connecting-using-azure-active-directory-authentication">官方文档 ↗</a>。对于所有身份验证选项，请确保所提供的用户和角色在目标数据库上具有必要的权限，并具有对目标表的读取或写入权限。</p>
+<p>* Azure Active Directory 现已更名为 <a href="https://www.microsoft.com/security/business/identity-access/microsoft-entra-id">Microsoft Entra ID ↗</a>；不过，Microsoft 发布的 SQL Server 驱动程序上的 JDBC 选项仍保留引用 Active Directory 的原始名称。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-networking" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#networking" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>网络</h2>
+<p>Microsoft SQL Server 连接器需要访问您要连接的 SQL Server 实例的网络权限。SQL Server 连接通常使用主机名在端口 1433 上进行连接。</p>
+<p>对于 SQL Server 连接，相应的 <a href="/docs/foundry/administration/configure-egress/">出站策略覆盖</a> 中设置源时，必须添加相应的 <a href="/docs/foundry/data-connection/overview/">Data Connection 应用程序</a>.</p>
+<p>中设置源时添加。</p>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>对于托管在 Azure SQL 或 AWS RDS 等云服务上的 SQL Server 实例，您必须为从云提供商控制台获取的主机名添加出站策略。 <a href="https://learn.microsoft.com/azure/azure-sql/managed-instance/connectivity-architecture-overview?view=azuresql&amp;tabs=current#public-endpoint">Azure SQL 文档 ↗</a>.</p></div>
+<ul>
+<li>如果使用 Azure 重定向模式，则还必须为所有解析出的 IP 地址添加出站策略。解析出的 IP 可能会不时变化，您必须更新出站策略以允许新的 IP。例如，如果您的 SQL Server 实例托管在 Azure 上，您可以在 <strong>Settings &gt; Properties</strong> 中找到有关 Azure SQL 实例公共 IP 地址的更多信息。要查找您的 Azure SQL 实例的主机名，请导航到 Azure 门户中的 <strong>Server Name</strong> 字段。以下是基于主机名的 Azure SQL 出站策略示例： <code>&lt;your-database-name&gt;.database.windows.net (port 1433)</code></li>
+<li>要查找解析出的 IP，您可以在命令行中运行 <code>nslookup &lt;your-database-name&gt;.database.windows.net</code> 。最终结果将是该主机名在 Azure 中解析到的 IP 地址。以下是基于 IPv4 的 Azure SQL 出站策略示例： <code>x.x.x.x (port 1433)</code>。Azure SQL 会在多个主机之间进行负载均衡，因此您可能需要多次运行 <code>nslookup</code> 命令并添加所有解析出的 IP 地址。</li>
+</ul>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>如果您从同样托管在 Azure 中的 Foundry 实例连接到 Azure SQL 实例，则需要使用 <strong>代理</strong> 连接策略选项。对于源自 Azure 内部的流量，连接策略默认为 <strong>Redirect</strong>。对于 Azure 到 Azure 的连接，使用重定向选项进行连接需要为 11000 到 11999 范围内所有端口上的所有 Azure SQL IP 地址配置出站策略。这是可行的，但由于权限过于宽松，不建议这样做。有关 Azure SQL 连接策略的详细信息，请参阅官方 <a href="https://learn.microsoft.com/azure/azure-sql/database/connectivity-architecture?view=azuresql#connection-policy">Azure SQL 文档 ↗</a>.</p></div>
+<h2 data-pagefind-weight="0.9" id="user-content-connection-details" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#connection-details" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>连接详情</h2>
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>选项</th><th>是否必填？</th><th>描述</th></tr></thead><tbody><tr><td><code>Host type</code></td><td>是</td><td>指定 Foundry 应如何连接到您的 SQL Server 数据库。 <br/><br/> <strong>选项 1：主机名</strong> <br/>提供主机名。这是所有 SQL Server 连接的推荐选项，并且在连接到 <a href="https://azure.microsoft.com/products/azure-sql">Azure SQL ↗</a> instance. <br/><br/> <strong>选项 2：IPv4</strong> <br/>提供 IPv4 地址。如果您通常使用 IPv4 地址进行连接（无论是在企业网络内还是通过互联网），都可以使用此选项。 <br/><br/> <strong>选项 3：IPv6</strong> <br/>提供 IPv6 地址。如果您通常使用 IPv6 地址进行连接，请使用此选项。</td></tr><tr><td><code>Port</code></td><td>是</td><td>指定连接时要使用的端口。大多数 SQL Server 实例的默认端口为 <code>1433</code>。有关端口的更多信息，请参阅您所连接的 SQL Server 版本的官方文档。</td></tr><tr><td><code>Database name</code></td><td>是</td><td>您要连接到的 MS SQL Server 实例中的数据库名称。</td></tr><tr><td><code>Authentication</code></td><td>是</td><td>使用以下内容进行配置 <a href="#authentication">身份验证</a> 上方显示的指南。</td></tr><tr><td><code>Require encryption</code></td><td>是</td><td>默认启用。有关更多详细信息，请参阅 Microsoft 关于 <code>encrypt</code> 设置的 SQL Server JDBC 驱动程序文档： <br/><br/> <a href="https://learn.microsoft.com/sql/connect/jdbc/setting-the-connection-properties?view=sql-server-ver16">连接属性参考 ↗</a><br/> <a href="https://learn.microsoft.com/sql/connect/jdbc/understanding-ssl-support?view=sql-server-ver16">加密支持示例 ↗</a></td></tr><tr><td><code>Trust server certificate</code></td><td>是</td><td>默认禁用。有关更多详细信息，请参阅 Microsoft 关于 <code>trustServerCertificate</code> 设置的 SQL Server JDBC 驱动程序文档： <br/><br/> <a href="https://learn.microsoft.com/sql/connect/jdbc/setting-the-connection-properties?view=sql-server-ver16">连接属性参考 ↗</a></td></tr><tr><td><code>Network Connectivity</code></td><td>是</td><td>您必须提供出口策略以允许连接到您的 MS SQL Server 实例。请参阅 <a href="#networking">网络</a> 参数</td></tr></tbody></table></div>
+<h2 data-pagefind-weight="0.9" id="user-content-batch-sync-consistency" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#batch-sync-consistency" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>批量同步一致性</h2>
+<p>一个 Foundry <a href="/docs/foundry/data-integration/datasets/#transactions"><code>SNAPSHOT</code> 事务</a> 会替换输出数据集中先前摄取的数据。它不会在 SQL Server 中自动启用快照隔离。</p>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>当 <code>READ_COMMITTED_SNAPSHOT</code> is <code>OFF</code>，SQL Server 的默认 <code>READ COMMITTED</code> 隔离并不保证源的时间点视图。在索引内或分区之间移动行的并发更新可能导致行重复或丢失，即使同步运行单个查询并成功完成也是如此。</p></div>
+<h3 data-pagefind-weight="0.8" id="user-content-read-a-consistent-snapshot" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#read-a-consistent-snapshot" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>读取一致的快照</h3>
+<p>要为读取单个表的批量同步请求快照隔离：</p>
+<ol>
+<li>
+<p>与数据库管理员确认 <code>ALLOW_SNAPSHOT_ISOLATION</code> is <code>ON</code> 针对源数据库。此选项默认 <code>OFF</code> 在 SQL Server 用户数据库中处于启用状态。</p>
+</li>
+<li>
+<p>当 <a href="/docs/foundry/data-connection/set-up-sync/#configure-batch-sync">配置批量同步</a>获取资源，请将 <code>SET TRANSACTION ISOLATION LEVEL SNAPSHOT;</code> 在现有的 <code>SELECT</code> 语句之前，位于 <strong>字段中运行</strong> 字段中。例如：</p>
+<pre><div class="ptcom-design__wrapper__12wpwnx" data-pagefind-weight="0.5"><span class="ptcom-design__clipboard__1l1gb20 ptcom-design__clipboard__12wpwnx"><span class="ptcom-design__confirmation__1l1gb20" data-pagefind-ignore="true">Copied!</span><svg aria-hidden="true" aria-label="clipboard" data-view-component="true" height="16" version="1.1" viewbox="0 0 16 16" width="16"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z" fill="currentColor" fill-rule="evenodd"></path><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z" fill="currentColor" fill-rule="evenodd"></path></svg></span><div style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;overflow:auto;position:relative;margin:0;padding:0.75em"><code style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;float:left;padding-right:10px"><span class="react-syntax-highlighter-line-number">1
+</span><span class="react-syntax-highlighter-line-number">2
+</span></code><code class="language-sql" style="white-space:pre;text-align:left;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none">SET TRANSACTION ISOLATION LEVEL SNAPSHOT;
+SELECT * FROM dbo.MyTable;</code></div></div></pre>
+</li>
+<li>
+<p>预览查询，然后保存并运行同步。</p>
+</li>
+</ol>
+<p>将两个语句保留在同一个 <strong>字段中运行</strong> 字段中。这会为提取请求一致的快照，而不会启用数据库范围的 <code>READ_COMMITTED_SNAPSHOT</code>。单独的同步和并行查询不共享快照。</p>
+<p>有关隔离级别及其前提条件的更多信息，请参阅 <a href="https://learn.microsoft.com/sql/t-sql/statements/set-transaction-isolation-level-transact-sql">SQL Server 文档 ↗</a>.</p>
+<h2 data-pagefind-weight="0.9" id="user-content-change-data-capture" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#change-data-capture" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Db2 连接器支持</h2>
+<p>Microsoft SQL Server 源支持 <a href="/docs/foundry/data-integration/change-data-capture/">（CDC）同步。Db2 CDC 同步是通过</a> 同步。</p>
+<p>要为 Microsoft SQL Server 启用变更数据捕获，您必须运行类似下方的命令在数据库上启用 CDC。</p>
+<pre><code>USE &lt;database&gt;
+GO
+EXEC sys.sp_cdc_enable_db
+GO
+</code></pre>
+<p>然后，在需要记录变更日志的每个表上运行另一条命令：</p>
+<pre><code>EXEC sys.sp_cdc_enable_table
+    @source_schema = N'&lt;schema&gt;'
+  , @source_name = N'&lt;table_name&gt;'
+  , @role_name = NULL
+  , @capture_instance = NULL
+  , @supports_net_changes = 0
+  , @filegroup_name = N'PRIMARY';
+GO
+</code></pre>
+<p>一旦为您希望同步到 Foundry 的表启用了变更数据捕获，您可以导航到 <strong>概述</strong> 页面并选择 <strong>+ 创建 CDC 同步</strong> 来开始创建新的变更数据捕获同步。</p>
+<p>探索运行时必须处于工作状态才能创建变更数据捕获同步。如果运行时仍在初始化，您可能需要等待几秒钟并刷新页面，然后再创建同步。</p>
+<p>有关这些命令以及在 Microsoft SQL Server 中使用变更数据捕获 (CDC) 的更多信息，请参阅 <a href="https://learn.microsoft.com/azure/azure-sql/database/change-data-capture-overview">官方文档 ↗</a> 适用于所使用的 SQL Server 版本。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-change-data-capture-permissioning" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#change-data-capture-permissioning" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>变更数据捕获权限设置</h3>
+<p>要成功读取 CDC 数据，您需要确保已为数据库用户提供了足够的权限。</p>
+<ul>
+<li>您可以使用以下查询验证您的权限： <code>SELECT HAS_PERMS_BY_NAME('cdc', 'SCHEMA', 'EXECUTE') AS HasExecutePermission;</code>。如果 <code>True</code> 则结果将返回 1；如果 <code>False</code>.</li>
+<li>您可以在源系统本身中运行以下查询来授予缺失的权限： <code>GRANT EXECUTE ON SCHEMA::cdc TO &lt;USER&gt;;</code></li>
+</ul>
+<h2 data-pagefind-weight="0.9" id="user-content-troubleshooting" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#troubleshooting" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>故障排除</h2>
+<h3 data-pagefind-weight="0.8" id="user-content-login-failed-when-using-active-directory-password-authentication" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#login-failed-when-using-active-directory-password-authentication" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>使用 Active Directory 密码身份验证时登录失败</h3>
+<p>如果您收到 <code>Login failed for user ''.</code> 身份验证选项时收到 <strong>Active Directory Password</strong> 错误，这通常表明您的 SQL Server 实例仅支持 Kerberos 或 NTLM 身份验证，不接受 Azure Active Directory 身份验证。</p>
+<p>直方图 <code>ActiveDirectoryPassword</code> 身份验证方法针对 Azure Active Directory 进行身份验证，而不是使用 Kerberos 或 NTLM 协议。如果您的 SQL Server 配置为仅接受 Kerberos 或 NTLM 身份验证，则 Azure AD 身份验证尝试将被拒绝。</p>
+<p>要解决此问题，请创建自定义 JDBC 连接并设置 JDBC 参数 <code>authenticationScheme=NTLM</code> 以改用 NTLM 身份验证。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-use-microsoft-sql-server-sources-in-code" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#use-microsoft-sql-server-sources-in-code" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>在代码中使用 Microsoft SQL Server 源</h2>
+<p>这些示例演示了如何在 <a href="/docs/foundry/available-connectors/microsoft-sql-server/">进行表批量同步的配置</a> 源中使用 <a href="https://www.pymssql.org/pymssql_examples.html"><code>pymssql</code> ↗</a> Python 包，通过 <a href="/docs/foundry/data-connection/external-transforms/">外部转换</a>.</p>
+<p>这些示例基于使用以下 schema 创建的 <code>Fruits</code> 表：</p>
+<pre><div class="ptcom-design__wrapper__12wpwnx" data-pagefind-weight="0.5"><span class="ptcom-design__clipboard__1l1gb20 ptcom-design__clipboard__12wpwnx"><span class="ptcom-design__confirmation__1l1gb20" data-pagefind-ignore="true">Copied!</span><svg aria-hidden="true" aria-label="clipboard" data-view-component="true" height="16" version="1.1" viewbox="0 0 16 16" width="16"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z" fill="currentColor" fill-rule="evenodd"></path><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z" fill="currentColor" fill-rule="evenodd"></path></svg></span><div style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;overflow:auto;position:relative;margin:0;padding:0.75em"><code style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;float:left;padding-right:10px"><span class="react-syntax-highlighter-line-number">1
+</span><span class="react-syntax-highlighter-line-number">2
+</span><span class="react-syntax-highlighter-line-number">3
+</span><span class="react-syntax-highlighter-line-number">4
+</span><span class="react-syntax-highlighter-line-number">5
+</span></code><code class="language-sql" style="white-space:pre;text-align:left;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none">CREATE TABLE Fruits (
+    FruitName VARCHAR(50) PRIMARY KEY,
+    Inventory INT NOT NULL,
+    PricePerKg DECIMAL(10, 2) NOT NULL
+);</code></div></div></pre>
+<h3 data-pagefind-weight="0.8" id="user-content-read-from-mssql-with-an-external-transform" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#read-from-mssql-with-an-external-transform" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>使用外部转换从 MSSQL 读取数据</h3>
+<p>此示例从 <code>Fruits</code> 表中读取数据，并筛选出 <code>Inventory</code> 值低于 <code>60</code>.</p>
+<pre><div class="ptcom-design__wrapper__12wpwnx" data-pagefind-weight="0.5"><span class="ptcom-design__clipboard__1l1gb20 ptcom-design__clipboard__12wpwnx"><span class="ptcom-design__confirmation__1l1gb20" data-pagefind-ignore="true">Copied!</span><svg aria-hidden="true" aria-label="clipboard" data-view-component="true" height="16" version="1.1" viewbox="0 0 16 16" width="16"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z" fill="currentColor" fill-rule="evenodd"></path><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z" fill="currentColor" fill-rule="evenodd"></path></svg></span><div style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;overflow:auto;position:relative;margin:0;padding:0.75em"><code style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;float:left;padding-right:10px"><span class="react-syntax-highlighter-line-number">1
+</span><span class="react-syntax-highlighter-line-number">2
+</span><span class="react-syntax-highlighter-line-number">3
+</span><span class="react-syntax-highlighter-line-number">4
+</span><span class="react-syntax-highlighter-line-number">5
+</span><span class="react-syntax-highlighter-line-number">6
+</span><span class="react-syntax-highlighter-line-number">7
+</span><span class="react-syntax-highlighter-line-number">8
+</span><span class="react-syntax-highlighter-line-number">9
+</span><span class="react-syntax-highlighter-line-number">10
+</span><span class="react-syntax-highlighter-line-number">11
+</span><span class="react-syntax-highlighter-line-number">12
+</span><span class="react-syntax-highlighter-line-number">13
+</span><span class="react-syntax-highlighter-line-number">14
+</span><span class="react-syntax-highlighter-line-number">15
+</span><span class="react-syntax-highlighter-line-number">16
+</span><span class="react-syntax-highlighter-line-number">17
+</span><span class="react-syntax-highlighter-line-number">18
+</span><span class="react-syntax-highlighter-line-number">19
+</span><span class="react-syntax-highlighter-line-number">20
+</span><span class="react-syntax-highlighter-line-number">21
+</span><span class="react-syntax-highlighter-line-number">22
+</span><span class="react-syntax-highlighter-line-number">23
+</span><span class="react-syntax-highlighter-line-number">24
+</span><span class="react-syntax-highlighter-line-number">25
+</span><span class="react-syntax-highlighter-line-number">26
+</span><span class="react-syntax-highlighter-line-number">27
+</span><span class="react-syntax-highlighter-line-number">28
+</span><span class="react-syntax-highlighter-line-number">29
+</span><span class="react-syntax-highlighter-line-number">30
+</span><span class="react-syntax-highlighter-line-number">31
+</span><span class="react-syntax-highlighter-line-number">32
+</span><span class="react-syntax-highlighter-line-number">33
+</span><span class="react-syntax-highlighter-line-number">34
+</span><span class="react-syntax-highlighter-line-number">35
+</span><span class="react-syntax-highlighter-line-number">36
+</span><span class="react-syntax-highlighter-line-number">37
+</span><span class="react-syntax-highlighter-line-number">38
+</span><span class="react-syntax-highlighter-line-number">39
+</span><span class="react-syntax-highlighter-line-number">40
+</span><span class="react-syntax-highlighter-line-number">41
+</span></code><code class="language-python" style="white-space:pre;text-align:left;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none">import logging
+from pandas import DataFrame
+from transforms.external.systems import ResolvedSource
+from transforms.api import lightweight, Output, transform_pandas
+from transforms.external.systems import external_systems, Source
+import pymssql
+import pandas as pd
+
+logger = logging.getLogger(__name__)
+
+@lightweight
+@external_systems(
+    mssql_source=Source("&lt;source_rid&gt;")
+)
+@transform_pandas(
+    Output("&lt;dataset_rid&gt;")
+)
+def compute(mssql_source: ResolvedSource) -&gt; DataFrame:
+    # Inventory threshold parameter (this could also be read from an input DataFrame)
+    INVENTORY_THRESHOLD = 60
+
+    connection_parameters = {
+        "server": "&lt;your_server_name&gt;",
+        "database": "&lt;your_database_name&gt;",
+        "port": "1433",
+        "user": "&lt;your_user_name&gt;",
+        "password": mssql_source.get_secret("MSSQL_BASIC_AUTH_PASSWORD"),
+        "encryption": "require",
+        "timeout": 30
+    }
+    try:
+        with pymssql.connect(**connection_parameters) as connection:
+            df = pd.read_sql(
+                'SELECT * FROM Fruits WHERE Inventory &lt; %s',
+                connection,
+                params=(INVENTORY_THRESHOLD,)
+            )
+    except Exception as e:
+        logger.error(f"Error querying MSSQL Fruits table: {e}")
+        raise RuntimeError(f"Failed to fetch Fruits data from MSSQL: {e}") from e
+    return df</code></div></div></pre>
+<h3 data-pagefind-weight="0.8" id="user-content-write-to-mssql-with-an-external-transform" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#write-to-mssql-with-an-external-transform" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>使用外部转换写入 MSSQL</h3>
+<p>此示例使用输入数据集更新 <code>Fruits</code> 表。它返回一个数据集，汇总每个 <code>FruitName</code>.</p>
+<pre><div class="ptcom-design__wrapper__12wpwnx" data-pagefind-weight="0.5"><span class="ptcom-design__clipboard__1l1gb20 ptcom-design__clipboard__12wpwnx"><span class="ptcom-design__confirmation__1l1gb20" data-pagefind-ignore="true">Copied!</span><svg aria-hidden="true" aria-label="clipboard" data-view-component="true" height="16" version="1.1" viewbox="0 0 16 16" width="16"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z" fill="currentColor" fill-rule="evenodd"></path><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z" fill="currentColor" fill-rule="evenodd"></path></svg></span><div style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;overflow:auto;position:relative;margin:0;padding:0.75em"><code style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;float:left;padding-right:10px"><span class="react-syntax-highlighter-line-number">1
+</span><span class="react-syntax-highlighter-line-number">2
+</span><span class="react-syntax-highlighter-line-number">3
+</span><span class="react-syntax-highlighter-line-number">4
+</span><span class="react-syntax-highlighter-line-number">5
+</span><span class="react-syntax-highlighter-line-number">6
+</span><span class="react-syntax-highlighter-line-number">7
+</span><span class="react-syntax-highlighter-line-number">8
+</span><span class="react-syntax-highlighter-line-number">9
+</span><span class="react-syntax-highlighter-line-number">10
+</span><span class="react-syntax-highlighter-line-number">11
+</span><span class="react-syntax-highlighter-line-number">12
+</span><span class="react-syntax-highlighter-line-number">13
+</span><span class="react-syntax-highlighter-line-number">14
+</span><span class="react-syntax-highlighter-line-number">15
+</span><span class="react-syntax-highlighter-line-number">16
+</span><span class="react-syntax-highlighter-line-number">17
+</span><span class="react-syntax-highlighter-line-number">18
+</span><span class="react-syntax-highlighter-line-number">19
+</span><span class="react-syntax-highlighter-line-number">20
+</span><span class="react-syntax-highlighter-line-number">21
+</span><span class="react-syntax-highlighter-line-number">22
+</span><span class="react-syntax-highlighter-line-number">23
+</span><span class="react-syntax-highlighter-line-number">24
+</span><span class="react-syntax-highlighter-line-number">25
+</span><span class="react-syntax-highlighter-line-number">26
+</span><span class="react-syntax-highlighter-line-number">27
+</span><span class="react-syntax-highlighter-line-number">28
+</span><span class="react-syntax-highlighter-line-number">29
+</span><span class="react-syntax-highlighter-line-number">30
+</span><span class="react-syntax-highlighter-line-number">31
+</span><span class="react-syntax-highlighter-line-number">32
+</span><span class="react-syntax-highlighter-line-number">33
+</span><span class="react-syntax-highlighter-line-number">34
+</span><span class="react-syntax-highlighter-line-number">35
+</span><span class="react-syntax-highlighter-line-number">36
+</span><span class="react-syntax-highlighter-line-number">37
+</span><span class="react-syntax-highlighter-line-number">38
+</span><span class="react-syntax-highlighter-line-number">39
+</span><span class="react-syntax-highlighter-line-number">40
+</span><span class="react-syntax-highlighter-line-number">41
+</span><span class="react-syntax-highlighter-line-number">42
+</span><span class="react-syntax-highlighter-line-number">43
+</span><span class="react-syntax-highlighter-line-number">44
+</span><span class="react-syntax-highlighter-line-number">45
+</span><span class="react-syntax-highlighter-line-number">46
+</span><span class="react-syntax-highlighter-line-number">47
+</span><span class="react-syntax-highlighter-line-number">48
+</span><span class="react-syntax-highlighter-line-number">49
+</span><span class="react-syntax-highlighter-line-number">50
+</span><span class="react-syntax-highlighter-line-number">51
+</span><span class="react-syntax-highlighter-line-number">52
+</span><span class="react-syntax-highlighter-line-number">53
+</span><span class="react-syntax-highlighter-line-number">54
+</span><span class="react-syntax-highlighter-line-number">55
+</span><span class="react-syntax-highlighter-line-number">56
+</span><span class="react-syntax-highlighter-line-number">57
+</span><span class="react-syntax-highlighter-line-number">58
+</span></code><code class="language-python" style="white-space:pre;text-align:left;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none">import logging
+from transforms.api import lightweight, Output, transform_pandas, Input
+from transforms.external.systems import external_systems, Source
+import pymssql
+import pandas as pd
+
+logger = logging.getLogger(__name__)
+
+@lightweight
+@external_systems(
+    mssql_source=Source("&lt;source_rid&gt;")
+)
+@transform_pandas(
+    Output("&lt;dataset_rid&gt;"),
+    fruits_df=Input("&lt;dataset_rid&gt;") # DataFrame with schema [FruitName: String, Inventory: Integer, PricePerKg: Double]
+)
+def compute(mssql_source, fruits_df):
+    # Connection parameters
+    connection_parameters = {
+        "server": "&lt;your_server_name&gt;",
+        "database": "&lt;your_database_name&gt;",
+        "port": "1433",
+        "user": "&lt;your_user_name&gt;",
+        "password": mssql_source.get_secret("MSSQL_BASIC_AUTH_PASSWORD"),
+        "encryption": "require",
+        "timeout": 30
+    }
+    results = []
+    try:
+        with pymssql.connect(**connection_parameters) as connection:
+            with connection.cursor() as cursor:
+                for _, row in fruits_df.iterrows():
+                    fruit_name = row["FruitName"]
+                    inventory = row["Inventory"]
+                    price_per_kg = row["PricePerKg"]
+
+                    # Try to update; if no row updated, then insert
+                    update_sql = """
+                        UPDATE Fruits
+                        SET Inventory = %s, PricePerKg = %s
+                        WHERE FruitName = %s
+                    """
+                    cursor.execute(update_sql, (inventory, price_per_kg, fruit_name))
+                    if cursor.rowcount == 0:
+                        insert_sql = """
+                            INSERT INTO Fruits (FruitName, Inventory, PricePerKg)
+                            VALUES (%s, %s, %s)
+                        """
+                        cursor.execute(insert_sql, (fruit_name, inventory, price_per_kg))
+                        results.append({"FruitName": fruit_name, "action": "inserted"})
+                    else:
+                        results.append({"FruitName": fruit_name, "action": "updated"})
+                connection.commit()
+    except Exception as e:
+        logger.error(f"Error updating MSSQL Fruits table: {e}")
+        raise RuntimeError(f"Failed to update Fruits data in MSSQL: {e}") from e
+    # Return a DataFrame summarizing the actions
+    return pd.DataFrame(results, columns=["FruitName", "action"])</code></div></div></pre></div>
+</article>
+</article>
+</body>
+</html>

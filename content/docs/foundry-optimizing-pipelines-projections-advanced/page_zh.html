@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>高级详细信息</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<article>
+<div class="ptcom-design__markdownDoc__1uarhel" data-pagefind-body="true"><h1 data-pagefind-weight="1" id="user-content-advanced-details" level="1" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#advanced-details" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>高级详细信息</h1>
+<p>本页面介绍数据集投影在实践中如何运作的高级详细信息，以便对数据集执行更优化的查询。要从更高层面了解投影，请参阅 <a href="/docs/foundry/optimizing-pipelines/projections-overview/">此页面</a>.</p>
+<p>在内部，投影是数据集的一个副本，针对某种访问模式进行了优化。Foundry 将数据集的投影存储为子数据集。这些数据集称为“投影”数据集。父数据集称为“规范”或“被投影”数据集。</p>
+<ul>
+<li>投影包含一组列。
+<ul>
+<li>投影只能满足对这些列（或其子集）的读取。</li>
+</ul>
+</li>
+</ul>
+<p>A <strong>构建</strong> 使投影与主数据集中的最新数据保持同步。如果投影不是最新的，它仍会被使用，但可能不会带来太多好处。</p>
+<p>如果被投影的数据集收到新的 <code>SNAPSHOT</code> 事务，则所有下游投影都会完全过时，在项目重新构建之前没有任何好处。如果被投影的数据集收到 <code>APPEND</code> 事务，则下游投影相对于新事务仅部分过时。Foundry 查询会被重写以在可能的情况下利用投影，同时仍能生成反映新数据的结果。</p>
+<ul>
+<li>投影构建是按分支配置的。投影会定期被 <strong>压缩</strong> 以将较小的分区合并为较大的分区。</li>
+<li>添加投影绝不会改变数据集的读取结果。</li>
+</ul>
+<p>在底层，投影要么是：</p>
+<ul>
+<li>一个近似全局排序的数据集。</li>
+<li>一个经过哈希分桶且局部排序的数据集，其中分桶列和排序列可以不同。</li>
+</ul>
+<h2 data-pagefind-weight="0.9" id="user-content-projection-datasets" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#projection-datasets" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>投影数据集</h2>
+<p>投影数据集存储为 <a href="/docs/foundry/data-integration/datasets/">Foundry 数据集</a>。该数据集不会显示为 <a href="/docs/foundry/getting-started/projects-and-resources/">资源</a> 但可以通过以下位置的链接访问 <code>Projections</code> 标签页。</p>
+<ul>
+<li>每个启用了投影构建的分支在投影数据集中都有对应的分支。</li>
+<li>删除数据集将删除该数据集上的所有投影。</li>
+<li>直方图 <em>Noho</em> 服务用于管理投影，并在 <a href="/docs/foundry/optimizing-pipelines/projections-setup/">设置投影</a>.</li>
+</ul>
+<h2 data-pagefind-weight="0.9" id="user-content-projection-builds" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#projection-builds" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>投影构建</h2>
+<p>为了保持最新，投影通过正常的 Foundry <a href="/docs/foundry/data-integration/builds/">构建</a> 系统异步构建。这使用户能够在构建后立即一致地读取被投影的数据集，但必须定期构建投影数据集，以防止其过时。</p>
+<p>为了在分配计算资源和控制成本方面提供灵活性，Foundry 不会自动创建这些构建。要进行配置，请使用以下位置的调度器小部件 <code>Projections</code> 标签页。</p>
+<p>没有适用于所有情况的构建频率通用规则。主要的决定因素是查询需要能够在数据集的 <strong>未投影</strong> 部分上在其性能目标内执行。例如，如果您的管道每小时写入 10 GB，并且您已确定过滤读取最多扫描 100 GB 才能满足性能目标，则应确保投影至少每 10 小时构建一次。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-spark-profiles" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#spark-profiles" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Spark 配置文件</h3>
+<p>投影使用自动缩放机制来寻找合适数量的执行器来构建投影。除非投影构建失败或耗时过长，否则您无需手动调整 Spark 配置。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-costs" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#costs" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>成本</h3>
+<p>Foundry 会将与投影相关的任何成本（例如其存储和计算）归因于主数据集所在的项目。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-projection-compaction" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#projection-compaction" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>投影压缩</h2>
+<p>压缩是对投影执行的主要维护操作。它是指将大量小型已排序文件合并为较大的已排序文件的过程。压缩作为投影构建过程的一部分在投影上自动执行。</p>
+<p>压缩（Compaction）使读取性能与主数据集上的输入事务数量无关。这使得投影（projection）能够加速对频繁增量写入或流式数据集的读取。投影构建偶尔可能会运行得比平均时间更长。这通常是由于压缩操作导致的。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-projection-query-planning" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#projection-query-planning" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>投影查询规划</h2>
+<p>如果某个投影可用于满足查询，它将 <strong>始终</strong> 优先于主数据集被选择，即使主数据集的写入方式原本能更优地支持给定查询。这大大简化了查询规划的相关语义。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-choosing-projections" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#choosing-projections" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>选择投影</h3>
+<p>对于以下查询，以下是查询规划期间分配给各投影的优先级：</p>
+<ul>
+<li><strong>对列的过滤：</strong> 在最多列上进行排序的投影将被优先选择，且全局排序的投影
+优先于局部排序的投影。例如，如果过滤条件为 <code>x = 1 AND y = 2</code>，则将按以下
+优先级选择投影：
+<ul>
+<li>在多列上全局排序 <code>x</code> and <code>y</code></li>
+<li>在多列上局部排序 <code>x</code> and <code>y</code> （且在任意一组列上进行分桶）</li>
+<li>在单列上全局排序 <code>x</code></li>
+<li>在单列上局部排序 <code>x</code> （且在任意一组列上进行分桶）</li>
+</ul>
+</li>
+<li><strong>对列的连接：</strong> 将优先选择在连接列的精确集合上进行分桶的投影。</li>
+<li><strong>连接加过滤：</strong> 例如，如果查询在列上进行过滤 <code>F</code> 并在列上进行连接 <code>J</code>，则将按以下
+优先级选择投影：
+<ul>
+<li>在 J 上分桶且在列上局部排序的投影 <code>F</code></li>
+<li>在列上全局排序的投影 <code>F</code></li>
+<li>在列上局部排序的投影 <code>F</code> （且在除该列以外的任意列上进行分桶 <code>J</code>)</li>
+<li>在该列上分桶的投影 <code>J</code> （且在除该列以外的任意内容上进行局部排序 <code>F</code>)</li>
+</ul>
+</li>
+</ul>
+<p>这些优先级反映了这样一种观点：过滤条件通常具有足够的选择性，因此针对过滤而非连接进行优化更好，尽管情况并非总是如此。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-retention" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#retention" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>保留</h2>
+<p>投影（Projection）会作为自动维护的一部分定期构建压缩文件。压缩会用较大的文件替换较旧的数据文件，但被取代的文件可能仍保留在较旧的事务中。如果没有删除这些事务的保留策略，随着投影构建的运行，被取代的文件可能会继续占用磁盘空间。</p>
+<p>要回收这些存储空间，请配置 <a href="/docs/foundry/retention/manage-retention-policies/">自定义保留策略</a> 菜单中选择 <a href="/docs/foundry/retention/navigation/#access-retention-policies-application">保留策略（Retention Policies）应用程序</a> ，针对相关空间：</p>
+<ol>
+<li>添加一个 <a href="/docs/foundry/retention/dataset-selectors/#is-transforms-dataset">转换数据集选择器</a> in <strong>选择</strong> 模式，并将转换类型设置为 <code>projection</code>。这样针对的是投影数据集，而非其父数据集。</li>
+<li>将 <strong><a href="/docs/foundry/retention/transaction-selectors/#no-files-in-active-view-advanced">活动视图中没有文件</a></strong> 事务选择器。</li>
+<li>在控制面板中启用 <strong><a href="/docs/foundry/retention/manage-retention-policies/#latest-view-transaction-deletion">允许从最新视图删除</a></strong> 以便即使被取代的事务属于最新视图的一部分，也可以将其删除。</li>
+<li>在控制面板中启用 <strong><a href="/docs/foundry/retention/transaction-selectors/#ignore-hidden-files">忽略隐藏文件</a></strong> 以便隐藏文件（如构建日志）不会阻止删除其数据文件已被取代的事务。</li>
+</ol>
+<p><img alt="An example shows a custom retention policy for projection datasets." height="600" node="[object Object]" src="/docs/resources/foundry/optimizing-pipelines/projection-retention-policy.png" style="aspect-ratio:1976 / 1312" width="903.6585365853659"/></p></div>
+</article>
+</article>
+</body>
+</html>

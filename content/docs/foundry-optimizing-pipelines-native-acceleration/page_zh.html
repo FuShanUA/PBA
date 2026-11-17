@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>原生加速</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<article>
+<div class="ptcom-design__markdownDoc__1uarhel" data-pagefind-body="true"><h1 data-pagefind-weight="1" id="user-content-native-acceleration" level="1" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#native-acceleration" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>原生加速</h1>
+<p>您可以通过启用原生加速来提升 Spark 的性能，使用 <a href="https://github.com/facebookincubator/velox">Velox ↗</a>.</p>
+<p>原生加速是一种利用底层硬件优化来提升批处理作业性能的技术。这些性能提升是通过将计算从 Java 虚拟机（JVM）语言转移到原生语言（如 C++）来实现的，这些语言会被编译为机器代码并直接在机器的硬件上运行。通过使用特定于平台的功能，原生加速旨在显著缩短处理大规模数据工作负载所需的时间，从而加快作业执行速度并提高资源利用率。</p>
+<p>原生加速适用于 <a href="/docs/foundry/transforms-python-spark/velox-overview/">Python 转换</a> 和 <a href="/docs/foundry/pipeline-builder/management-build-settings/">如果希望用户在每次运行预览前手动确认，请开启</a>.</p>
+<h2 data-pagefind-weight="0.9" id="user-content-build-analysis" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#build-analysis" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>构建分析</h2>
+<p>您可以在 <a href="/docs/foundry/code-repositories/module-pinning/">Spark 详情</a> 页面中对原生加速的构建进行基本分析。在 <strong>查询计划</strong> 标签页中，选择 <strong>物理计划</strong>下，您将看到类似以下内容：</p>
+<pre><code>== Physical Plan ==
+AdaptiveSparkPlan
++- == Final Plan ==
+   Execute InsertIntoHadoopFsRelationCommand
+   +- WriteFiles
+      +- CollectMetrics
+         +- VeloxColumnarToRowExec
+            +- ^ ProjectExecTransformer
+               +- ^ InputIteratorTransformer
+                  +- ^ InputAdapter
+                     +- ^ RowToVeloxColumnar
+                        +- ^ HashAggregate
+                           +- ^ VeloxColumnarToRowExec
+                              +- ^ AQEShuffleRead
+                                 +- ^ ShuffleQueryStage
+                                    +- ColumnarExchange
+                                       +- ^ ProjectExecTransformer
+                                          +- ^ RowToVeloxColumnar
+                                             +- * ColumnarToRow
+                                                +- BatchScan parquet
+</code></pre>
+<p>虽然与传统的 Spark 查询计划大体相似，但您会注意到一些关键差异。原本的 <code>ProjectExec</code> 节点被替换为 <code>ProjectExecTransformer</code>。这意味着该操作将在 Velox 查询引擎中以原生方式执行。查询计划中所有被卸载的节点都会在树中标记为 <code>^</code> 符号。原生执行的代码块由 <code>RowToVeloxColumnar</code> 和 <code>VeloxColumnarToRowExec</code>节点夹在中间。这些节点负责将 Spark 数据集转换为 Arrow DataFrame，反之亦然。这种序列化/反序列化操作具有显著的开销。</p>
+<p>通常有两种模式表明原生加速性能不佳：</p>
+<ul>
+<li>以原生方式执行的节点比例很小，如 <code>^</code> symbol.</li>
+<li>所示。大量的 <code>RowToVeloxColumnar</code> and <code>VeloxColumnarToRowExec</code> 节点导致较高的序列化开销。</li>
+</ul>
+<p>如果性能不如预期，这种分析会很有帮助。对管道的小改动可能会对卸载的计算量产生很大影响。诸如 <a href="/docs/foundry/pipeline-builder/management-checkpoints/">检查点</a> 之类的功能可用于手动将构建中可以全部以原生方式执行的代码块组合在一起。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-implementation-and-architecture-of-native-acceleration" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#implementation-and-architecture-of-native-acceleration" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>原生加速的实现与架构</h2>
+<p>Foundry 的原生加速实现基于 <a href="https://github.com/apache/incubator-gluten">Apache Gluten ↗</a> 项目。Foundry 原生加速利用 <a href="https://github.com/facebookincubator/velox">Velox ↗</a> 查询引擎在运行时加速 Spark 作业。Velox 使用 C++ 编写，并且 <a href="https://research.facebook.com/publications/velox-metas-unified-execution-engine/">在设计时明确考虑了数据库加速 ↗</a>，提供了开发人员 API 以便在 <a href="https://arrow.apache.org/">Arrow DataFrame ↗</a>上运行算子级别的操作。Gluten 提供了必要的“粘合层”，将 Spark 运行时与 Velox 绑定在一起。</p>
+<p>在此设置中，管道首先像普通构建（即不使用原生加速的构建）一样生成 Spark 查询计划。然后对计划应用额外的优化规则，以识别查询的哪些部分可以使用 Velox 运行。此决策基于 Velox 是否具有等效的实现，以及 Gluten 中是否存在该实现的映射。查询可以在算子级别进行卸载：这大致对应于类似 <code>SELECT</code>, <code>FILTER</code>，或 <code>JOIN</code>的 SQL 语句。查询计划中任何可以卸载的部分都会在此阶段被标记。</p>
+<p>规划步骤完成后，查询将通过正常的 Spark 引擎执行。这意味着所有任务调度、执行器编排和生命周期管理都照常进行。区别在于当执行器到达查询计划中被标记为原生执行的部分时。如果发生这种情况，将调用 Velox 的实现，而不是 Spark 中的默认实现。</p>
+<p>这种架构特别有利，因为它支持并非所有计算都可以使用 Velox 完成的查询。这是因为卸载决策是在算子级别而非整个计划级别做出的。支持的算子数量在不断增加，但用户编写的代码（如 <a href="/docs/foundry/transforms-java/user-defined-functions/">UDF</a> ）永远无法被卸载，因为不存在对应的原生实现。</p>
+<p><a href="https://github.com/apache/incubator-gluten/blob/main/docs/velox-backend-support-progress.md">查看支持的算子和表达式的完整列表 ↗</a></p>
+<h2 data-pagefind-weight="0.9" id="user-content-why-is-native-acceleration-faster" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#why-is-native-acceleration-faster" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>为什么原生加速更快？</h2>
+<p>Spark 是用 Scala（一种 JVM 语言）编写的，并包含许多优化，例如 <a href="https://spark.apache.org/docs/latest/sql-performance-tuning.html#whole-stage-codegen">代码生成 ↗</a> 来提升其性能。此外，JVM 本身也包含诸如 <a href="https://openjdk.org/groups/hotspot/docs/RuntimeOverview.html">C2 编译器 ↗</a> 等优化，旨在尽可能利用平台特定的特性。然而，C++ 等原生语言在性能上仍然更胜一筹，原因有三个基本方面：</p>
+<ul>
+<li><strong>编译时优化：</strong> Java 和 Scala 会被编译为字节码，然后由 JVM 执行；而 C++ 等原生语言则直接编译为机器码。这使得 C++ 编译器能够在编译时执行大量优化，从而显著降低运行时开销。相比之下，JVM 语言依赖即时（JIT）编译，这种编译发生在执行期间，并且由于需要在编译耗时与快速启动运行之间取得平衡，可能无法达到同等程度的优化。</li>
+<li><strong>无垃圾回收（GC）：</strong> 在 C++ 中，内存管理是手动处理的，这消除了与垃圾回收（GC）相关的开销。在 JVM 语言中，GC 过程可能引入不可预测的暂停和开销，从而影响性能，尤其是在内存密集型应用中。</li>
+<li><strong>直接硬件访问以及向量化 API 的可用性：</strong> C++ 提供对硬件特性和底层系统资源的直接访问，使开发者能够利用平台特定的优化以及 SSE、AVX 和其他 SIMD（单指令多数据）指令等向量化 API。这种直接访问可以实现精细的性能优化，而在 JVM 语言中，抽象层可能会阻碍同等程度的硬件交互，因此这类优化不容易实现。</li>
+</ul>
+<h2 data-pagefind-weight="0.9" id="user-content-memory-configuration-considerations-for-native-acceleration" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#memory-configuration-considerations-for-native-acceleration" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>原生加速的内存配置注意事项</h2>
+<p>在 Foundry 中使用原生加速运行 Spark 需要与普通批处理管道稍有不同的配置。Spark 支持使用 <a href="https://spark.apache.org/docs/latest/configuration.html#:~:text=1.6.0-,spark.memory.offHeap.enabled,-false">堆外内存 ↗</a>。堆外内存是不由 JVM 管理的内存，可消除 GC 开销，从而带来更好的性能。默认情况下，我们在 Foundry 中不启用堆外内存，因为这样做会为管道引入额外的维护成本。启用堆外内存是原生加速所必需的，因为被 Velox 修改的 DataFrame 必须位于堆外，才能被原生进程访问。对于除 Velox 数据转换之外的所有内容，Foundry 仍需要足够的堆内内存（例如，编排、调度和构建管理代码仍在 JVM 中运行），但理想情况下，大部分工作现在将在堆外执行。将管道配置为使用原生加速会在平衡堆内和堆外内存方面引入额外的维护成本。</p></div>
+</article>
+</article>
+</body>
+</html>

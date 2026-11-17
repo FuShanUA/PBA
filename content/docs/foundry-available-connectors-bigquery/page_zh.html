@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BigQuery</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<article>
+<div class="ptcom-design__markdownDoc__1uarhel" data-pagefind-body="true"><h1 data-pagefind-weight="1" id="user-content-bigquery" level="1" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#bigquery" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>BigQuery</h1>
+<p>将 Foundry 连接到 Google BigQuery，以在 BigQuery 表和 Foundry 数据集之间读取和同步数据。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-supported-capabilities" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#supported-capabilities" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>受支持的功能</h2>
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>功能</th><th>状态</th></tr></thead><tbody><tr><td>探索</td><td>🟢 正式可用</td></tr><tr><td>批量导入</td><td>🟢 正式可用</td></tr><tr><td>增量</td><td>🟢 正式可用</td></tr><tr><td>虚拟表</td><td>🟢 正式可用</td></tr><tr><td>计算下推</td><td>🟢 正式可用</td></tr><tr><td>导出任务</td><td>🟡 停用（Sunset）</td></tr></tbody></table></div>
+<h2 data-pagefind-weight="0.9" id="user-content-setup" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#setup" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>设置</h2>
+<ol>
+<li>打开 <a href="/docs/foundry/data-connection/overview/">数据连接</a> 应用程序，然后选择 <strong>源</strong> （位于屏幕右上角）。</li>
+<li>选择 <strong>BigQuery</strong> （从可用的连接器类型中选择）。</li>
+<li>的信息。</li>
+</ol>
+<p>了解更多关于 <a href="/docs/foundry/data-connection/set-up-source/">设置连接器</a> （在 Foundry 中）的更多信息。</p>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>您必须拥有一个 <a href="https://cloud.google.com/iam/docs/overview#service_account0">Google Cloud IAM 服务账号 ↗</a> 才能继续进行 BigQuery 身份验证和设置。</p></div>
+<h2 data-pagefind-weight="0.9" id="user-content-authentication" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#authentication" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>身份验证</h2>
+<p>使用 BigQuery 连接器需要以下 Identity and Access Management (IAM) 角色：</p>
+<p>读取 BigQuery 数据：</p>
+<ul>
+<li><code>BigQuery Read Session User</code>：在 BigQuery Project 上授予</li>
+<li><code>BigQuery Data Viewer</code>：在 BigQuery 数据上授予，用于读取数据和元数据</li>
+<li><code>BigQuery Job User</code> （可选）：授予后可摄取视图并运行自定义查询</li>
+</ul>
+<p>将数据从 Foundry 导出到 BigQuery：</p>
+<ul>
+<li><code>BigQuery Data Editor</code>：在 BigQuery 数据集或 Project 上授予</li>
+<li><code>BigQuery Job User</code>：在 BigQuery Project 上授予</li>
+<li><code>Storage Object Admin</code>：如果数据通过 Google Cloud Storage 导出，则在存储桶上授予</li>
+</ul>
+<p>使用临时表：</p>
+<ul>
+<li><code>BigQuery Data Editor</code>：如果数据集由连接器自动创建，则在 BigQuery Project 上授予</li>
+<li><code>BigQuery Data Editor</code>：在提供的数据集上授予，作为存储临时表的位置</li>
+</ul>
+<p>在以下内容中了解有关所需角色的更多信息 <a href="https://cloud.google.com/bigquery/docs/access-control">Google Cloud 访问控制文档 ↗</a>.</p>
+<p>从以下可用的身份验证方法中选择一种：</p>
+<ul>
+<li>
+<p><strong>GCP 实例账号：</strong> 请参阅 <a href="https://cloud.google.com/compute/docs/access/create-enable-service-accounts-for-instances#using">Google Cloud 文档 ↗</a> 了解如何设置基于实例的身份验证。</p>
+<ul>
+<li>GCP 实例身份验证仅适用于通过在 GCP 中经过适当配置的实例上运行的代理进行操作的连接器。</li>
+<li>GCP 实例身份验证凭据不支持 <a href="/docs/foundry/data-integration/virtual-tables/">虚拟表</a>.</li>
+</ul>
+</li>
+<li>
+<p><strong>服务账号密钥文件：</strong> 请参阅 <a href="https://cloud.google.com/bigquery/docs/authentication/service-account-file">Google Cloud 文档 ↗</a> 了解如何设置服务账号密钥文件身份验证。密钥文件可以以 JSON 或 PKCS8 凭据的形式提供。</p>
+</li>
+<li>
+<p><strong>Workload Identity Federation (OIDC)：</strong> 按照显示的源系统配置说明来设置 OIDC。请参阅 <a href="https://cloud.google.com/iam/docs/workload-identity-federation-with-other-providers">Google Cloud 文档 ↗</a> 了解 Workload Identity Federation 的详细信息，以及 <a href="/docs/foundry/data-connection/oidc/">我们的文档</a> 了解 OIDC 如何与 Foundry 配合使用的详细信息。</p>
+</li>
+</ul>
+<h3 data-pagefind-weight="0.8" id="user-content-networking" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#networking" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>网络</h3>
+<p>BigQuery 连接器需要通过 443 端口访问以下域名：</p>
+<ul>
+<li><code>bigquery.googleapis.com</code></li>
+<li><code>bigquerystorage.googleapis.com</code></li>
+<li><code>storage.googleapis.com</code></li>
+<li><code>www.googleapis.com</code></li>
+</ul>
+<p>可能还需要访问以下其他域名：</p>
+<ul>
+<li><code>oauth2.googleapis.com</code></li>
+<li><code>accounts.google.com</code></li>
+</ul>
+<p>如果您正在建立 <a href="/docs/foundry/data-connection/architecture/#foundry-worker-with-direct-connection-policies">直接连接</a> 在 Google Cloud Platform (GCP) 上的 Foundry 与 GCP 上的 BigQuery 之间建立直接连接时，您还必须通过相关的 VPC 服务控制启用该连接。如果您的设置需要此连接，请联系 Palantir Support 获取更多指导。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-connection-details" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#connection-details" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>连接详情</h2>
+<p>BigQuery 连接器提供以下配置选项：</p>
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>选项</th><th>是否必填？</th><th>描述</th></tr></thead><tbody><tr><td><code>Project ID</code></td><td>是</td><td>BigQuery Project 的 ID；无论同步什么数据，该 Project 都将被收取 BigQuery 计算使用费用</td></tr><tr><td><code>Credentials settings</code></td><td>是</td><td>使用以下内容进行配置 <a href="#authentication">身份验证</a> 上方显示的指南。</td></tr><tr><td><code>Cloud Storage bucket</code></td><td>No</td><td>添加一个 Cloud Storage 存储桶的名称，用作向 BigQuery 写入数据的暂存位置。</td></tr><tr><td><code>Proxy settings</code></td><td>No</td><td>启用以允许通过代理连接到 BigQuery。</td></tr><tr><td><code>Settings for temporary tables</code></td><td>No <a href="#temporary-tables-ref"><sup>[1]</sup></a></td><td>启用以使用 <a href="#temporary-tables">临时表</a>.</td></tr><tr><td><code>gRPC Settings</code></td><td>No</td><td>用于配置 gRPC 通道的高级设置。</td></tr><tr><td><code>Spark settings</code></td><td>No <a href="#spark-settings-ref"><sup>[2]</sup></a></td><td>启用 <strong>与 Spark 兼容的 BIGNUMERIC 精度和小数位数</strong> 以在使用 <code>BIGNUMERIC</code> 时在 Spark 中读取未参数化的 <a href="#virtual-tables">虚拟表</a>。启用后，未参数化的 <code>BIGNUMERIC</code> 列将使用与 Spark 的 <code>DecimalType</code>.</td></tr><tr><td><code>Additional projects</code></td><td>No</td><td>添加同一连接需要访问的任何其他 Project 的 ID；用作此连接器凭据的 Google Cloud 账号需要具有对这些 Project 的访问权限。连接器 <code>Project Id</code> 将被收取任何 BigQuery 数据访问或计算使用费用。</td></tr></tbody></table></div>
+<p><span id="user-content-temporary-tables-ref"></span>[1] 注册 <a href="https://cloud.google.com/bigquery/docs/views-intro">BigQuery 视图 ↗</a> 时必须启用临时表 <a href="/docs/foundry/data-integration/virtual-tables/">虚拟表</a>.</p>
+<p><span id="user-content-spark-settings-ref"></span>[2] <strong>与 Spark 兼容的 BIGNUMERIC 精度和小数位数</strong> 必须启用才能读取未参数化的 <code>BIGNUMERIC</code> 列。鉴于 Spark 分别支持的最大精度和小数位数为 38 和 18，如果 BigQuery 中数据的精度或小数位数超过这些限制，则可能会出现数据丢失。精度或小数位数超过 Spark 限制的参数化 <code>BIGNUMERIC</code> 列不受支持。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-sync-data-from-bigquery" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#sync-data-from-bigquery" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>从 BigQuery 同步数据</h2>
+<p>BigQuery 连接器支持针对大型数据同步和自定义查询的高级同步配置。对于更复杂的场景，请使用 <a href="#virtual-tables">虚拟表</a> or <a href="#use-bigquery-sources-in-code">代码级替代方案</a>.</p>
+<p>要设置 BigQuery 同步，请选择 <strong>源探索</strong> 在数据源右上角 <strong>概述</strong> 屏幕。接下来，选择要同步到 Foundry 中的表。准备同步时，请选择 <strong>为 x 个数据集创建同步</strong>.</p>
+<p>了解更多关于 <a href="/docs/foundry/data-connection/source-exploration/">探索并创建同步</a> （在 Foundry 中）的更多信息。</p>
+<p>在浏览可用的同步并将其添加到连接器后，导航至 <strong>编辑同步</strong>。在 <strong>同步</strong> 左侧面板中，找到要配置的同步并选择 <strong>&gt;</strong> 右侧的。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-data-model" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#data-model" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>数据模型</h3>
+<p>来自 BigQuery 的表导入 Foundry 时，数据以 Avro 格式保存。类型为 <code>BIGNUMERIC</code> 和 <code>TIME</code> 的列在导入时不受支持。</p>
+<p>从 Foundry 向 BigQuery 导出数据时，除 <code>MAPS</code>, <code>STRUCTS</code> 和 <code>ARRAYS</code> 之外的所有列类型均受支持。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-import-settings" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#import-settings" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>导入设置</h3>
+<p>选择要从 BigQuery 同步到 Foundry 的数据。</p>
+<h4 id="user-content-sync-full-table"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#sync-full-table" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>同步整张表</h4>
+<p>输入以下信息以将整张表同步到 Foundry：</p>
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>选项</th><th>是否必填？</th><th>描述</th></tr></thead><tbody><tr><td><code>BigQuery project Id</code></td><td>No</td><td>表所属项目的 ID。</td></tr><tr><td><code>BigQuery dataset</code></td><td>是</td><td>表所属数据集的名称。</td></tr><tr><td><code>BigQuery table</code></td><td>No</td><td>要同步到 Foundry 的表的名称。</td></tr></tbody></table></div>
+<h4 id="user-content-custom-sql"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#custom-sql" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>自定义 SQL</h4>
+<p>可以运行任意查询，结果将保存在 Foundry 中。查询输出必须小于 20GB（BigQuery 表的最大大小），或者必须启用临时表。查询必须以关键字开头 <code>select</code> or <code>with</code>构造一个本体论编辑容器。例如： <code>SELECT * from table_name limit 100;</code>.</p>
+<h3 data-pagefind-weight="0.8" id="user-content-incremental-syncs" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#incremental-syncs" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>增量同步</h3>
+<p>通常，同步会导入目标表中所有匹配的行，无论同步之间数据是否发生变化。相比之下，增量同步会维护最近一次同步的状态，并且仅从目标中摄取新的匹配行。</p>
+<p>从 BigQuery 摄取大型表时可以使用增量同步。要使用增量同步，表必须包含一个严格单调递增的列。此外，被读取的表或查询必须包含具有以下数据类型之一的列：</p>
+<ul>
+<li><code>INT64</code></li>
+<li><code>FLOAT64</code></li>
+<li><code>NUMERIC</code></li>
+<li><code>BIGNUMERIC</code></li>
+<li><code>STRING</code></li>
+<li><code>TIMESTAMP</code></li>
+<li><code>DATE</code></li>
+<li><code>TIME</code></li>
+<li><code>DATETIME</code></li>
+</ul>
+<p><strong>示例：</strong> 一个 5 TB 的表包含数十亿行我们想要同步到 BigQuery 的数据。该表有一个 <strong>单调递增列</strong> 中的一个顶层键下定义，该键名为 <code>id</code>。可以将同步配置为每次摄取 5000 万行，使用 <code>id</code> 列作为 <strong>增量列</strong>，初始值为 -1，配置的限制为 5000 万行。</p>
+<p>首次运行同步时，前 5000 万行（基于 <code>id</code>升序排列）中包含 <code>id</code> 值大于 -1 的行将被摄取到 Foundry 中。例如，如果此同步运行了多次，且上次运行期间摄取的最大 <code>id</code> 为 <code>19384004822</code>，则下一次同步将摄取接下来的 5000 万行，从第一个 <code>id</code> 大于 <code>19384004822</code>的行开始，依此类推。</p>
+<p>增量同步需要以下配置：</p>
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>选项</th><th>是否必填？</th><th>描述</th></tr></thead><tbody><tr><td>列</td><td>是</td><td>选择将用于增量摄取的列。如果表不包含任何受支持的列类型，下拉列表将为空。</td></tr><tr><td><code>Initial value</code></td><td>是</td><td>开始同步数据的起始值。</td></tr><tr><td><code>Limit</code></td><td>No</td><td>单次同步中要下载的记录数。</td></tr></tbody></table></div>
+<h3 data-pagefind-weight="0.8" id="user-content-incremental-syncs-for-custom-queries" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#incremental-syncs-for-custom-queries" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>自定义查询的增量同步</h3>
+<p>要为自定义查询同步启用增量查询，必须将查询更新为符合以下格式：</p>
+<p><code>SELECT * from table_name where incremental_column_name &gt; @value order by incremental_column_name asc limit @limit</code></p>
+<h3 data-pagefind-weight="0.8" id="user-content-temporary-tables" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#temporary-tables" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>临时表</h3>
+<p>从非标准 BigQuery 表同步超过 20GB 的数据时，必须启用临时表。临时表允许 BigQuery 导入大型查询输出的结果、从视图和其他非标准表导入数据，并支持大型增量导入和摄取。</p>
+<p>单次同步最多可以导入磁盘可用大小的数据。对于 <a href="/docs/foundry/data-connection/core-concepts/#foundry-worker">在 Foundry worker 上运行的同步</a>，这通常限制为 600 GB。请使用增量同步来导入更大的表。</p>
+<p>要使用临时表，请启用 <strong>临时表设置</strong> （位于连接器配置中），并根据需要配置以下设置：</p>
+<ul>
+<li><strong>自动创建数据集：</strong> 选择此选项以创建一个 <code>Palantir_temporary_tables</code> 数据集来存储临时表。此选项要求 BigQuery 账号在项目中具有 <code>BigQuery Data Editor</code> 角色。</li>
+<li><strong>提供要使用的数据集：</strong> 选择此选项以手动添加 <strong>项目 ID</strong> and <strong>数据集名称</strong> （即您要用于存储临时表的数据集）。此选项要求 BigQuery 账号在所提供的数据集上具有 <code>BigQuery Data Editor</code> 角色。</li>
+</ul>
+<p>使用临时表时必须启用 <a href="https://cloud.google.com/bigquery/docs/views-intro">BigQuery 视图 ↗</a> ，使用 <a href="/docs/foundry/data-integration/virtual-tables/">虚拟表</a>.</p>
+<h2 data-pagefind-weight="0.9" id="user-content-export-data-to-bigquery" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#export-data-to-bigquery" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>将数据导出到 BigQuery</h2>
+<p>导出到 BigQuery 是通过 <a href="/docs/foundry/data-connection/export-tasks/">导出任务</a>完成的。对于更复杂的场景，请使用 <a href="#use-bigquery-sources-in-code">代码级替代方案</a>.</p>
+<p>连接器可以通过两种方式导出到 BigQuery：</p>
+<ul>
+<li>通过 <strong>Google Cloud Storage</strong> 作为中间存储（推荐）。请参阅下面关于 <a href="#export-via-cloud-storage-recommended">通过 Cloud Storage 导出</a> 的文档以获取更多信息。</li>
+<li>通过 <strong>BigQuery API</strong> see <a href="https://cloud.google.com/bigquery/docs/batch-loading-data#loading_data_from_local_files">从本地文件读取数据 ↗</a> 以了解所用 API 的详细信息</li>
+</ul>
+<p>通过 API 写入适用于数百万行的数据规模。此模式的预期性能是大约两分钟导出一百万行。如果您的数据规模达到数十亿行，请改用 Google Cloud Storage。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-task-configuration" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#task-configuration" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>任务配置</h3>
+<p>要开始导出数据，您必须配置一个导出任务。导航到包含您要导出到的连接器的 Project 文件夹。右键单击连接器名称，然后选择 <code>Create Data Connection Task</code>.</p>
+<p>在 Data Connection 视图的左侧面板中，验证 <code>Source</code> 名称与您要使用的连接器匹配。然后，将输入数据集添加到 <code>Input</code> 字段。输入数据集必须命名为 <code>inputDataset</code>，它是要导出的 Foundry 数据集。导出任务还需要配置一个 <code>Output</code> 。输出数据集必须命名为 <code>outputDataset</code> 并指向一个 Foundry 数据集。输出数据集用于运行、调度和监控任务。</p>
+<p>在 Data Connection 视图的左侧面板中：</p>
+<ol>
+<li>验证 <code>Source</code> 名称与您要使用的连接器匹配。</li>
+<li>添加一个 <code>Input</code> named <code>inputDataset</code>。该 <strong>输入数据集</strong> 是要导出的 Foundry 数据集。</li>
+<li>添加一个 <code>Output</code> named <code>outputDataset</code>。该 <strong>输出数据集</strong> 用于运行、调度和监控任务。</li>
+<li>最后，在文本字段中添加一个 YAML 块来定义任务配置。</li>
+</ol>
+<p>左侧面板中显示的连接器和输入数据集的标签并不反映 YAML 中定义的名称。</p>
+<p>创建导出任务 YAML 时，请使用以下选项：</p>
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>选项</th><th>是否必填？</th><th>默认值</th><th>描述</th></tr></thead><tbody><tr><td><code>project</code></td><td>No</td><td>连接器的项目 ID</td><td>目标表所属项目的 ID。</td></tr><tr><td><code>dataset</code></td><td>是</td><td></td><td>表所属数据集的名称。</td></tr><tr><td><code>table</code></td><td>是</td><td></td><td>数据将导出到的表的名称。</td></tr><tr><td><code>incrementalType</code></td><td>是</td><td>SNAPSHOT</td><td>该值可以是 SNAPSHOT 或 REQUIRE_INCREMENTAL。 <br/> <strong>• 以快照模式导出：</strong> 目标表的内容将被替换。<br/> <strong>• 以增量模式导出：</strong> 内容将被 <a href="#append-rows-to-output-table">追加</a> 到现有表中。</td></tr></tbody></table></div>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>要设置增量导出，请将首次导出运行为 <code>SNAPSHOT</code>，然后更改 <code>incrementalType</code> to <code>REQUIRE_INCREMENTAL</code>.</p></div>
+<p>示例任务配置：</p>
+<pre><div class="ptcom-design__wrapper__12wpwnx" data-pagefind-weight="0.5"><span class="ptcom-design__clipboard__1l1gb20 ptcom-design__clipboard__12wpwnx"><span class="ptcom-design__confirmation__1l1gb20" data-pagefind-ignore="true">Copied!</span><svg aria-hidden="true" aria-label="clipboard" data-view-component="true" height="16" version="1.1" viewbox="0 0 16 16" width="16"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z" fill="currentColor" fill-rule="evenodd"></path><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z" fill="currentColor" fill-rule="evenodd"></path></svg></span><div style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;overflow:auto;position:relative;margin:0;padding:0.75em"><code style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;float:left;padding-right:10px"><span class="react-syntax-highlighter-line-number">1
+</span><span class="react-syntax-highlighter-line-number">2
+</span><span class="react-syntax-highlighter-line-number">3
+</span><span class="react-syntax-highlighter-line-number">4
+</span><span class="react-syntax-highlighter-line-number">5
+</span><span class="react-syntax-highlighter-line-number">6
+</span><span class="react-syntax-highlighter-line-number">7
+</span></code><code class="language-yaml" style="white-space:pre;text-align:left;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none">type: magritte-bigquery-export-task
+config:
+    table:
+      dataset: datasetInBigQuery
+      table: tableInBigQuery
+      project: projectId #(Optional: Do not specify unless the Project for export differs from the Project configured for the connector.)
+    incrementalType: SNAPSHOT | REQUIRE_INCREMENTAL</code></div></div></pre>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>只有包含以 Parquet 格式存储的行的数据集才支持导出到 BigQuery。</p></div>
+<p>配置导出任务后，选择 <strong>保存</strong> （位于右上角）。</p>
+<h4 id="user-content-append-rows-to-output-table"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#append-rows-to-output-table" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>向输出表追加行</h4>
+<p>如果您需要向目标表追加行，可以使用 <code>REQUIRE_INCREMENTAL</code> 而不是替换数据集。</p>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>增量同步要求仅向输入数据集追加行，并且 BigQuery 中的目标表与 Foundry 中输入数据集的架构相匹配。</p></div>
+<h3 data-pagefind-weight="0.8" id="user-content-export-via-cloud-storage-recommended" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#export-via-cloud-storage-recommended" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>通过 Cloud Storage 导出（推荐）</h3>
+<p>要通过 Cloud Storage 导出，必须在连接器中配置 Cloud Storage 存储桶 <a href="#connection-details">配置设置</a>。此外，该 Cloud Storage 存储桶必须仅用于连接器的临时表，以便尽可能少的用户可以访问临时写入该存储桶的任何数据。</p>
+<p>我们建议通过 Cloud Storage 而非 BigQuery API 导出到 BigQuery；Cloud Storage 在大规模场景下运行更好，并且不会在 BigQuery 中创建临时表。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-export-via-bigquery-apis" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#export-via-bigquery-apis" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>通过 BigQuery API 导出</h3>
+<p>导出作业会在目标表旁边创建一个临时表；该临时表不会应用额外的访问限制。此外， <code>SNAPSHOT</code> 导出会删除并重新创建表，这意味着额外的访问限制也会被删除。</p>
+<p>在通过 BigQuery API 导出期间，数据会导出到临时表 <code>datasetName.tableName_temp_$timestamp</code>。导出完成后，行会自动从临时表传输到目标表。</p>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>通过 BigQuery API 导出不支持 Hive 表分区。对于使用 Hive 表分区的数据集，请改用通过 Cloud Storage 导出。</p></div>
+<p>如果导出以 <code>REQUIRE_INCREMENTAL</code> 模式运行，则可以共享目标表。以 <code>SNAPSHOT</code> 模式运行会在每次运行时重新创建表，因此需要重新应用共享。</p>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>要通过 BigQuery API 成功导出，请勿对导出的表应用 BigQuery 行级或列级权限。</p></div>
+<h2 data-pagefind-weight="0.9" id="user-content-use-bigquery-sources-in-code" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#use-bigquery-sources-in-code" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>在代码中使用 BigQuery 源</h2>
+<p><a href="/docs/foundry/data-connection/core-concepts/#use-in-code">专业代码替代方案</a> 可用于连接 BigQuery 源以应对更复杂的场景。</p>
+<p>以下示例演示了如何使用 <a href="https://cloud.google.com/python/docs/reference/bigquery/latest">适用于 Google BigQuery 的 Python 客户端 ↗</a> <code>google-cloud-bigquery</code> 在 <a href="/docs/foundry/data-connection/external-transforms/">外部转换</a>.</p>
+<p>连接到 BigQuery 源。这些示例基于存储在 BigQuery 中的一个 <code>Shipments</code> 表，该表表示包裹货运清单及其重量、承运人和追踪编号。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-read-from-bigquery-with-an-external-transform" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#read-from-bigquery-with-an-external-transform" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>使用外部转换从 BigQuery 读取</h3>
+<p>此示例从给定承运人列表中读取超过一定重量的货运。</p>
+<pre><div class="ptcom-design__wrapper__12wpwnx" data-pagefind-weight="0.5"><span class="ptcom-design__clipboard__1l1gb20 ptcom-design__clipboard__12wpwnx"><span class="ptcom-design__confirmation__1l1gb20" data-pagefind-ignore="true">Copied!</span><svg aria-hidden="true" aria-label="clipboard" data-view-component="true" height="16" version="1.1" viewbox="0 0 16 16" width="16"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z" fill="currentColor" fill-rule="evenodd"></path><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z" fill="currentColor" fill-rule="evenodd"></path></svg></span><div style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;overflow:auto;position:relative;margin:0;padding:0.75em"><code style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;float:left;padding-right:10px"><span class="react-syntax-highlighter-line-number">1
+</span><span class="react-syntax-highlighter-line-number">2
+</span><span class="react-syntax-highlighter-line-number">3
+</span><span class="react-syntax-highlighter-line-number">4
+</span><span class="react-syntax-highlighter-line-number">5
+</span><span class="react-syntax-highlighter-line-number">6
+</span><span class="react-syntax-highlighter-line-number">7
+</span><span class="react-syntax-highlighter-line-number">8
+</span><span class="react-syntax-highlighter-line-number">9
+</span><span class="react-syntax-highlighter-line-number">10
+</span><span class="react-syntax-highlighter-line-number">11
+</span><span class="react-syntax-highlighter-line-number">12
+</span><span class="react-syntax-highlighter-line-number">13
+</span><span class="react-syntax-highlighter-line-number">14
+</span><span class="react-syntax-highlighter-line-number">15
+</span><span class="react-syntax-highlighter-line-number">16
+</span><span class="react-syntax-highlighter-line-number">17
+</span><span class="react-syntax-highlighter-line-number">18
+</span><span class="react-syntax-highlighter-line-number">19
+</span><span class="react-syntax-highlighter-line-number">20
+</span><span class="react-syntax-highlighter-line-number">21
+</span><span class="react-syntax-highlighter-line-number">22
+</span><span class="react-syntax-highlighter-line-number">23
+</span><span class="react-syntax-highlighter-line-number">24
+</span><span class="react-syntax-highlighter-line-number">25
+</span><span class="react-syntax-highlighter-line-number">26
+</span><span class="react-syntax-highlighter-line-number">27
+</span><span class="react-syntax-highlighter-line-number">28
+</span><span class="react-syntax-highlighter-line-number">29
+</span><span class="react-syntax-highlighter-line-number">30
+</span><span class="react-syntax-highlighter-line-number">31
+</span><span class="react-syntax-highlighter-line-number">32
+</span><span class="react-syntax-highlighter-line-number">33
+</span><span class="react-syntax-highlighter-line-number">34
+</span><span class="react-syntax-highlighter-line-number">35
+</span><span class="react-syntax-highlighter-line-number">36
+</span><span class="react-syntax-highlighter-line-number">37
+</span><span class="react-syntax-highlighter-line-number">38
+</span><span class="react-syntax-highlighter-line-number">39
+</span><span class="react-syntax-highlighter-line-number">40
+</span><span class="react-syntax-highlighter-line-number">41
+</span><span class="react-syntax-highlighter-line-number">42
+</span><span class="react-syntax-highlighter-line-number">43
+</span><span class="react-syntax-highlighter-line-number">44
+</span></code><code class="language-python" style="white-space:pre;text-align:left;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none">from pandas import DataFrame
+from transforms.api import lightweight, Output, Input, transform_pandas
+from transforms.external.systems import ResolvedSource, external_systems, Source
+from google.cloud import bigquery
+import json
+
+@lightweight
+@external_systems(
+    bigquery_source=Source("&lt;source_rid&gt;")
+)
+@transform_pandas(
+    Output("&lt;dataset_rid&gt;"),
+    carriers_df=Input("&lt;dataset_rid&gt;") # dataframe with schema [carrier_name: String, carrier_details: String]
+)
+def read(bigquery_source: ResolvedSource, carriers_df: DataFrame) -&gt; DataFrame:
+    # Authenticate BigQuery client
+    account_info = json.loads(bigquery_source.get_secret("jsonCredentials"))
+    client = bigquery.Client.from_service_account_info(account_info)
+
+    # Table reference
+    bigquery_project = "&lt;bigquery_project_id&gt;"
+    bigquery_dataset = "&lt;bigquery_dataset_id&gt;"
+    bigquery_table = "&lt;bigquery_table_id&gt;"
+    table_ref = f"{bigquery_project}.{bigquery_dataset}.{bigquery_table}"
+
+    # Filter parameters
+    carrier_list = carriers_df['carrier_name'].drop_duplicates().tolist()
+    min_weight = 10
+
+    job_config = bigquery.QueryJobConfig(
+        query_parameters=[
+            bigquery.ArrayQueryParameter("carrier_list", "STRING", carrier_list),
+            bigquery.ScalarQueryParameter("min_weight", "FLOAT64", min_weight)
+        ]
+    )
+
+    query = f"""
+        SELECT shipment_id, carrier, weight, tracking_number
+        FROM `{table_ref}`
+        WHERE carrier IN UNNEST(@carrier_list) AND weight &gt;= @min_weight
+    """
+
+    query_job = client.query(query, job_config=job_config)
+    return query_job.to_dataframe()</code></div></div></pre>
+<h3 data-pagefind-weight="0.8" id="user-content-write-to-bigquery-with-an-external-transform" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#write-to-bigquery-with-an-external-transform" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>使用外部转换写入 BigQuery</h3>
+<p>此函数根据提供的货运信息更新货运的追踪编号，然后返回更新后的货运详情。</p>
+<pre><div class="ptcom-design__wrapper__12wpwnx" data-pagefind-weight="0.5"><span class="ptcom-design__clipboard__1l1gb20 ptcom-design__clipboard__12wpwnx"><span class="ptcom-design__confirmation__1l1gb20" data-pagefind-ignore="true">Copied!</span><svg aria-hidden="true" aria-label="clipboard" data-view-component="true" height="16" version="1.1" viewbox="0 0 16 16" width="16"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z" fill="currentColor" fill-rule="evenodd"></path><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z" fill="currentColor" fill-rule="evenodd"></path></svg></span><div style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;overflow:auto;position:relative;margin:0;padding:0.75em"><code style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;float:left;padding-right:10px"><span class="react-syntax-highlighter-line-number">1
+</span><span class="react-syntax-highlighter-line-number">2
+</span><span class="react-syntax-highlighter-line-number">3
+</span><span class="react-syntax-highlighter-line-number">4
+</span><span class="react-syntax-highlighter-line-number">5
+</span><span class="react-syntax-highlighter-line-number">6
+</span><span class="react-syntax-highlighter-line-number">7
+</span><span class="react-syntax-highlighter-line-number">8
+</span><span class="react-syntax-highlighter-line-number">9
+</span><span class="react-syntax-highlighter-line-number">10
+</span><span class="react-syntax-highlighter-line-number">11
+</span><span class="react-syntax-highlighter-line-number">12
+</span><span class="react-syntax-highlighter-line-number">13
+</span><span class="react-syntax-highlighter-line-number">14
+</span><span class="react-syntax-highlighter-line-number">15
+</span><span class="react-syntax-highlighter-line-number">16
+</span><span class="react-syntax-highlighter-line-number">17
+</span><span class="react-syntax-highlighter-line-number">18
+</span><span class="react-syntax-highlighter-line-number">19
+</span><span class="react-syntax-highlighter-line-number">20
+</span><span class="react-syntax-highlighter-line-number">21
+</span><span class="react-syntax-highlighter-line-number">22
+</span><span class="react-syntax-highlighter-line-number">23
+</span><span class="react-syntax-highlighter-line-number">24
+</span><span class="react-syntax-highlighter-line-number">25
+</span><span class="react-syntax-highlighter-line-number">26
+</span><span class="react-syntax-highlighter-line-number">27
+</span><span class="react-syntax-highlighter-line-number">28
+</span><span class="react-syntax-highlighter-line-number">29
+</span><span class="react-syntax-highlighter-line-number">30
+</span><span class="react-syntax-highlighter-line-number">31
+</span><span class="react-syntax-highlighter-line-number">32
+</span><span class="react-syntax-highlighter-line-number">33
+</span><span class="react-syntax-highlighter-line-number">34
+</span><span class="react-syntax-highlighter-line-number">35
+</span><span class="react-syntax-highlighter-line-number">36
+</span><span class="react-syntax-highlighter-line-number">37
+</span><span class="react-syntax-highlighter-line-number">38
+</span><span class="react-syntax-highlighter-line-number">39
+</span><span class="react-syntax-highlighter-line-number">40
+</span><span class="react-syntax-highlighter-line-number">41
+</span><span class="react-syntax-highlighter-line-number">42
+</span><span class="react-syntax-highlighter-line-number">43
+</span><span class="react-syntax-highlighter-line-number">44
+</span><span class="react-syntax-highlighter-line-number">45
+</span><span class="react-syntax-highlighter-line-number">46
+</span><span class="react-syntax-highlighter-line-number">47
+</span><span class="react-syntax-highlighter-line-number">48
+</span><span class="react-syntax-highlighter-line-number">49
+</span><span class="react-syntax-highlighter-line-number">50
+</span><span class="react-syntax-highlighter-line-number">51
+</span><span class="react-syntax-highlighter-line-number">52
+</span><span class="react-syntax-highlighter-line-number">53
+</span><span class="react-syntax-highlighter-line-number">54
+</span><span class="react-syntax-highlighter-line-number">55
+</span><span class="react-syntax-highlighter-line-number">56
+</span><span class="react-syntax-highlighter-line-number">57
+</span><span class="react-syntax-highlighter-line-number">58
+</span><span class="react-syntax-highlighter-line-number">59
+</span><span class="react-syntax-highlighter-line-number">60
+</span><span class="react-syntax-highlighter-line-number">61
+</span><span class="react-syntax-highlighter-line-number">62
+</span><span class="react-syntax-highlighter-line-number">63
+</span><span class="react-syntax-highlighter-line-number">64
+</span><span class="react-syntax-highlighter-line-number">65
+</span><span class="react-syntax-highlighter-line-number">66
+</span><span class="react-syntax-highlighter-line-number">67
+</span><span class="react-syntax-highlighter-line-number">68
+</span></code><code class="language-python" style="white-space:pre;text-align:left;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none">from pandas import DataFrame
+from transforms.api import lightweight, Output, Input, transform_pandas
+from transforms.external.systems import ResolvedSource, external_systems, Source
+from google.cloud import bigquery
+import json
+
+@lightweight
+@external_systems(
+    bigquery_source=Source("&lt;source_rid&gt;")
+)
+@transform_pandas(
+    Output("&lt;dataset_rid&gt;"),
+    shipments_df=Input("&lt;dataset_rid&gt;"), # DataFrame with schema [shipment_id: Long, tracking_number: String]
+)
+def update_tracking_numbers(bigquery_source: ResolvedSource, shipments_df: DataFrame) -&gt; DataFrame:
+    # Authenticate BigQuery client
+    account_info = json.loads(bigquery_source.get_secret("jsonCredentials"))
+    client = bigquery.Client.from_service_account_info(account_info)
+
+    # Table reference
+    bigquery_project = "&lt;bigquery_project_id&gt;"
+    bigquery_dataset = "&lt;bigquery_dataset_id&gt;"
+    bigquery_table = "&lt;bigquery_table_id&gt;"
+    table_ref = f"{bigquery_project}.{bigquery_dataset}.{bigquery_table}"
+
+    # 1. Clear temporary table if it exists
+    temp_table_id = f"{bigquery_project}.{bigquery_dataset}.temp_update_tracking"
+    client.delete_table(temp_table_id, not_found_ok=True)
+
+
+    # 2. Upload shipments_df to a temporary table
+    load_job_config = bigquery.LoadJobConfig(
+        schema=[
+            bigquery.SchemaField("shipment_id", "INT64"),
+            bigquery.SchemaField("tracking_number", "STRING"),
+        ]
+    )
+    job = client.load_table_from_dataframe(shipments_df, temp_table_id, job_config=load_job_config)
+    job.result()  # Wait for load to finish
+
+    # 3. MERGE to update tracking_number in main table
+    merge_query = f"""
+    MERGE `{table_ref}` T
+    USING `{temp_table_id}` S
+    ON T.shipment_id = S.shipment_id
+    WHEN MATCHED THEN
+      UPDATE SET tracking_number = S.tracking_number
+    """
+
+    client.query(merge_query).result()
+
+    # 3. (Optional) Clean up temporary table
+    client.delete_table(temp_table_id, not_found_ok=True)
+
+    # Optionally, return the updated rows as a DataFrame for confirmation
+    updated_ids = shipments_df["shipment_id"].tolist()
+    query = f"""
+        SELECT shipment_id, tracking_number
+        FROM `{table_ref}`
+        WHERE shipment_id IN UNNEST(@updated_ids)
+    """
+    job_config = bigquery.QueryJobConfig(
+        query_parameters=[
+            bigquery.ArrayQueryParameter("updated_ids", "INT64", [int(x) for x in updated_ids])
+        ]
+    )
+    updated_rows = client.query(query, job_config=job_config).to_dataframe()
+    return updated_rows</code></div></div></pre>
+<h2 data-pagefind-weight="0.9" id="user-content-virtual-tables" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#virtual-tables" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>虚拟表</h2>
+<p>本节提供有关使用 <a href="/docs/foundry/data-integration/virtual-tables/">虚拟表</a> 与 BigQuery 源的其他详细信息。本节不适用于同步到 Foundry 数据集的情况。</p>
+<p>下表重点介绍了 BigQuery 支持的虚拟表功能。</p>
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>功能</th><th>状态</th></tr></thead><tbody><tr><td>批量注册</td><td>🟢 正式可用</td></tr><tr><td>自动注册</td><td>🟢 正式可用</td></tr><tr><td>表输入</td><td>🟢 正式可用：中的表、视图、物化视图 <a href="/docs/foundry/code-repositories/overview/">代码仓库</a>, <a href="/docs/foundry/pipeline-builder/overview/">如果希望用户在每次运行预览前手动确认，请开启</a></td></tr><tr><td>表输出</td><td>🟢 正式可用：中的表 <a href="/docs/foundry/code-repositories/overview/">代码仓库</a>, <a href="/docs/foundry/pipeline-builder/overview/">如果希望用户在每次运行预览前手动确认，请开启</a></td></tr><tr><td>增量管道</td><td>🟢 正式可用： <code>APPEND</code> only <a href="#bigquery-incremental"><sup>[1]</sup></a></td></tr><tr><td>计算下推</td><td>🟢 正式可用</td></tr></tbody></table></div>
+<p>请查阅 <a href="/docs/foundry/data-integration/virtual-tables/#supported-foundry-workflows">虚拟表文档</a> 以了解支持将 BigQuery 表用作输入或输出的 Foundry 工作流的详细信息。</p>
+<p><span id="user-content-bigquery-incremental">[1]</span> 要为由 BigQuery 虚拟表支撑的管道启用增量支持，请确保 <a href="https://cloud.google.com/bigquery/docs/time-travel">Time Travel ↗</a> 已启用并设置了适当的保留期。此功能依赖于 <a href="https://cloud.google.com/bigquery/docs/change-history">Change History ↗</a> ，并且目前仅支持追加。 <code>current</code> 和 <code>added</code> 读取模式在 <a href="/docs/foundry/transforms-python/incremental-usage/#incrementaltransforminput">创建更复杂的管道。</a> 中受支持。 <code>_CHANGE_TYPE</code> 和 <code>_CHANGE_TIMESTAMP</code> 列将在 Python Transforms 中可用。</p>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>务必确保由虚拟表支撑的增量管道构建于 <code>APPEND</code>仅追加的源表之上，因为 BigQuery 不提供 <code>UPDATE</code> or <code>DELETE</code> 变更信息。请参阅官方 <a href="https://cloud.google.com/bigquery/docs/change-history">BigQuery 文档 ↗</a> 以了解更多详情。</p></div>
+<h3 data-pagefind-weight="0.8" id="user-content-source-configuration-requirements" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#source-configuration-requirements" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>源配置要求</h3>
+<p>使用 <a href="/docs/foundry/data-integration/virtual-tables/">虚拟表</a>，请记住以下源配置要求：</p>
+<ul>
+<li>您必须使用 <a href="/docs/foundry/data-connection/core-concepts/#foundry-worker">您必须正确配置出站策略（如果使用</a> 源。虚拟表不支持使用 <a href="/docs/foundry/data-connection/core-concepts/#agent-worker">）或您的代理网络（如果使用</a> connections.</li>
+<li>确保按照 <a href="#networking">本文档的网络部分</a>.</li>
+<li>所述建立双向连接和允许列表。如果在 Code Repositories 中使用虚拟表，请参阅 <a href="/docs/foundry/data-integration/virtual-tables/#virtual-tables-in-code-repositories">虚拟表文档</a> 以了解所需的其他源配置的详细信息。</li>
+<li>使用服务账号密钥文件凭据或 Workload Identity Federation (OIDC)。基于实例的身份验证不支持虚拟表。</li>
+<li><a href="#temporary-tables">临时表</a> 必须启用才能进行注册 <a href="https://cloud.google.com/bigquery/docs/views-intro">BigQuery 视图 ↗</a>，并且必须将相关角色添加到 <a href="#authentication">身份验证凭据</a>.</li>
+<li>组织 <a href="#connection-details">Spark 设置</a> 以在使用 <code>BIGNUMERIC</code> Spark 中的列。</li>
+</ul>
+<p>有关构建自定义主题的示例，请参阅 <a href="#connection-details">连接详情</a> 和 <a href="#temporary-tables">临时表</a> 部分以了解更多详情。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-compute-pushdown" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#compute-pushdown" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>计算下推</h2>
+<p>Foundry 支持在使用虚拟表时将计算下推到 BigQuery。虚拟表输入利用 <a href="https://github.com/GoogleCloudDataproc/spark-bigquery-connector">BigQuery Spark 连接器 ↗</a> 该连接器内置了对谓词下推的支持。</p>
+<p>当使用注册到同一数据源的 BigQuery 虚拟表作为管道的输入和输出时，可以将计算完全联合到 BigQuery。此功能目前可在 Python 转换中使用。请参阅 <a href="/docs/foundry/transforms-python/tables-bigquery/">Python 文档</a> 以了解如何将计算下推到 BigQuery 的详细信息。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-troubleshooting" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#troubleshooting" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>故障排除</h2>
+<h3 data-pagefind-weight="0.8" id="user-content-not-found-dataset-dataset-was-not-found-in-location-location" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#not-found-dataset-dataset-was-not-found-in-location-location" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>未找到：数据集 <code>&lt;dataset&gt;</code> 未在以下位置找到 <code>&lt;location&gt;</code></h3>
+<p>BigQuery 会根据查询中使用的输入或查询结果的存储位置来确定给定查询的运行位置。使用临时表时，输出会设置为临时表数据集中的临时表；该数据集的位置将决定查询的运行位置。请确保同步的所有输入和临时表数据集位于同一区域。如果 <strong>自动创建数据集。</strong> 设置已启用，请使用 Google Cloud 控制台或 Google 的 SDK/API 来确定名为以下名称的数据集的位置 <code>Palantir_temporary_tables</code>.</p>
+<h3 data-pagefind-weight="0.8" id="user-content-grpc-message-exceeds-maximum-size" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#grpc-message-exceeds-maximum-size" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>gRPC 消息超出最大大小</h3>
+<p>如果同步包含大型内容（如 JSON 列）的数据，传输可能会失败并出现上述错误。请调整 BigQuery 的 <code>Maximum inbound message size</code> in <strong>gRPC 设置</strong> 以增加单次 API 调用中的数据传输量。请注意，单次调用会获取多行数据，因此将其设置为最大行大小可能还不够。</p>
+<p>您可以通过导航到以下位置找到此配置选项 <strong>Connection Settings &gt; Connection Details</strong>，然后滚动到 <strong>更多选项</strong> 并选择 <strong>gRPC 设置</strong>.</p>
+<p><img alt="The gRPC settings setting section in the BigQuery connection settings." height="361" node="[object Object]" src="/docs/resources/foundry/available-connectors/grpc_settings_bigquery.png" style="aspect-ratio:1128 / 361" width="1128"/></p>
+<h3 data-pagefind-weight="0.8" id="user-content-preview-fails-to-load-for-a-dataset-or-virtual-table-based-on-a-bigquery-view" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#preview-fails-to-load-for-a-dataset-or-virtual-table-based-on-a-bigquery-view" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>基于 BigQuery 视图的数据集或虚拟表的预览无法加载</h3>
+<p>如果您的预览无法加载且目标 BigQuery 表是视图，这可能是架构不匹配的结果。视图的架构由创建时定义的 SQL 查询结果确定。对底层表结构的后续更改 <em>不</em> 会自动应用到视图的架构，并且在尝试使用该视图时（例如通过 Palantir 平台中的同步/虚拟表）可能导致意外行为。</p>
+<p>您可以通过在 BigQuery 控制台中比较视图和底层表的架构来验证这一点，检查是否存在任何差异。这可能包括：</p>
+<ul>
+<li>视图中存在但底层表中不存在的列（反之亦然）</li>
+<li>同一列具有两种不同的数据类型</li>
+</ul>
+<p>如果发现任何差异，您可以使用以下方法重新创建或刷新视图来解决 <code>CREATE OR REPLACE VIEW</code> or <code>ALTER VIEW</code>。有关更多信息，请参阅此 <a href="https://www.googlecloudcommunity.com/gc/Data-Analytics/View-schema-not-updated/m-p/747908#M5903">Google Cloud 社区帖子 ↗</a> 其中更详细地描述了预期行为，并提供了关于最佳实践的额外指导。</p></div>
+</article>
+</article>
+</body>
+</html>

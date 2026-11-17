@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>设置流式同步</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<article>
+<div class="ptcom-design__markdownDoc__1uarhel" data-pagefind-body="true"><h1 data-pagefind-weight="1" id="user-content-set-up-a-streaming-sync" level="1" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#set-up-a-streaming-sync" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>设置流式同步</h1>
+<p>A <strong>同步</strong> 是一项从源读取特定数据并将其摄取到 Foundry 中的任务。例如，如果您有一个包含多个表的关系型数据库源，您可以配置一个同步，将特定的表摄取到 Foundry 中。</p>
+<p>流式同步与非流式（即批量或增量）同步类似 <a href="/docs/foundry/data-connection/set-up-sync/">同步</a> 但存在一些差异。主要区别在于，批量或增量同步会定期运行，而流式同步会持续运行，以尽可能低的延迟将数据拉取到 Foundry 中。</p>
+<p>下面，我们将讨论创建同步所需的步骤：</p>
+<ol>
+<li><a href="#part-1-define-data">定义数据</a> 以从源进行同步。</li>
+<li><a href="#part-2-define-the-sync-location">定义一个位置</a> 在 Foundry 中用于发送数据。</li>
+<li><a href="#part-3-configure-the-streaming-sync">组织</a> 流式同步。</li>
+<li><a href="#part-4-run-the-sync">运行</a> 流式同步。</li>
+</ol>
+<p>在本教程中，我们将使用 <a href="/docs/foundry/available-connectors/kafka/">Kafka</a> 源来设置同步。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-part-1-define-data" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#part-1-define-data" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>第 1 部分：定义数据</h2>
+<p>首先，决定您希望将哪些数据同步到 Foundry 中。选择您的 <a href="/docs/foundry/data-integration/streaming-guide/">流式源</a> 在 Data Connection 中，然后选择右上角可用的操作：</p>
+<ul>
+<li><strong>浏览并创建同步：</strong> 如果您的源类型支持 <a href="/docs/foundry/data-connection/source-exploration/">探索并创建同步</a>，则会出现此选项，允许您在创建同步的同时浏览您的数据源。</li>
+<li><strong>创建同步：</strong> 如果您的源类型不支持源浏览，则会出现此选项。</li>
+</ul>
+<img alt="Explore Kafka source" height="544" node="[object Object]" src="/docs/resources/foundry/data-connection/stream-explore-create-sync@2x.png?width=0.50" srcset="/docs/resources/foundry/data-connection/stream-explore-create-sync@2x.png?width=0.50 1x, /docs/resources/foundry/data-connection/stream-explore-create-sync@2x.png 2x" style="aspect-ratio:3110 / 544" width="3110"/>
+<h3 data-pagefind-weight="0.8" id="user-content-explore-and-create-syncs" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#explore-and-create-syncs" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>源探索</h3>
+<p>如果您的源类型支持源浏览，您将进入 <strong>探索源</strong> Data Connection 中的页面，该页面显示可同步的数据。浏览视图的界面取决于您所使用的源类型。例如，Kafka 源浏览允许您查看 Kafka broker 上存在的 <a href="https://kafka.apache.org/intro#intro_concepts_and_terms">主题 ↗</a> 并预览这些主题中包含的数据。</p>
+<p>在 Kafka 浏览视图中，您可以在页面左侧的列表中查看现有主题。</p>
+<img alt="Explore Kafka source" height="600" node="[object Object]" src="/docs/resources/foundry/data-connection/stream-kafka-explore-source@2x.png?width=0.50" srcset="/docs/resources/foundry/data-connection/stream-kafka-explore-source@2x.png?width=0.50 1x, /docs/resources/foundry/data-connection/stream-kafka-explore-source@2x.png 2x" style="aspect-ratio:3112 / 1454" width="1284.1815680880331"/>
+<p>选择某个主题后，您可以预览该主题中的数据样本。</p>
+<img alt="Preview Kafka topic" height="600" node="[object Object]" src="/docs/resources/foundry/data-connection/stream-kafka-preview-topic@2x.png?width=0.50" srcset="/docs/resources/foundry/data-connection/stream-kafka-preview-topic@2x.png?width=0.50 1x, /docs/resources/foundry/data-connection/stream-kafka-preview-topic@2x.png 2x" style="aspect-ratio:3128 / 816" width="2300"/>
+<h2 data-pagefind-weight="0.9" id="user-content-part-2-define-the-sync-location" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#part-2-define-the-sync-location" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>第 2 部分：定义同步位置</h2>
+<p>接下来，您需要决定将同步的数据集保存在 Foundry 中的位置。数据集的位置将根据 <a href="/docs/foundry/compass/move-and-share-resources/">创建同步数据集时，推荐的最佳做法是将其与连接器一起保存。这使得对来自给定连接器的所有数据进行统一权限设置成为可能，这对于创建数据管道非常有帮助。了解更多关于</a> 权限决定谁有权访问生成的数据集。</p>
+<p>我们建议将同步的数据集与其源一起保存在同一个 Project 中，使它们具有相同的权限；匹配的数据集和源权限在创建数据管道时非常有用。 <a href="/docs/foundry/building-pipelines/recommended-project-structure/">了解更多关于数据管道推荐的项目结构。</a></p>
+<p>选择同步位置后，点击 <strong>创建流式同步</strong> 在右上角。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-part-3-configure-the-streaming-sync" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#part-3-configure-the-streaming-sync" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>第 3 部分：配置流式同步</h2>
+<p>现在，您将进入 <strong>同步创建</strong> Data Connection 中的页面，您可以在其中为同步定义特定于源的配置和核心流式配置。</p>
+<ul>
+<li><strong>特定于源的配置：</strong> 位于配置页面顶部，这些选项取决于您的源类型，并配置传递给您所连接的特定源的参数。</li>
+<li><strong>核心流式配置：</strong> 位于特定于源的配置下方，这些选项是所有流式同步通用的。核心配置包括吞吐量、架构和同步目标。</li>
+</ul>
+<img alt="Configure Kafka sync" height="600" node="[object Object]" src="/docs/resources/foundry/data-connection/stream-kafka-configure-sync@2x.png?width=0.50" srcset="/docs/resources/foundry/data-connection/stream-kafka-configure-sync@2x.png?width=0.50 1x, /docs/resources/foundry/data-connection/stream-kafka-configure-sync@2x.png 2x" style="aspect-ratio:3074 / 1830" width="1007.8688524590164"/>
+<p>您可以在源配置选项中的 <strong>计算配置文件设置</strong> （位于附加设置菜单中）下选择计算配置文件大小，从而为流式同步指定计算资源。对于使用 <a href="/docs/foundry/data-connection/agent-worker/">）或您的代理网络（如果使用</a> 的源，此选项不可用，因为其计算在代理主机上运行。</p>
+<p>接下来，选择您的流的 <a href="/docs/foundry/data-integration/streams/#partitions">吞吐量</a> 。吞吐量决定了将创建的分区数量。选择更多的分区数量可以实现更高的吞吐量。选择 <strong>正常</strong> 吞吐量将允许该流达到最高 5 MB/s 的速度。</p>
+<p>然后指定输入数据的架构；默认情况下，架构会从源推断得出，但如有必要可以覆盖。</p>
+<img alt="Set stream schema" height="600" node="[object Object]" src="/docs/resources/foundry/data-connection/stream-kafka-set-schema@2x.png?width=0.50" srcset="/docs/resources/foundry/data-connection/stream-kafka-set-schema@2x.png?width=0.50 1x, /docs/resources/foundry/data-connection/stream-kafka-set-schema@2x.png 2x" style="aspect-ratio:3074 / 1942" width="949.7425334706488"/>
+<p>配置同步后，选择 <strong>创建同步</strong> 使用</p>
+<p>现在您的同步已创建，您将被带到 <strong>概述</strong> 标签页。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-part-4-run-the-sync" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#part-4-run-the-sync" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>第 4 部分。运行同步</h2>
+<p>现在，您已准备好运行同步。选择 <strong>概述</strong> 选项卡以查看新同步的摘要，包括输出数据集、位置和可用操作。</p>
+<p>点击设置菜单下的 <strong>开始时间</strong> 以开始将数据从外部流同步到 Foundry 中。</p>
+<img alt="Kafka sync overview" height="600" node="[object Object]" src="/docs/resources/foundry/data-connection/stream-kafka-sync-overview@2x.png?width=0.50" srcset="/docs/resources/foundry/data-connection/stream-kafka-sync-overview@2x.png?width=0.50 1x, /docs/resources/foundry/data-connection/stream-kafka-sync-overview@2x.png 2x" style="aspect-ratio:2686 / 1322" width="1219.0620272314675"/>
+<p>要查看流数据，请导航到您在创建同步时配置的流，以查看流预览页面。您应该能看到记录从 Kafka 主题流入流中。</p>
+<img alt="View stream output" height="600" node="[object Object]" src="/docs/resources/foundry/data-connection/stream-sync-output@2x.png?width=0.50" srcset="/docs/resources/foundry/data-connection/stream-sync-output@2x.png?width=0.50 1x, /docs/resources/foundry/data-connection/stream-sync-output@2x.png 2x" style="aspect-ratio:3080 / 1902" width="971.6088328075709"/>
+<h2 data-pagefind-weight="0.9" id="user-content-next-steps" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#next-steps" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>后续步骤</h2>
+<p>现在您已成功运行了同步，了解如何 <a href="/docs/foundry/optimizing-pipelines/debug-stream/">调试失败的流</a>, <a href="/docs/foundry/data-connection/push-based-ingestion/">将数据推送到流中</a> 使用基于推送的摄取，或者 <a href="/docs/foundry/object-indexing/funnel-streaming-pipelines/">将您的流与本体论集成</a>.</p></div>
+</article>
+</article>
+</body>
+</html>

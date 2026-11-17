@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>管理架构变更</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<article>
+<div class="ptcom-design__markdownDoc__1uarhel" data-pagefind-body="true"><h1 data-pagefind-weight="1" id="user-content-manage-schema-changes" level="1" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#manage-schema-changes" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>管理架构变更</h1>
+<h2 data-pagefind-weight="0.9" id="user-content-changing-object-type-schema" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#changing-object-type-schema" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>更改对象类型的架构</h2>
+<p>基于 Foundry 本体论构建的工作流和应用程序应随着组织需求的变化而演进；在某些情况下，这种演进可能涉及更新对象类型的架构，从而需要在其他地方进行额外的更改（“破坏性变更”）。破坏性架构变更的示例包括：更改现有属性的数据类型、更改对象类型的支撑数据源，或更改对象类型的主键。请参见以下 <a href="#list-of-breaking-schema-changes">破坏性架构变更的完整列表</a>.</p>
+<p>在对象存储 v1（Phonograph）中，用户界面不鼓励进行此类架构更改，尤其是当对象类型已接收用户编辑时。这是因为此类用户编辑无法在 OSv1 中迁移；相反，破坏性更改将导致现有用户编辑丢失，除非能够执行耗时且复杂的手动干预。</p>
+<p>对象存储 v2 移除了对架构更改的这一限制，以便于灵活且迭代式的工作流构建。为此，OSv2 提供了一个架构迁移框架，其中包含一系列预定义的迁移，可在破坏性架构更改后应用于现有的用户编辑。本体论管理器会自动检测破坏性架构更改，并引导用户从预定义列表中选择迁移选项。有关更多信息，请参阅下文 <a href="#list-of-supported-schema-migrations-in-osv2">受支持迁移的完整列表</a>.</p>
+<h3 data-pagefind-weight="0.8" id="user-content-example-workflow" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#example-workflow" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>示例工作流</h3>
+<p>在此示例工作流中，用户从具有现有用户编辑的对象类型中删除 <code>Description</code> 该属性。本体论管理器会自动将其识别为破坏性架构变更，并显示需要进行迁移的警告，如下方截图所示。</p>
+<p><img alt="Breaking change warning" height="600" node="[object Object]" src="/docs/resources/foundry/object-edits/breaking_changes.png" style="aspect-ratio:1792 / 618" width="1739.8058252427186"/></p>
+<p>除显示警告外，本体论管理器还会呈现一个 <strong>迁移</strong> AIP 使用量与限制 <strong>预览状态</strong> 界面。当用户想要将更改保存到本体论时，Ontology Manager 会阻止用户保存更改，直到他们为该破坏性更改定义迁移。这可以防止该更改破坏其他工作流。</p>
+<p>当用户导航至 <strong>迁移</strong> 选项卡时，Ontology Manager 会根据破坏性更改的类型显示可用的迁移选项，如下所示。</p>
+<p><img alt="Review edits" height="600" node="[object Object]" src="/docs/resources/foundry/object-edits/edits_review.png" style="aspect-ratio:1794 / 680" width="1582.9411764705883"/></p>
+<p>一旦用户在 Ontology Manager 中指定并保存了架构更改，后端就会为该对象类型创建新的架构版本，并创建一个相应的 <a href="/docs/foundry/object-indexing/funnel-batch-pipelines/#funnel-batch-pipelines">替代 Funnel 批处理管道</a> 会被编排执行以更新对象类型的索引。新的对象类型版本将可被 Object Set Service (OSS) 以及本体论 API 的其他使用者查询，前提是替换管道已完成且新版本被声明为完全 <a href="/docs/foundry/object-indexing/funnel-batch-pipelines/#hydration">由对象数据库填充</a>.</p>
+<h2 data-pagefind-weight="0.9" id="user-content-list-of-breaking-schema-changes" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#list-of-breaking-schema-changes" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>破坏性架构变更列表</h2>
+<p>本体论中的以下变更被视为破坏性架构变更：</p>
+<ul>
+<li>更改对象类型的输入数据源</li>
+<li>更改对象类型的主键</li>
+<li>更改属性的数据类型</li>
+<li>更改已被用户编辑过的属性的 ID</li>
+<li>删除已被用户编辑过的属性</li>
+<li>删除已被用户编辑过的 struct 字段</li>
+<li>更改 struct 字段的数据类型</li>
+</ul>
+<h2 data-pagefind-weight="0.9" id="user-content-list-of-non-breaking-schema-changes" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#list-of-non-breaking-schema-changes" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>非破坏性架构更改列表</h2>
+<p>以下对本体论的更改 <strong>不</strong> 会被视为破坏性架构更改：</p>
+<ul>
+<li>更改已收到用户编辑的属性的显示名称、标题键、渲染提示、类型类或可见性</li>
+<li>删除属性或对从未收到用户编辑的属性进行架构更改</li>
+<li>删除结构体字段或对从未收到用户编辑的结构体字段进行架构更改</li>
+</ul>
+<h2 data-pagefind-weight="0.9" id="user-content-list-of-supported-schema-migrations-in-osv2" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#list-of-supported-schema-migrations-in-osv2" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>OSv2 中支持的架构迁移列表</h2>
+<p>以下是对象存储 v2 中当前支持的所有架构迁移的完整列表。</p>
+<ul>
+<li>
+<p><strong>丢弃所有属性编辑：</strong> 此迁移指令会丢弃对象类型上某个特定属性的所有现有用户编辑。该对象类型上其他属性的用户编辑不受影响。此指令通常在从对象类型中删除属性且没有新属性作为替代时使用。</p>
+</li>
+<li>
+<p><strong>丢弃所有结构体字段编辑：</strong> 此迁移指令会删除对象类型的结构体属性中特定结构体字段上的所有现有用户编辑。同一结构体属性中其他结构体字段上的用户编辑不受影响。此指令通常用于从结构体属性中删除某个结构体字段且没有新的替代结构体字段的情况。</p>
+</li>
+<li>
+<p><strong>删除所有编辑：</strong> 此迁移指令会删除对象类型所有属性上的所有现有用户编辑。此迁移运行时，对象类型的所有对象的状态将重置为输入数据源中的数据。要执行此迁移，请导航至该对象类型的  <strong>数据源</strong> 选项卡，然后选择 <strong>删除编辑</strong>，位于 <strong>编辑</strong> 区域的字段中添加命令。</p>
+</li>
+<li>
+<p><strong>移动编辑：</strong> 此迁移指令会移动特定属性或整个对象类型上的所有现有用户编辑。该指令通常用于以下两种情况：</p>
+<ul>
+<li>当现有属性被重命名或删除并被新属性替换时，或者</li>
+<li>当对象类型的输入数据源被另一个数据源替换时。</li>
+</ul>
+</li>
+<li>
+<p><strong>移动 struct 字段编辑：</strong> 此迁移指令会将特定 struct 字段上的所有现有用户编辑移动到另一个 struct 字段。该指令通常用于现有 struct 字段被删除并被新 struct 字段替换的情况。</p>
+</li>
+<li>
+<p><strong>将属性强制转换为新类型：</strong> 此迁移指令会将特定属性上现有用户编辑的数据类型转换为该属性的新数据类型。支持的数据类型转换列表如下：</p>
+<ul>
+<li>Attachment → String</li>
+<li>Boolean → String</li>
+<li>Date → String</li>
+<li>Double → Integer</li>
+<li>Double → Long</li>
+<li>Double → String</li>
+<li>Geopoint → String</li>
+<li>Geoshape → String</li>
+<li>Integer → Long</li>
+<li>Integer → Double</li>
+<li>Integer → String</li>
+<li>Long → Integer</li>
+<li>Long → Double</li>
+<li>Long → String</li>
+<li>强制标记 → String</li>
+<li>String → Integer</li>
+<li>String → Long</li>
+<li>String → Double</li>
+<li>String → Boolean</li>
+<li>String → Date</li>
+<li>String → Timestamp</li>
+<li>String → Geopoint</li>
+<li>String → Geoshape</li>
+<li>Timestamp → String</li>
+</ul>
+</li>
+<li>
+<p><strong>将结构体字段转换为新类型：</strong> 此迁移指令会将特定结构体字段上现有用户编辑的数据类型转换为该结构体字段的新数据类型。支持的数据类型转换列表如下：</p>
+<ul>
+<li>Boolean → String</li>
+<li>Date → String</li>
+<li>Double → Integer</li>
+<li>Double → Long</li>
+<li>Double → String</li>
+<li>Geopoint → String</li>
+<li>Integer → Long</li>
+<li>Integer → Double</li>
+<li>Integer → String</li>
+<li>Long → Integer</li>
+<li>Long → Double</li>
+<li>Long → String</li>
+<li>String → Integer</li>
+<li>String → Long</li>
+<li>String → Double</li>
+<li>String → Boolean</li>
+<li>String → Date</li>
+<li>String → Timestamp</li>
+<li>String → Geopoint</li>
+<li>Timestamp → String</li>
+</ul>
+</li>
+<li>
+<p><strong>回填一个值：</strong> 此迁移指令会在用户编辑所创建的对象上，将某个属性设置为指定值，但仅在该属性未设置时生效。它不会覆盖现有值，包括显式设置为 <code>null</code>的值。此指令通常用于在向对象类型添加属性后，为用户编辑所创建的现有对象分配默认值。</p>
+</li>
+<li>
+<p><strong>回滚迁移：</strong> 此迁移指令用于撤销之前已应用的架构迁移。当通过本体论管理器中的 <strong>历史记录</strong> 部分来撤销已保存的本体论更改时，通常会使用此指令。</p>
+<ul>
+<li>要撤销迁移，请在本体论管理器中导航至所需本体论的 <strong>历史记录</strong> 部分，展开历史事件中的 <strong>迁移</strong> 部分，然后打开 <strong>...</strong> 菜单（位于迁移事件上），然后选择 <strong>还原</strong>。迁移回退完成后，请在 Ontology Manager 中保存修改。</li>
+</ul>
+</li>
+</ul>
+<p><img alt="Revert migration" height="600" node="[object Object]" src="/docs/resources/foundry/object-edits/revert_migration.png" style="aspect-ratio:1964 / 1232" width="956.4935064935065"/></p>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>一次最多只能应用 500 个架构迁移。如果架构变更数量超过此限制，则必须分批执行迁移。 <br/><br/>
+当前的架构迁移框架不支持对对象类型的主键属性应用迁移指令。</p></div>
+<ul>
+<li><strong>从失败的架构迁移中恢复：</strong> 当架构迁移未能完成时，替换管道上方的错误消息会显示在 <strong>数据源</strong> 选项卡上，提供帮助您从索引失败中恢复对象类型的信息。如果从失败中恢复需要暂存额外的架构迁移，错误消息将显示一个 <strong>修复架构迁移</strong> 选项，用于暂存必要的迁移。</li>
+</ul>
+<p><img alt="The Datasources tab displays an error message above the replacement pipeline with an option for recovering an object type from a failed schema migration." height="600" node="[object Object]" src="/docs/resources/foundry/object-edits/schema-migration-recovery-ui.png" style="aspect-ratio:2048 / 660" width="1861.8181818181818"/></p></div>
+</article>
+</article>
+</body>
+</html>

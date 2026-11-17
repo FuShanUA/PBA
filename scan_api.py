@@ -345,18 +345,37 @@ def scan_docs(progress=None, translate=True):
         command = [python, updater, "--workers", "3"]
         if not translate:
             command.append("--no-translate")
-        result = subprocess.run(
+        # Stream the updater's output as it is produced. Buffering it until the
+        # child exited left the UI parked on "检查技术文档更新..." for the whole
+        # run, which takes hours whenever the docs sitemap is re-fetched.
+        process = subprocess.Popen(
             command,
             cwd=ROOT,
-            capture_output=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
             text=True,
-            timeout=86400,
+            bufsize=1,
         )
-        for line in result.stdout.splitlines():
-            if line.strip():
-                progress({"phase": "docs:scan", "msg": line})
-        if result.returncode != 0:
-            message = (result.stderr or result.stdout or "").strip()[-500:]
+        tail = []
+        pages = 0
+        for line in process.stdout:
+            text = line.rstrip()
+            if not text.strip():
+                continue
+            tail.append(text)
+            if len(tail) > 20:
+                tail.pop(0)
+            # complete_docs.py logs one "ok <n> <slug>" line per page. Collapse
+            # those into a periodic counter so the log stays readable.
+            if text.lstrip().startswith("ok "):
+                pages += 1
+                if pages % 25:
+                    continue
+                text = f"  已抓取 {pages} 页..."
+            progress({"phase": "docs:scan", "msg": text})
+        returncode = process.wait()
+        if returncode != 0:
+            message = "\n".join(tail)[-500:]
             progress({"phase": "docs:error", "msg": f"[{_ts()}] 文档更新失败: {message}"})
             return {"new": 0, "changed": 0, "error": message}
     except Exception as e:

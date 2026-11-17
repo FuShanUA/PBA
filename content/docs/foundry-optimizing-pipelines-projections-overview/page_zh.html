@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>数据集投影</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<article>
+<div class="ptcom-design__markdownDoc__1uarhel" data-pagefind-body="true"><h1 data-pagefind-weight="7" id="user-content-dataset-projections" level="1" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#dataset-projections" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>数据集投影</h1>
+<p><strong>数据集投影</strong> 可以提升一大类查询的性能。如果你有一个数据集，希望针对多种查询模式进行优化（例如，在两个不同的列上进行筛选），你应该考虑为该数据集添加投影。具体的 <a href="#use-cases">用例</a> 示例如下所列。</p>
+<p>每个投影通常支持单一查询模式，专注于改进对一组列的筛选或对一组列的连接。可以向一个数据集添加多个投影，并且投影支持所有列类型。此外，投影可以添加到快照数据集或增量构建的数据集中。 <em>Noho</em> 服务用于管理投影，并在 <a href="/docs/foundry/optimizing-pipelines/projections-setup/">设置投影</a>.</p>
+<p>投影存在一些限制：</p>
+<ul>
+<li>投影只能添加到仅追加（append-only）的数据集上。在仅追加的数据集中，只能向数据集添加（即追加）行；无法从仅追加的数据集中手动删除文件或事务。具体而言，对仅追加数据集唯一可执行的 <a href="/docs/foundry/data-integration/datasets/#transaction-types">事务</a> 是向数据集添加行的事务。 <code>APPEND</code>, <code>SNAPSHOT</code>日 <code>UPDATE</code> 投影系统会自动识别违反此要求的数据集并禁用其上的投影，但作为用户，你仍应避免这种情况。</li>
+<li>投影不支持 schema 演进，即使是像添加列这样增量一致的操作也不支持。</li>
+</ul>
+<p>查看下面的示例用例，了解投影是否适合你的用例。首先学习如何 <a href="/docs/foundry/optimizing-pipelines/projections-setup/">设置投影</a>.</p>
+<h2 data-pagefind-weight="6.3" id="user-content-use-cases" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#use-cases" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>用例</h2>
+<p>许多类型的查询都能从投影中受益。以下示例将演示：</p>
+<ul>
+<li><a href="#filter-on-a-list-of-columns">在多个预先指定的维度上筛选大型数据集</a></li>
+<li><a href="#join-on-a-set-of-columns">在预先指定的一组列上连接大型数据集</a></li>
+<li><a href="#aggregate-on-a-pre-specified-set-of-columns">在预先指定的一组列上聚合大型数据集</a></li>
+<li><a href="#read-from-incremental-pipelines">读取频繁写入的增量数据集或流式数据集</a></li>
+<li><a href="#query-uploaded-data">查询直接上传的数据</a></li>
+</ul>
+<h3 data-pagefind-weight="5.6" id="user-content-filter-on-a-list-of-columns" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#filter-on-a-list-of-columns" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>在一组列上进行筛选</h3>
+<p>给定一个有序的列列表，优化对列表任意 <strong>前缀</strong> 的筛选。投影只会加速将列与常量值进行比较的筛选。并且对字符串列的任何筛选必须 <strong>区分大小写</strong>.</p>
+<p>例如，假设有一个投影针对有序列列表上的筛选进行了优化 <code>["x", "y", "z"]</code>。
+它将加速以下类型的查询：</p>
+<ul>
+<li><code>SELECT * FROM dataset WHERE x = 5 AND y = 10 AND z = '15'</code></li>
+<li><code>SELECT * FROM dataset WHERE x = 5 AND y = 10</code></li>
+<li><code>SELECT * FROM dataset WHERE x = 5 AND q = 3</code>
+<ul>
+<li>如果对不在配置列表中的其他列还有额外的筛选条件，例如本例中的 <code>q = 3</code>，Spark 会自动尝试拆解它可以“下推”到数据源（在本例中为 <code>x = 5</code>）的筛选条件，并在之后应用其余条件。</li>
+</ul>
+</li>
+</ul>
+<p>但以下类型的查询不会被优化：</p>
+<ul>
+<li><code>SELECT * FROM dataset WHERE abs(x) == 10</code>
+<ul>
+<li><code>abs(x) == 10</code> 没有将列与常量值进行比较。</li>
+</ul>
+</li>
+<li><code>SELECT * FROM dataset WHERE x % 100 == 10</code>
+<ul>
+<li><code>x % 100 == 10</code> 没有将列与常量值进行比较。</li>
+</ul>
+</li>
+<li><code>SELECT * FROM dataset WHERE y = 10</code>
+<ul>
+<li><code>["y"]</code> 不是 <code>["x", "y", "z"]</code>.</li>
+</ul>
+</li>
+<li><code>SELECT * FROM dataset WHERE z = '15'</code>
+<ul>
+<li><code>["z"]</code> 不是 <code>["x", "y", "z"]</code>.</li>
+</ul>
+</li>
+<li><code>SELECT * FROM dataset WHERE x = 5 OR q = 3</code>
+<ul>
+<li>的前缀，Spark 将无法把 <code>x = 5</code> 筛选条件下推到数据源，因为那样会遗漏 <code>x = 5</code> 为 false 但 <code>q = 3</code> 为 true 的行。</li>
+</ul>
+</li>
+</ul>
+<h4 id="user-content-range-queries"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#range-queries" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>范围查询</h4>
+<p>投影可以选择性地加速筛选列上的范围查询，例如：</p>
+<ul>
+<li><code>SELECT * FROM dataset WHERE x &gt; 5 AND x &lt; 10</code></li>
+<li><code>SELECT * FROM dataset WHERE s LIKE 'SOME_PREFIX%'</code></li>
+</ul>
+<h4 id="user-content-limitations"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#limitations" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>局限性</h4>
+<ul>
+<li>无法创建一个既包含非原始类型（例如数组）列、又支持筛选列上范围查询的投影。</li>
+</ul>
+<h3 data-pagefind-weight="5.6" id="user-content-join-on-a-set-of-columns" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#join-on-a-set-of-columns" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>在一组列上进行连接</h3>
+<p>给定一个无序的列集合和分桶数量，仅针对该精确集合和分桶数量优化连接。</p>
+<p>例如，一个针对 <code>{"x", "y"}</code> 上的连接进行优化的投影将优化以下类型的查询：</p>
+<ul>
+<li><code>SELECT * FROM dataset1 INNER JOIN dataset2 ON dataset1.x = dataset2.x AND dataset1.y = dataset2.y</code></li>
+</ul>
+<p>但以下查询不会被优化：</p>
+<ul>
+<li><code>SELECT * FROM dataset1 INNER JOIN dataset2 ON dataset1.x = dataset2.x</code></li>
+</ul>
+<h3 data-pagefind-weight="5.6" id="user-content-join-projected-and-non-projected-datasets" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#join-projected-and-non-projected-datasets" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>连接已投影和未投影的数据集</h3>
+<p>在 Foundry 中，大型数据集的连接通常执行排序合并连接（sort-merge join）。这包括根据连接键对每个数据集进行分区、按该键对每个分区排序，然后合并具有相同键的（已排序的）分区。</p>
+<ul>
+<li>在一般情况下，这涉及对两个数据集进行 shuffle 和排序。</li>
+<li>如果其中一个数据集具有针对在连接列上进行连接而优化的投影，则该数据集不会被 shuffle 或排序，但另一个数据集会被 shuffle 或排序。</li>
+<li>如果两个数据集都具有针对在连接列上进行连接而优化的投影， <strong>并且使用相同数量的桶</strong>，那么两个数据集都不会被 shuffle 或排序。这可以带来显著的性能提升。将具有连接优化投影的数据集与显式分桶的数据集（无投影）进行连接时也是如此，不过同样地，桶的数量和连接列必须匹配 <strong>完全一致</strong>.</li>
+</ul>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>Foundry 中的大多数投影消费者在执行 sort-merge 连接时，默认情况下不会利用投影已经排序这一事实，因此你可能仍会在 Spark 查询计划中看到排序操作。在 transform 中，你可以使用 <a href="/docs/foundry/optimizing-pipelines/spark-profiles-reference/#profile-table">Spark 配置文件</a> <code>BUCKET_SORTED_SCAN_ENABLED</code> 来基于投影已排序这一事实修改 Spark 的行为，但这并不总能提升性能，实际上还可能使性能变差。</p></div>
+<h3 data-pagefind-weight="5.6" id="user-content-aggregate-on-a-pre-specified-set-of-columns" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#aggregate-on-a-pre-specified-set-of-columns" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>在预先指定的一组列上进行聚合</h3>
+<p>在 Foundry 中，聚合通常涉及根据聚合键对数据集执行 shuffle exchange（即对数据集进行分区）。当从经过哈希分桶的投影读取数据时（所有连接优化的投影都属于这种情况，但筛选优化的投影可能不属于这种情况），消费者可以避免这种 shuffle，从而在聚合过程中带来显著的性能提升。 <a href="/docs/foundry/transforms-python/data-expectations-reference/#primary-key">主键期望检查</a> 对于以仅追加方式增量更新的数据集，投影（基于主键列）尤其有益，一方面是因为投影执行的压缩操作，另一方面是因为可以利用投影的哈希分桶来执行用于计算期望的聚合。</p>
+<h3 data-pagefind-weight="5.6" id="user-content-read-from-incremental-pipelines" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#read-from-incremental-pipelines" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>从增量管道读取数据</h3>
+<p>增量管道可能产生非常高的文件数量，并相应地导致读取性能下降。例如，一个每五分钟写入十个分区的管道每年将写入超过一百万个文件。由于多种原因，这些文件难以读取，其中包括仅仅生成输入分区列表这样的操作。</p>
+<p>投影提供了一种透明地压缩此类增量管道的方法。只需设置一个针对筛选或连接优化的投影，读取操作就会使用该投影。 <a href="/docs/foundry/building-pipelines/maintaining-incremental-performance/#dataset-projections">了解有关在增量管道中使用投影的更多信息。</a></p>
+<p>即使投影未与规范数据集完全保持最新，消费者仍然可以利用投影的筛选或连接优化，前提是在投影最后一次构建时的最新事务与规范数据集上的当前最新事务之间，规范数据集上没有 SNAPSHOT 或 DELETE 事务（或修改现有文件的 UPDATE 事务）。</p>
+<h3 data-pagefind-weight="5.6" id="user-content-query-uploaded-data" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#query-uploaded-data" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>查询上传的数据</h3>
+<p>CSV 是一种低效的数据查询文件格式，但上传到 Foundry 的数据（通过 Data Connection 从文件系统源上传、手动上传等）最初通常为 CSV 格式。创建 transform 作业是将这些 CSV 转换为更高效格式（如 Parquet）的一种方法。或者，你可以添加一个投影；读取操作将使用优化后的投影以获得更好的性能，而数据集仍包含原始的 CSV 文件。</p></div>
+</article>
+</article>
+</body>
+</html>

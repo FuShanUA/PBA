@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>数据集</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<article>
+<div class="ptcom-design__markdownDoc__1uarhel" data-pagefind-body="true"><h1 data-pagefind-weight="1" id="user-content-datasets" level="1" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#datasets" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>数据集</h1>
+<p>A <strong>数据集</strong> 是数据从进入 Foundry 到被映射到 <a href="/docs/foundry/ontology/overview/">本体论</a> 中的最基本的数据表示形式。从根本上说，数据集是围绕一组 <strong>文件</strong> 的封装，这些文件存储在 <a href="#backing-filesystem">支撑文件系统</a> 中。使用 Foundry 数据集的好处在于，它们为权限管理、模式（schema）管理、版本控制以及随时间推移的更新提供了集成支持。我们将在本文档的其余部分中探讨这些功能背后的概念。</p>
+<p>在 Foundry 的数据集成层中，数据集可以存储和表示所有类型的数据，无论是结构化、非结构化还是半结构化数据：</p>
+<ul>
+<li><em>结构化</em> （表格）数据由包含开源格式（例如 <a href="https://parquet.apache.org/">Parquet ↗</a>）表格数据的文件以及有关数据集中列的元数据组成。这些元数据作为 <a href="#schemas">模式</a>.</li>
+<li><em>Unstructured</em> 数据由没有关联模式的文件组成；示例包括非表格文件（如客户支持电子邮件），以及媒体文件（如图像、视频或 PDF 文档）。Foundry 提供两种存储非结构化数据的方式：作为无模式数据集或作为 <a href="/docs/foundry/data-integration/media-sets/">媒体集</a>，后者是一种针对媒体工作流优化的独立资源类型。如果您要在 Foundry 中 <a href="/docs/foundry/compass/manually-upload-data/">手动上传非结构化数据</a> ，可以选择 <strong>作为媒体集上传</strong> or <strong>上传到无模式的数据集</strong>.</li>
+<li><em>半结构化</em> 数据是非表格形式的，但仍可包含提供一定程度组织性的标签或元数据；示例包括 XML 或 JSON 等文件格式。半结构化数据没有专用的上传选项；您可以将这些文件上传到无模式的数据集，然后在下游数据转换中 <a href="/docs/foundry/building-pipelines/infer-schema/">推断表格模式</a> ，以提升性能和使用便利性。</li>
+</ul>
+<h2 data-pagefind-weight="0.9" id="user-content-transactions" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#transactions" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>事务</h2>
+<p>数据集的设计初衷是随时间推移而变化。当您在 Foundry 中打开一个数据集并看到行和列时，您实际上看到的是最新的 <a href="#dataset-views"><em>数据集视图</em></a>.</p>
+<p>作为最终用户，您通常会使用 <a href="/docs/foundry/data-integration/builds/">构建</a>来修改数据集，它们允许您根据指定的逻辑更新数据集的内容。然而，在幕后，数据集是随着时间推移通过 <strong>事务</strong>来更新的，事务表示对数据集内文件的修改。事务有一个简单的生命周期：</p>
+<ul>
+<li>当事务 <em>启动</em>后，它处于 <code>OPEN</code> 状态。在此状态下，可以在数据集的支撑文件系统中打开和写入文件。</li>
+<li>事务可以被 <em>提交</em>，这会使其进入 <code>COMMITTED</code> 状态，并且所有已写入的文件现在都会出现在最新的数据集视图中。</li>
+<li>事务可以被 <em>中止</em>，这会使其进入 <code>ABORTED</code> 状态。事务期间写入的任何文件都将被忽略。</li>
+</ul>
+<p>如果您是一名软件工程师，您可能熟悉 Git。数据集事务是 Foundry 支持数据版本控制的基础，有时也被称为“数据界的 Git”。事务类似于 Git 中的 <em>提交（commit）</em> ：对数据集内容的一次原子性更改。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-transaction-types" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#transaction-types" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>事务类型</h3>
+<p>在事务中修改数据集文件的方式取决于事务类型。共有四种可能的事务类型： <code>SNAPSHOT</code>, <code>APPEND</code>, <code>UPDATE</code>日 <code>DELETE</code>.</p>
+<h3 data-pagefind-weight="0.8" id="user-content-snapshot" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#snapshot" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a><code>SNAPSHOT</code></h3>
+<p>A <code>SNAPSHOT</code> 事务会用一组全新的文件替换数据集的当前视图。</p>
+<p><code>SNAPSHOT</code> 事务是最简单的事务类型，并且是 <a href="/docs/foundry/building-pipelines/pipeline-types/#batch">批处理管道</a>.</p>
+<h3 data-pagefind-weight="0.8" id="user-content-append" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#append" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a><code>APPEND</code></h3>
+<p>An <code>APPEND</code> 事务会向当前数据集视图添加新文件。</p>
+<p>An <code>APPEND</code> 事务无法修改当前数据集视图中的现有文件。如果打开一个 <code>APPEND</code> 事务并覆盖了现有文件，那么尝试提交该事务将会失败。</p>
+<p><code>APPEND</code> 事务是以下功能的基础： <a href="/docs/foundry/building-pipelines/pipeline-types/#incremental">增量管道</a>。通过仅将新数据同步到 Foundry，并仅在整个管道中处理这些新数据，可以对大型数据集的变更进行高性能的端到端处理。但是，构建和维护增量管道会带来额外的复杂性。 <a href="/docs/foundry/building-pipelines/incremental-overview/">了解更多关于增量管道的信息。</a></p>
+<h3 data-pagefind-weight="0.8" id="user-content-update" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#update" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a><code>UPDATE</code></h3>
+<p>An <code>UPDATE</code> 事务（例如 <code>APPEND</code>）会向数据集视图添加新文件，但也可能覆盖现有文件的内容。</p>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>An <code>UPDATE</code> 覆盖现有文件内容的事务将破坏以下对象的仅追加（append-only）要求： <a href="/docs/foundry/building-pipelines/pipeline-types/#incremental">增量管道</a>。如果数据集收到此类 <code>UPDATE</code> 事务，下游管道将无法增量处理数据，而必须回退到 <code>SNAPSHOT</code> （批处理）处理。</p><p>An <code>UPDATE</code> 仅添加新文件而不覆盖任何现有文件的事务不会影响增量性。除非别无选择，否则不要在 <code>UPDATE</code> 事务中覆盖现有文件。更多详细信息，请参阅 <a href="/docs/foundry/transforms-python/incremental-usage/#append-only-input-changes">增量转换和仅追加输入</a>.</p></div>
+<p>配置 <a href="/docs/foundry/data-connection/file-based-syncs/">基于文件的同步</a> 以从外部系统摄取数据时，您选择的事务类型决定了数据在管道中的流动方式。三种常见的摄取模式为：</p>
+<ul>
+<li><strong>批量镜像（<code>SNAPSHOT</code>):</strong> 每次同步运行都会摄取所有文件并提交一个 <code>SNAPSHOT</code> 事务。这是最简单的模式，适用于完整文件集足够小、可以在每次运行时重新加载的情况。</li>
+<li><strong>增量镜像（<code>APPEND</code>):</strong> 每次同步运行仅摄取新文件并提交一个 <code>APPEND</code> 事务。此模式支持端到端增量管道，是在文件仅被添加而不被修改时推荐使用的方法。</li>
+<li><strong>增量镜像（<code>UPDATE</code>):</strong> 每次同步运行会摄取新增和修改的文件并提交一个 <code>UPDATE</code> 事务。仅在外部系统会修改现有文件时才使用此模式，因为它会阻止下游的增量处理。</li>
+</ul>
+<p>有关这些模式的详细配置指导（包括筛选器设置和相互冲突的选项），请参阅 <a href="/docs/foundry/data-connection/file-based-syncs/#conceptual-file-based-ingestion-modes">基于文件的同步</a>.</p>
+<h3 data-pagefind-weight="0.8" id="user-content-delete" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#delete" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a><code>DELETE</code></h3>
+<p>A <code>DELETE</code> 事务会移除当前数据集视图中的文件。</p>
+<p>提交一个 <code>DELETE</code> 事务并不会从底层支撑文件系统中删除文件——它只是从数据集视图中移除该文件的引用。</p>
+<p>在实践中， <code>DELETE</code> 事务主要用于实现数据保留工作流。通过根据保留策略（通常基于文件的存在时间）删除数据集上的文件，可以将数据从 Foundry 中移除，这既有助于降低存储成本，也有助于满足数据治理要求。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-example-of-transaction-types" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#example-of-transaction-types" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>事务类型示例</h3>
+<p>假设数据集某个分支的事务历史如下（从最早的开始）：</p>
+<ol>
+<li><code>SNAPSHOT</code> 包含文件 <code>A</code> and <code>B</code></li>
+<li><code>APPEND</code> 添加文件 <code>C</code></li>
+<li><code>UPDATE</code> 修改文件 <code>A</code> 使其内容不同， <code>A'</code></li>
+<li><code>DELETE</code> 移除文件 <code>B</code></li>
+</ol>
+<p>此时，当前数据集视图将包含 <code>A'</code> 和 <code>C</code>。如果我们添加第五个 <code>SNAPSHOT</code> 事务，其中包含文件 <code>D</code>，则当前数据集视图将仅包含 <code>D</code> （因为 <code>SNAPSHOT</code> 事务会开启新视图），而前四个事务将位于旧视图中。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-retention" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#retention" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>保留</h3>
+<p>由于 <code>DELETE</code> 事务实际上并不会从 <a href="#backing-filesystem">支撑文件系统</a>中移除旧数据，您可以使用 <a href="/docs/foundry/retention/overview/">保留策略</a> 来移除不再需要的事务中的数据。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-view-retention-policies-for-a-dataset-beta" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#view-retention-policies-for-a-dataset-beta" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>查看数据集的保留策略 [Beta]</h3>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><div class="ptcom-design__title__19o1cwu">测试版</div><p>查看数据集保留策略的功能目前处于 <a href="/docs/foundry/platform-overview/development-life-cycle/">测试版</a> 开发阶段，您的注册环境中可能无法使用。在积极开发过程中，功能可能会发生变化。请联系 Palantir Support 以申请访问数据集保留策略。</p></div>
+<p>要查看当前应用于某个数据集的保留策略，请导航至 <a href="/docs/foundry/dataset-preview/overview/#details">数据集详情页面</a>.</p>
+<p><img alt="Retention policies section screenshot" height="600" node="[object Object]" src="/docs/resources/foundry/data-integration/retention-policies.png" style="aspect-ratio:2128 / 924" width="1381.8181818181818"/></p>
+<h2 data-pagefind-weight="0.9" id="user-content-branches" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#branches" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>提供了专为数据转换量身定制的版本控制体验，支持团队在同一工作簿中同时处理逻辑与数据。</h2>
+<p>虽然数据集事务旨在使数据集的内容能够随时间变化，但还需要额外的功能来实现 <em>协作</em> ——即让多个用户同时对数据集的变更进行试验。 <strong>提供了专为数据转换量身定制的版本控制体验，支持团队在同一工作簿中同时处理逻辑与数据。</strong> 数据集中的此功能旨在支持这些工作流。</p>
+<p>要了解 Foundry 中的分支功能（包括单个数据集和整个管道层面的分支），请参阅 <a href="/docs/foundry/data-integration/branching/">分支</a> 概念页。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-dataset-views" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#dataset-views" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>数据集视图</h2>
+<p>数据集视图表示数据集在某个时间点某个分支上的有效文件内容。历史视图类似于数据集的历史版本。要计算视图中包含哪些文件：</p>
+<ol>
+<li>从一个空的文件集合开始。</li>
+<li>给定时间点的视图始于该时间点之前最新的 <code>SNAPSHOT</code> 事务。如果不存在 <code>SNAPSHOT</code> 事务，则改为采用该数据集最早的事务。</li>
+<li>对于视图中的第一个事务以及随后的每个事务，执行以下操作：
+<ul>
+<li>折线图 <code>SNAPSHOT</code> （仅可能是第一个事务）或 <code>APPEND</code> 事务，将该事务的所有文件添加到集合中。</li>
+<li>对于 <code>UPDATE</code> 事务，将该事务的所有文件添加到集合中并替换现有文件。</li>
+<li>折线图 <code>DELETE</code> 事务，从集合中移除该事务中的所有文件。</li>
+</ul>
+</li>
+</ol>
+<p>最终得到的文件集合即构成一个数据集视图。</p>
+<p>由于新视图仅在 <code>SNAPSHOT</code> 事务处开始，数据集历史中的视图数量等于其包含的 <code>SNAPSHOT</code> 事务的数量。如果数据集仅包含 <code>SNAPSHOT</code> 事务，这意味着视图数量等于事务数量。对于增量数据集， <code>APPEND</code>, <code>UPDATE</code>日 <code>DELETE</code> 事务会扩展当前视图而不是开始一个新视图，因此视图数量仍然等于 <code>SNAPSHOT</code> 事务的数量。</p>
+<p>一个视图可能包含来自多个分支的事务。例如，给定一个以 <code>SNAPSHOT</code> 开头的增量数据集，以及 <code>APPEND</code> 分支上的某些 <code>master</code> 事务，如果该分支上的后续事务也是 <code>APPEND</code> （或者严格来说是 <em>不</em> <code>SNAPSHOT</code>）事务，那么这些事务将构成该分支上数据集视图的开头。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-schemas" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#schemas" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>模式（Schema）</h2>
+<p>模式是 <em>数据集视图</em> 上的元数据，用于定义视图中的文件应如何解释。这包括如何解析视图中的文件，以及文件中的列或字段的命名和类型。Foundry 中最常见的模式是 <em>表格模式</em>——它们描述数据集中的列，包括列的名称和 <a href="#supported-field-types">字段类型</a>.</p>
+<p>无法保证数据集中的文件实际符合指定的模式。例如，可以将 Parquet 模式应用于包含 CSV 文件的数据集。在这种情况下，尝试读取数据集内容的客户端应用程序会遇到错误，原因是某些文件不符合该模式。</p>
+<p>由于模式存储在 <em>数据集视图</em>上，模式可以随时间变化。这很有用，因为数据集的内容可能会在结构上随时间变化。例如，新事务可能会为表格数据集引入新列或更改字段的类型。</p>
+<p>在 Foundry 中，你可以在 <a href="/docs/foundry/dataset-preview/overview/">数据集预览</a> 应用程序中查看任何数据集的模式，方法是导航到 <strong>详情</strong> 选项卡并选择 <strong>模式</strong>.</p>
+<h3 data-pagefind-weight="0.8" id="user-content-supported-field-types" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#supported-field-types" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>支持的字段类型</h3>
+<p>以下是数据集可用的字段类型列表：</p>
+<ul>
+<li><code>BOOLEAN</code></li>
+<li><code>BYTE</code></li>
+<li><code>SHORT</code></li>
+<li><code>INTEGER</code></li>
+<li><code>LONG</code></li>
+<li><code>FLOAT</code></li>
+<li><code>DOUBLE</code></li>
+<li><code>DECIMAL</code></li>
+<li><code>STRING</code></li>
+<li><code>MAP</code></li>
+<li><code>ARRAY</code></li>
+<li><code>STRUCT</code></li>
+<li><code>BINARY</code></li>
+<li><code>DATE</code></li>
+<li><code>TIMESTAMP</code></li>
+</ul>
+<p>某些字段类型需要额外的参数：</p>
+<ul>
+<li><code>DECIMAL</code> requires <code>precision</code> and <code>scale</code>。如果你不确定这些参数应设置什么值，一个不错的默认值是 <code>precision: 38</code> and <code>scale: 18</code>. <code>38</code> 是可能的最高精度值。</li>
+<li><code>MAP</code> requires <code>mapKeyType</code> and <code>mapValueType</code>，它们都是字段类型。</li>
+<li><code>ARRAY</code> requires <code>arraySubType</code>，一种字段类型。</li>
+<li><code>STRUCT</code> requires <code>subSchemas</code>，字段类型的列表。</li>
+</ul>
+<p>有关上述这些字段类型的更多信息（包括描述和示例），请参阅 <a href="https://spark.apache.org/docs/latest/sql-ref-datatypes.html">Spark 数据类型文档 ↗</a>.</p>
+<h3 data-pagefind-weight="0.8" id="user-content-schema-options" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#schema-options" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>模式选项</h3>
+<p>在监听器设置向导的 <strong>模式</strong> 已应用标签 <strong>详情</strong> 选项卡中，你可以在模式元数据底部的 <code>options</code> 块中为 CSV 文件添加可选的解析配置。请参阅 <a href="/docs/foundry/dataset-preview/csv-parsing/">CSV 解析</a> 文档以了解更多信息。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-file-formats" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#file-formats" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>文件格式</h3>
+<p>模式包含有关数据集中文件底层存储格式的信息。三种最广泛使用的格式是：</p>
+<ul>
+<li>Parquet</li>
+<li>Avro</li>
+<li>文本</li>
+</ul>
+<p>文本文件格式可用于表示多种文件类型，包括各种 CSV 格式或 JSON 文件。有关如何解析文本的额外信息存储在一个名为以下字段的 schema 字段中 <code>customMetadata</code>.</p>
+<p>实际上，对于 JSON 或 XML 等非表格格式，我们建议将文件存储在非结构化（无 schema）数据集中，并在下游数据转换中应用 schema，具体说明见 <a href="/docs/foundry/building-pipelines/infer-schema/">schema 推断文档</a>.</p>
+<h2 data-pagefind-weight="0.9" id="user-content-backing-filesystem" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#backing-filesystem" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>支撑文件系统</h2>
+<p>数据集中跟踪的文件并非存储在 Foundry 本身。相反，系统会维护文件在 Foundry 中的 <em>逻辑路径</em> 与其 <em>物理路径</em> 之间的映射，物理路径位于支撑文件系统中。Foundry 的支撑文件系统由以下内容中的基目录指定： <a href="https://hadoop.apache.org/docs/r2.7.0/api/org/apache/hadoop/fs/FileSystem.html">Hadoop FileSystem ↗</a>。这可以是自托管的 HDFS 集群，但更常见的做法是使用云存储提供商（如 Amazon S3）进行配置。所有数据集文件都存储在支撑文件系统基目录之下的文件夹层级结构中。</p></div>
+</article>
+</article>
+</body>
+</html>

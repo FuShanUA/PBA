@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>时间序列查询计算用量</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<article>
+<div class="ptcom-design__markdownDoc__1uarhel" data-pagefind-body="true"><h1 data-pagefind-weight="1" id="user-content-time-series-query-compute-usage" level="1" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#time-series-query-compute-usage" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>时间序列查询计算用量</h1>
+<p>Foundry 将时间序列数据以高度优化的格式缓存到磁盘上，用于时间序列查询。查询这些数据需要使用计算秒数（compute-seconds）。</p>
+<p>时间序列查询通过以下方式使用计算资源：</p>
+<ol>
+<li>每个查询都有固定的每查询计算秒数消耗率。</li>
+<li>每个查询还会根据其读取的时间序列点数产生额外的计算秒数计量。</li>
+</ol>
+<p>对更大的时间序列索引进行查询将读取更多的点。以下部分介绍了其计算方式的说明。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-how-compute-is-measured" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#how-compute-is-measured" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>计算资源的计量方式</h2>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>当您为 Foundry 用量付费时，每个查询会消耗固定的最低数量的计算秒数。默认数量为 <code>4</code> 计算秒数。这是为查询提供服务所需的基础计算用量。如果您与 Palantir 签订了企业合同，请在进行计算用量计算之前联系您的 Palantir 代表。</p></div>
+<p>时间序列数据的存储在 Foundry 存储下计量。存储时间序列数据不使用任何计算资源；只有对时间序列进行索引和主动查询数据时才会使用计算资源。</p>
+<p>时间序列查询计算资源仅在查询存储在 Foundry 中的时间序列数据时使用。时间序列查询通过两种方式使用计算资源：</p>
+<ol>
+<li>每个查询使用最低数量的计算秒数。在基于用量的 Foundry 实例上，每个查询使用 4 计算秒数。</li>
+<li>查询会根据其自身所考虑的点数超出固定的最低成本进行扩展。查询期间扫描的点数取决于所查询序列的大小和所执行逻辑的复杂程度，后者可能会对点进行大量的比较/操作。</li>
+</ol>
+<p>以下公式根据查询推导计算秒数：</p>
+<pre><code>compute-seconds = 4 + points_scanned / 25000
+</code></pre>
+<h2 data-pagefind-weight="0.9" id="user-content-investigate-time-series-query-usage" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#investigate-time-series-query-usage" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>调查时间序列查询用量</h2>
+<p>直方图 <a href="/docs/foundry/resource-management/overview/">资源管理</a> 应用程序允许您深入查看数据集用量信息，应作为调查 Foundry 平台中用量问题的起点。</p>
+<p>用户可以使用多种工具在 Foundry 中查询时间序列数据。时间序列查询用量始终归属于每个工具所产生或修改的资源。</p>
+<ul>
+<li>在 Quiver 中，时间序列查询将归属于发起查询所使用的单个 Quiver 分析或仪表板。</li>
+<li>在 Workshop 中，查询将归属于发起查询的 Workshop 应用。当 Workshop 应用嵌入了查询时间序列的 Quiver 组件时，用量仍归属于上层的 Workshop 应用程序。</li>
+<li>对于使用 FoundryTS 库查询时间序列的转换，这些查询的计算用量将归属于编写该转换的仓库。</li>
+</ul>
+<h2 data-pagefind-weight="0.9" id="user-content-understand-drivers-of-usage" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#understand-drivers-of-usage" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>了解用量的驱动因素</h2>
+<p>在按用量合同为 Foundry 付费时，时间序列查询的计算用量有三个主要驱动因素：</p>
+<ol>
+<li>
+<p>查询数量</p>
+<ul>
+<li>每个查询的最低用量为 4 计算秒数。这意味着用户执行的查询越多、运行查询的 Quiver 仪表板越多、以及运行 FoundryTS 查询的定时构建越多，使用的计算秒数就越多。</li>
+</ul>
+</li>
+<li>
+<p>所查询序列的大小</p>
+<ul>
+<li>减少读取的点数通常会降低计算用量和延迟。例如，对一个包含 10,000,000 个点的序列执行聚合查询，将比对一个包含 100,000 个点的序列执行相同查询使用更多计算资源。但实际用量取决于具体查询。减少读取点数最常用的技术是在每个序列上添加时间范围筛选器。</li>
+</ul>
+</li>
+<li>
+<p>查询的复杂程度</p>
+<ul>
+<li>与底层序列执行更复杂交互的查询将在该序列之上运行更多操作。在运行这些操作时，随着扫描的点数增多，查询用量也会增加。</li>
+</ul>
+<p>有关更多信息和使用示例，请参阅以下章节 <a href="#examples-of-query-complexity">查询复杂度</a>.</p>
+</li>
+</ol>
+<h2 data-pagefind-weight="0.9" id="user-content-manage-usage-with-time-series" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#manage-usage-with-time-series" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>使用时间序列管理用量</h2>
+<p>管理查询总数对于管理时间序列查询的总计算用量非常重要。在 Foundry 中使用时间序列时，请考虑以下实践：</p>
+<ul>
+<li>在构建基于时间序列的分析或仪表板时，请考虑每次更新时必须运行的查询总数。还应考虑拆分更新路径，以免在参数更改时所有查询都进行更新。</li>
+<li>在运行 FoundryTS 构建时，请确保合理设置调度计划，使构建不会比必要的更频繁地运行。</li>
+<li>当对时间序列应用时间范围时，Foundry 的时间序列后端只会读取该时间范围内的数据点。因此，Foundry 中的时间序列查询可以根据其查询的范围进行优化。限制查询的时间范围 <em>数据集。</em> 需要计算资源；选择合适的时间范围可以显著减少扫描的数据点总数，从而减少查询所使用的计算资源。</li>
+<li>为任务选择正确的粒度；并非所有工作流都需要最大粒度的数据。在某些情况下，这意味着针对特定工作流进行预聚合。在其他使用场景中，这意味着将不同粒度存储在不同的序列中。虽然维护多个最新序列可能会增加索引计算量，但存储多个序列本身不需要计算资源。因此，持有多个不同粒度的序列可能比始终查询最细粒度的序列更经济。</li>
+</ul>
+<h2 data-pagefind-weight="0.9" id="user-content-calculate-usage" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#calculate-usage" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>计算用量</h2>
+<p>要预测时间序列查询的成本，请务必始终了解所查询序列的大小。</p>
+<p>考虑以下示例，其中对一个包含 100,000 个数据点的序列执行三个查询，每个查询都会扫描该序列中的所有数据点：</p>
+<pre><code>series_size: 100,000 points
+minimum_query_usage: 4-compute seconds
+points_per_compute_second: 25,000 points
+total_queries: 3
+
+ 
+compute-seconds = num_queries * minimum_query_usage + total_points / points_per_compute_second
+compute-seconds = 3 queries * 4 compute-seconds + 100,000 points * 3 queries / 25,000 points-per-second
+compute-seconds = 3 * 4 + 300,000 / 25,000
+compute-seconds = 24 compute-seconds
+</code></pre>
+<h2 data-pagefind-weight="0.9" id="user-content-examples-of-query-complexity" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#examples-of-query-complexity" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>查询复杂度示例</h2>
+<p>时间序列查询的复杂度随着对所查询时间序列应用的嵌套操作增多而增加。</p>
+<p>举个例子，考虑以下 FoundryTS 代码，它将两个时间序列相加，并以 Pandas 数据帧的形式返回新序列在 1 年时间范围内的所有数据点：</p>
+<pre><code>series_1 = N.TimeseriesNode('series_1')
+series_2 = N.TimeseriesNode('series_2')
+result = F.dsl(program='a+b', return_type=float)([series_1, series_2]).time_range(start='2022-01-01', end='2023-01-01')
+result.to_pandas()
+</code></pre>
+<p>此代码将向 Codex 发出具有以下形状的查询：</p>
+<pre><code>{
+  id: dsl-fomula
+  children: [
+    { id: timeseries },
+    { id: timeseries }
+  ]
+}
+</code></pre>
+<p>评估 <code>to_pandas</code> 调用将产生扫描 <code>result</code> 时间序列在所请求的 1 年时间范围内的数据点，以及计算结果所需的两个组成序列中的数据点（在本例中，每个序列各为 1 年范围）的成本。</p>
+<p>现在，考虑以下应用了更多嵌套操作的 FoundryTS 代码。首先，我们定义一个由另外两个序列相加得到的序列。然后，我们将该序列与其 7 天滚动平均值进行比较，并以 Pandas 数据帧的形式加载结果中一年的数据点：</p>
+<pre><code>series_1 = N.TimeseriesNode('series_1')
+series_2 = N.TimeseriesNode('series_1')
+intermediate_1 = F.dsl(program='a+b', return_type=float)([series_1, series_2])
+intermediate_2 = intermediate_1.rolling_aggregate('mean', '7d')
+result = F.dsl(program='a-b', return_type=float)([intermediate_1, intermediate_2]).time_range(start='2022-01-01', end='2023-01-01')
+result.to_pandas()
+</code></pre>
+<p>此代码将向 Codex 发出具有以下形状的查询：</p>
+<pre><code>{
+  id: dsl-fomula
+  children: [
+    {
+      id: dsl-fomula
+      children: [
+        { id: timeseries },
+        { id: timeseries }
+      ]
+    },
+    {
+      id: rolling-aggregate
+      children: [
+        {
+          id: dsl-fomula
+          children: [
+            { id: timeseries },
+            { id: timeseries }
+          ]
+        }
+      ]
+    }
+  ]
+}
+</code></pre>
+<p>此查询树中的每个节点都会产生扫描 1 年范围数据点以生成最终结果的成本。</p></div>
+</article>
+</article>
+</body>
+</html>

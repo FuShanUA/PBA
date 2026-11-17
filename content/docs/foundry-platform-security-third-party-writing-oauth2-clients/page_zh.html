@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>为 Foundry 编写 OAuth2 客户端</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<article>
+<div class="ptcom-design__markdownDoc__1uarhel" data-pagefind-body="true"><h1 data-pagefind-weight="1" id="user-content-writing-oauth2-clients-for-foundry" level="1" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#writing-oauth2-clients-for-foundry" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>为 Foundry 编写 OAuth2 客户端</h1>
+<p>本文档面向希望编写 OAuth2 客户端以连接到 Foundry 的 Foundry 用户或管理员。本页面提供了对 <a href="https://www.rfc-editor.org/rfc/rfc6749">OAuth 2.0 授权框架 ↗</a> 的描述，以及有关 Foundry 的 OAuth2 实现的详细信息。此外， <a href="/docs/foundry/platform-security-third-party/3pa-api-guidance/">Foundry 第三方应用程序与 API 协议</a> 规定了第三方应用程序在 Foundry 平台上的使用，第三方应用程序的创建者和管理员应理解该协议。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-oauth2-overview" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#oauth2-overview" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>OAuth2 概述</h2>
+<p>OAuth2 授权框架使第三方应用程序能够获得对服务的受控访问。OAuth2 通过提供一个层来改进传统的客户端-服务器授权模型，使客户端（如第三方应用程序）能够通过使用专门颁发的访问令牌和刷新令牌来请求访问，而不是使用用户的凭据或静态持有者令牌。OAuth2 通过使用授权许可（grant）来管理这种访问，授权许可 是获取访问令牌的方法。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-supporting-oauth2-integration" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#supporting-oauth2-integration" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>支持 OAuth2 集成</h2>
+<p>以下各节介绍如何在第三方应用程序中支持 OAuth2。在本文档中， <strong>客户端</strong> 指第三方应用程序， <strong>授权服务器</strong> 指 Foundry 的授权服务器，而 <strong>用户</strong> 指第三方应用程序的最终用户。</p>
+<p>要在 Foundry 中使用 OAuth2，您必须按照 <a href="/docs/foundry/platform-security-third-party/register-3pa/">注册第三方应用程序</a> 中的说明注册您的应用程序，并从下一小节中选择一种授权方式。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-authorization-code-grant" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#authorization-code-grant" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>授权码模式</h3>
+<p>授权码许可允许客户端代表现有的 Foundry 用户执行操作。应用程序必须请求其需要访问的一组 Foundry 权限，然后 Foundry 用户必须明确授予客户端访问其账户中这些权限的权限。Foundry 允许将客户端限制为一组有限的资源，或限制为用户可以访问的所有资源。</p>
+<p>授权码许可的工作方式如下：</p>
+<ol>
+<li>客户端创建一个 <code>code_verifier</code> and <code>code_challenge</code>。这对于 <strong>是推荐</strong> 但非必需的，适用于 <em><a href="https://tools.ietf.org/html/rfc6749#section-2.1">机密客户端 ↗</a></em>，例如可以安全存储客户端密钥的基于服务器的应用程序。对于 <strong>必填</strong> for <a href="https://tools.ietf.org/html/rfc6749#section-2.1"><em>公共客户端</em> ↗</a>，例如无法安全存储客户端密钥的原生应用程序，则是必需的。
+<ul>
+<li>直方图 <code>code_verifier</code> 是一个加密随机字符串，包含 A-Z、a-z、0-9、 <code>-</code> (hyphen), <code>.</code> (period), <code>_</code> （下划线）和 <code>~</code> （波浪号），长度为 43 到 128 个字符。</li>
+<li>直方图 <code>code_challenge</code> 是通过对 <code>code_verifier</code> 执行 SHA256 计算并转换为不带填充的 Base64-URL 编码值而派生的。</li>
+</ul>
+</li>
+<li>客户端应用程序应打开浏览器，并将用户发送到 <a href="#authorization-endpoint">授权端点</a> URL，并添加以下参数作为查询参数：
+<ul>
+<li><code>response_type</code>：应设置为 <code>code</code>.</li>
+<li><code>client_id</code>：应设置为第三方应用程序在 Foundry 中注册时生成的 ID。</li>
+<li><code>redirect_uri</code>：这告诉授权服务器在用户批准请求后将用户重定向到哪里。如果未指定，将默认使用 Foundry 中第三方应用程序设置中的第一个重定向 URI 值。</li>
+<li><code>scope</code>：这定义了所请求的权限。公共 API 的作用域位于 <a href="/docs/foundry/api/general/overview/introduction/">《API 文档》</a>中。添加 <code>offline_access</code> 作用域以获取刷新令牌。如果需要多个作用域，请使用空格作为分隔符将作用域连接起来。</li>
+<li><code>state</code>：这是应用程序生成的随机字符串，将原样传回应用程序。应用程序应检查返回的值是否与原始字符串匹配，以防止 CSRF 攻击。</li>
+<li><code>code_challenge</code>：如果客户端创建了 <code>code_challenge</code>，则应填充此参数。授权服务器将在内部将 <code>code_challenge</code> 参数与其生成的授权码相关联。</li>
+<li><code>code_challenge_method</code>：应设置为 <code>S256</code>.</li>
+</ul>
+</li>
+<li>当用户访问该 URL 时，授权服务器会向用户显示类似于以下的提示，然后用户可以选择批准应用程序的请求。</li>
+</ol>
+<p><img alt="Authorization request" height="600" node="[object Object]" src="/docs/resources/foundry/platform-security-third-party/3PA-user-connection-dialog.png" style="aspect-ratio:1063 / 702" width="908.5470085470085"/></p>
+<ol start="4">
+<li>如果请求成功，授权服务器随后会将用户重定向到指定的重定向 URI，并附加以下参数作为查询参数：
+<ul>
+<li><code>code</code>：这是授权服务器生成的授权码。</li>
+<li><code>state</code>：这是客户端在授权请求中传递的相同参数。客户端应检查其是否与原始 <code>state</code> 请求中发送的参数匹配。</li>
+</ul>
+</li>
+<li>然后，客户端应通过调用 <a href="#token-endpoint">令牌端点</a>来将授权码换取访问令牌。应使用 <code>application/x-www-form-urlencoded</code> 格式在请求体中发送以下参数：
+<ul>
+<li><code>grant_type</code>：应设置为 <code>authorization_code</code>.</li>
+<li><code>code</code>：从授权服务器收到的代码。</li>
+<li><code>redirect_uri</code>：用户代理将被重定向到的绝对 URI。</li>
+<li><code>client_id</code>：应设置为第三方应用程序在 Foundry 中注册时生成的 ID。</li>
+<li><code>code_verifier</code>：如果客户端生成了 <code>code_verifier</code>，则应在此请求中发送。授权服务器将验证该 <code>code_verifier</code> 是否与 <code>code_challenge</code> 之前请求中发送的相匹配。</li>
+</ul>
+</li>
+<li>授权服务器随后会返回一个访问令牌，客户端可使用该令牌访问所请求的资源（例如 REST API）。响应包含以下参数：
+<ul>
+<li><code>access_token</code>：客户端可用于访问所请求资源的令牌。</li>
+<li><code>token_type</code>：所颁发令牌的类型。</li>
+<li><code>expires_in</code>：访问令牌的有效期（以秒为单位）。</li>
+<li><code>refresh_token</code>：仅当请求的范围包含 <code>offline_access</code>时才会返回。如果客户端希望在用户不在场授权请求的情况下刷新访问令牌，则应使用此项。更多信息请参见 <a href="#refreshing-an-access-token">刷新访问令牌</a>.</li>
+</ul>
+</li>
+</ol>
+<h3 data-pagefind-weight="0.8" id="user-content-client-credentials-grant" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#client-credentials-grant" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>客户端凭证授予</h3>
+<p>客户端凭证授予专为非交互式服务用户类型的工作流而设计，客户端执行的操作不与普通 Foundry 用户关联。客户端不代表普通 Foundry 用户行事。</p>
+<p><img alt="Client Credentials Grant" height="600" node="[object Object]" src="/docs/resources/foundry/platform-security-third-party/3PA-client-credentials-grant.png" style="aspect-ratio:1678 / 969" width="1039.0092879256968"/></p>
+<p>相反，此授予类型会自动创建一个与客户端关联的 Foundry 服务用户，随后可为其授予访问 Foundry 资源的权限。通过此授予获取的令牌可用于代表所创建的服务用户访问资源。服务用户账户的用户名与应用的客户端 ID 相同。</p>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>默认情况下，服务账户无权访问任何资源。Foundry 管理员必须为该服务用户账户分配所需的角色和权限，客户端才能在 Foundry 中执行操作。</p></div>
+<p>客户端凭证授予的工作方式如下：</p>
+<ol>
+<li>客户端调用 <a href="#token-endpoint">令牌端点</a>来将授权码换取访问令牌。应使用 <code>application/x-www-form-urlencoded</code> 格式在请求体中发送以下参数：
+<ul>
+<li><code>grant_type</code>：应设置为 <code>client_credentials</code>.</li>
+<li><code>client_id</code>：应设置为第三方应用程序在 Foundry 中注册时生成的 ID。</li>
+<li><code>client_secret</code>：应设置为在 Foundry 中注册第三方应用程序时生成的客户端密钥。</li>
+</ul>
+</li>
+<li>授权服务器随后会返回以下内容：
+<ul>
+<li><code>access_token</code>：客户端可用于访问所请求资源的令牌。</li>
+<li><code>token_type</code>：所颁发令牌的类型。</li>
+<li><code>expires_in</code>：访问令牌的有效期（以秒为单位）。</li>
+</ul>
+</li>
+<li>然后，客户端可以使用访问令牌来访问所请求的资源。</li>
+</ol>
+<h3 data-pagefind-weight="0.8" id="user-content-refreshing-an-access-token" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#refreshing-an-access-token" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>刷新访问令牌</h3>
+<p>访问令牌会在一段时间后过期，需要重新获取。任何在用户不在场时需要访问 Foundry API 的客户端都需要刷新令牌。</p>
+<p>可以按照以下步骤完成：</p>
+<ol>
+<li>客户端应按照 <a href="#authorization-code-grant">授权码授予</a> 中概述的步骤操作，并指定 <code>offline_access</code> 作为所请求 <code>scope</code> parameter.</li>
+<li>的一部分。客户端应保存返回的 <code>refresh_token</code> 在最终步骤中返回的 <a href="#authorization-code-grant">授权码授予</a>.</li>
+<li>如果访问令牌过期，客户端可以通过调用 <a href="#token-endpoint">令牌端点</a> 端点并使用以下参数来刷新令牌：
+<ul>
+<li><code>grant_type</code>：应设置为 <code>refresh_token</code>.</li>
+<li><code>refresh_token</code>：之前为给定用户获取的访问令牌。</li>
+<li><code>client_id</code>：应设置为第三方应用程序在 Foundry 中注册时生成的 ID。</li>
+<li><code>client_secret</code>：应设置为在 Foundry 中注册第三方应用程序时生成的客户端密钥。</li>
+</ul>
+</li>
+<li>授权服务器随后将返回以下内容：
+<ul>
+<li><code>access_token</code> 客户端可用于访问所请求资源的令牌。</li>
+<li><code>token_type</code>：所颁发令牌的类型。</li>
+<li><code>expires_in</code>：访问令牌的有效期（以秒为单位）。</li>
+<li><code>refresh_token</code>：可用于刷新访问令牌的刷新令牌。Foundry 会在每次使用先前颁发的刷新令牌时轮换刷新令牌。请确保同时保存 <code>access_token</code> 和 <code>refresh_token</code>.</li>
+</ul>
+</li>
+</ol>
+<h4 id="user-content-refresh-token-rotation"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#refresh-token-rotation" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>刷新令牌轮换</h4>
+<p>刷新令牌可用于获取新的访问令牌。Foundry 通过在每次使用先前颁发的刷新令牌时轮换刷新令牌，来降低与刷新令牌相关的风险。
+重用检测保护机制确保：如果刷新令牌在首次使用一分钟后被重用，则基于该授权创建的所有访问令牌都将失效，并且需要重新进行授权流程。
+允许一分钟的重复使用间隔，以应对可能出现的瞬时错误（如网络故障）。此外，超过 30 天未活动的刷新令牌将自动失效。这些保障措施通过确保不存在长期有效的刷新令牌，降低了令牌可能被泄露所带来的风险。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-oauth2-api-reference" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#oauth2-api-reference" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>OAuth2 API 参考</h2>
+<p>以下端点可用于获取 OAuth2 令牌。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-authorization-endpoint" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#authorization-endpoint" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>授权端点</h3>
+<p><code>GET /multipass/api/oauth2/authorize</code></p>
+<p>授权端点，由客户端用于获取授权码。</p>
+<h4 id="user-content-query-parameters"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#query-parameters" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>查询参数</h4>
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>参数名称</th><th>类型</th><th>描述</th></tr></thead><tbody><tr><td>response_type</td><td>字符串</td><td>此项必须设置为 <code>code</code>.</td></tr><tr><td>client_id</td><td>字符串</td><td>客户端的唯一标识符。</td></tr><tr><td>redirect_uri</td><td>字符串</td><td>用户代理将被重定向到的绝对 URI。它必须与在控制面板中指定的重定向 URI 之一匹配。您可以再次访问此 URI，方法是导航到 <a href="/docs/foundry/platform-security-third-party/manage-3pa/">管理应用程序</a> screen.</td></tr><tr><td>scope</td><td>字符串</td><td>要请求的权限范围。公共 API 的范围位于 <a href="/docs/foundry/api/general/overview/introduction/">《API 文档》</a> 中，并且应以空格分隔的字符串形式列出。</td></tr><tr><td>state</td><td>字符串（可选）</td><td>传递给服务器的任意字符串，服务器会将其原样传回客户端。这有助于防止跨站请求伪造。</td></tr><tr><td>code_challenge</td><td>字符串（可选）</td><td>由客户端生成的代码质询；与 <a href="#authorization-code-grant">带代码交换证明密钥（PKCE）的授权码许可</a></td></tr><tr><td>code_challenge_method</td><td>字符串（可选）</td><td>一起使用。此项应设置为 <code>S256</code> if <code>code_challenge</code> 时使用。</td></tr></tbody></table></div>
+<h4 id="user-content-redirect-query-parameters"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#redirect-query-parameters" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>重定向查询参数</h4>
+<p>如果请求成功，用户的浏览器将被重定向到第三方应用程序设置中指定的重定向 URI 或请求中传递的重定向 URI。重定向请求 URI 中将包含以下查询参数：</p>
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>参数名称</th><th>类型</th><th>描述</th></tr></thead><tbody><tr><td>code</td><td>字符串</td><td>生成的授权码。此代码将在 10 分钟后过期。</td></tr><tr><td>state</td><td>字符串（可选）</td><td>如果 <code>state</code> 参数出现在授权请求中，则此处将包含该确切值。</td></tr></tbody></table></div>
+<h3 data-pagefind-weight="0.8" id="user-content-token-endpoint" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#token-endpoint" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>令牌端点</h3>
+<p><code>POST /multipass/api/oauth2/token</code></p>
+<p>令牌端点由客户端用于通过出示其授权许可或刷新令牌来获取访问令牌。</p>
+<h4 id="user-content-header-parameters"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#header-parameters" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>标头参数</h4>
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>参数名称</th><th>描述</th></tr></thead><tbody><tr><td>Content-Type</td><td>必须为 <code>application/x-www-form-urlencoded</code>.</td></tr></tbody></table></div>
+<h4 id="user-content-request-body-parameters"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#request-body-parameters" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>请求正文参数</h4>
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>参数名称</th><th>类型</th><th>描述</th></tr></thead><tbody><tr><td>grant_type</td><td>字符串</td><td>值必须为 <code>authorization_code</code>, <code>refresh_token</code>，或 <code>client_credentials</code></td></tr><tr><td>code</td><td>字符串（可选）</td><td>从授权端点收到的授权码。当许可类型为 <code>authorization_code</code></td></tr><tr><td>refresh_token</td><td>字符串（可选）</td><td>时，此项为必需。 <code>grant_type</code> is <code>refresh_token</code>。该值应为 <code>refresh_token</code> 即在获取授权码的原始请求中所获得的值。</td></tr><tr><td>redirect_uri</td><td>字符串（可选/必需）</td><td>用户代理将被重定向到的绝对 URI。此项为 <strong>必填</strong> 如果在授权请求中指定了重定向 URI。</td></tr><tr><td>scope</td><td>字符串（可选）</td><td>要请求的权限范围。公共 API 的范围位于 <a href="/docs/foundry/api/general/overview/introduction/">《API 文档》</a> 中，并且应以空格分隔的字符串形式列出。</td></tr><tr><td>client_id</td><td>字符串</td><td>客户端的唯一标识符。</td></tr><tr><td>client_secret</td><td>字符串（可选）</td><td>应用程序注册时颁发的应用程序客户端密钥。当 <code>grant_type</code> is <code>client_credentials</code>.</td></tr><tr><td>code_verifier</td><td>字符串（可选）</td><td>用于 PKCE 请求的代码验证器，由应用程序在授权请求之前生成。</td></tr></tbody></table></div>
+<h4 id="user-content-response-body"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#response-body" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>响应正文</h4>
+<p>响应 JSON 包含以下字段。</p>
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>字段名称</th><th>type</th><th>描述</th></tr></thead><tbody><tr><td>access_token</td><td>字符串</td><td>用于访问资源的凭据。</td></tr><tr><td>token_type</td><td>字符串</td><td>颁发的令牌类型。</td></tr><tr><td>expires_in</td><td>字符串</td><td>访问令牌的有效期（以秒为单位）。</td></tr><tr><td>refresh_token</td><td>字符串（可选）</td><td>用于获取新访问令牌的凭据。Foundry 会轮换 <code>refresh_token</code> 每次调用 <code>refresh_token</code> 许可时都会轮换。请务必同时保存 <code>access_token</code> 和 <code>refresh_token</code>.</td></tr></tbody></table></div>
+<h3 data-pagefind-weight="0.8" id="user-content-endpoint-errors" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#endpoint-errors" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>端点错误</h3>
+<h4 id="user-content-error-response-body"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#error-response-body" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>错误响应正文</h4>
+<p>如果请求失败，只有在访问请求被拒绝时，用户的浏览器才会被重定向。在所有其他情况下，将返回包含以下字段的 HTML 错误页面。</p>
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>字段名称</th><th>类型</th><th>描述</th></tr></thead><tbody><tr><td>error</td><td>字符串</td><td>下一节中定义的错误代码。</td></tr><tr><td>error_description</td><td>字符串</td><td>错误的易读描述</td></tr></tbody></table></div>
+<h4 id="user-content-error-codes"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#error-codes" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>错误代码</h4>
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>错误代码值</th><th>描述</th></tr></thead><tbody><tr><td><code>invalid_request</code></td><td>请求无效。</td></tr><tr><td><code>unauthorized_client</code></td><td>客户端无权请求授权码。</td></tr><tr><td><code>access_denied</code></td><td>服务器拒绝了该请求。</td></tr><tr><td><code>unsupported_response_type</code></td><td>不支持所提供的响应类型。</td></tr><tr><td><code>invalid_scope</code></td><td>请求的作用域无效、未知或格式错误</td></tr><tr><td><code>server_error</code></td><td>发生了意外的服务器错误。</td></tr></tbody></table></div></div>
+</article>
+</article>
+</body>
+</html>
