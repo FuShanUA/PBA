@@ -2,7 +2,7 @@
 
 <html lang="en"><head><meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>How Palantir Apollo Saves Developer Time on Kubernetes</title>
+<title>Palantir Apollo 如何节省开发人员在 Kubernetes 上的时间</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background:#fff;color:#1a1a1a;line-height:1.7;max-width:680px;margin:0 auto;padding:48px 24px 80px}
@@ -31,10 +31,10 @@ article a:hover{text-decoration:underline}
 .nav a{color:#2e86de;text-decoration:none;font-size:.88em}
 .nav a:hover{text-decoration:underline}
 </style></head><body>
-<h1>How Palantir Apollo Saves Developer Time on Kubernetes</h1>
+<h1>Palantir Apollo 如何节省开发人员在 Kubernetes 上的时间</h1>
 <div class="meta">2022-09-23 · <a href="https://blog.palantir.com/how-palantir-apollo-saves-developer-time-on-kubernetes-71d51a5d24df">Original →</a></div>
 <article><p><em>编者按：本文是关于 Palantir Apollo 系列博文的第三篇，前两篇分别为《为何传统的持续部署方法在当今行不通》和《Palantir Apollo 编排：面向现代架构的基于约束的持续部署》。</em></p>
-<p><img alt="图片" src="https://miro.medium.com/v2/resize:fit:700/1*UqWbjpGQc6RBFXQMliiOnA.png" /></p>
+<p><img alt="图片" src="https://miro.medium.com/v2/resize:fit:700/1*UqWbjpGQc6RBFXQMliiOnA.png"/></p>
 <p>过去十年间，基础设施平台不断发展，以满足将容器作为软件部署基本单元的日益增长的需求。其中最受欢迎的平台是 Kubernetes (K8s)，它支持管理容器化工作负载的大量原语。但同时，它也<em>极其复杂</em>。哪怕只是运行一个简单的应用，也需要了解并协调多个 K8s 资源。强迫开发者去应对这些概念，不仅会消耗他们的生产力，还会削弱组织标准化基础设施使用的能力。</p>
 <p>在 Palantir，我们意识到让开发者能够在不应对所有这些复杂性的情况下部署到 K8s 上是至关重要的。我们通过定义《Apollo 产品规范》来应对这一挑战，确保遵循该规范能够保证应用程序的可部署性。两个核心的 Apollo 组件巩固了该规范的价值。《Apollo SDK》帮助开发者利用 Apollo 产品规范的声明式 API，而《Apollo 服务管理面》则将这些应用程序转换为一组正常运行的 Kubernetes 原生资源。</p>
 <p>这种方法为我们的开发者带来了更简单、可重复的部署体验。同样重要的是，它使我们的部署平台能够随着时间的推移不断演进，既能处理 K8s API 的弃用或移除，也能加速新功能的采纳。在这篇文章中，我们将进一步详细说明组织在 Kubernetes 上部署时面临的问题、Apollo SDK 和服务管理面的作用，以及这为 Palantir 带来的价值示例。</p>
@@ -58,7 +58,7 @@ article a:hover{text-decoration:underline}
 <p>为此，产品规范包含了一系列配置点，供开发者声明应用程序的基本需求或特征。这些配置点简洁且声明式——例如，申请持久化存储只需提供一个名称和所需大小（<code>my-app-data: 10Gi</code>）。最关键的是，开发者使用产品规范只声明他们需要<em>什么</em>；而决定<em>如何</em>满足这些声明的需求，则交由 Apollo 服务管理面处理。</p>
 <h3>WitchcraftServices 与 Apollo 服务管理面</h3>
 <p>符合 Apollo 产品规范的应用程序直接映射为 WitchcraftServices，这是 Apollo 服务管理面主要的 Kubernetes 自定义资源。服务管理面负责接收一个 WitchcraftService，并生成一组构成正常运行的应用程序的 K8s 资源，并完整实现 WitchcraftService 声明的所有特征。决定在满足 WitchcraftService 声明的需求时使用哪些资源类型，以及协调所有这些资源，均由管理面内的一组控制循环以编程方式处理。这一逻辑包括如何将持久化存储或入口等所需属性赋予应用程序，并跨越多个 K8s 资源。</p>
-<p><img alt="图片" src="https://miro.medium.com/v2/resize:fit:700/1*0xMmKrhPbgWwhCnZRwWzoQ.png" /></p>
+<p><img alt="图片" src="https://miro.medium.com/v2/resize:fit:700/1*0xMmKrhPbgWwhCnZRwWzoQ.png"/></p>
 <p>上面的图表清楚展示了 Apollo 部署平台封装了多少 K8s 的复杂性。这不仅涉及选择要创建的正确资源，还处理了资源间引用的全面对齐，包括标签选择器（如 Pod 和节点选择器），以及显式对象名称引用（如 ConfigMap 卷挂载）。</p>
 <p>至关重要的是，服务管理面将 K8s 资源使用和协调的决策逻辑集中在一个地方进行编码。在应用程序之间应用此标准，使得部署变得可重复，且<em>无需</em> <em>不是</em> K8s 专家的应用程序开发者<em>付出努力</em>。</p>
 <p>这种设置可以保护开发者免受部署的繁琐细节困扰，使他们能够将更多时间花在实际构建上。需要与 K8s 直接交互的应用程序仍然可以这样做，同时不会丧失标准化部署方案带来的好处。</p>

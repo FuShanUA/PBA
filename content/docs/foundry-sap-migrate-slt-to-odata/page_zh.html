@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>使用 OData 进行 SAP SLT 同步</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<article>
+<div class="ptcom-design__markdownDoc__1uarhel" data-pagefind-body="true"><h1 data-pagefind-weight="1" id="user-content-use-odata-for-sap-slt-syncs" level="1" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#use-odata-for-sap-slt-syncs" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>使用 OData 进行 SAP SLT 同步</h1>
+<p>本指南介绍如何将 SAP SLT 复制同步配置为使用 OData API，以及如何将现有同步从旧版 ODP API 迁移到 OData。它涵盖以下两者的批量和流式同步： <a href="/docs/foundry/available-connectors/sap-slt/">SAP SLT</a> 源和 <a href="/docs/foundry/available-connectors/sap-custom-source/">SAP（自定义源）</a> 用于 SLT 复制的连接器。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-background" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#background" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>背景</h2>
+<p>SAP SLT 同步从 SLT 复制服务器上的操作增量队列 (ODQ) 读取变更数据。Foundry 可以通过 Palantir Foundry Connector 2.0 for SAP Applications（"连接器"）上的两种 API 之一访问 ODQ：</p>
+<ul>
+<li><strong>ODP：</strong> 旧版 API，通过 RFC 使用 SAP 的 ODP 数据复制 API (ODP-RFC)。</li>
+<li><strong>OData：</strong> 替代 API，使用 SAP 的 <a href="https://help.sap.com/docs/SAP_NETWEAVER_750/ccc9cdbdc6cd4eceaf1e5485b1bf8f4b/11853413cf124dde91925284133c007d.html">通过 OData 进行基于 ODP 的数据提取 ↗</a>。该 <code>PALODATA</code> 连接器的组件提供此 API。</li>
+</ul>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><div class="ptcom-design__title__19o1cwu">SAP 正在限制对 ODP-RFC API 的访问</div><p>SAP 正在限制对 ODP-RFC API 的访问，如以下所述： <a href="https://me.sap.com/notes/3255746">SAP Note 3255746 ↗</a>。客户和第三方应用程序不再被允许使用 ODP 数据复制 API 的 RFC 模块。SAP 的公开 ODP 常见问题解答说明，SAP 的安全补丁会拒绝未经授权的 ODP-RFC 调用。一旦该补丁应用到您的 SAP 系统，仍使用 ODP API 的 SLT 同步将失败。请咨询您的 SAP Basis 团队补丁何时会应用到您的每个系统，并在此之前完成迁移。</p></div>
+<h3 data-pagefind-weight="0.8" id="user-content-migration-criteria" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#migration-criteria" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>迁移条件</h3>
+<p>本指南仅适用于 SLT 复制同步：</p>
+<ul>
+<li>使用以下工具的批量同步和流式同步： <strong>SAP SLT</strong> 使用以下工具的源： <strong>SLT 复制服务器</strong> 对象类型。</li>
+<li>批量同步： <strong>SAP（自定义源）</strong> 使用以下工具的源： <strong>SLT</strong> SAP 对象类型。</li>
+<li>流式同步： <strong>SAP（自定义源）</strong> source.</li>
+</ul>
+<p><strong>本地表</strong> 在 SAP SLT 源和其他 SAP 对象类型（如 ERP 表、InfoProvider 或提取器）上的同步不使用本指南中所述的 API 选择。对于上面未列出的对象类型，请联系 Palantir 支持获取指导。</p>
+<p>现有同步将就地迁移。同步保留其源及其输出数据集或流。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-differences-between-the-odata-and-odp-apis" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#differences-between-the-odata-and-odp-apis" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>OData 和 ODP API 之间的差异</h3>
+<p>在迁移同步之前，请查看这些差异：</p>
+<ul>
+<li><strong>每个表和 SAP 用户一个订阅：</strong> OData API 允许源进行身份验证所用的 SAP 用户在每个表上只有一个活动订阅。使用相同源凭据的两个同步不能都通过 OData 摄取同一个表，即使使用不同的筛选器或计划也是如此。使用 ODP API 时，多个同步可以独立订阅同一个表。</li>
+<li><strong>无远程上下文或并行分页：</strong> OData 同步不使用 <strong>远程上下文</strong> 初始加载绕过或 <strong>从 SAP 检索数据时每页返回的行数。默认值为 50,000。最小值为 5,000。</strong>。页面按顺序检索，这可能会增加大型初始加载的持续时间。</li>
+<li><strong>需要新的初始加载：</strong> OData 同步无法从 ODP 增量指针继续。将同步从 ODP 迁移到 OData 需要通过 OData 进行一次完整的初始加载，如下面的步骤所述。</li>
+</ul>
+<h2 data-pagefind-weight="0.9" id="user-content-compatibility-and-prerequisites" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#compatibility-and-prerequisites" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>兼容性和前提条件</h2>
+<p>OData API 在 SAP 系统和 Foundry 中都有要求。在配置同步使用 OData 之前，必须满足表中所有四个要求组。</p>
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>源和同步类型</th><th>SAP 前提条件</th><th>Foundry 连接器</th><th>Foundry 用户界面</th></tr></thead><tbody><tr><td>SAP SLT 源，批量同步</td><td><a href="#sap-prerequisites">常见 SAP 前提条件</a></td><td>支持</td><td><strong>API 版本</strong> 卡片和 <strong>重置队列注册</strong> 批量同步编辑器中的卡片。 <strong>重置增量状态</strong> 可选属性。</td></tr><tr><td>SAP SLT 源，流式同步</td><td><a href="#sap-prerequisites">常见 SAP 前提条件</a></td><td>支持</td><td><strong>API 版本</strong> card, <strong>重置队列注册</strong> 卡片，以及 <strong>（位于源概览页面上）。</strong> 流式同步编辑器中的设置。</td></tr><tr><td>SAP（自定义源），使用以下工具的批量同步： <strong>SLT</strong> 对象类型</td><td><a href="#sap-prerequisites">常见 SAP 前提条件</a></td><td>需要支持旧版 SLT 批量同步使用 OData 的连接器版本</td><td><strong>API 版本</strong> 批量同步编辑器中的卡片。 <strong>重置增量状态</strong> 可选属性。重置队列注册不可用。</td></tr><tr><td>SAP（自定义源），流式同步</td><td><a href="#sap-prerequisites">常见 SAP 前提条件</a>，以及具有以下特征的源： <a href="/docs/foundry/available-connectors/sap-custom-source/#enable-streaming-syncs-slt-only">显式 SLT 连接类型</a></td><td>支持</td><td><strong>API 版本</strong> card, <strong>重置队列注册</strong> 卡片，以及 <strong>（位于源概览页面上）。</strong> 流式同步编辑器中的设置。</td></tr></tbody></table></div>
+<h3 data-pagefind-weight="0.8" id="user-content-sap-prerequisites" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#sap-prerequisites" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>SAP 前提条件</h3>
+<p>以下 SAP 端要求适用于所有四种源和同步类型。它们是 SAP 附加组件版本，与上表中 Foundry 连接器的要求是分开的。</p>
+<ul>
+<li><strong>SAP_BASIS</strong> 7.50 SP09 或更高版本，安装在安装了连接器的 SLT 复制服务器上。</li>
+<li><strong>连接器</strong> 版本 2.34（SP34）或更高版本。 <code>PALANTIR</code> and <code>PALCONN</code> 组件必须为 SP34 或更高版本。我们建议在迁移之前升级到 SP39 Fix Pack 4 或更高版本，以获取最新的 OData 功能。</li>
+<li>直方图 <strong><code>PALODATA</code></strong> 组件已安装在 SLT 系统上。了解更多关于 <a href="/docs/foundry/sap/install-sap/#slt-installation">安装适用于 SLT 的连接器</a>.</li>
+<li>中列出的 SAP 说明 <a href="/docs/foundry/sap/configure-sap-slt/#use-odp-via-odata-connector-version-234-sp34-and-above">通过 OData 使用 ODP</a>，已在适用的情况下阅读并实施。</li>
+<li>连接器的 <code>SICF</code> 服务处于活动状态，如 <a href="/docs/foundry/sap/install-sap-connector/#2-activate-sicf-services">激活 SICF 服务</a>.</li>
+<li>一个现有的 <a href="/docs/foundry/sap/configure-sap-slt/#slt-configuration">SLT 配置</a> （用于源系统）。其队列别名是同步所使用的上下文。</li>
+</ul>
+<h4 id="user-content-check-sap-component-versions"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#check-sap-component-versions" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>检查 SAP 组件版本</h4>
+<p>请让您的 SAP Basis 团队确认 SLT 复制服务器上安装的组件版本：</p>
+<ol>
+<li>使用 SAP GUI 登录 SLT 系统。</li>
+<li>从菜单中选择 <strong>System &gt; Status</strong>.</li>
+<li>自动预览行为 <strong>SAP 系统数据</strong>，打开 <strong>组件信息</strong>.</li>
+<li>确认以下各行：
+<ul>
+<li><code>SAP_BASIS</code>: Release <code>750</code> 且支持包为 <code>SAPK-75009INSAPBASIS</code> 或更高版本，或更高的发布版本。</li>
+<li><code>PALANTIR</code> and <code>PALCONN</code>：支持包级别为 SP34 或更高。建议使用 SP39 Fix Pack 4 或更高版本。</li>
+<li><code>PALODATA</code>：出现在列表中。</li>
+</ul>
+</li>
+</ol>
+<p>Foundry 还会检查连接器版本。在 <strong>API 版本</strong> 卡片中， <strong>OData</strong> 选项会在 Foundry 判定该附加组件不支持 OData 时显示以下消息之一：</p>
+<ul>
+<li><code>This source's add-on is older than version 2.34 (SP34), which OData requires.</code> 在选择 OData 之前升级连接器。</li>
+<li><code>We couldn't confirm this source's add-on is version 2.34 (SP34) or newer, so OData might not work.</code> 按照上述说明在 SAP 中确认组件版本。</li>
+</ul>
+<h3 data-pagefind-weight="0.8" id="user-content-check-foundry-support" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#check-foundry-support" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>检查 Foundry 支持</h3>
+<p>Foundry 连接器和用户界面更新由 Palantir 提供，没有需要您管理的版本号。要确认您的 Foundry 环境是否支持特定同步类型的 OData，请打开该类型的现有同步或开始创建一个新同步。然后检查 <a href="#compatibility-and-prerequisites">兼容性表</a>.</p>
+<p>如果 <strong>API 版本</strong> 卡片未在 SLT 同步中显示，则表示您的注册中该同步类型尚不支持 OData 选择。请勿尝试通过其他方式配置 OData。请联系 Palantir 支持团队，并提供源类型、同步类型和 SAP 组件版本。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-batch-syncs" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#batch-syncs" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>批量同步</h2>
+<p>使用 OData 的批量 SLT 同步遵循标准的 Foundry <a href="/docs/foundry/data-connection/set-up-sync/">事务类型的信息</a>:</p>
+<ul>
+<li><strong>APPEND:</strong> 增量同步。每次运行请求自上次成功运行以来在 ODQ 中记录的更改，并将其追加到数据集中。</li>
+<li><strong>SNAPSHOT:</strong> 每次运行都会用该运行的输出替换数据集的内容。</li>
+</ul>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><div class="ptcom-design__title__19o1cwu">将增量同步切换为 SNAPSHOT 不会重新加载表</div><p>如果您将 <strong>APPEND</strong> 同步更改为 <strong>SNAPSHOT</strong> 但保留其增量设置，SAP 仍只会发送自上次运行以来的更改。 <strong>SNAPSHOT</strong> 事务随后会用这些更改替换整个数据集，因此数据集可能最终不完整或为空。要重新加载完整表，请开启 <strong>重置增量状态</strong>，它会自动将同步切换为 <strong>SNAPSHOT</strong> 以进行重新加载。禁用 <strong>重置增量状态</strong> 会将事务类型切换回 <strong>APPEND</strong>.</p></div>
+<h3 data-pagefind-weight="0.8" id="user-content-create-a-new-batch-sync-using-odata" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#create-a-new-batch-sync-using-odata" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>使用 OData 创建新的批量同步</h3>
+<ol>
+<li>仓库类型 <a href="#sap-prerequisites">SAP 前提条件</a> 已满足，并且 <strong>API 版本</strong> 卡片适用于您的源和同步类型。请参阅 <a href="#check-foundry-support">检查 Foundry 支持</a>.</li>
+<li>创建同步：
+<ul>
+<li><strong>SAP SLT 源：</strong> 在源概览页面中，选择 <strong>+ 新建</strong> 批量同步旁边，然后选择 <strong>SLT 复制服务器</strong> 对象类型。</li>
+<li><strong>SAP（自定义源）：</strong> 在源概览页面中，选择 <strong>+ 新建</strong> 批量同步旁边，然后选择 <strong>SLT</strong> SAP 对象类型。</li>
+</ul>
+</li>
+<li>自动预览行为 <strong>API 版本</strong>中，选择 <strong>OData</strong>。在 SAP SLT 源上，新同步默认为 <strong>OData</strong> 除非 Foundry 判定该附加组件版本低于 2.34（SP34）。在 SAP（自定义源）同步上，新同步默认为 <strong>ODP</strong>，因此您必须选择 <strong>OData</strong>.</li>
+<li>配置表和上下文：
+<ul>
+<li><strong>SAP SLT 源：</strong> 并选择 <strong>表名</strong>。上下文来自源的 <strong>远程上下文</strong> setting.</li>
+<li><strong>SAP（自定义源）：</strong> 选择 <strong>Context</strong> （SLT 队列别名）并输入 <strong>对象名称</strong>.</li>
+</ul>
+</li>
+<li>配置增量设置：
+<ul>
+<li>对于增量摄取，请设置 <strong>事务类型</strong> to <strong>APPEND</strong>。在 SAP（自定义源）同步上，设置 <strong>增量字段</strong> to <code>pointer</code>。OData 同步不支持其他增量字段。</li>
+<li>要在每次运行时读取完整表而不使用订阅指针，请设置 <strong>事务类型</strong> to <strong>SNAPSHOT</strong>.</li>
+<li>（可选）设置 <strong>对于增量批量同步，</strong> （SAP SLT 源）或 <code>maxRowsPerSync</code> （SAP（自定义源） <strong>高级</strong> 标签页），以将较大的初始加载拆分到多次运行中。参见 <a href="#initial-loads-split-across-multiple-runs">跨多次运行拆分的初始加载</a>.</li>
+</ul>
+</li>
+<li>保存同步。暂不要添加计划。</li>
+<li>如果您的 SAP 环境需要为新的 SLT 初始加载或新的 ODQ 订阅进行审批，请在继续之前从您的 SAP Basis 团队获取批准。此审批是一个组织流程，而非 Connector 的要求，许多环境并不需要。</li>
+<li>手动运行同步。首次运行 <strong>APPEND</strong> 同步会执行表的初始加载。</li>
+<li>验证初始加载。将数据集行数与 SAP 表中的行数进行比较，同时考虑任何筛选条件或被删除的列。如果您将初始加载拆分到多次运行中，请继续运行同步直到初始加载完成，然后再比较行数。</li>
+<li>添加计划并确认后续运行是增量的。每个 <strong>APPEND</strong> 事务仅包含已更改的记录。后续的增量运行通常不需要 SAP Basis 的进一步批准。</li>
+</ol>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>SAP 的 ODQ 仅在有限时间内保留增量请求。如果增量 OData 同步的运行频率低于 ODQ 的保留期，增量指针可能会丢失，从而导致同步失败。请安排增量同步以比 ODQ 保留期（默认为 24 小时）更高的频率运行。详情请参阅 SAP Note <code>2888122</code> – <em>如果源系统中最新的 delta 请求被删除，则无法进行 ODATA ODP Delta</em>.</p></div>
+<h3 data-pagefind-weight="0.8" id="user-content-migrate-an-existing-batch-sync-from-odp-to-odata" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#migrate-an-existing-batch-sync-from-odp-to-odata" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>将现有批量同步从 ODP 迁移到 OData</h3>
+<p>现有批量同步在迁移后会保留其源、输出数据集和事务类型。</p>
+<ul>
+<li><strong>SNAPSHOT 同步：</strong> 确认 <a href="#sap-prerequisites">SAP 前提条件</a> and <a href="#check-foundry-support">Foundry 支持</a>。对于 SAP（自定义源）同步，还需满足 <a href="#sap-custom-source-configuration-requirements">配置要求</a>。然后打开同步配置，选择 <strong>OData</strong> under <strong>API 版本</strong>，并保存。无需重置增量状态。</li>
+<li><strong>APPEND 同步：</strong> 请按照 <a href="#migrate-an-incremental-batch-sync">迁移增量批量同步</a>，该操作会通过 OData 重新加载一次表，然后恢复增量摄取。</li>
+</ul>
+<h4 id="user-content-migrate-an-incremental-batch-sync"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#migrate-an-incremental-batch-sync" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>迁移增量批量同步</h4>
+<p>对满足以下条件的现有批量同步使用此流程： <strong>事务类型</strong> is <strong>APPEND</strong>。它会通过 OData 对表执行一次完整重新加载，然后恢复增量摄取。</p>
+<ol>
+<li><strong>规划迁移。</strong> 完成以下检查：
+<ul>
+<li>仓库类型 <a href="#sap-prerequisites">SAP 前提条件</a> 已满足，并且 <strong>API 版本</strong> 卡片和 <strong>重置增量状态</strong> 可选属性可用于该同步。参见 <a href="#check-foundry-support">检查 Foundry 支持</a>.</li>
+<li>与您的 SAP Basis 团队商定迁移时间窗口。重新加载会以与初始加载相同的方式消耗 SLT 和 ODQ 资源。请查看 <a href="/docs/foundry/sap/configure-sap-slt/#resource-sizing">资源规模调整</a>.</li>
+<li>检查响应的 <a href="#sap-custom-source-configuration-requirements">SAP（自定义源）配置要求</a> （如果您正在迁移 SAP（自定义源）同步）。</li>
+</ul>
+</li>
+<li><strong>防止运行重叠。</strong> 暂停包含该同步的所有计划，并等待任何正在进行的运行完成。</li>
+<li><strong>选择 OData。</strong> 打开同步配置，在 <strong>API 版本</strong>中，选择 <strong>OData</strong>.</li>
+<li><strong>启用“重置增量状态”。</strong> 将 <strong>重置增量状态</strong> 可选属性并将其开启。Foundry 会设置 <strong>事务类型</strong> to <strong>SNAPSHOT</strong> 并锁定增量设置。保存之前请确认以下事项：
+<ul>
+<li><strong>事务类型</strong> is <strong>SNAPSHOT</strong>.</li>
+<li>增量设置仍然存在。在 SAP（自定义源）同步上， <strong>增量字段</strong> remains <code>pointer</code>。请勿删除增量设置；同步需要这些设置以在重新加载后保留其订阅。</li>
+</ul>
+</li>
+<li><strong>保存</strong> 同步配置。</li>
+<li><strong>如有需要，完成 SAP 端的订阅检查。</strong> OData 允许每个表和每个 SAP 用户仅有一个活动订阅。如果同一表和 SAP 用户已存在另一个 OData 订阅，则运行会失败并报错，指出每个表每个技术用户仅允许一个活动的增量同步。参见 <a href="#subscription-conflicts">订阅冲突</a> 以了解在运行同步之前如何解决此问题。</li>
+<li><strong>触发重新加载。</strong> 如果您的 SAP 环境需要为新的初始加载进行审批，请先获取批准。然后手动运行同步。该运行会通过 OData 执行完整的初始加载并替换数据集内容。</li>
+<li><strong>验证初始加载。</strong> 确认运行成功，并且数据集的行数与 SAP 表匹配（需考虑任何筛选条件或被删除的列）。如果您配置了 <strong>对于增量批量同步，</strong>，请参阅 <a href="#initial-loads-split-across-multiple-runs">跨多次运行拆分的初始加载</a> ，然后再比较行数。</li>
+<li><strong>禁用“重置增量状态”。</strong> 关闭 <strong>重置增量状态</strong>。Foundry 会将 <strong>事务类型</strong> 重置回 <strong>APPEND</strong> 并解锁增量设置。确认 <strong>事务类型</strong> is <strong>APPEND</strong>，然后保存。</li>
+<li><strong>验证增量摄取。</strong> 再次手动运行同步，并确认新事务是一个 <strong>APPEND</strong> ，其中仅包含自重新加载以来所做的更改。如果没有记录发生更改，则预期会出现空事务。</li>
+<li><strong>恢复计划任务。</strong></li>
+<li><strong>清理旧的 ODP 订阅。</strong> 在验证迁移后的同步之后，请让您的 SAP Basis 团队在事务 <code>ODQMON</code>中检查该表的传统 ODP 订阅。连接器不再从该订阅读取数据。终止未使用的订阅只会删除队列和订阅数据；不会删除 SAP 业务表中的数据。请勿终止属于其他使用者的订阅。了解更多关于 <a href="/docs/foundry/sap/housekeeping/#resetting-slt-pointer-for-unused-subscription">SLT 订阅清理的信息</a>.</li>
+</ol>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>请勿让 <strong>重置增量状态</strong> 保持开启状态。当它开启时，每次运行都会在 SAP 中强制执行新的完整初始加载并替换数据集。</p></div>
+<h4 id="user-content-initial-loads-split-across-multiple-runs"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#initial-loads-split-across-multiple-runs" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>跨多次运行拆分的初始加载</h4>
+<p>本节适用于增量同步，包括 <a href="#migrate-an-incremental-batch-sync">增量批处理迁移流程</a>，其步骤在下文中被引用。如果增量同步使用 <strong>对于增量批量同步，</strong> （或 <code>maxRowsPerSync</code>），初始加载将通过多次运行交付：</p>
+<ol>
+<li>重置运行（步骤 7）将表的第一部分写入为 <strong>SNAPSHOT</strong>.</li>
+<li>关闭 <strong>重置增量状态</strong> 在首次成功运行之后，如步骤 9 所述。如果保持开启，每次运行都会重新启动初始加载，导致加载永远无法完成。</li>
+<li>手动运行同步 <strong>APPEND</strong> ，直到剩余部分全部交付完毕。</li>
+<li>仅在初始加载完成后再验证完整性（步骤 8），然后继续执行步骤 10。</li>
+</ol>
+<h4 id="user-content-sap-custom-source-configuration-requirements"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#sap-custom-source-configuration-requirements" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>SAP（自定义源）配置要求</h4>
+<p>在选择 <strong>OData</strong>之前，SAP（自定义源）批处理同步必须满足以下要求。如果未满足某项要求，运行将失败并显示指明该设置的错误。</p>
+<ul>
+<li><strong>仅限 SLT 对象类型：</strong> OData 仅适用于使用 <strong>SLT</strong> SAP 对象类型。</li>
+<li><strong>需要上下文：</strong> 同步必须指定一个 <strong>Context</strong>.</li>
+<li><strong>增量字段：</strong> 如果已设置， <strong>增量字段</strong> 必须在 <code>pointer</code>.</li>
+<li><strong>JSON 页面格式：</strong> 如果源使用 TSV 序列化，请在 <code>useKernelJsonSerialization: true</code> 选项卡中将 <strong>高级</strong> 添加到同步中。这会更改页面在传输时的编码方式，而不会更改提取哪些行。</li>
+<li><strong>布尔标志：</strong> 直方图 <code>timestamp</code>, <code>resourceCheck</code>日 <code>debug</code> 设置必须为 <code>true</code>, <code>false</code>, <code>ON</code>，或 <code>OFF</code>.</li>
+<li><strong>不支持的设置：</strong> 从同步 YAML 中删除以下设置，即使其值为空： <code>filter</code>, <code>incrementalType</code>, <code>initialIncrementalValue</code>, <code>twinTable</code>, <code>twinMap</code>, <code>twinJoinConfigItems</code>, <code>incrementalSubTypes</code>, <code>incrementalComparator</code>, <code>trace</code>日 <code>continuousResourceCheck</code>。仅适用于其他对象类型的设置（例如 BEx、函数或 TSV 特定设置）也必须删除。</li>
+</ul>
+<p>如果同步使用了 <code>filter</code>，删除它会更改提取哪些行。在您拥有 OData API 支持的等效筛选条件之前，请勿迁移该同步。请联系 Palantir Support 以获取有关表达该筛选条件的帮助。</p>
+<p>直方图 <strong>从 SAP 检索数据时每页返回的行数。默认值为 50,000。最小值为 5,000。</strong> 设置在 OData 同步中会被忽略。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-streaming-syncs" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#streaming-syncs" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>流式同步</h2>
+<p>流式同步不使用 <strong>SNAPSHOT</strong> 和 <strong>APPEND</strong> 事务类型。流式同步持有自己的 SAP 订阅（由流标识），并在流运行时轮询该订阅以获取更改。使用 <strong>（位于源概览页面上）。</strong> 来控制流的启动方式：</p>
+<ul>
+<li><strong>强制快照：</strong> 在流启动后的首次请求时请求表的全新完整初始加载，然后轮询更改。该设置在每次流启动时（包括自动重启）都会生效，但不适用于正在运行的流的后续轮询。</li>
+</ul>
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>情况</th><th>（位于源概览页面上）。</th></tr></thead><tbody><tr><td>新流，该表和 SAP 用户没有其他 OData 订阅</td><td>关闭</td></tr><tr><td>从 ODP 迁移到 OData 的现有流</td><td>迁移后首次启动时开启，之后关闭</td></tr><tr><td>SLT 触发器重置，或流的 SLT 指针丢失</td><td>开启一次，之后关闭</td></tr><tr><td>另一个同步已持有该表和 SAP 用户的 OData 订阅</td><td>在启动流之前，请先解决 <a href="#subscription-conflicts">订阅冲突</a> （在 SAP 中）</td></tr></tbody></table></div>
+<p>保留 <strong>重置队列注册</strong> 对于流式同步已关闭。该设置仅重置流自身的 OData 订阅， <strong>（位于源概览页面上）。</strong> 已经持有的订阅。它无法接管由另一个同步持有的订阅。当流运行时，该设置会随每个轮询请求发送，而不是只发送一次，因此流可以反复重新初始化并重新发送完整表。</p>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>关闭 <strong>（位于源概览页面上）。</strong> 一旦收到初始加载后。如果保持开启，流每次重启时都会重新加载完整表。</p></div>
+<h3 data-pagefind-weight="0.8" id="user-content-streaming-configuration-reference" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#streaming-configuration-reference" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>流式配置参考</h3>
+<p>以下设置决定流式同步如何连接到 SAP。SLT 上下文在源上进行配置，所有其他设置在流式同步编辑器中进行配置。</p>
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>。部分设置也可以在源级别进行配置。</th><th>SAP SLT 源</th><th>SAP（自定义源）</th><th>OData 的值</th></tr></thead><tbody><tr><td>SLT 上下文</td><td><strong>远程上下文</strong> 在源上，格式为 <code>SLT~&lt;Alias_Name&gt;</code></td><td><code>connectionType.slt.context</code> 在源 YAML 中</td><td>SLT 队列别名。迁移时保持不变。</td></tr><tr><td><strong>表名</strong></td><td>流式同步编辑器</td><td>流式同步编辑器</td><td>迁移时保持不变。</td></tr><tr><td><strong>API 版本</strong></td><td>流式同步编辑器</td><td>流式同步编辑器</td><td><strong>OData</strong></td></tr><tr><td><strong>（位于源概览页面上）。</strong></td><td>流式同步编辑器</td><td>流式同步编辑器</td><td>仅在迁移后首次启动时开启。参见 <a href="#migration-stages">迁移阶段</a>.</td></tr><tr><td><strong>重置队列注册</strong></td><td>流式同步编辑器</td><td>流式同步编辑器</td><td>关闭。参见 <a href="#streaming-syncs">流式同步</a>.</td></tr><tr><td>轮询间隔和批处理大小</td><td>流式同步编辑器</td><td>流式同步编辑器</td><td>迁移时保持不变。</td></tr></tbody></table></div>
+<p>SAP（自定义源）流式同步需要具有显式 SLT 连接类型的源。打开源配置并确认 YAML 中包含一个 <code>connectionType</code> 类似如下的块，其中 <code>&lt;context&gt;</code> 是 SLT 队列别名：</p>
+<pre><div class="ptcom-design__wrapper__12wpwnx" data-pagefind-weight="0.5"><span class="ptcom-design__clipboard__1l1gb20 ptcom-design__clipboard__12wpwnx"><span class="ptcom-design__confirmation__1l1gb20" data-pagefind-ignore="true">Copied!</span><svg aria-hidden="true" aria-label="clipboard" data-view-component="true" height="16" version="1.1" viewbox="0 0 16 16" width="16"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z" fill="currentColor" fill-rule="evenodd"></path><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z" fill="currentColor" fill-rule="evenodd"></path></svg></span><div style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;overflow:auto;position:relative;margin:0;padding:0.75em"><code style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;float:left;padding-right:10px"><span class="react-syntax-highlighter-line-number">1
+</span><span class="react-syntax-highlighter-line-number">2
+</span><span class="react-syntax-highlighter-line-number">3
+</span><span class="react-syntax-highlighter-line-number">4
+</span><span class="react-syntax-highlighter-line-number">5
+</span><span class="react-syntax-highlighter-line-number">6
+</span><span class="react-syntax-highlighter-line-number">7
+</span></code><code class="language-yaml" style="white-space:pre;text-align:left;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none">type: magritte-sap-source
+url: https://&lt;host&gt;:&lt;port&gt;/sap/palantir
+usernamePassword: &lt;username&gt;:{{password}}
+connectionType:
+  type: slt
+  slt:
+    context: &lt;context&gt;</code></div></div></pre>
+<p>如果缺少该块，请按照 <a href="/docs/foundry/available-connectors/sap-custom-source/#enable-streaming-syncs-slt-only">启用流式同步</a> 中的说明添加，然后再创建或迁移流。源上的每个流式同步都使用此上下文。OData 不需要其他源设置。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-create-a-new-streaming-sync-using-odata" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#create-a-new-streaming-sync-using-odata" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>使用 OData 创建新的流式同步</h3>
+<ol>
+<li>仓库类型 <a href="#sap-prerequisites">SAP 前提条件</a> 已满足，并且 <strong>API 版本</strong> 卡片在流式同步编辑器中可用。参见 <a href="#check-foundry-support">检查 Foundry 支持</a>.</li>
+<li>在源概览页面中，创建新的流式同步并输入 <strong>表名</strong>.</li>
+<li>自动预览行为 <strong>API 版本</strong>中，选择 <strong>OData</strong>。新流默认为 <strong>OData</strong> ，除非 Foundry 判定该附加组件版本低于 2.34（SP34）。</li>
+<li>将 <strong>（位于源概览页面上）。</strong> and <strong>重置队列注册</strong> 关闭。新订阅会自动执行初始加载。如果另一个同步已经持有该表和 SAP 用户的 OData 订阅，请先解决 <a href="#subscription-conflicts">订阅冲突</a> 然后再启动流。</li>
+<li>选择输出流位置并创建流式同步。</li>
+<li>如果您的 SAP 环境需要为新的 SLT 初始加载或新的 ODQ 订阅进行审批，请在启动流之前获得批准。</li>
+<li>启动流。流首先接收表的初始加载，然后继续接收变更。</li>
+<li>验证流。确认在收到初始加载后，流中不同键的数量与 SAP 表一致，然后在 SAP 中进行测试变更，并确认其到达流中。</li>
+</ol>
+<h3 data-pagefind-weight="0.8" id="user-content-migrate-an-existing-streaming-sync-from-odp-to-odata" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#migrate-an-existing-streaming-sync-from-odp-to-odata" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>将现有流式同步从 ODP 迁移到 OData</h3>
+<p>使用此过程将现有的 SAP SLT 或 SAP（自定义源）流式同步切换到 OData，同时保留其源和输出流。迁移流会将完整表重新发送到现有流中，因此在启动之前请规划好重放。</p>
+<h4 id="user-content-migration-stages"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#migration-stages" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>迁移阶段</h4>
+<p>在迁移过程中，将流依次经过以下阶段。使用此表确认每个阶段的配置。</p>
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>阶段</th><th>Stream</th><th><strong>API 版本</strong></th><th><strong>（位于源概览页面上）。</strong></th><th><strong>重置队列注册</strong></th></tr></thead><tbody><tr><td>迁移前</td><td>如果在此代码工作区中之前已加载了带有安全标记的数据，而您失去了对这些标记数据的访问权限，您可能会收到此错误。如果是这种情况，请选择</td><td><strong>ODP</strong></td><td>关闭</td><td>不可用</td></tr><tr><td>重新配置（步骤 2–6）</td><td>已停止</td><td><strong>OData</strong></td><td>On</td><td>关闭</td></tr><tr><td>初始加载重放（步骤 7–8）</td><td>如果在此代码工作区中之前已加载了带有安全标记的数据，而您失去了对这些标记数据的访问权限，您可能会收到此错误。如果是这种情况，请选择</td><td><strong>OData</strong></td><td>On</td><td>关闭</td></tr><tr><td>稳定状态（步骤 9 及之后）</td><td>如果在此代码工作区中之前已加载了带有安全标记的数据，而您失去了对这些标记数据的访问权限，您可能会收到此错误。如果是这种情况，请选择</td><td><strong>OData</strong></td><td>关闭</td><td>关闭</td></tr></tbody></table></div>
+<p>流不会将 ODP 检查点延续到 OData。在首次启动且 <strong>（位于源概览页面上）。</strong> 开启时，流会通过其 OData 订阅请求新的初始加载。之后在 <strong>（位于源概览页面上）。</strong> 关闭的情况下启动时，将从 SAP 为流持有的 OData 增量指针处恢复。</p>
+<h4 id="user-content-procedure"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#procedure" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>过程</h4>
+<ol>
+<li><strong>规划迁移。</strong> 完成以下检查：
+<ul>
+<li>仓库类型 <a href="#sap-prerequisites">SAP 前提条件</a> 已满足，并且 <strong>API 版本</strong> 卡片在流式同步编辑器中可用。</li>
+<li>对于 SAP（自定义源）流，请确认源的 <a href="#streaming-configuration-reference">SLT 连接类型</a>.</li>
+<li>与您的 SAP Basis 团队商定迁移时间窗口。</li>
+<li>识别使用该流的下游管道。迁移后，表的每一行当前记录都会被重新发送。消费方必须能够容忍重复记录，例如根据表的主键和 <code>/PALANTIR/TIMESTAMP</code> 列（流式同步始终会添加该列）来去除重复记录。</li>
+<li>初始加载反映表的当前状态。流停止期间在 SAP 中删除的记录不会作为删除操作发出。如果下游消费者依赖删除记录，请计划在初始加载后对其进行核对。</li>
+</ul>
+</li>
+<li><strong>停止流。</strong> 停止流式同步，并暂停任何会自动重启它的调度。</li>
+<li><strong>选择 OData。</strong> 打开流式同步配置，然后在 <strong>API 版本</strong>中，选择 <strong>OData</strong>.</li>
+<li><strong>启用强制快照（Force snapshot）。</strong> 启用 <strong>（位于源概览页面上）。</strong> 以便首次 OData 启动时执行新的初始加载，而不是依赖 ODP 指针。</li>
+<li><strong>检查订阅冲突。</strong> 如果另一个同步已持有该表和 SAP 用户的 OData 订阅，请先按照 <a href="#subscription-conflicts">订阅冲突</a>。确认 <strong>重置队列注册</strong> 处于关闭状态。</li>
+<li><strong>保存</strong> 中的说明在 SAP 中解决冲突，然后再继续。在启动流之前，请确认配置与 <a href="#migration-stages">迁移阶段</a>: <strong>API 版本</strong> is <strong>OData</strong> and <strong>（位于源概览页面上）。</strong> 处于开启状态。</li>
+<li><strong>启动流。</strong> 如果您的 SAP 环境需要为新初始加载申请审批，请先获取审批。然后选择 <strong>开始时间</strong>.</li>
+<li><strong>验证重放。</strong> 等待初始加载完成接收。确认不同键的数量与 SAP 表一致。</li>
+<li><strong>关闭强制快照（Force snapshot）</strong>，然后保存。流现在处于 <a href="#migration-stages">迁移阶段</a>中所示的稳定状态。保存的更改不会影响正在运行的流；它们将在流下次启动时生效。当 <strong>（位于源概览页面上）。</strong> 关闭时，后续重启（包括停机后的自动重启）仅轮询更改。</li>
+<li><strong>验证增量。</strong> 在 SAP 中进行或等待一项更改，并确认其到达流中。</li>
+<li><strong>恢复</strong> 任何会重启流的调度。</li>
+<li><strong>清理旧的 ODP 订阅。</strong> 验证流之后，请让您的 SAP Basis 团队在事务 <code>ODQMON</code>中审查该表的旧版 ODP 订阅，具体方法与 <a href="#migrate-an-incremental-batch-sync">增量批处理同步</a>.</li>
+</ol>
+<h2 data-pagefind-weight="0.9" id="user-content-subscription-conflicts" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#subscription-conflicts" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>订阅冲突</h2>
+<p>OData API 允许每个 SAP 用户对每张表仅持有一个活动订阅。当另一个使用相同 SAP 用户的同步已持有该表的 OData 订阅时，就会发生冲突。常见原因包括：</p>
+<ul>
+<li>另一个使用相同凭据且已通过 OData 摄取该表的 SAP SLT 或 SAP（自定义源）同步。</li>
+<li>在 Foundry 中已被删除或替换的同步，其订阅在 SAP 中仍处于活动状态。</li>
+<li>针对同一表和 SAP 用户的早期 OData 测试。</li>
+</ul>
+<p>错误消息包含持有该订阅的同步的增量 ID、最近运行日期和创建者。请使用这些详细信息来识别所属的同步。</p>
+<p><strong>重置队列注册</strong> 无法解决冲突。它仅重置当前同步自身的订阅。如果是另一个同步持有该订阅，则运行将失败并显示 <code>You cannot reset this sync, an active sync is already configured for this table</code>.</p>
+<p>要解决冲突，请选择以下选项之一：</p>
+<ul>
+<li><strong>在 SAP 中释放订阅：</strong> 与冲突同步的所有者协调并先停止该同步。然后请您的 SAP Basis 团队在事务 <code>ODQMON</code>中终止该表和 SAP 用户的冲突 OData 订阅。这仅移除订阅；不会从 SAP 业务表中删除数据。持有该订阅的同步无法继续增量运行。如果仍需要该同步，则需要新的初始加载，且冲突会再次出现，因此请为其中一个同步改用其他 SAP 用户。</li>
+<li><strong>使用其他 SAP 用户：</strong> 如果两个同步必须独立摄取同一张表，请使用以不同 SAP 用户进行身份验证的源。</li>
+</ul>
+<h2 data-pagefind-weight="0.9" id="user-content-troubleshooting" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#troubleshooting" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>故障排除</h2>
+<h3 data-pagefind-weight="0.8" id="user-content-the-api-version-card-does-not-appear" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#the-api-version-card-does-not-appear" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>API 版本卡片未显示</h3>
+<ul>
+<li>确认该同步使用的是 <strong>SLT 复制服务器</strong> 对象类型（SAP SLT 源）或 <strong>SLT</strong> SAP 对象类型（SAP（自定义源））。对于本地表或其他对象类型，该卡片不会显示。</li>
+<li>对于 SAP（自定义源）流式同步，请确认源具有 <a href="/docs/foundry/available-connectors/sap-custom-source/#enable-streaming-syncs-slt-only">显式 SLT 连接类型</a>.</li>
+<li>如果对象类型正确但卡片仍未显示，则说明您的注册尚未针对该同步类型启用 OData 选择。请联系 Palantir Support。</li>
+</ul>
+<h3 data-pagefind-weight="0.8" id="user-content-the-add-on-version-is-not-supported" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#the-add-on-version-is-not-supported" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>不支持该附加组件版本</h3>
+<p>直方图 <strong>API 版本</strong> 卡片可能会报告附加组件版本低于 2.34 (SP34)。运行也可能失败并显示错误，指出 OData 需要 SAP 附加组件 2.34.0 (SP34) 或更高版本。无论哪种情况，请升级 Connector 并安装 <code>PALODATA</code> 运行代理时（如 <a href="/docs/foundry/sap/install-sap-support-package/">安装支持包</a> 和 <a href="/docs/foundry/sap/install-sap/#slt-installation">安装</a>。然后 <a href="#check-sap-component-versions">检查组件版本</a>.</p>
+<h3 data-pagefind-weight="0.8" id="user-content-the-odata-service-is-unavailable" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#the-odata-service-is-unavailable" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>OData 服务不可用</h3>
+<p>如果 OData 运行在连接 SAP 时失败，而 ODP 在同一数据源上的运行成功：</p>
+<ul>
+<li>确认 <code>PALODATA</code> 已安装，并且 <code>SAP_BASIS</code> 为 7.50 SP09 或更高版本。</li>
+<li>确认 <a href="/docs/foundry/sap/configure-sap-slt/#use-odp-via-odata-connector-version-234-sp34-and-above">通过 OData 使用 ODP</a> 中列出的 SAP Notes 已实施。</li>
+<li>确认 Connector 的 <a href="/docs/foundry/sap/install-sap-connector/#2-activate-sicf-services"><code>SICF</code> 服务</a> 处于活动状态。</li>
+<li>在 <a href="/docs/foundry/sap/sap-cockpit/">Add-on Cockpit</a>中查看 Connector 日志，然后携带错误消息和 SAP 组件版本联系 Palantir Support。</li>
+</ul>
+<h3 data-pagefind-weight="0.8" id="user-content-a-run-reports-an-active-subscription-for-the-table" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#a-run-reports-an-active-subscription-for-the-table" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>运行报告该表存在活动订阅</h3>
+<p>诸如 <code>Only one active incremental sync is permitted per table per technical user</code> or <code>You cannot reset this sync, an active sync is already configured for this table</code> 之类的错误表明存在 <a href="#subscription-conflicts">订阅冲突</a>。错误消息包含持有该订阅的同步的详细信息。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-every-run-reloads-the-full-table" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#every-run-reloads-the-full-table" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>每次运行都会重新加载整个表</h3>
+<p>如果批量同步在每次运行时替换整个数据集，或流式同步重新发送整个表，请检查是否有设置被保留为开启状态：</p>
+<ul>
+<li><strong>重置增量状态</strong> （批量）。请将其关闭；Foundry 会将事务类型恢复为 <strong>APPEND</strong>.</li>
+<li><strong>重置队列注册</strong> （批量或流式）。请将其关闭。在流式同步上，此设置可能会在流运行期间反复重新初始化订阅。</li>
+<li><strong>（位于源概览页面上）。</strong> （流式）。请将其关闭。</li>
+</ul>
+<p>正在运行的流会保留其启动时的配置。要将更改应用于流，请停止该流，关闭该设置，保存，然后重新启动该流。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-the-dataset-is-partial-or-empty-after-a-snapshot-run" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#the-dataset-is-partial-or-empty-after-a-snapshot-run" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>SNAPSHOT 运行后数据集不完整或为空</h3>
+<p>以 <strong>SNAPSHOT</strong> 未启用 <strong>重置增量状态</strong> 方式运行的增量 OData 同步仅写入最新的增量并替换数据集。要恢复，请按照 <a href="#migrate-an-incremental-batch-sync">增量批处理迁移流程</a> 中的步骤 2 重新加载整个表，然后返回到 <strong>APPEND</strong>.</p></div>
+</article>
+</article>
+</body>
+</html>

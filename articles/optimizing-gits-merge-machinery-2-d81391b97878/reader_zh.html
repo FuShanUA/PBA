@@ -2,7 +2,7 @@
 
 <html lang="en"><head><meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Optimizing Git’s Merge Machinery, #2</title>
+<title>优化 Git 的合并机制，#2</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background:#fff;color:#1a1a1a;line-height:1.7;max-width:680px;margin:0 auto;padding:48px 24px 80px}
@@ -31,10 +31,10 @@ article a:hover{text-decoration:underline}
 .nav a{color:#2e86de;text-decoration:none;font-size:.88em}
 .nav a:hover{text-decoration:underline}
 </style></head><body>
-<h1>Optimizing Git’s Merge Machinery, #2</h1>
+<h1>优化 Git 的合并机制，#2</h1>
 <div class="meta">2021-03-08 · <a href="https://blog.palantir.com/optimizing-gits-merge-machinery-2-d81391b97878">Original →</a></div>
 <article><p><em>编者按：这是 Palantir 软件工程师探讨优化 git 合并与重命名检测机制系列文章的第二篇。</em> <a href="https://medium.com/@palantir/127ceb0ef2a1?sk=1be8c98b4158d882a7fa950cfede8ee2"><em>点击阅读第一篇</em></a><em>。</em></p>
-<p><img alt=" " src="https://miro.medium.com/v2/resize:fit:700/1*WM7lOosKWvV2RWCvk9H4_Q.jpeg" /></p>
+<p><img alt=" " src="https://miro.medium.com/v2/resize:fit:700/1*WM7lOosKWvV2RWCvk9H4_Q.jpeg"/></p>
 <p>在<a href="https://medium.com/@palantir/127ceb0ef2a1?sk=1be8c98b4158d882a7fa950cfede8ee2"><em>本系列的第一篇文章</em></a>中，我介绍了一些背景知识，包括 git 合并机制的工作原理、我为什么要优化它，并展示了一个通过更好地利用精确重命名来加速该过程的简单优化方案。在本文中，我们将深入探讨下一项优化，其核心思想可以概括为“寻找有效的启发式规则来引导重命名检测，从而避免（或至少减少）暴力的穷举式逐对比较”。</p>
 <h2>为三方内容合并配对文件</h2>
 <p>首先，我们来快速回顾一下；以下两段引文出自<a href="https://medium.com/@palantir/127ceb0ef2a1?sk=1be8c98b4158d882a7fa950cfede8ee2"><em>上一篇博文</em></a>：</p>
@@ -49,11 +49,11 @@ article a:hover{text-decoration:underline}
 <p>合并机制并不会开启中断检测；如果开启的话，速度会<em>慢得多</em>。这本质上意味着 git 认为文件名是三方内容合并中匹配文件的良好指引，但前提是文件名完全匹配。如果文件名不完全匹配，它就会放弃这一策略，转而认为唯一重要的就是两个文件的内容相似度。简而言之，文件名相似度和内容相似度都可以作为三方内容合并中文件配对的依据。我们稍后再回到这个话题，现在先集中讨论内容相似度比较。</p>
 <h2>那么，这种文件配对意味着什么？</h2>
 <p>我们可以将其形象化为一个矩阵。将合并基中独有的文件名列在左侧，指定侧中独有的文件名列在顶部，例如，我们可能会看到如下视图：</p>
-<p><img alt=" " src="https://miro.medium.com/v2/resize:fit:700/1*m-cdSxy7Lho0rfuiKhwTog.png" /></p>
+<p><img alt=" " src="https://miro.medium.com/v2/resize:fit:700/1*m-cdSxy7Lho0rfuiKhwTog.png"/></p>
 <p>然后，我们计算每个单元格中两个文件的相似度百分比并存储起来。完成后，我们为每个文件寻找最佳匹配，如果最佳匹配足够好，就将这些文件标记为重命名。在上一篇博文中，我们注意到可以利用 git 为所有内容存储哈希值的特性，提供一种快速检测某些重命名的方法。但是，如果没有精确匹配，或者在精确匹配后仍然剩下大量文件怎么办？还有其他办法吗？如果我以稍微不同的方式展示同一个矩阵会怎样：</p>
 <h2>用连五岁小孩都能解决的方式来重新构建问题</h2>
 <p>盯着长长的文件列表看了一会儿（比这里的列表长得多）后，我注意到了关于文件配对的一个显而易见的现象。让我们换种稍微不同的方式来展示这个矩阵：</p>
-<p><img alt=" " src="https://miro.medium.com/v2/resize:fit:700/1*AQ9SHJiDV8YZPJ7HqNN7SQ.png" /></p>
+<p><img alt=" " src="https://miro.medium.com/v2/resize:fit:700/1*AQ9SHJiDV8YZPJ7HqNN7SQ.png"/></p>
 <p>在不查看实际文件内容的情况下，是否更容易发现潜在的重命名对？我问了我五岁的孩子，她找出了所有四个可能的配对。当然，我们无法用颜色编码，但这只是一种简单的方式来强调一个事实：重命名通常涉及将文件移动到不同的目录，同时保持文件的基本名（最后一个目录分隔符之后的所有内容，<em>包括</em>扩展名）不变。这算作弊吗？它在实际中的很多情况下有用吗？它是只适用于某些特定仓库的特殊情况吗？所以最大的问题是……</p>
 <h2>这种情况有多普遍？</h2>
 <p>我研究了一些真实的仓库，并查看了每个仓库中的历史重命名记录。我统计了在重命名时<em>未</em>更改文件基本名的比例。以下是我的发现：</p>

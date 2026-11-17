@@ -19,6 +19,39 @@ sys.path.insert(0, ROOT)
 
 from scrapers.translate_parallel import translate_file
 
+
+def sync_translated_title(path, title, update_heading=False):
+    """Keep the local page heading aligned with the source-index title."""
+    if not title or not os.path.isfile(path):
+        return None
+    with open(path, encoding='utf-8') as f:
+        html = f.read()
+    updated = html
+    changed = False
+    title_match = re.search(r'<title[^>]*>(.*?)</title>', updated, re.I | re.S)
+    if title_match:
+        current = re.sub(r'\s+', ' ', title_match.group(1)).strip()
+        if current != re.sub(r'\s+', ' ', title).strip():
+            updated = updated[:title_match.start()] + f'<title>{title}</title>' + updated[title_match.end():]
+            changed = True
+    else:
+        head_match = re.search(r'<head\b[^>]*>', updated, re.I)
+        if head_match:
+            updated = updated[:head_match.end()] + f'<title>{title}</title>' + updated[head_match.end():]
+            changed = True
+    h1_match = re.search(r'<h1\b[^>]*>(.*?)</h1>', updated, re.I | re.S)
+    if update_heading and h1_match:
+        current = re.sub(r'<[^>]+>', '', h1_match.group(1))
+        current = re.sub(r'\s+', ' ', current).strip()
+        if current != re.sub(r'\s+', ' ', title).strip():
+            updated = updated[:h1_match.start()] + f'<h1>{title}</h1>' + updated[h1_match.end():]
+            changed = True
+    if not changed:
+        return title
+    with open(path, 'w', encoding='utf-8') as f:
+        f.write(updated)
+    return title
+
 def log(msg):
     print(f'[{datetime.now().strftime("%H:%M:%S")}] {msg}', flush=True)
 
@@ -265,6 +298,11 @@ def _translate_source_articles(source):
             ROOT, 'data', 'translation_cache', f'{source}-{slug}.json'
         )
         title = translate_file(source_path, zh_path, cache_path, slug)
+        preferred_title = article.get('tt')
+        if preferred_title and preferred_title != article.get('t'):
+            title = sync_translated_title(
+                zh_path, preferred_title, update_heading=source == 'blog'
+            ) or title
         if title and article.get('tt', article.get('t')) == article.get('t'):
             article['tt'] = title
         translated += 1

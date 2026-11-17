@@ -2,7 +2,7 @@
 
 <html lang="en"><head><meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>From Human-Defined to Software-Defined Data Integration — Part II, Data Discovery</title>
+<title>从人类定义到软件定义的数据集成 - 第二部分，数据发现</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background:#fff;color:#1a1a1a;line-height:1.7;max-width:680px;margin:0 auto;padding:48px 24px 80px}
@@ -31,7 +31,7 @@ article a:hover{text-decoration:underline}
 .nav a{color:#2e86de;text-decoration:none;font-size:.88em}
 .nav a:hover{text-decoration:underline}
 </style></head><body>
-<h1>From Human-Defined to Software-Defined Data Integration — Part II, Data Discovery</h1>
+<h1>从人类定义到软件定义的数据集成 - 第二部分，数据发现</h1>
 <div class="meta">2021-10-25 · <a href="https://blog.palantir.com/from-human-defined-to-software-defined-data-integration-part-ii-data-discovery-489ad40de902">Original →</a></div>
 <article><div><div><section><div><div><div><div><p id="5311"><em>编者按：本文是探讨 Palantir 《软件定义数据集成》的起源、能力与影响的四部曲系列文章中的第二篇。点击此处阅读第一部分，并请持续关注第三部分与第四部分。</em></p><p id="05d9">过去几年，业界对“数据商品化”这一概念进行了大量探讨。这并非空穴来风：在信息时代，数据是任何组织可拥有的最具价值的单一资源——无论该组织是公共机构、私营企业还是非营利组织。然而，数据也可能迅速从商品演变为雪崩之势。</p><p id="642b">与任何实体商品不同，全球数据量正以近乎指数级的速度增长。据估计，未来三年内产生的数据量将超过过去三十年产生数据量的总和。随着边缘人工智能、物联网和流数据等技术的蓬勃发展，这一增长步伐只会不断加快。</p></div></div><div><div><div><figure><img alt="" height="524" loading="eager" src="https://miro.medium.com/v2/resize:fit:1000/1*1R6FR7ymWFw1NwNlDiZpiw.jpeg" width="1000"/></figure></div></div></div><div><div><p id="2370">大多数现代企业所面临的挑战，并不在于如何产生、存储或为这些海量涌入的数据建立数据目录，而在于如何找到数据并将其应用于解决关键业务问题。我们屡次看到，合作伙伴夜以继日地努力定位其最紧迫的业务痛点，结果却发现企业内部根本没有相应的机制来呈现解决这些问题所需的数据。</p><p id="3318">他们清楚数据就在某处，但在最需要的时候却怎么也找不到。</p><p id="3318">于是，寻找并组装所需数据集以生成连贯报告的重担便落到了IT部门肩上。然而，等到这一切完成时，采取行动的最佳时机早已错过，企业又得面对新的待解难题。例如，一家合作伙伴的IT部门曾向我们描述他们正在开展的一个端到端供应链集成项目。光是收集构建代表销售订单语义的“黄金表”所需的表清单，就耗费了将近整整一个月的时间。</p><p id="7f67">在实施了无数类似项目后，我们发现这种经历绝非个案；相反，它才是常态。我们亟需一种类似“罗塞塔石碑”的工具，来破译和预览数据源，帮助终端用户在广阔的数据版图中迅速提炼洞察。</p><blockquote><p id="fbc7">“探索是旅程，洞察是目的地。” —— Gary Hamel</p></blockquote><p id="91c5">基于这一初衷，我们着手构建 Palantir Foundry 的软件定义数据发现工具，该工具配备了可扩展的知识框架，能够利用源系统元数据，以直观且交互式的方式呈现数据内容。这正是实现自动化与可扩展性的关键所在——利用已在常见源系统（如ERP和CRM）中驻留的元数据，来指导数据转换。这类元数据包含了关于数据及其结构的重要信息，因此用户能够快速理解所见数据，并提取所需信息。</p><p id="7c41">然而，利用基于元数据定义的转换来“看见”数据，只是解决了一半问题；另一半难题在于，如何在一开始就明确该使用哪些数据集和源系统。举例来说，如果我想为供应链运行一个端到端的销货成本工作流，我该如何确定需要哪些数据源？正因如此，我们在软件定义数据集成（SDDI）中融入了针对特定工作流、带有偏好的数据探索机制。根据需要，SDDI 能够（基于多年数据集成经验）自动呈现并为指定工作流归集所需的分布式数据集。当然，在进行任何集成或分析之前，这些数据分组均支持动态调整。</p><p id="b72c">借助 SDDI，业务决策者和数据团队拥有了统一的平台，用以探索源系统并定位处理紧急业务问题所需的数据。该平台采用点击式交互，抽象掉了底层技术壁垒，使用户能够将注意力从“数据在哪里？”转移到“我该如何利用这一洞察来优化运营？”</p><p id="4dd3">SDDI 不仅能让用户轻松获取正确的数据，还鼓励他们基于第一性原理进行集成，即使用最细粒度的数据源，避免使用预处理或聚合后的数据。从最基础、最细粒度的数据起步，为在此数据基础之上构建最丰富、最灵活的应用层铺平了道路。</p><p id="86ea">本系列的第三部分将深入探讨这一主题：SDDI 如何在现有流水线构建自动化的基础上实现再次自动化，从而为下游应用提供动力？随后，在第四部分中，我们将通过几项影响评估，展示我们的合作伙伴如何借助 SDDI 以更快的速度释放前所未有的价值。</p><p id="c35e"><em>想进一步了解 SDDI？</em><a href="https://www.palantir.com/explore/sddi-insights?utm_source=medium&amp;utm_medium=blog&amp;utm_campaign=sddi&amp;utm_id=part-1&amp;utm_term=q4+2021" rel="noopener ugc nofollow" target="_blank"><em>下载全新白皮书。</em></a></p></div></div></div></div></section></div></div></article>
 </body></html>

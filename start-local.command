@@ -6,7 +6,9 @@ ROOT=${0:A:h}
 cd "$ROOT" || exit 1
 
 healthy() {
-  curl -fsS --max-time 2 "http://127.0.0.1:$1/api/status" >/dev/null 2>&1
+  curl -fsS --max-time 2 "http://127.0.0.1:$1/api/status" 2>/dev/null | \
+    python3 -c 'import json,sys; d=json.load(sys.stdin); assert isinstance(d,dict) and "sources" in d and "running" in d' \
+    >/dev/null 2>&1
 }
 
 listener_pid() {
@@ -65,7 +67,6 @@ echo "Local archive started: $URL"
 
 nohup python3 "$ROOT/server.py" --host 127.0.0.1 --port "$PORT" >/tmp/palantir-archive.log 2>&1 &
 SERVER_PID=$!
-disown "$SERVER_PID"
 
 for _ in {1..50}; do
   if healthy "$PORT"; then

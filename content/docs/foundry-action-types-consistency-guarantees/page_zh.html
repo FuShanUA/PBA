@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>一致性与隔离</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<article>
+<div class="ptcom-design__markdownDoc__1uarhel" data-pagefind-body="true"><h1 data-pagefind-weight="1" id="user-content-consistency-and-isolation" level="1" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#consistency-and-isolation" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>一致性与隔离</h1>
+<p>操作通过单个事务将编辑应用于本体论，该事务可以从本体论读取数据、应用用户定义的逻辑，并将编辑写入一个或多个对象和关联。</p>
+<p>本页面介绍操作类型在并发执行期间提供的保证，以及如何为特定用例选择合适的隔离级别。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-acid-guarantees" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#acid-guarantees" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>ACID 保证</h2>
+<p>操作的行为类似于数据库事务，并提供标准的 ACID 属性：</p>
+<ul>
+<li><strong>原子性：</strong> 操作对本体论的编辑作为单个“全有或全无”的批次应用。这不扩展到操作的其他 <a href="/docs/foundry/action-types/side-effects-overview/">副作用</a> （例如通知或 webhook），也不扩展到支撑函数的副作用（例如其发起的外部调用）。</li>
+<li><strong>一致性：</strong> 操作的编辑只有在满足本体论的约束时才会提交，例如 <a href="/docs/foundry/object-link-types/value-type-constraints/">值类型约束</a> and <a href="/docs/foundry/object-link-types/required-properties/">必填属性</a>.</li>
+<li><strong>隔离性：</strong> 控制同时执行的操作如何相互影响。 <a href="#isolation-levels">章节</a> 介绍了操作类型提供的隔离级别。</li>
+<li><strong>持久性：</strong> 操作一旦提交，其编辑将被永久持久化。</li>
+</ul>
+<p>操作完成后，之后启动的任何操作或查询都会看到该已完成操作应用的所有编辑。
+此保证不适用于同一操作执行期间进行的读取。</p>
+<p>这些编辑的可见性取决于操作的写入模式，详见 <a href="#write-modes">写入模式</a>.</p>
+<h2 data-pagefind-weight="0.9" id="user-content-how-writes-work" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#how-writes-work" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>写入的工作原理</h2>
+<h3 data-pagefind-weight="0.8" id="user-content-what-counts-as-a-write-to-a-property" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#what-counts-as-a-write-to-a-property" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>什么算作对属性的写入</h3>
+<p>操作是否写入属性取决于操作的实现方式：</p>
+<ul>
+<li>在逻辑规则操作中，当规则 <a href="/docs/foundry/action-types/rules/#values-and-parameters">将参数映射到该属性</a>.</li>
+<li>在 <a href="/docs/foundry/action-types/function-actions-overview/">或填充小组件内容的函数）无法触发 OAuth 2.0 交互式授权提示。如果用户尚未对出站应用程序进行授权，函数将失败，而不会显示提示。要在 Workshop 中使用 OAuth 支撑的函数，请将其封装在</a>时，当函数通过 <a href="/docs/foundry/functions/edits-overview/">本体论编辑</a>.</li>
+</ul>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><div class="ptcom-design__title__19o1cwu">OSDK 操作请求</div><p>当您通过 <a href="/docs/foundry/ontology-sdk/typescript-osdk/#apply-action">本体论 SDK (OSDK)</a>应用操作时，只有当参数配置了默认值时，才能在操作请求中省略可选参数。
+如果默认值使用 <a href="/docs/foundry/action-types/parameters-default-value/#object-property-default-values">对象属性的当前值</a>，则操作会使用该属性值填充被省略的参数，并将其写回该属性。</p></div>
+<h3 data-pagefind-weight="0.8" id="user-content-write-modes" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#write-modes" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>写入模式</h3>
+<p>操作提供两种写入模式。
+在这两种模式下，操作的编辑都会在操作运行期间收集，并在结束时作为单个原子批次提交到本体论，因此其他操作绝不会观察到部分应用的操作。
+两种模式的区别在于操作的 <strong>自己的</strong> 读取能否看到其到目前为止所做的编辑：</p>
+<ul>
+<li><strong>批量写入（默认）：</strong> 编辑在操作运行期间收集到批次中，并在结束时作为单个原子操作提交到本体论。操作自身的读取无法看到其批量编辑；每次读取返回的都是本体论中的数据，不包含该操作到目前为止收集的编辑。例如，如果操作更新了某个对象的属性，然后再次读取该对象，读取将返回原始值，而不是更新后的值。</li>
+<li><strong>暂存写入：</strong> 操作的读取可以看到其自身的编辑。在同一操作执行中，读取操作已编辑的对象会返回编辑后的值，搜索和聚合也会包含这些编辑。暂存写入目前支持 <a href="/docs/foundry/functions/typescript-v2-staged-writes/">Python</a>, <a href="/docs/foundry/functions/python-staged-writes/">或</a>日 <a href="/docs/foundry/logic/staged-writes/">AIP 逻辑</a> 函数支撑的操作类型。</li>
+</ul>
+<h3 data-pagefind-weight="0.8" id="user-content-how-conflict-checks-work" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#how-conflict-checks-work" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>冲突检查的工作原理</h3>
+<p>在执行冲突检查的隔离级别下，本体论会在对象级别检测写-写冲突。
+如果两个操作并发写入同一对象，其中一个操作将因冲突错误而失败。
+即使这些操作写入的是该对象的不同属性，也是如此。</p>
+<p>重建支撑对象类型或多对多关联类型的数据集也可能导致冲突。
+操作执行之间的冲突仅限于两个操作都写入的对象，但由支撑数据集重建引起的冲突范围更广。
+即使重建不会更改操作写入的特定对象，操作在重建运行期间也可能遇到冲突。
+这些冲突是暂时的，因此在重建完成后重试操作通常会成功。</p>
+<p>检测到冲突时，失败操作的整个编辑将被丢弃。参见 <a href="#retry-mode-on-transient-errors">暂时性错误的重试模式</a> 了解冲突如何呈现和重试。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-isolation-levels" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#isolation-levels" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>隔离级别</h2>
+<p>操作类型的 <em>隔离级别</em> 设置了当操作与其他操作并发运行并交互相同数据时适用的保证。
+它定义了两件事：操作内每次读取观察到的数据版本，以及哪些并发更改会导致操作失败而不是提交基于已更改数据构建的结果。
+更强的级别可排除更多异常，但会在冲突时拒绝更多操作；更弱的级别提交更频繁，但提供的保证更少。</p>
+<p>操作类型的隔离级别在 <strong>本体论管理器</strong>中配置，位于操作类型的 <strong>功能</strong> 选项卡中。
+该级别可在创建后更改，并对后续执行生效。</p>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><p>所有使用批量写入的新操作类型在创建时默认采用 <strong>快照隔离</strong> 。
+使用分阶段写入的操作类型目前仅支持传统模式。
+更多信息请参见 <a href="#current-staged-writes-behavior">当前分阶段写入行为</a>.</p></div>
+<p><img alt="The Capabilities tab in Ontology Manager showing the isolation level configuration with Snapshot isolation selected as the recommended option." height="600" node="[object Object]" src="/docs/resources/foundry/action-types/actions-isolation-levels.png" style="aspect-ratio:3000 / 1618" width="1112.4845488257106"/></p>
+<p>操作类型可用的级别汇总如下，并在后续章节中详细说明。</p>
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>级别</th><th>读取</th><th>冲突检查</th></tr></thead><tbody><tr><td><strong>遗留版</strong></td><td>不保证读取来自单一时间点。同一操作中的不同读取可能观察到不同的状态。</td><td>如果另一操作更改了此操作 <strong>写入</strong>.</td></tr><tr><td><strong>快照隔离</strong></td><td>的所有读取使用一个快照，该快照在操作启动时获取。</td><td>如果另一操作更改了此操作 <strong>写入</strong>.</td></tr><tr><td><strong>已提交读</strong></td><td>每次读取返回读取时最新的已提交值。</td><td>允许在并发更改的情况下进行编辑。对于两个操作都设置的属性，最后提交的操作获胜。</td></tr></tbody></table></div>
+<h3 data-pagefind-weight="0.8" id="user-content-legacy" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#legacy" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>遗留版</h3>
+<p>传统隔离模式在以下位置仍然可用： <strong>功能</strong> 选项卡，适用于在引入显式隔离级别之前创建的操作类型。
+使用批量写入的新操作类型默认采用快照隔离。</p>
+<p><strong>读取：</strong> 读取通常来自单一时间点，但这并不保证。同一操作执行期间加载的不同对象可能反映本体论的不同状态，因为在操作运行期间，由于从对象存储检索数据时出现错误，底层数据可能会被刷新。</p>
+<p><strong>写入：</strong> 传统隔离支持两种写入模式。使用批量写入时，同一操作执行中稍后执行的读取不包括该执行中较早进行的编辑。使用分阶段写入时，稍后的读取包括这些编辑。更多信息请参见 <a href="#how-writes-work">写入的工作原理</a> 和 <a href="#current-staged-writes-behavior">当前分阶段写入行为</a>.</p>
+<p><strong>冲突检查：</strong> 如果在对象加载到操作提交之间，另一操作更改了该操作写入的对象，则操作将因冲突错误而失败。但是，由于不保证读取的一致性，基于操作仅 <em>读取</em> 的数据做出的决策可能基于组合了不同时间点数据的视图。</p>
+<p>传统隔离模式是为了向后兼容而提供的。</p>
+<p>对于新的操作类型，请使用 <a href="#snapshot-isolation">快照隔离</a> 以获得相同的冲突检查，并额外保证所有读取来自单一时间点。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-snapshot-isolation" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#snapshot-isolation" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>快照隔离</h3>
+<p>这是使用批量写入的新操作类型的默认级别。有关使用分阶段写入的操作类型的行为，请参见 <a href="#current-staged-writes-behavior">当前分阶段写入行为</a>.</p>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__warning__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><div class="ptcom-design__title__19o1cwu">数据源可能观察到不同的数据</div><p>逻辑规则和函数支持的操作会从一致的时间点读取本体论。当函数调用 <a href="/docs/foundry/functions/source-aliases/">源</a>时，该源在操作的时间点视图之外运行。源可以读取本体论或其他系统，而这些读取可能会观察到不同时间点的数据。操作的原子性和冲突检查不涵盖源执行的操作。</p></div>
+<p><strong>读取：</strong> 操作直接执行的每次本体论读取都会观察到单一一致的时间点视图，该视图在操作开始时获取。无论其他操作在此操作运行期间提交了什么，读取同一对象或运行同一搜索两次始终返回相同的匹配数据。</p>
+<p><strong>写入：</strong> 操作使用批量写入，因此在同一操作执行期间稍后执行的读取不会包含该执行中较早进行的编辑。</p>
+<p><strong>冲突检查：</strong> 如果在对象加载到操作提交之间，另一个操作更改了该操作写入的对象，则该操作将因冲突错误而失败。操作会失败，而不是覆盖并发更改。操作仅 <em>读取</em> 的对象不会在此级别导致冲突失败。有关重试冲突的信息，请参阅 <a href="#retry-mode-on-transient-errors">暂时性错误的重试模式</a>.</p>
+<h4 id="user-content-write-skew"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#write-skew" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>写偏斜</h4>
+<p>由于只有 <em>写入</em> 的对象会进行冲突检查，快照隔离 <strong>不</strong> 检测读写冲突。</p>
+<p>两个操作可以各自读取重叠的数据，基于该读取做出决策，写入 <em>不同</em> 对象，并且都成功提交——即使任何一个操作如果看到了另一个操作的写入，都不会提交。</p>
+<p>这被称为 <em>写偏斜</em>.</p>
+<p><strong>示例：</strong> 值班轮换必须始终保持 <strong>至少一名</strong> 工程师在值班。只有在仍有其他人值班时，工程师才能离开轮换，因此该操作会检查： <em>当前是否至少有两名工程师在值班？</em> 工程师 A 和 B 都在值班，并且同时运行操作将自己移出：</p>
+<ul>
+<li>A 的操作从其快照中读取轮换信息，看到两名工程师在值班，于是继续执行——移除 A 后仍有 B。</li>
+<li>B 的操作从其自己的快照中读取相同状态，看到两名工程师在值班，并出于相同的原因继续执行。</li>
+<li>A 写入 <code>A.onCall = false</code>；B 写入 <code>B.onCall = false</code>。这两个操作写入了 <em>不同</em> 对象，因此不存在写-写冲突，两者都成功提交。此时轮换为空，违反了不变量。</li>
+</ul>
+<p>快照隔离无法捕获这种情况，因为被违反的不变量存在于操作 <em>读取</em> （值班工程师集合）的数据上，而不存在于任一操作 <em>写入</em>.</p>
+<p>为避免这种异常，请重新设计工作流，将不变量表达为对单个共享对象的写入。</p>
+<p>例如，两个操作都可以写入一个 <code>Rotation</code> 对象，该对象具有 <code>onCallCount</code> 属性，从而导致操作冲突。</p>
+<h3 data-pagefind-weight="0.8" id="user-content-read-committed" level="3" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#read-committed" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>已提交读</h3>
+<p>直方图 <strong>读已提交</strong> 隔离模式即将推出。</p>
+<p><strong>读取：</strong> 每次读取都会返回读取运行时最新提交的值。没有固定的快照，因此如果另一个操作在两次读取之间提交，则同一操作中在不同时间点进行的两次读取可能会观察到不同的状态。</p>
+<p><strong>写入：</strong> 操作使用批量写入，因此在同一操作执行期间稍后执行的读取不会包含该执行中较早进行的编辑（参见 <a href="#how-writes-work">写入的工作原理</a>).</p>
+<p><strong>冲突检查：</strong> 即使另一个操作在执行期间更改了同一对象，操作也允许进行编辑。当两个操作都提交时，对不同属性的更改会被保留。如果两个操作设置了相同的属性，则最后提交的操作决定其值。在同一对象上并发运行大量操作时，仍可能偶尔发生少量冲突。</p>
+<p><strong>示例：</strong> A <code>Ticket</code> 对象具有 <code>status = "open"</code> 和 <code>priority = "low"</code>。两个操作同时运行：</p>
+<ul>
+<li>操作 A 设置 <code>status = "in progress"</code> and <code>priority = "medium"</code>.</li>
+<li>操作 B 设置 <code>priority = "high"</code>.</li>
+<li>操作 A 先提交。工单现在为 <code>status = "in progress"</code>, <code>priority = "medium"</code>.</li>
+<li>操作 B 后提交并覆盖了操作 A 对 <code>priority</code>的更改。工单最终为 <code>status = "in progress"</code> and <code>priority = "high"</code>。操作 A 对 <code>status</code> 和操作 B 对 <code>priority</code> 的更改均被保留。</li>
+</ul>
+<p>自动预览行为 <a href="#snapshot-isolation">快照隔离</a>，操作 B 将在冲突检查中失败，因为两个操作写入了同一个对象，而操作 A 的编辑将被保留。</p>
+<p>此级别以较弱的正确性保证为代价，产生更高的提交成功率。它适用于操作只写入其已掌握的值（例如作为参数传入的值），且不依赖其读取的内容来决定写入内容的场景。</p>
+<div class="ptcom-design__callout__19o1cwu ptcom-design__danger__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M11,2H9L2,15v2H18V15.5ZM10,15a1,1,0,1,1,1-1A1,1,0,0,1,10,15Zm1-3H9V6h2Z"></path></svg><div class="ptcom-design__title__19o1cwu">并发编辑可能被覆盖</div><p>当多个操作可以并发设置同一属性时，请谨慎使用 read committed。如果两个操作都提交，则后提交的操作会覆盖该属性先前的值。对其他属性的更改将被保留。</p></div>
+<h2 data-pagefind-weight="0.9" id="user-content-current-staged-writes-behavior" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#current-staged-writes-behavior" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>当前分阶段写入行为</h2>
+<p>使用暂存写入的操作类型目前仅支持旧版隔离模式。</p>
+<p>本节介绍暂存写入所提供的保证。</p>
+<p><strong>读取：</strong> 每次读取都会返回读取执行时刻的最新已提交值，以及该操作自身的暂存编辑。由于没有固定的快照，同一操作在不同时刻进行的两次读取，如果在两次读取之间有其他操作提交，可能会观察到不同的状态。但是，该操作自身的暂存编辑对其后续读取始终可见。</p>
+<p><strong>写入：</strong> 该操作使用暂存写入，因此在同一操作执行过程中稍后执行的读取会包含该次执行中较早进行的编辑。其他操作在这些编辑于结束时以原子方式提交之前不会看到它们（参见 <a href="#how-writes-work">写入的工作原理</a>).</p>
+<p><strong>冲突检查：</strong> 如果在对象加载到操作提交之间，另一个操作更改了该操作写入的对象，则该操作将因冲突错误而失败。操作会失败，而不是覆盖并发更改。操作仅 <em>读取</em> 不会导致冲突失败。有关重试冲突的信息，请参见 <a href="#retry-mode-on-transient-errors">暂时性错误的重试模式</a>.</p>
+<p>此行为将暂存写入的“读己之写”能力与写-写冲突检测相结合，但不保证从本体论（Ontology）读取的数据来自单一时间点。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-retry-mode-on-transient-errors" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#retry-mode-on-transient-errors" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>暂时性错误的重试模式</h2>
+<p>当操作遇到瞬时错误（包括冲突错误以及从对象存储加载对象的失败）时，平台可以自动重试该操作。每次重试都会使用该操作配置的隔离级别从头开始重新执行该操作，最多尝试 5 次。读取当前值的逻辑会使用新执行可用的数据重新计算其编辑。如果每次尝试都失败，则错误将返回给调用方。</p>
+<p>默认情况下，不包含外部系统调用（如 webhook）的操作会被重试，而包含外部系统调用的操作不会被重试——因为重新执行该操作会重复其副作用，例如触发两次 webhook。</p>
+<p>您可以在 <strong>功能</strong> 选项卡中使用 <strong>暂时性错误的重试模式</strong> 设置来针对每个操作类型调整此行为：</p>
+<p><img alt="The Retry mode on transient errors dropdown in the Capabilities tab showing the available options." height="600" node="[object Object]" src="/docs/resources/foundry/action-types/actions-retry-settings.png" style="aspect-ratio:2990 / 1664" width="1078.125"/></p>
+<ul>
+<li><strong>仅重试没有外部调用的操作（默认）：</strong> 仅当操作类型没有外部系统调用时，平台才会重试。</li>
+<li><strong>所有操作：</strong> 平台重试所有操作，包括包含外部调用的操作。当已知操作类型的外部调用可以安全重复（幂等）时使用此选项。</li>
+<li><strong>启用：</strong> 平台从不自动重试。首次失败时错误即返回给调用方。当调用方希望观察并处理每个冲突时使用此选项。</li>
+</ul>
+<p>请注意，在其他方面完全相同的两个操作类型，在此设置不同的情况下，在争用下的行为可能不同——一个似乎总是成功，因为冲突被重试消除，而另一个则向其调用方暴露冲突错误。</p>
+<p>自动重试也意味着，经常发生冲突的操作可能需要明显更长的时间才能完成，即使它最终成功。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-choosing-an-isolation-level" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#choosing-an-isolation-level" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>选择隔离级别</h2>
+<ul>
+<li><strong>使用快照隔离</strong> ，除非您有特定的理由不这样做。快照隔离是大多数工作流程的最佳隔离级别，包括对单个对象的“读取-修改-写入”逻辑。</li>
+<li>对于已创建的操作类型 <em>然后</em> 引入了显式隔离级别后，可将级别设置为快照隔离，以确保执行中的每次读取都来自同一时间点，而不是旧版行为中通常如此但无法保证的情况。但是，由于快照隔离在整个执行过程中使用同一时间点视图，如果操作运行时间较长且尝试编辑频繁更新的数据，则该操作可能会被更频繁地重试。</li>
+<li>考虑使用读已提交 <strong>唯一</strong> 当冲突失败频繁发生、您了解其允许的异常情况，并且操作的写入不依赖于对数据的稳定读取时。请在 <a href="#read-committed">读已提交</a> 部分中查看警告，然后再将现有操作类型切换到此模式。</li>
+</ul></div>
+</article>
+</article>
+</body>
+</html>

@@ -2,7 +2,7 @@
 
 <html lang="en"><head><meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Rethinking CRUD For REST API Designs</title>
+<title>重新思考 REST API 设计的 CRUD</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background:#fff;color:#1a1a1a;line-height:1.7;max-width:680px;margin:0 auto;padding:48px 24px 80px}
@@ -31,12 +31,11 @@ article a:hover{text-decoration:underline}
 .nav a{color:#2e86de;text-decoration:none;font-size:.88em}
 .nav a:hover{text-decoration:underline}
 </style></head><body>
-<h1>Rethinking CRUD For REST API Designs</h1>
+<h1>重新思考 REST API 设计的 CRUD</h1>
 <div class="meta">2021-08-11 · <a href="https://blog.palantir.com/rethinking-crud-for-rest-api-designs-a2a8287dc2af">Original →</a></div>
 <article><p>当我听到有人说“我们即将创建新服务 X”时，后面通常跟着一句话：“V0 版本会使用简单的 CRUD 接口。”虽然这种设计方法曾一度吸引过我，但我越来越觉得它并非最佳的设计选择。在这篇文章中，我将探讨我在使用 CRUD 时遇到的一些实际问题，以及这些问题如何改变我们对优秀 API 设计的思路。</p>
 <p>回顾一下，CRUD 这个词代表的是 <a href="https://en.wikipedia.org/wiki/Create,_read,_update_and_delete">创建、读取、更新、删除</a>，它试图描述“持久化存储的四种基本操作”。该术语源于早期关系型数据库的工作。它看起来非常像标准 SQL 中的 INSERT、SELECT、UPDATE 和 DELETE 操作，而且由于它与 HTTP 动词 POST、GET、PUT 和 DELETE 紧密映射，其用法在 Web 和库 API 设计中也很普遍。对于任何以资源为中心的工作流来说，CRUD 感觉非常直观——你会先“创建”它，之后你可以“读取”它的当前值，“更新”为新值，或者“删除”它。</p>
 <figure><img alt="" height="367" loading="eager" src="https://miro.medium.com/v2/resize:fit:700/1*iRAPmpZwRufU4JVFnnKtgg.jpeg" width="700"/></figure>
-
 <h2>问题所在</h2>
 <p>虽然 CRUD 乍一看似乎很容易理解、实现和使用，但在实践中我发现它远没有那么吸引人。为了解释我的意思，让我们来看看 CRUD 的各个功能：</p>
 <ul>
@@ -48,7 +47,6 @@ article a:hover{text-decoration:underline}
 <p>那么问题出在哪里呢？我看到了几个问题。</p>
 <p>首先，许多客户端不需要区分 Create、Update 和 Delete——<strong>它们想要一个包罗万象的“set”操作</strong>。当 API 使用随机生成的 ID 来标识资源且碰撞概率极低时（例如 UUID 或哈希），情况尤其如此。我遇到过一些 API，几乎每个客户端调用都包含类似下面的代码块，这在某种程度上显得很愚蠢：</p>
 <pre>if (newValue != null) {<br/>    try {<br/>        backend.insertRecord(id, newValue);<br/>    } catch (ResourceAlreadyExistsException e) {<br/>        backend.updateRecord(id, newValue);<br/>    }<br/>} else {<br/>    backend.deleteRecord(id);<br/>}</pre>
-
 <p>其次，虽然有些资源是原子性的且无法拆分，但许多其他资源可以分解为多个子组件或字段。大多数客户端一次只想更新资源的一个字段或一部分，但 <strong>CRUD 要求他们读取并写入整个资源才能正确更新单个字段。</strong>这使客户端逻辑变得复杂，引入了不必要的性能开销，并极大地加剧了我在下一步中描述的并发问题。想象一下，如果在文档编辑器中写一个字就需要将整个文档重新发送回服务器！</p>
 <p>第三，许多客户端的编辑工作流是三步事务。它们会对资源执行读取以获取其当前值，基于该值和用户输入运行一些计算，然后在更新中写回结果。服务本质上是多访问的，但<strong>更新命令只是一个覆盖操作，没有内置的冲突或同步语义。</strong>在任何时刻，多个用户可能同时读取、计算、更新资源，并互相覆盖彼此的编辑内容。这通常通过单独的锁定或事务开始/结束命令来处理，但这些往往很难做到既正确又高性能。此外，由于它们不属于 CRUD 定义的一部分，往往会被遗忘，直到出现头几个 Bug 之后才被想起来。</p>
 <p>最后，在实践中，特别是对于我们 Palantir 来说，CRUD 遗漏了其他两个对任何初始 REST API 设计都至关重要的操作：<strong>搜索和安全变更/硬删除</strong>。如果在项目初期没有考虑到这两个操作，它们往往会导致服务后端被迫进行大幅度的调整。例如：</p>

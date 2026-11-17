@@ -2,7 +2,7 @@
 
 <html lang="en"><head><meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Thinking Outside the (Black) Box (Engineering Responsible AI , #2)</title>
+<title>跳出（黑）框思考（工程负责任的人工智能，#2）</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background:#fff;color:#1a1a1a;line-height:1.7;max-width:680px;margin:0 auto;padding:48px 24px 80px}
@@ -31,10 +31,10 @@ article a:hover{text-decoration:underline}
 .nav a{color:#2e86de;text-decoration:none;font-size:.88em}
 .nav a:hover{text-decoration:underline}
 </style></head><body>
-<h1>Thinking Outside the (Black) Box (Engineering Responsible AI , #2)</h1>
+<h1>跳出（黑）框思考（工程负责任的人工智能，#2）</h1>
 <div class="meta">2024-08-12 · <a href="https://blog.palantir.com/thinking-outside-the-black-box-24d0c87ec8a5">Original →</a></div>
 <article><h2>在 AIP 中构建更透明、可解释的 AI 系统</h2>
-<p><img alt="" src="https://miro.medium.com/v2/resize:fit:700/1*-KjlBrGY66jnz79hybUxdg.jpeg" /></p>
+<p><img alt="" src="https://miro.medium.com/v2/resize:fit:700/1*-KjlBrGY66jnz79hybUxdg.jpeg"/></p>
 <p><em>编者按：本文是《负责任的 AI》系列文章的第二篇。</em></p>
 <p>先进的大语言模型在处理和生成自然语言方面展现出了惊人的能力。正如本系列首篇博文所探讨的，这把双刃剑也会带来隐患：大语言模型容易产生“幻觉”，输出荒谬或虚构的内容，且这些内容往往看起来极具说服力。且不论是否存在幻觉，另一个相关挑战在于弄清大语言模型针对特定输入返回某项输出的过程与原因。正因如此，大语言模型常被视为“黑盒”模型。这一特性对基于大语言模型的 AI 系统的负责任开发与部署构成了重大挑战：如果无法解释大语言模型的输出，就很难信任其结果，并在面对意外或不理想的结果时做出必要调整。</p>
 <p>提升基于大语言模型的 AI 系统鲁棒性与可靠性的近期策略之一是思维链提示。本文将探讨思维链在推动构建更透明、可解释 AI 系统方面的有效性。我们还将重点介绍 Palantir AIP 对这种大语言模型提示方式的原生支持，以及其他旨在增强大语言模型系统透明度与可解释性的功能。</p>
@@ -46,37 +46,37 @@ article a:hover{text-decoration:underline}
 <h2>走出黑盒？探讨思维链提示</h2>
 <p>思维链提示是指引导大语言模型在返回最终输出前，先生成中间步骤或“解释”的做法。这项技术已成为提升大语言模型在某些任务上表现的有效手段。表面上看，要求大语言模型对其预测给出解释，似乎是实现可解释性的万灵药。然而，仍需考量一些重要的注意事项。</p>
 <p>让我们通过 Palantir AIP 中的示例来看看思维链提示是如何运作的。默认情况下，AIP Logic 函数配置为使用思维链提示。</p>
-<p><img alt="" src="https://miro.medium.com/v2/resize:fit:700/1*ySow2b5R0UvD5Zw2x_axng.jpeg" /></p>
+<p><img alt="" src="https://miro.medium.com/v2/resize:fit:700/1*ySow2b5R0UvD5Zw2x_axng.jpeg"/></p>
 <p>在底层机制中，在 AIP Logic 函数内使用思维链提示需要以特定方式生成提示词。AIP Logic 函数会引导大语言模型按照结构化计划进行迭代响应，如下所示：</p>
 <blockquote>
 <p>我们将逐步思考此问题。你将收到用户的一段陈述，应生成一系列步骤，用于识别并解决在此问题解决过程中遇到的任何问题。你应该以纯文本项目符号列表的形式输出需要执行的步骤。</p>
 </blockquote>
 <p>具体而言，我们会在用户输入的每段提示词后追加以下文本，引导大语言模型按如下格式响应：</p>
 <blockquote>
-<p>Thought: &lt;对如何响应提示词的思考过程&gt;<br />
+<p>Thought: &lt;对如何响应提示词的思考过程&gt;<br/>
 Final Answer: &lt;对提示词的响应&gt;</p>
 </blockquote>
 <p>让我们考察思维链提示如何影响大语言模型对 Titan Industries（一家虚构的医疗用品制造公司）配送中心位置查询的响应。以下是在输入我们的问题及思维链提示指令后，模型返回的精确输出：</p>
-<p><img alt="" src="https://miro.medium.com/v2/resize:fit:700/1*QLG0HQDykejERhbw0_oD3Q.jpeg" /></p>
+<p><img alt="" src="https://miro.medium.com/v2/resize:fit:700/1*QLG0HQDykejERhbw0_oD3Q.jpeg"/></p>
 <p>在这里，我们看到了“思考”——也就是我们要求大语言模型在给出最终答案前生成的中间计划。人们很容易将呈现为“思考”的文本视为真实的思维、理由、计划或解释。但事实远非如此。</p>
 <p>如我们上一篇博文所述，大语言模型的设计初衷是逐个预测统计概率最高的词元。模型本身并未进行推理，它只是在模拟推理，因为这些模型接受过模仿人类对话的训练。在收到要求生成“思考过程”的指令后，大语言模型会根据训练数据生成在结构和语义上模仿人类推理的文本。因此，我们必须警惕这种合成“推理”中可能存在的幻觉。例如，生成的“推理”可能看似合理且无幻觉，但它仍可能与模型预测的真实原因毫无关联。在分析使用思维链提示的大语言模型输出时，至关重要的是切勿将生成的解释或“思考”解读为模型如何或为何得出特定最终输出的真实写照。</p>
 <p>然而，理解基于大语言模型的系统如何运作并非毫无希望。使用思维链提示仍是一项有助于提升透明度与可解释性的技术——但这或许并非得益于模型所谓的“解释”。相反，思维链提示之所以能帮助我们在 AIP 中构建可解释的 AI 系统，是因为它实现了向更具解释性的工具的透明交接。</p>
 <h2>AIP 中的可解释工具</h2>
 <p>在 AIP Logic 中使用思维链提示策略，使得大语言模型能够调用工具访问本体——即企业内部数据、逻辑和操作的可信表征。这包括用于执行组织相关逻辑计算的工具。AIP Logic 通过思维链向大语言模型提供这些工具，具体方式是在用户的提示词中补充已配置工具的描述和使用示例，并在大语言模型生成结构化的工具调用请求后，将控制权交给该工具。由于大语言模型并未接受过执行多种复杂逻辑的训练或构建，工具极大地扩展了大语言模型在功能上的可能性边界。</p>
-<p><img alt="" src="https://miro.medium.com/v2/resize:fit:700/1*As6ASM354tZO0gxfwVxp8w.jpeg" /></p>
+<p><img alt="" src="https://miro.medium.com/v2/resize:fit:700/1*As6ASM354tZO0gxfwVxp8w.jpeg"/></p>
 <p>在 AIP 中使用工具能让我们构建的 AI 系统更具解释性和透明度。具体而言，当系统由可解释的组件构成时，其本身就变得更易解释。通过引入工具，我们可以将核心功能模块委托给更具解释性的逻辑组件——例如可解释模型或业务逻辑函数——并让大语言模型编排其使用。这种方法使我们能够依赖可信、更具解释性的逻辑，而不是让大语言模型在其“黑盒”中处理整个任务。尽管这无法洞察大语言模型本身的内部运作，但它是提升 AI 系统透明度与可解释性的重要一步。反过来，这也让我们能更好地理解 AI 系统为何以及如何返回其输出。</p>
 <p>如需了解有关利用大语言模型和逻辑工具构建工作流的更多信息，请阅读我们的博文：《使用 Palantir AIP 构建：RAG/OAG 的逻辑工具》。</p>
 <h2>AIP Logic 调试器中的透明交接</h2>
 <p>使用工具将任务委托给更具解释性的逻辑组件是解决问题的一部分，但同样重要的是，确保大语言模型对这些工具的使用过程透明且易于追踪。为了帮助用户理解大语言模型的思维链响应和工具使用情况，AIP Logic 配备了全面的大语言模型调试器。</p>
 <p>对于软件工程师而言，调试器是构建可靠软件不可或缺的工具。调试器允许程序员监控程序执行过程并定位代码中的错误。同理，在 AIP Logic 调试器中，你可以向大语言模型驱动的函数输入数据，并在大语言模型运行期间观察详尽且易于导航的执行日志——包括每一次向工具交接的过程。这对于构建 AI 系统的透明度至关重要。为了说明原因，让我们看一个 AIP Logic 调试器实际运作的示例。</p>
 <p>正如我们上一篇博文所述，假设我们是 Titan Industries（一家虚构的医疗用品制造商）的员工。在这个场景中，我们的货车抛锚了，我们希望使用 AIP 帮助确定距离它们位置最近的配送中心。我们为 Logic 函数提供了查询本体的工具，使模型能够访问我们配送中心的位置。我们还提供了函数调用工具，用于运行自定义业务逻辑，计算某个配送中心与给定坐标之间的距离。</p>
-<p><img alt="" src="https://miro.medium.com/v2/resize:fit:700/1*KVuRGtdiTqq1XCSx7hgW-Q.jpeg" /></p>
+<p><img alt="" src="https://miro.medium.com/v2/resize:fit:700/1*KVuRGtdiTqq1XCSx7hgW-Q.jpeg"/></p>
 <p>如我们所见，思维链提示使大语言模型能够将手头的任务分解为多个子任务。它首先编排了对“查询对象”工具的调用：</p>
-<p><img alt="" src="https://miro.medium.com/v2/resize:fit:700/1*FErFsIQZ9LOISa5p060HOw.jpeg" /></p>
+<p><img alt="" src="https://miro.medium.com/v2/resize:fit:700/1*FErFsIQZ9LOISa5p060HOw.jpeg"/></p>
 <p>调试器提供了对工具调用过程的可见性，捕获了查询工具的输入和输出。随后，大语言模型使用我们用于距离计算的自定义业务逻辑，计算出每个配送中心与提供坐标之间的距离：</p>
-<p><img alt="" src="https://miro.medium.com/v2/resize:fit:700/1*PLAzYnxiex4IVr6_HE8Ygw.jpeg" /></p>
+<p><img alt="" src="https://miro.medium.com/v2/resize:fit:700/1*PLAzYnxiex4IVr6_HE8Ygw.jpeg"/></p>
 <p>最终，大语言模型得出了最终输出：</p>
-<p><img alt="" src="https://miro.medium.com/v2/resize:fit:700/1*B-nbsSy2hgpUvldkt4wNIg.jpeg" /></p>
+<p><img alt="" src="https://miro.medium.com/v2/resize:fit:700/1*B-nbsSy2hgpUvldkt4wNIg.jpeg"/></p>
 <p>如你所见，调试器为 AIP 用户提供了宝贵的视角，以洞悉 AIP Logic 函数的内部运作。在这个示例中，我们可以看到通过思维链提示生成的中间步骤和工具调用。调试器让我们能够观察大语言模型执行的工具编排过程，揭示了 AIP Logic 函数的运作方式。</p>
 <p>此外，我们可以检查工具底层的逻辑，以更好地理解系统行为背后的原因。如果 AI 系统因使用了某项工具而开始出现异常行为，我们可以检查该工具的具体逻辑和步骤，以定位逻辑出错的环节。如果我们想要质疑 AI 系统生成的结果或输出，我们可以更好地理解和评估其在通向最终答案路径上的执行过程，尤其是在它委托给我们提供的工具的情况下。</p>
 <h2>结论</h2>

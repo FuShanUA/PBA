@@ -2,7 +2,7 @@
 
 <html lang="en"><head><meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Frontend Engineering at Palantir: Plotlines in Three.js</title>
+<title>Palantir 的前端工程：Three.js 中的情节</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background:#fff;color:#1a1a1a;line-height:1.7;max-width:680px;margin:0 auto;padding:48px 24px 80px}
@@ -31,10 +31,10 @@ article a:hover{text-decoration:underline}
 .nav a{color:#2e86de;text-decoration:none;font-size:.88em}
 .nav a:hover{text-decoration:underline}
 </style></head><body>
-<h1>Frontend Engineering at Palantir: Plotlines in Three.js</h1>
+<h1>Palantir 的前端工程：Three.js 中的情节</h1>
 <div class="meta">2026-04-07 · <a href="https://blog.palantir.com/frontend-engineering-at-palantir-plotlines-in-three-js-c0c47f310715">Original →</a></div>
 <article><figure><img alt="" height="366" loading="eager" src="https://miro.medium.com/v2/resize:fit:700/1*D_5LhinYPvt9spEjX8t_AA.png" width="700"/></figure>
-<p><strong>关于本系列</strong><br />
+<p><strong>关于本系列</strong><br/>
 Palantir 的前端工程远不止是构建标准的 Web 应用。我们的工程师设计用于关键任务决策的界面，构建将洞察转化为行动的操作应用，并创建处理海量数据集的系统——不仅要考虑用户需要什么，还要考虑在网络不稳定、风险高且容错率为零的情况下他们需要什么。</p>
 <p>本系列将揭开这项工作的真实面貌：我们解决的技术问题、产生的影响以及采取的方法。无论你是单纯好奇，还是正在寻找加入我们的机会，这些文章都将为你真实展现我们前端团队的工作日常。在这里查看所有前端工程博文。</p>
 <p>在这篇博文中，驻纽约的前端工程师 Lasse 将分享 Palantir 工程师负责的各种 3D 工作流概述，以及应对性能挑战的一些独特方法。敬请关注第 5 部分。</p>
@@ -48,7 +48,6 @@ Palantir 的前端工程远不止是构建标准的 Web 应用。我们的工程
 <h3>Zodiac 与我们的大球体</h3>
 <p>架构划分十分清晰：后端负责数据存储、过滤和繁重的计算，而前端专注于渲染。后端向下发送简化后的几何图形和样式信息——客户端不需要知道数据是如何计算的，只需知道在哪里绘制以及它应该是什么样子。</p>
 <figure><img alt="" height="339" loading="lazy" src="https://miro.medium.com/v2/resize:fit:700/1*diaUzou7E3HstAyzTrrptA.png" width="700"/></figure>
-
 <p>有了这个服务层（此处略去达成该层所做的工作），我们拥有了一套组件，可以将物体放置在某个位置并查看它。我们从 API 获取泛化后的可渲染对象，并在每一帧将其渲染在地图上。</p>
 <pre><code class="language-typescript">interface EarthLineItem {
   id?: string;
@@ -69,7 +68,7 @@ interface LineVisualProps {
     { lat: 40.7128, lng: -74.0060, height: 10_000 },
     { lat: 38.9072, lng: -77.0369, height: 10_000 },
   ]}
-  color=&quot;#3b82f6&quot;
+  color="#3b82f6"
   lineWidth={2}
 /&gt;
 </code></pre>
@@ -122,7 +121,6 @@ class EarthLine implements ZodiacObject {
 }
 </code></pre>
 <figure><img alt="" height="371" loading="lazy" src="https://miro.medium.com/v2/resize:fit:700/1*iP7f44dfGyjP9ZR7_sks7A.png" width="700"/></figure>
-
 <h2>放大到太空</h2>
 <p>卫星位置的高密度可视化挑战了浏览器图形的性能极限。面对环绕地球的数以万计的物体，<strong>我们使用实例化网格来更新地图上开启和关闭的物体，并以最快速度重新计算最近卫星的位置。</strong> 这个实例化网格存在于单个 Zodiac 对象下，但在同一绘制调用帧中渲染数千颗卫星（或任何具有相同几何形状的物体）。</p>
 <pre><code class="language-typescript">class SatelliteRenderer extends ZodiacObject {
@@ -144,7 +142,7 @@ class EarthLine implements ZodiacObject {
     this.mesh.setPositionAt(satellite, position);
   }
 
-  // Later code blocks leverage our satellite mesh to &quot;attach&quot; to 
+  // Later code blocks leverage our satellite mesh to "attach" to 
   // the current position and corresponding TLE used on the map.
   public getPosition(satellite: string, out: Vector3): void {
     this.mesh.getPositionAt(satellite, out);
@@ -183,7 +181,6 @@ class EarthLine implements ZodiacObject {
 <p>队列随时间向前滑动。当一个点从队列前端移出时，我们会为后端的下一个区块重新计算它。使用旧方法，我们的地图每秒需要执行数千次 SGP4 推算。借助队列，我们可以减少为每个选定对象所做的 95% 的计算。</p>
 <p>这使得可以同时渲染更多的轨道路径。与我们的卫星网格并排，我们可以监听用户拖动时间轴时的 TLE 更新，以确保使用正确推算的轨道根数。</p>
 <figure><img alt="" height="351" loading="lazy" src="https://miro.medium.com/v2/resize:fit:700/1*iQgv1gp2REjz8SdIH4Y03A.png" width="700"/></figure>
-
 <h3>视线</h3>
 <p>展示卫星集合与地面物体之间的视线也很有帮助。卫星通常在系统中协同工作，可视化它们之间的“链路”非常有用。某些卫星配置只会在它们之间没有被地球遮挡时才渲染配对线。</p>
 <p>使用之前相同的 Satellite 辅助对象，现在更容易转化出类似的连线。</p>
@@ -215,11 +212,9 @@ class EarthLine implements ZodiacObject {
 <p>我们为卫星工作绘制的最后一种线条涉及传感器可视化。可视化卫星能力需要一套更复杂的线条。我们创建了一个与卫星运动匹配的 3D 多边形，并具有各种规格以匹配方向、尺寸和能力。通常，更“复杂”的形状是多个基本形状的聚合。对于传感器，我们构建了一个线条框架和一些不透明的平面来展示覆盖区域。</p>
 <p>由于卫星绕地球运行，我们的地球扫描带应匹配传感器在整个轨道上可以扫描的位置。正确的路径是聚合卫星位置、地球自转、对地球的瞄准以及传感器旋转的任何属性。将这些组合成一个对象后，得到的是一条更符合传感器“能力”的轨迹，而不是粗略的飞越路径。</p>
 <figure><img alt="" height="380" loading="lazy" src="https://miro.medium.com/v2/resize:fit:700/1*4L401YxtP5InShG1i2in1w.png" width="700"/></figure>
-
 <p>上面是我附在 PR 中的图片，用于解释扫描带旋转背后的数学原理。通常，这方面最快的工作流是在笔记本上头脑风暴步骤，然后将数学公式交给带有一些测试用例的大语言模型（LLM）。</p>
 <p>在计算了最大宽度、在射线投射点之间构建多边形并进行推算后，你就得到了一个相对准确的卫星视野表现。随着时间戳的变化，卫星将更紧密地贴合路径。</p>
 <figure><img alt="" height="392" loading="lazy" src="https://miro.medium.com/v2/resize:fit:700/1*kCuWXsUWx0gG55hY6yM9Lg.png" width="700"/></figure>
-
 <p>上述可视化基于完全标称的传感器规格。</p>
 <h2>回到地球</h2>
 <p>Gotham 作为一个平台，为常见模式和数据形状构建了许多抽象。随着我们的 3D 库复杂度增加，它需要引入与 Foundry 数据源相匹配并在我们 2D 场景中已经渲染的 API。</p>
@@ -278,7 +273,6 @@ class TimeFilterableGeometry {
 }
 </code></pre>
 <figure><img alt="" height="439" loading="lazy" src="https://miro.medium.com/v2/resize:fit:700/1*fF81a-bfhoL7ZXzH-yaNEQ.gif" width="700"/></figure>
-
 <h3>动画线条</h3>
 <p>过去一年中我最喜欢的迭代周期涉及向底层 Gaia 地图暴露 API 以操作 Three.JS 对象。我们在动画方面遇到了一系列类似的问题。与太空中的视线类似，在许多场景下，用户可以在其工作流中看到不同的视觉变化。</p>
 <p>在我们的一个用例中，提供转换状态的实时动画对于保持客户对态势的顶层域感知至关重要。当地图上管理的单元数量过多时，使用地图的传统可视化比卡片、表格和提示框更有效。</p>
@@ -298,7 +292,7 @@ class TimeFilterableGeometry {
 <p>对于状态驱动的动画，回调可以从 React 状态派生其行为。代表一项任务的线条可能会在等待确认时脉冲闪烁，然后在确认后渐变为纯色：</p>
 <pre><code class="language-typescript">const animationCallback = useCallback(
   (currentTime: number) =&gt; {
-    if (phase === &quot;awaiting&quot;) {
+    if (phase === "awaiting") {
       return { color: createPulsingColor(baseColor, white, currentTime, 1000) };
     }
     return { color: confirmedColor };

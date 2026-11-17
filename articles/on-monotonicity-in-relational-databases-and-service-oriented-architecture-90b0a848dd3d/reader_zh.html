@@ -2,7 +2,7 @@
 
 <html lang="en"><head><meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>On Monotonicity in Relational Databases and Service-oriented Architecture</title>
+<title>关系数据库的单调性和面向服务的体系结构</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background:#fff;color:#1a1a1a;line-height:1.7;max-width:680px;margin:0 auto;padding:48px 24px 80px}
@@ -31,10 +31,10 @@ article a:hover{text-decoration:underline}
 .nav a{color:#2e86de;text-decoration:none;font-size:.88em}
 .nav a:hover{text-decoration:underline}
 </style></head><body>
-<h1>On Monotonicity in Relational Databases and Service-oriented Architecture</h1>
+<h1>关系数据库的单调性和面向服务的体系结构</h1>
 <div class="meta">2020-11-19 · <a href="https://blog.palantir.com/on-monotonicity-in-relational-databases-and-service-oriented-architecture-90b0a848dd3d">Original →</a></div>
-<article><p>单调性是关系型数据库中的一个重要概念，正如我将在本篇博文中所展示的，它在面向服务架构的 API 中同样适用。<br />
-<img alt=" " src="https://miro.medium.com/v2/resize:fit:700/1*dJehAk9bDpeo5zqGEP0_zg.png" /><br />
+<article><p>单调性是关系型数据库中的一个重要概念，正如我将在本篇博文中所展示的，它在面向服务架构的 API 中同样适用。<br/>
+<img alt=" " src="https://miro.medium.com/v2/resize:fit:700/1*dJehAk9bDpeo5zqGEP0_zg.png"/><br/>
 直观地看，如果信息“不会消失”，那么数据库或 API 就是单调的。单调的数据库查询比非单调查询更容易进行分析和优化，而单调的 API 则能帮助开发者规避竞态条件和未定义状态。在 Palantir，我们自然非常看重快捷的数据库查询和安全、行为良好的 API。在与我的团队讨论数据库或 API 架构时，我经常使用单调性框架。让我们深入探讨吧！</p>
 <h2>关系型数据库</h2>
 <p>我猜想大多数读者对微积分中单调函数的概念并不陌生：对于所有的 x 和 y，如果 x ≤ y，都有 f(x) ≤ f(y)，那么函数 f 就被称为单调递增。左侧的图表展示了这样一个函数。在数据库理论中，我们可以类比地定义单调查询的概念：对于所有的数据库 D1 和 D2，如果 D1 ⊆ D2，都有 Q(D1) ⊆ Q(D2)，那么查询 Q 就是单调的。通俗来说，如果我们在一个比 D1 拥有更多行的数据库 D2 上执行单调查询 Q，那么在较大的数据库 D2 上得到的查询结果总是会更大（或一样大）。</p>
@@ -58,16 +58,16 @@ SELECT * FROM
 <p>让我们转换视角，看看我称之为“API 单调性”的概念在面向服务架构（特别是 REST API 场景）中的作用。沿用前文的账户/策略域，我们可以设想一个账户服务和一个独立的策略服务，分别管理账户对象和策略对象：</p>
 <pre><code># 账户服务和策略服务的 HTTP/JSON 实现
 # 账户服务
---&gt; {&quot;account_id&quot;: {account_id}, &quot;policy_id&quot;: {policy_id}}
+--&gt; {"account_id": {account_id}, "policy_id": {policy_id}}
 PUT /accounts/{account_id}
 GET /accounts/{account_id}
-&lt;-- {&quot;account_id&quot;: {account_id}, &quot;policy_id&quot;: {policy_id}}
+&lt;-- {"account_id": {account_id}, "policy_id": {policy_id}}
 
 # 策略服务
---&gt; {&quot;policy_id&quot;: {policy_id}, &quot;policy&quot;: { ... }}
+--&gt; {"policy_id": {policy_id}, "policy": { ... }}
 PUT /policies/{policy_id}
 GET /policies/{policy_id}
-&lt;-- {&quot;policy_id&quot;: {policy_id}, &quot;policy&quot;: { ... }}
+&lt;-- {"policy_id": {policy_id}, "policy": { ... }}
 </code></pre>
 <p>这些服务提供了添加和获取账户及策略对象的方法。在面向服务模型中，账户与策略之间的数据库连接是通过对象的标识符进行关联来实现的。由于这里是一个 1:N 的连接（即每个账户对应一个策略，而同一个策略可以适用于多个账户），我选择在账户对象中添加一个 <code>policy_id</code> 字段。</p>
 <p>类似于数据库对单调查询的定义，我会称这种 API 是单调的，意思是我们永远无法通过与 API 的交互来移除账户或策略。（我们可以用一个新的策略去覆盖某个具有特定 <code>policy_id</code> 的策略，但我们永远无法删除策略。账户同理。）如果增加 DELETE 端点，就会使 API 变成非单调的：</p>
@@ -75,10 +75,10 @@ GET /policies/{policy_id}
 DELETE /policies/{policy_id}
 </code></pre>
 <p>此时，我们可以发出一系列请求来说明信息是如何消失的：</p>
-<pre><code>--&gt; {&quot;policy_id&quot;: 123, &quot;policy&quot;: { ... }}
+<pre><code>--&gt; {"policy_id": 123, "policy": { ... }}
 PUT /policies/123
 GET /policies/123
-&lt;-- {&quot;policy_id&quot;: 123, &quot;policy&quot;: { ... }}
+&lt;-- {"policy_id": 123, "policy": { ... }}
 DELETE /policies/123
 GET /policies/123
 &lt;-- 404 NOT FOUND
@@ -86,19 +86,19 @@ GET /policies/123
 <p>如果我们要保证跨服务边界的某些完整性约束，单调性属性就非常有用。例如，我们可能要求每个账户都必须拥有一个有效的策略：</p>
 <pre><code>def putAccount(account_id, policy_id):
   if policyService.getPolicy(policy_id) == 404:
-    fail(&quot;No such policy: &quot; + policy_id)
+    fail("No such policy: " + policy_id)
   else:
     database.storeAccount(account_id, policy_id)
 </code></pre>
 <p>尽管我们没有使用任何形式的分布式事务系统，但在策略服务 API 具备单调性的前提下，上述代码也能正确维持“每个账户都有有效策略”这一不变式：我们在将账户信息存入数据库之前会检查所请求的策略是否存在，并且可以保证，只要该策略曾经存在过，它就永远不会消失。（如果有读者能用时序逻辑对这个论断进行建模，那就太棒了……）当然，如果策略服务 API 是非单调的，这个不变式就很容易被打破。</p>
 <p>我们能否在支持策略删除的同时，保持 API 的单调性以及“每个账户都有有效策略”的不变式呢？一个可行的解决方案是在策略对象中添加一个 <code>isDeleted</code> 字段：</p>
-<pre><code>--&gt; {&quot;policy_id&quot;: 123, &quot;policy&quot;: { ... }}
+<pre><code>--&gt; {"policy_id": 123, "policy": { ... }}
 PUT /policies/123
 GET /policies/123
-&lt;-- {&quot;policy_id&quot;: 123, &quot;policy&quot;: { ... }, isDeleted: false}
+&lt;-- {"policy_id": 123, "policy": { ... }, isDeleted: false}
 DELETE /policies/123
 GET /policies/123
-&lt;-- {&quot;policy_id&quot;: 123, &quot;policy&quot;: { ... }, isDeleted: true}
+&lt;-- {"policy_id": 123, "policy": { ... }, isDeleted: true}
 </code></pre>
 <p>账户服务可以利用 <code>isDeleted</code> 标志来促使用户采取行动以修复不一致的状态，例如在显示账户的同时展示一条“策略无效：请选择新策略”的警告消息。更重要的是，如果账户服务只存储 <code>policy_id</code>（而非完整的策略对象），它就总能访问到所引用的策略，哪怕是已删除的策略。</p>
 <p>这里有一个有趣的推论：单调 API 与删除操作天生不合。举例来说，假设我们负有删除策略信息的法律义务，比如其中包含了个人身份信息（PII）。这种删除要求与单调性属性是相悖的，因为我们无法在删除策略的同时又保留它。API 设计者在平衡诸如 GDPR 中的数据最小化原则等法律约束与架构或性能方面的诉求时，必须牢记这种权衡。我知道这有点吊人胃口，但我想把关于这个话题的进一步思考留到未来的博文中，敬请期待！</p>

@@ -49,8 +49,29 @@ main{max-width:1200px;margin:0 auto;padding:28px 24px 48px}
 .source-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:.68em;font-weight:600;margin-bottom:6px}
 .source-badge.blog{background:rgba(14,165,233,.12);color:#0EA5E9}
 .source-badge.website{background:rgba(139,92,246,.12);color:#8B5CF6}
+.source-badge.docs{background:rgba(16,185,129,.12);color:#10B981}
 .title{font-size:.94em;font-weight:600;line-height:1.45;margin-bottom:8px}
 .date{font-size:.78em;color:var(--muted)}
+.docs-panel{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:30px}
+.docs-header{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.docs-title{font-size:1.08em;font-weight:700;color:var(--text)}
+.docs-meta{font-size:.78em;color:var(--muted)}
+.docs-summary{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.docs-chip{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:999px;font-size:.76em;font-weight:600;background:var(--accent-soft);color:var(--accent)}
+.docs-chip.changed{background:rgba(245,158,11,.12);color:#F59E0B}
+.docs-chip.announcements{background:rgba(16,185,129,.12);color:#10B981}
+.docs-list{display:grid;gap:8px;margin-top:14px}
+.docs-item{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;border:1px solid var(--border);border-radius:8px;text-decoration:none;color:inherit;transition:border-color .15s}
+.docs-item:hover{border-color:var(--accent)}
+.docs-item-title{font-size:.88em;font-weight:600;line-height:1.4;min-width:0}
+.docs-item-badge{flex:none}
+.announcement-item{display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid var(--border);border-radius:8px;text-decoration:none;color:inherit;transition:border-color .15s}
+.announcement-item:hover{border-color:var(--accent)}
+.announcement-date{flex:none;font-size:.76em;color:var(--muted)}
+.announcement-title{font-size:.88em;font-weight:600;line-height:1.4;min-width:0}
+.docs-details{margin-top:14px}
+.docs-details summary{cursor:pointer;font-size:.86em;font-weight:600;color:var(--accent)}
+.docs-scroll{max-height:420px;overflow:auto;margin-top:10px;padding-right:4px}
 .empty,.error{padding:64px 20px;text-align:center;color:var(--muted)}
 .error{color:#ef4444}
 footer{text-align:center;padding:20px;color:var(--muted);border-top:1px solid var(--border);font-size:.8em}
@@ -71,9 +92,10 @@ footer{text-align:center;padding:20px;color:var(--muted);border-top:1px solid va
 </header>
 <main>
   <div class="page-summary">
-    <p>2026年7月1日起，按网页发布时间倒序显示。</p>
+    <p>2026年7月1日起，按网页发布时间倒序显示；技术文档按最近扫描结果单独显示。</p>
     <span class="count" id="count">正在加载...</span>
   </div>
+  <section class="docs-panel" id="docsPanel" aria-live="polite"></section>
   <div class="timeline" id="timeline" aria-live="polite"></div>
 </main>
 <footer>blog.palantir.com</footer>
@@ -82,6 +104,7 @@ footer{text-align:center;padding:20px;color:var(--muted);border-top:1px solid va
   var START_DATE = "2026-07-01";
   var timeline = document.getElementById("timeline");
   var count = document.getElementById("count");
+  var docsPanel = document.getElementById("docsPanel");
 
   function effectiveDate(article) {
     var source = article.source || "blog";
@@ -160,18 +183,142 @@ footer{text-align:center;padding:20px;color:var(--muted);border-top:1px solid va
     return { group: group, grid: grid };
   }
 
-  fetch("data/index.json?_=" + Date.now())
-    .then(function(response) {
+  function createDocsItem(article, type) {
+    var item = document.createElement("a");
+    item.className = "docs-item";
+    item.href = article.hz || article.hp || "#";
+    var title = document.createElement("span");
+    title.className = "docs-item-title";
+    title.textContent = article.tt || article.t || article.s || "";
+    var badge = document.createElement("span");
+    badge.className = "source-badge docs docs-item-badge";
+    badge.textContent = type;
+    item.appendChild(title);
+    item.appendChild(badge);
+    return item;
+  }
+
+  function createAnnouncementItem(entry) {
+    var item = document.createElement("a");
+    item.className = "announcement-item";
+    item.href = entry.url || "#";
+    item.target = "_blank";
+    item.rel = "noopener noreferrer";
+    var date = document.createElement("time");
+    date.className = "announcement-date";
+    date.dateTime = entry.date || "";
+    date.textContent = formatDate(entry.date || "");
+    var title = document.createElement("span");
+    title.className = "announcement-title";
+    title.textContent = entry.title_zh || entry.title || "";
+    item.appendChild(date);
+    item.appendChild(title);
+    return item;
+  }
+
+  function createDocsPanel(summary, docsMap) {
+    docsPanel.textContent = "";
+    var header = document.createElement("div");
+    header.className = "docs-header";
+    var title = document.createElement("h2");
+    title.className = "docs-title";
+    title.textContent = "技术文档更新";
+    var meta = document.createElement("div");
+    meta.className = "docs-meta";
+    meta.textContent = "扫描时间：" + formatDate((summary.updated_at || "").slice(0, 10));
+    header.appendChild(title);
+    header.appendChild(meta);
+
+    var summaryRow = document.createElement("div");
+    summaryRow.className = "docs-summary";
+    var newChip = document.createElement("span");
+    newChip.className = "docs-chip";
+    newChip.textContent = "新增 " + (summary.new || 0) + " 篇";
+    var changedChip = document.createElement("span");
+    changedChip.className = "docs-chip changed";
+    changedChip.textContent = "变更 " + (summary.changed || 0) + " 篇";
+    var announcements = summary.announcement_updates || [];
+    var announcementChip = document.createElement("span");
+    announcementChip.className = "docs-chip announcements";
+    announcementChip.textContent = "公告 " + announcements.length + " 条";
+    summaryRow.appendChild(newChip);
+    summaryRow.appendChild(changedChip);
+    summaryRow.appendChild(announcementChip);
+
+    if (announcements.length) {
+      var announcementTitle = document.createElement("h3");
+      announcementTitle.textContent = "文档公告";
+      announcementTitle.style.fontSize = ".92em";
+      announcementTitle.style.marginTop = "16px";
+      var announcementList = document.createElement("div");
+      announcementList.className = "docs-list";
+      announcements.forEach(function(entry) {
+        announcementList.appendChild(createAnnouncementItem(entry));
+      });
+      docsPanel.appendChild(announcementTitle);
+      docsPanel.appendChild(announcementList);
+    }
+
+    var newTitle = document.createElement("h3");
+    newTitle.textContent = "新增文档";
+    newTitle.style.fontSize = ".92em";
+    newTitle.style.marginTop = "16px";
+    var newList = document.createElement("div");
+    newList.className = "docs-list";
+    (summary.new_slugs || []).forEach(function(slug) {
+      newList.appendChild(createDocsItem(docsMap[slug] || { s: slug }, "新增"));
+    });
+
+    var details = document.createElement("details");
+    details.className = "docs-details";
+    var detailsSummary = document.createElement("summary");
+    detailsSummary.textContent = "查看 " + (summary.changed || 0) + " 篇变更文档";
+    var scroll = document.createElement("div");
+    scroll.className = "docs-scroll";
+    var changedList = document.createElement("div");
+    changedList.className = "docs-list";
+    (summary.changed_slugs || []).forEach(function(slug) {
+      changedList.appendChild(createDocsItem(docsMap[slug] || { s: slug }, "变更"));
+    });
+    scroll.appendChild(changedList);
+    details.appendChild(detailsSummary);
+    details.appendChild(scroll);
+
+    docsPanel.appendChild(header);
+    docsPanel.appendChild(summaryRow);
+    if ((summary.new_slugs || []).length) {
+      docsPanel.appendChild(newTitle);
+      docsPanel.appendChild(newList);
+    }
+    if ((summary.changed_slugs || []).length) docsPanel.appendChild(details);
+  }
+
+  Promise.all([
+    fetch("data/index.json?_=" + Date.now()).then(function(response) {
+      if (!response.ok) throw new Error("HTTP " + response.status);
+      return response.json();
+    }),
+    fetch("data/docs_update_summary.json?_=" + Date.now()).then(function(response) {
       if (!response.ok) throw new Error("HTTP " + response.status);
       return response.json();
     })
-    .then(function(index) {
+  ])
+    .then(function(values) {
+      var index = values[0];
+      var docsSummary = values[1];
       var articles = (index.articles || [])
         .filter(function(article) { return effectiveDate(article) >= START_DATE; })
         .sort(function(a, b) {
           return effectiveDate(b).localeCompare(effectiveDate(a));
         });
-      count.textContent = "共 " + articles.length + " 条";
+      var docsMap = {};
+      (index.articles || []).forEach(function(article) {
+        if (article.source === "docs") docsMap[article.s] = article;
+      });
+      createDocsPanel(docsSummary || {}, docsMap);
+      var docsTotal = (docsSummary.new || 0) + (docsSummary.changed || 0);
+      var announcementTotal = (docsSummary.announcement_updates || []).length;
+      count.textContent = "共 " + articles.length + " 篇文章，" + docsTotal + " 页文档更新，" + announcementTotal + " 条文档公告";
       if (!articles.length) {
         timeline.className = "empty";
         timeline.textContent = "暂无更新";

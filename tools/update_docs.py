@@ -12,12 +12,17 @@ import urllib.request
 from datetime import datetime, timezone
 from urllib.parse import urlparse
 
+from bs4 import BeautifulSoup
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SITEMAP_PATH = os.path.join(ROOT, "data", "docs_sitemap.xml")
 MANIFEST_PATH = os.path.join(ROOT, "data", "docs_manifest.json")
 SUMMARY_PATH = os.path.join(ROOT, "data", "docs_update_summary.json")
+ANNOUNCEMENTS_STATE_PATH = os.path.join(ROOT, "data", "docs_announcements.json")
 COMPLETION_PATH = os.path.join(ROOT, "data", "docs_completion.json")
 CONTENT_DIR = os.path.join(ROOT, "content", "docs")
+ANNOUNCEMENTS_SLUG = "foundry-announcements"
+ANNOUNCEMENTS_URL = "https://www.palantir.com/docs/foundry/announcements/"
 PRODUCT_PREFIXES = ("/docs/foundry/", "/docs/apollo/", "/docs/gotham/")
 EXCLUDED_PATHS = {
     "/docs/foundry/",
@@ -200,6 +205,99 @@ def read_audit_count():
         return None
 
 
+def parse_announcement_entries(path):
+    if not os.path.isfile(path):
+        return []
+    with open(path, encoding="utf-8") as f:
+        soup = BeautifulSoup(f.read(), "html.parser")
+    container = soup.select_one("div.ptcom-design__markdownDoc__1uarhel") or soup.body
+    if container is None:
+        return []
+
+    entries = []
+    for heading in container.find_all("h2"):
+        title = heading.get_text(" ", strip=True)
+        if not title:
+            continue
+        date_paragraph = heading.find_next_sibling("p")
+        date_text = date_paragraph.get_text(" ", strip=True) if date_paragraph else ""
+        date_match = re.search(r"Date published:\s*(\d{4}-\d{2}-\d{2})", date_text)
+        if not date_match:
+            continue
+
+        anchor = ""
+        link = heading.find("a", href=True)
+        if link and link.get("href", "").startswith("#"):
+            anchor = link["href"]
+        elif heading.get("id"):
+            anchor = "#" + heading["id"]
+        url = ANNOUNCEMENTS_URL + anchor if anchor else ANNOUNCEMENTS_URL
+        entries.append(
+            {
+                "title": title,
+                "date": date_match.group(1),
+                "url": url,
+            }
+        )
+    return entries
+
+
+def translated_announcement_titles(path):
+    if not os.path.isfile(path):
+        return {}
+    with open(path, encoding="utf-8") as f:
+        soup = BeautifulSoup(f.read(), "html.parser")
+    container = soup.select_one("div.ptcom-design__markdownDoc__1uarhel") or soup.body
+    if container is None:
+        return {}
+
+    titles = {}
+    for heading in container.find_all("h2"):
+        link = heading.find("a", href=True)
+        anchor = ""
+        if link and link.get("href", "").startswith("#"):
+            anchor = link["href"]
+        elif heading.get("id"):
+            anchor = "#" + heading["id"]
+        if anchor:
+            titles[anchor] = heading.get_text(" ", strip=True)
+    return titles
+
+
+def load_announcement_state():
+    local_path = os.path.join(CONTENT_DIR, ANNOUNCEMENTS_SLUG, "page.html")
+    if os.path.isfile(ANNOUNCEMENTS_STATE_PATH):
+        with open(ANNOUNCEMENTS_STATE_PATH, encoding="utf-8") as f:
+            state = json.load(f)
+        state.setdefault("entries", [])
+        return state
+    return {"entries": parse_announcement_entries(local_path)}
+
+
+def collect_new_announcements():
+    state = load_announcement_state()
+    known = {(entry["title"], entry["date"]) for entry in state["entries"]}
+    current = parse_announcement_entries(
+        os.path.join(CONTENT_DIR, ANNOUNCEMENTS_SLUG, "page.html")
+    )
+    translated_titles = translated_announcement_titles(
+        os.path.join(CONTENT_DIR, ANNOUNCEMENTS_SLUG, "page_zh.html")
+    )
+    for entry in current:
+        anchor = entry["url"].removeprefix(ANNOUNCEMENTS_URL)
+        if anchor in translated_titles:
+            entry["title_zh"] = translated_titles[anchor]
+    new_entries = [
+        entry for entry in current if (entry["title"], entry["date"]) not in known
+    ]
+    state["entries"] = current
+    state["updated_at"] = datetime.now(timezone.utc).isoformat()
+    with open(ANNOUNCEMENTS_STATE_PATH, "w", encoding="utf-8") as f:
+        json.dump(state, f, ensure_ascii=False, indent=2)
+        f.write("\n")
+    return new_entries
+
+
 def update_docs(workers=3, translate=True):
     xml = fetch_sitemap()
     sitemap_entries = parse_sitemap(xml)
@@ -317,14 +415,17 @@ def update_docs(workers=3, translate=True):
     new_slugs = sorted(set(after) - set(before))
     changed_slugs = [slug for slug in changed_candidates if slug in after]
     unavailable_slugs = load_unavailable_slugs()
+    announcement_updates = collect_new_announcements()
     save_manifest(manifest, sitemap_entries, after, unavailable_slugs)
 
     summary = {
         "new": len(new_slugs),
         "changed": len(changed_slugs),
+        "announcement_count": len(announcement_updates),
+        "announcement_updates": announcement_updates,
         "new_slugs": new_slugs,
         "changed_slugs": changed_slugs,
-        "has_updates": bool(new_slugs or changed_slugs),
+        "has_updates": bool(new_slugs or changed_slugs or announcement_updates),
         "translation": translation,
         "updated_at": datetime.now(timezone.utc).isoformat(),
     }

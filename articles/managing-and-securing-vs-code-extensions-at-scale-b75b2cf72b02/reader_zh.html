@@ -2,7 +2,7 @@
 
 <html lang="en"><head><meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Managing and Securing VS Code Extensions at Scale</title>
+<title>大规模管理和保护 VS Code 扩展</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background:#fff;color:#1a1a1a;line-height:1.7;max-width:680px;margin:0 auto;padding:48px 24px 80px}
@@ -31,7 +31,7 @@ article a:hover{text-decoration:underline}
 .nav a{color:#2e86de;text-decoration:none;font-size:.88em}
 .nav a:hover{text-decoration:underline}
 </style></head><body>
-<h1>Managing and Securing VS Code Extensions at Scale</h1>
+<h1>大规模管理和保护 VS Code 扩展</h1>
 <div class="meta">2026-01-23 · <a href="https://blog.palantir.com/managing-and-securing-vs-code-extensions-at-scale-b75b2cf72b02">Original →</a></div>
 <article><figure><img alt="" height="366" loading="eager" src="https://miro.medium.com/v2/resize:fit:700/1*DavE6thOBFFwgC485aujRQ.png" width="700"/></figure>
 <p><em>编者按：在这篇博文中，Palantir 的信息安全（InfoSec）团队分享了他们实施全面 VS Code 扩展管理项目的经验，展示了解决这一经常被忽视的攻击向量的实用方案。</em></p>
@@ -122,13 +122,13 @@ get_installed_exts() {
 
     # 检查 extensions.json 文件是否存在
     if [ ! -f "$ext_file" ]; then
-        echo "Extensions file not found: $ext_file" >&2
+        echo "Extensions file not found: $ext_file" &gt;&amp;2
         return 1
     fi
 
     # 解析 JSON 并提取扩展 ID，移除版本后缀
-    jq -r '.[].identifier.id' "$ext_file" 2>/dev/null || {
-        echo "Failed to parse extensions.json - invalid JSON format" >&2
+    jq -r '.[].identifier.id' "$ext_file" 2&gt;/dev/null || {
+        echo "Failed to parse extensions.json - invalid JSON format" &gt;&amp;2
         return 1
     }
 }
@@ -145,7 +145,7 @@ fi
 
 # 读取与此脚本同目录下的配置文件
 # 注意：您必须使用您的企业配置创建以下 .txt 文件
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &amp;&amp; pwd)"
 ALLOWED_EXTENSIONS_FILE="$SCRIPT_DIR/allowed_extensions.txt"
 ALLOWED_PUBLISHERS_FILE="$SCRIPT_DIR/allowed_publishers.txt"
 DISALLOWED_EXTENSIONS_FILE="$SCRIPT_DIR/disallowed_extensions.txt"
@@ -153,7 +153,7 @@ DISALLOWED_EXTENSIONS_FILE="$SCRIPT_DIR/disallowed_extensions.txt"
 AFFECTED_EXTENSIONS=()
 
 while IFS= read -r ext; do
-    [ -z "$ext" ] && continue
+    [ -z "$ext" ] &amp;&amp; continue
 
     publisher="${ext%%.*}"
 
@@ -163,17 +163,17 @@ while IFS= read -r ext; do
     # 3. 否则如果发布者被允许，则获许可
     # 4. 否则，扩展被封禁（默认拒绝）
 
-    if grep -Fxq "$ext" "$DISALLOWED_EXTENSIONS_FILE" 2>/dev/null; then
+    if grep -Fxq "$ext" "$DISALLOWED_EXTENSIONS_FILE" 2&gt;/dev/null; then
         AFFECTED_EXTENSIONS+=("$ext") # 扩展被拒绝，封禁
-    elif grep -Fxq "$ext" "$ALLOWED_EXTENSIONS_FILE" 2>/dev/null; then
+    elif grep -Fxq "$ext" "$ALLOWED_EXTENSIONS_FILE" 2&gt;/dev/null; then
         continue # 扩展被允许，跳过
-    elif grep -Fxq "$publisher" "$ALLOWED_PUBLISHERS_FILE" 2>/dev/null; then
+    elif grep -Fxq "$publisher" "$ALLOWED_PUBLISHERS_FILE" 2&gt;/dev/null; then
         continue # 发布者被允许，跳过
     else
         # 扩展未被明确允许，封禁
         AFFECTED_EXTENSIONS+=("$ext")
     fi
-done <<< "$INSTALLED_EXTENSIONS"
+done &lt;&lt;&lt; "$INSTALLED_EXTENSIONS"
 
 if [ "${#AFFECTED_EXTENSIONS[@]}" -eq 0 ]; then
     echo "✅ You do not have any extensions installed that will be disallowed!"

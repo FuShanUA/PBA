@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Generic chat completion in Python transforms</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<div class="ptcom-design__markdownDoc__1uarhel" data-pagefind-body="true"><h1 data-pagefind-weight="1" id="user-content-generic-chat-completion-in-python-transforms" level="1" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#generic-chat-completion-in-python-transforms" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Generic chat completion in Python transforms</h1>
+<p>Use <code>GenericChatCompletionRequest</code> with <code>GenericChatCompletionLanguageModel</code> to send text conversations to language models through a common API. The model input selects the model, and the request contains the messages and generation parameters.</p>
+<p>This page documents the Python classes from <code>palantir_models</code> and <code>language-model-service-api</code>. For repository setup and model selection, see <a href="/docs/foundry/transforms-python-spark/palantir-provided-models/">Use language models within transforms</a>.</p>
+<h2 data-pagefind-weight="0.9" id="user-content-example" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#example" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Example</h2>
+<p>Add <code>palantir_models</code> to your repository. Replace <code>&lt;model-rid&gt;</code> with the full resource identifier of a model you can access, and replace the output dataset path. This example uses a <a href="/docs/foundry/transforms-python/overview/">lightweight transform</a>.</p>
+<pre><div class="ptcom-design__wrapper__12wpwnx" data-pagefind-weight="0.5"><span class="ptcom-design__clipboard__1l1gb20 ptcom-design__clipboard__12wpwnx"><span class="ptcom-design__confirmation__1l1gb20" data-pagefind-ignore="true">Copied!</span><svg aria-hidden="true" aria-label="clipboard" data-view-component="true" height="16" version="1.1" viewbox="0 0 16 16" width="16"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z" fill="currentColor" fill-rule="evenodd"></path><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z" fill="currentColor" fill-rule="evenodd"></path></svg></span><div style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;overflow:auto;position:relative;margin:0;padding:0.75em"><code style="text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none;float:left;padding-right:10px"><span class="react-syntax-highlighter-line-number">1
+</span><span class="react-syntax-highlighter-line-number">2
+</span><span class="react-syntax-highlighter-line-number">3
+</span><span class="react-syntax-highlighter-line-number">4
+</span><span class="react-syntax-highlighter-line-number">5
+</span><span class="react-syntax-highlighter-line-number">6
+</span><span class="react-syntax-highlighter-line-number">7
+</span><span class="react-syntax-highlighter-line-number">8
+</span><span class="react-syntax-highlighter-line-number">9
+</span><span class="react-syntax-highlighter-line-number">10
+</span><span class="react-syntax-highlighter-line-number">11
+</span><span class="react-syntax-highlighter-line-number">12
+</span><span class="react-syntax-highlighter-line-number">13
+</span><span class="react-syntax-highlighter-line-number">14
+</span><span class="react-syntax-highlighter-line-number">15
+</span><span class="react-syntax-highlighter-line-number">16
+</span><span class="react-syntax-highlighter-line-number">17
+</span><span class="react-syntax-highlighter-line-number">18
+</span><span class="react-syntax-highlighter-line-number">19
+</span><span class="react-syntax-highlighter-line-number">20
+</span><span class="react-syntax-highlighter-line-number">21
+</span><span class="react-syntax-highlighter-line-number">22
+</span><span class="react-syntax-highlighter-line-number">23
+</span><span class="react-syntax-highlighter-line-number">24
+</span><span class="react-syntax-highlighter-line-number">25
+</span><span class="react-syntax-highlighter-line-number">26
+</span><span class="react-syntax-highlighter-line-number">27
+</span><span class="react-syntax-highlighter-line-number">28
+</span><span class="react-syntax-highlighter-line-number">29
+</span><span class="react-syntax-highlighter-line-number">30
+</span><span class="react-syntax-highlighter-line-number">31
+</span></code><code class="language-python" style="white-space:pre;text-align:left;word-spacing:normal;word-break:normal;word-wrap:normal;color:#c3cee3;background:#263238;font-family:'SF Mono', Menlo, Consolas, Monaco, Inconsolata, 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;font-size:14px;line-height:1.5em;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none">import pandas as pd
+from language_model_service_api.languagemodelservice_api_completion_v3 import (
+    DialogChatMessage,
+    DialogRole,
+    GenericChatCompletionRequest,
+)
+from palantir_models.models import GenericChatCompletionLanguageModel
+from palantir_models.transforms import GenericChatCompletionLanguageModelInput
+from transforms.api import Output, transform
+
+
+@transform.using(
+    model=GenericChatCompletionLanguageModelInput("&lt;model-rid&gt;"),
+    output=Output("/path/to/output/dataset"),
+)
+def compute(model: GenericChatCompletionLanguageModel, output):
+    request = GenericChatCompletionRequest(
+        messages=[
+            DialogChatMessage(
+                role=DialogRole.SYSTEM,
+                content="Answer questions in one sentence.",
+            ),
+            DialogChatMessage(
+                role=DialogRole.USER,
+                content="Why is the sky blue?",
+            ),
+        ],
+        max_tokens=256,
+    )
+    response = model.create_chat_completion(request)
+    output.write_table(pd.DataFrame({"completion": [response.completion]}))</code></div></div></pre>
+<p><code>GenericChatCompletionLanguageModelInput</code> supplies a <code>GenericChatCompletionLanguageModel</code> to the compute function. The same model input and request types can be used in a Spark transform with <code>@transform(...)</code>.</p>
+<h2 data-pagefind-weight="0.9" id="user-content-genericchatcompletionrequest" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#genericchatcompletionrequest" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a><code>GenericChatCompletionRequest</code></h2>
+<p>Import <code>GenericChatCompletionRequest</code> from <code>language_model_service_api.languagemodelservice_api_completion_v3</code>.</p>
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>Python parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead><tbody><tr><td><code>messages</code></td><td><code>list[DialogChatMessage]</code></td><td>Yes</td><td>The conversation to send to the model, in order. See <a href="#message-structure">Message structure</a>.</td></tr><tr><td><code>temperature</code></td><td><code>float</code></td><td>No</td><td>Controls sampling randomness where supported. Supported values and behavior depend on the selected model.</td></tr><tr><td><code>stop_sequences</code></td><td><code>list[str]</code></td><td>No</td><td>Sequences that stop generation when encountered, where supported by the model.</td></tr><tr><td><code>max_tokens</code></td><td><code>int</code></td><td>No</td><td>Maximum number of output tokens to generate for this request. This excludes input tokens and is subject to the selected model's limits.</td></tr></tbody></table></div>
+<p>The optional parameters can be omitted. There is no single set of defaults or supported parameter values across all models; the service and selected model determine behavior for omitted parameters. Start with the required messages and add only parameters supported by your model.</p>
+<p>The Python names are <code>stop_sequences</code> and <code>max_tokens</code>. In the serialized request, these fields are named <code>stopSequences</code> and <code>maxTokens</code>.</p>
+<p>This request supports text messages and the generation parameters listed above. It does not define image inputs, tool calls, or a structured output schema.</p>
+<h2 data-pagefind-weight="0.9" id="user-content-message-structure" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#message-structure" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Message structure</h2>
+<p>Import <code>DialogChatMessage</code> and <code>DialogRole</code> from the same module as <code>GenericChatCompletionRequest</code>.</p>
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>role</code></td><td><code>DialogRole</code></td><td><code>DialogRole.SYSTEM</code>, <code>DialogRole.USER</code>, or <code>DialogRole.ASSISTANT</code>.</td></tr><tr><td><code>content</code></td><td><code>str</code></td><td>The text of the message.</td></tr></tbody></table></div>
+<p>Follow these rules when constructing a conversation:</p>
+<ul>
+<li>Start with a <code>SYSTEM</code> or <code>USER</code> message.</li>
+<li>Use <code>SYSTEM</code> only as the first message, if needed.</li>
+<li>Follow a <code>SYSTEM</code> message with a <code>USER</code> message.</li>
+<li>Alternate <code>USER</code> and <code>ASSISTANT</code> messages after the optional system message.</li>
+</ul>
+<p>For example, a conversation with history can have the roles <code>SYSTEM</code>, <code>USER</code>, <code>ASSISTANT</code>, <code>USER</code>. Include the previous turns in <code>messages</code> when you want the model to use them as context.</p>
+<h2 data-pagefind-weight="0.9" id="user-content-genericchatcompletionresponse" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#genericchatcompletionresponse" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a><code>GenericChatCompletionResponse</code></h2>
+<p><code>model.create_chat_completion(request)</code> returns a <code>GenericChatCompletionResponse</code> with these fields:</p>
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>Python attribute</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>completion</code></td><td><code>str</code></td><td>The generated text. Read this field to retrieve the answer.</td></tr><tr><td><code>token_usage</code></td><td><code>TokenUsage</code></td><td>Token counts and the model's context-window limit.</td></tr></tbody></table></div>
+<p>The token usage object exposes <code>prompt_tokens</code> for input tokens, <code>completion_tokens</code> for output tokens, and <code>max_tokens</code> for the model's context window, which includes both input and output tokens. <code>response.token_usage.max_tokens</code> has a different meaning from the request's <code>max_tokens</code> output limit.</p>
+<p>This response has a <code>completion</code> field rather than the <code>choices</code> list used by <code>GptChatCompletionResponse</code>.</p>
+<h2 data-pagefind-weight="0.9" id="user-content-model-selection-and-custom-models" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#model-selection-and-custom-models" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>Model selection and custom models</h2>
+<p>Set the model RID on <code>GenericChatCompletionLanguageModelInput</code>. <code>GenericChatCompletionRequest</code> does not have a model or provider field.</p>
+<p>For a <a href="/docs/foundry/aip/bring-your-own-model/">registered model</a>, use its full <code>ri.language-model-service..registered-model.&lt;id&gt;</code> RID. The Python client uses that identifier to call the registered model. Registering and configuring the model determines which model endpoint handles the request.</p>
+<p>When investigating a custom model integration:</p>
+<ul>
+<li>Confirm that the input uses the intended model RID and that you have access to that model.</li>
+<li>Confirm that message roles, ordering, and content follow the request structure above.</li>
+<li>Check the selected model's support for each optional parameter. A common request type does not guarantee identical behavior for every model.</li>
+<li>Read the generated answer from <code>response.completion</code>.</li>
+</ul>
+<p>For guidance on connecting a self-hosted or external model to AIP, see <a href="/docs/foundry/aip/bring-your-own-model/">Bring your own model to AIP</a>.</p></div>
+</article>
+</body>
+</html>
