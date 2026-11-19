@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>在 Pipeline Builder 中批量迁移管道</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#242424}
+h1{font-size:1.8em;margin-bottom:8px}
+h2{font-size:1.4em;margin-top:24px}
+h3{font-size:1.2em;margin-top:20px}
+img{max-width:100%;height:auto;border-radius:8px}
+pre{overflow-x:auto;background:#f5f5f5;padding:16px;border-radius:8px}
+code{background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:0.9em}
+a{color:#1a8917}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style>
+</head>
+<body>
+<article>
+<article>
+<div class="ptcom-design__markdownDoc__1uarhel" data-pagefind-body="true"><h1 data-pagefind-weight="1" id="user-content-bulk-migrate-pipelines-in-pipeline-builder" level="1" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#bulk-migrate-pipelines-in-pipeline-builder" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>在 Pipeline Builder 中批量迁移管道</h1>
+<p>使用 Pipeline Builder 中的批量迁移功能，可在管道、项目或注册级别创建并运行迁移。通过在单个工作流中迁移多个管道，您可以减少重复的手动工作、简化维护，并保持管道配置的一致性。</p>
+<p>批量迁移不会直接更改管道，而是会为每个符合条件的管道创建一个 <a href="/docs/foundry/pipeline-builder/branches-overview/">提案</a> 。请查看并合并每个提案，以将更改应用到管道的 <strong>main</strong> 分支的情况下对分支执行操作。</p>
+<p>Pipeline Builder 支持以下批量迁移：</p>
+<ul>
+<li>将标准批处理管道迁移到 <a href="/docs/foundry/building-pipelines/create-faster-pipeline-pb/">更快的管道</a></li>
+<li>在以下位置批量替换模型： <strong>使用 LLM</strong> 节点和 <a href="/docs/foundry/pipeline-builder/pipeline-builder-aip/#text-to-embeddings"><code>Text to embeddings</code></a> expressions</li>
+</ul>
+<h2 data-pagefind-weight="0.9" id="user-content-required-permissions" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#required-permissions" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>所需权限</h2>
+<p>您需要针对所选迁移范围具备以下权限：</p>
+<ul>
+<li><strong>项目：</strong> <code>Edit</code> 对每个所选项目的权限。</li>
+<li><strong>管道：</strong> <code>Edit</code> 对每个所选管道的权限。</li>
+<li><strong>注册中的所有内容：</strong> 运行注册范围迁移的权限，注册管理员默认拥有该权限。</li>
+</ul>
+<h2 data-pagefind-weight="0.9" id="user-content-configure-a-bulk-migration" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#configure-a-bulk-migration" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>配置批量迁移</h2>
+<p>要在 Pipeline Builder 中配置批量迁移，请按照以下步骤操作：</p>
+<ol>
+<li>
+<p>从 Pipeline Builder 的 <a href="/docs/foundry/pipeline-builder/navigation/#landing-page">登录页面</a>，请选择 <strong>迁移</strong> 顶部栏中的选项卡。</p>
+<p><img alt="The Migrate tab is highlighted in Pipeline Builder above a list of pipeline migrations and their statuses." height="600" node="[object Object]" src="/docs/resources/foundry/pipeline-builder/pipeline-builder-bulk-migrations.png" style="aspect-ratio:3442 / 1658" width="1245.5971049457178"/></p>
+</li>
+<li>
+<p>在 <strong>迁移管道</strong> 页面上，选择 <strong>创建迁移</strong>。迁移名称对注册中的所有用户可见，但用户只能查看其有权访问的资源。</p>
+<p><img alt="The Create migration button is highlighted on the Migrate tab in Pipeline Builder." height="600" node="[object Object]" src="/docs/resources/foundry/pipeline-builder/pipeline-builder-create-migration.png" style="aspect-ratio:3442 / 1654" width="1248.609431680774"/></p>
+</li>
+<li>
+<p>在迁移配置菜单中，输入一个 <strong>名称</strong> 作为迁移名称，或保留默认名称。</p>
+<p><img alt="The migration configuration menu shows the migration name, migration types, and options to select projects or individual pipelines." height="600" node="[object Object]" src="/docs/resources/foundry/pipeline-builder/pipeline-builder-configure-migration.png" style="aspect-ratio:1289 / 1129" width="685.0310008857396"/></p>
+</li>
+</ol>
+<p>接下来，选择迁移 <strong>类型</strong> 并完成该类型的步骤：</p>
+<ul>
+<li><strong>转换为 Faster：</strong> <a href="#migrate-to-faster-pipelines">迁移到 faster 管道</a></li>
+<li><strong>替换模型：</strong> <a href="#replace-models">替换模型</a></li>
+</ul>
+<h2 data-pagefind-weight="0.9" id="user-content-migrate-to-faster-pipelines" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#migrate-to-faster-pipelines" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>迁移到 faster 管道</h2>
+<p>在创建迁移之前，请查看 <a href="/docs/foundry/building-pipelines/create-faster-pipeline-pb/#known-limitations">faster 管道的已知限制</a>。与 <a href="/docs/foundry/building-pipelines/create-faster-pipeline-pb/#convert-between-faster-and-standard-batch-pipelines">转换单个管道</a>不同，批量迁移会为每个兼容的管道创建一个提案，并跳过不兼容的管道。</p>
+<ol>
+<li>
+<p>在迁移配置菜单中，选择 <strong>转换为 Faster</strong>.</p>
+<p><img alt="The Convert to Faster migration type is highlighted in the migration configuration menu, with one project selected." height="600" node="[object Object]" src="/docs/resources/foundry/pipeline-builder/pipeline-builder-convert-to-faster.png" style="aspect-ratio:1573 / 1222" width="772.3404255319149"/></p>
+</li>
+<li>
+<p>自动预览行为 <strong>选择管道</strong>，选择迁移范围：</p>
+<ul>
+<li><strong>项目：</strong> 包含一个或多个项目中的所有管道，包括其文件夹中的管道。</li>
+<li><strong>管道：</strong> 选择要包含的单个管道。</li>
+<li><strong>注册中的所有内容：</strong> 包含您注册中的所有管道。</li>
+</ul>
+<p>在本示例中，选择 <strong>项目</strong> 并添加包含您要迁移的管道的项目。</p>
+<p><img alt="The Projects option, the plus icon for adding a project, and the selected project are highlighted in the migration configuration menu." height="600" node="[object Object]" src="/docs/resources/foundry/pipeline-builder/pipeline-builder-select-migration-projects.png" style="aspect-ratio:1573 / 1222" width="772.3404255319149"/></p>
+</li>
+<li>
+<p>选择 <strong>创建迁移</strong> 位于菜单右下角，用于打开迁移详情。要按状态筛选管道，请使用搜索栏右侧的 <strong>显示所有管道</strong> 下拉菜单。有关每种管道状态的定义以及管道可能被跳过的原因，请参见 <a href="#pipeline-statuses">管道状态</a>.</p>
+<p><img alt="The migration details view shows three pipelines with successful proposal generation, one skipped pipeline, and links to view the generated proposals." height="600" node="[object Object]" src="/docs/resources/foundry/pipeline-builder/pipeline-builder-migration-proposal-results.png" style="aspect-ratio:3344 / 1692" width="1185.8156028368794"/></p>
+</li>
+<li>
+<p>当提案可用时，选择 <strong>查看提案</strong> （位于管道旁边）。您可以在迁移继续处理其他管道的同时查看提案。</p>
+<p><img alt="The View proposal links are highlighted beside pipelines with successful proposal generation in the migration details view." height="600" node="[object Object]" src="/docs/resources/foundry/pipeline-builder/pipeline-builder-view-migration-proposals.png" style="aspect-ratio:3344 / 1692" width="1185.8156028368794"/></p>
+<p>本体论编辑： <a href="/docs/foundry/pipeline-builder/branches-approve-a-change/">查看并批准管道更改</a>.</p>
+</li>
+</ol>
+<h2 data-pagefind-weight="0.9" id="user-content-replace-models" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#replace-models" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>替换模型</h2>
+<ol>
+<li>
+<p>在迁移配置菜单中，选择 <strong>替换模型</strong>.</p>
+<p><img alt="The Replace model migration type is highlighted in the migration configuration menu, with model mapping fields displayed below it." height="600" node="[object Object]" src="/docs/resources/foundry/pipeline-builder/pipeline-builder-replace-model.png" style="aspect-ratio:1574 / 1146" width="824.0837696335078"/></p>
+</li>
+<li>
+<p>在左侧下拉菜单中选择当前模型，在右侧下拉菜单中选择其替换模型。要在同一迁移中替换更多模型，请选择 <strong>添加映射</strong>.</p>
+<p><img alt="The model mapping fields are highlighted, showing the current model on the left and its replacement on the right." height="600" node="[object Object]" src="/docs/resources/foundry/pipeline-builder/pipeline-builder-configure-model-mapping.png" style="aspect-ratio:1705 / 1130" width="905.3097345132744"/></p>
+</li>
+<li>
+<p>按照 <a href="#migrate-to-faster-pipelines">迁移到 faster 管道</a> 中的步骤 2–4 选择范围、创建迁移并查看其提案。</p>
+</li>
+</ol>
+<h2 data-pagefind-weight="0.9" id="user-content-cancel-a-migration" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#cancel-a-migration" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>取消迁移</h2>
+<p>如果您需要取消正在运行的迁移（例如因为配置错误而创建的），请选择进度指示器旁边的停止图标。取消后处理会逐渐停止，已创建的提案仍可供查看。</p>
+<h2 data-pagefind-weight="0.9" id="user-content-pipeline-statuses" level="2" node="[object Object]"><a aria-hidden="true" aria-label="Copy link to section" class="autolink-header" href="#pipeline-statuses" tabindex="-1"><svg class="autolink-img" fill="currentColor" height="25" viewbox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M20.368,10.29l-1.839,1.84a.75.75,0,1,1-1.061-1.06l1.84-1.841a3.214,3.214,0,0,0,0-4.539,3.286,3.286,0,0,0-4.538,0L11.411,8.05a2.3,2.3,0,0,0-.3.357,3.188,3.188,0,0,0,.3,4.183.75.75,0,1,1-1.061,1.06,4.664,4.664,0,0,1-.474-6.094,3.625,3.625,0,0,1,.474-.566l3.359-3.36a4.709,4.709,0,1,1,6.659,6.66Zm-7.779.06a.749.749,0,0,0,0,1.06,3.172,3.172,0,0,1,.749,3.353,3.068,3.068,0,0,1-.749,1.187L9.23,19.31a3.286,3.286,0,0,1-4.538,0,3.214,3.214,0,0,1,0-4.539l1.84-1.841a.75.75,0,1,0-1.061-1.06L3.632,13.71a4.709,4.709,0,1,0,6.659,6.66l3.359-3.36a4.546,4.546,0,0,0,1.105-1.756,4.712,4.712,0,0,0-1.105-4.9A.75.75,0,0,0,12.589,10.35Z"></path></svg></a>管道状态</h2>
+<p>迁移详情视图会显示每个管道的状态，指示其提案是否已创建。</p>
+<div class="ptcom-design__tableContainer__1uarhel" data-pagefind-weight="0.5"><table><thead><tr><th>状态</th><th>描述</th></tr></thead><tbody><tr><td><strong>未开始</strong></td><td>此管道的处理尚未开始。</td></tr><tr><td><strong>进行中</strong></td><td>处理正在进行中，尚未记录最终结果。</td></tr><tr><td><strong>成功</strong></td><td>已创建迁移提案。请查看并合并该提案以应用更改。</td></tr><tr><td><strong>失败</strong></td><td>在检查管道或准备其提案时发生错误。</td></tr><tr><td><strong>已跳过</strong></td><td>此迁移不适用于该管道。请查看下方各迁移类型的条件。</td></tr><tr><td><strong>已取消</strong></td><td>在记录最终结果之前，处理已被取消。</td></tr></tbody></table></div>
+<p>跳过管道的条件取决于迁移类型：</p>
+<ul>
+<li><strong>转换为 Faster：</strong> 如果管道不是标准批处理管道（例如已使用更快管道的管道），或者未通过 <a href="/docs/foundry/building-pipelines/create-faster-pipeline-pb/#convert-between-faster-and-standard-batch-pipelines">更快转换兼容性检查</a>.</li>
+<li><strong>替换模型：</strong> 如果管道未使用映射中的任何源模型（例如这些模型已被替换），则跳过该管道。</li>
+</ul>
+<div class="ptcom-design__callout__19o1cwu"><svg class="ptcom-design__icon__19o1cwu" fill="currentColor" height="20" role="img" viewbox="0 0 20 20" width="20"><path d="M10,2a8,8,0,1,0,8,8A8,8,0,0,0,10,2Zm1,13H9V10H7V8h4ZM10,7a1,1,0,1,1,1-1A1,1,0,0,1,10,7Z"></path></svg><p>未来版本计划支持更多迁移类型。</p></div></div>
+</article>
+</article>
+</body>
+</html>

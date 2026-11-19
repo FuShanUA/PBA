@@ -12,6 +12,9 @@ import time
 import urllib.request
 from datetime import datetime, timezone
 from urllib.parse import urlparse
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
+import requests
 
 from bs4 import BeautifulSoup
 
@@ -115,6 +118,65 @@ def file_digest(path):
         for chunk in iter(lambda: f.read(65536), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def remote_page_header(session, url, etag=None):
+    """Return the remote ETag, or None when the page is unchanged."""
+    headers = {}
+    if etag:
+        headers["If-None-Match"] = etag
+    response = session.head(
+        url,
+        allow_redirects=True,
+        timeout=20,
+        headers=headers,
+    )
+    if response.status_code == 304:
+        return etag
+    if response.status_code != 200:
+        raise RuntimeError(f"HEAD {url} returned {response.status_code}")
+    return response.headers.get("ETag")
+
+
+def select_changed_pages(slugs, manifest, sitemap_entries, workers=12):
+    """Use ETags to find pages whose body actually changed.
+
+    Palantir rewrites the sitemap's <lastmod> for every page during a docs
+    release, so lastmod alone cannot distinguish a real page change from a
+    metadata-only bump. A conditional HEAD request returns 304 for unchanged
+    pages and avoids downloading the page body.
+    """
+    session = requests.Session()
+    session.headers.update({"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)"})
+    changed = set()
+    errors = []
+
+    def check(slug):
+        entry = manifest["entries"].setdefault(slug, {})
+        url = sitemap_entries[slug]["url"]
+        old_etag = entry.get("etag")
+        new_etag = remote_page_header(session, url, old_etag)
+        return slug, old_etag, new_etag
+
+    with ThreadPoolExecutor(max_workers=workers) as executor:
+        futures = {executor.submit(check, slug): slug for slug in slugs}
+        for future in as_completed(futures):
+            slug = futures[future]
+            try:
+                checked_slug, old_etag, new_etag = future.result()
+                entry = manifest["entries"][checked_slug]
+                if new_etag:
+                    entry["etag"] = new_etag
+                if old_etag is not None and (new_etag is None or new_etag != old_etag):
+                    changed.add(checked_slug)
+            except Exception as exc:
+                errors.append((slug, str(exc)))
+
+    if errors:
+        log(f"ETag check errors: {len(errors)}")
+        for slug, error in errors[:10]:
+            log(f"  {slug}: {error}")
+    return changed, errors
 
 
 def recover_stashed_pages():
@@ -423,7 +485,7 @@ def update_docs(workers=3, translate=True):
         )
         if not same_unavailable:
             new_candidates.append(slug)
-    changed_candidates = []
+    lastmod_changed_candidates = []
     if not first_run:
         for slug in sitemap_entries:
             if slug not in before:
@@ -431,16 +493,27 @@ def update_docs(workers=3, translate=True):
             old_lastmod = manifest["entries"].get(slug, {}).get("lastmod", "")
             new_lastmod = sitemap_entries[slug].get("lastmod", "")
             if new_lastmod and old_lastmod and new_lastmod != old_lastmod:
-                changed_candidates.append(slug)
+                lastmod_changed_candidates.append(slug)
+
+    changed_candidates = set()
+    etag_errors = []
+    if lastmod_changed_candidates:
+        changed_candidates, etag_errors = select_changed_pages(
+            lastmod_changed_candidates,
+            manifest,
+            sitemap_entries,
+            workers=max(1, min(workers * 4, 16)),
+        )
 
     # Palantir rewrites <lastmod> across the whole sitemap on every docs
-    # release, so a lastmod diff says nothing about the page body. Stash the
-    # current files rather than deleting them, then compare after the fetch.
+    # release, so a lastmod diff says nothing about the page body. ETags now
+    # filter out metadata-only bumps before any page body is downloaded.
     stashed = stash_changed_pages(changed_candidates)
 
     log(
         f"Docs sitemap: {len(sitemap_entries)} English pages; "
-        f"new={len(new_candidates)} changed={len(changed_candidates)}"
+        f"new={len(new_candidates)} lastmod_changed={len(lastmod_changed_candidates)} "
+        f"etag_changed={len(changed_candidates)}"
     )
 
     fetch_updates = bool(new_candidates or changed_candidates)
